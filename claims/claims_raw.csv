@@ -1,0 +1,651 @@
+claim_id,anchor,unit_type,ordinal,doc_line,sha1,note,text
+C-best-practices-guardrails-closed-loop-de-heading-001,best-practices-guardrails-closed-loop-de,heading,1,1,04dc3d105ebf98c40b76fe791de7a5d4a17bd6d5,scope anchor,Best Practices: Guardrails Closed-Loop Design
+C-aws-bedrock-agentcore-before-during-afte-heading-001,aws-bedrock-agentcore-before-during-afte,heading,1,3,d759b754315f406dcab70215395bbd8bc9e5fd38,scope anchor,AWS Bedrock AgentCore — Before → During → After Architecture
+C-aws-bedrock-agentcore-before-during-afte-thead-001,aws-bedrock-agentcore-before-during-afte,thead,1,5,717d77f3eca33587dcf4d5b9e7986e891232ea94,cells=2,**Field** || **Value**
+C-aws-bedrock-agentcore-before-during-afte-trow-001,aws-bedrock-agentcore-before-during-afte,trow,1,7,1c4f51ab73bd660daf13cdcc4a38f23553180117,cells=2,**Version** || 1.2
+C-aws-bedrock-agentcore-before-during-afte-trow-002,aws-bedrock-agentcore-before-during-afte,trow,2,8,dcd9b274b13e648d5d1c41d1d1ee7a5f6f93a4ea,cells=2,"**Date** || August 8, 2026"
+C-aws-bedrock-agentcore-before-during-afte-trow-003,aws-bedrock-agentcore-before-during-afte,trow,3,9,9eaf5e64373cd39bf46310be81c637363dcbf5bc,cells=2,**Scope** || End-to-end guardrails architecture for agents deployed on Amazon Bedrock AgentCore Runtime
+C-aws-bedrock-agentcore-before-during-afte-trow-004,aws-bedrock-agentcore-before-during-afte,trow,4,10,6a8c6159437a17578a9c41d1a9fe5f7d2d5494d2,cells=2,"**Audience** || Solutions Architects, Technical Account Managers, Builder Community"
+C-aws-bedrock-agentcore-before-during-afte-trow-005,aws-bedrock-agentcore-before-during-afte,trow,5,11,46da7d79faa4ca7d6f6f12bf82cc1f9ac080ced9,cells=2,**References** || AWS Official Documentation; Amazon Bedrock AgentCore Service Approval Accelerator v2.9 (2026-07-13)
+C-s1-heading-001,s1,heading,1,13,3abcc2cf0440581468341c7211f2946754168feb,scope anchor,Executive Summary
+C-s1-prose-001,s1,prose,1,15,b7b5c3b7aa98c52ac3346306d0d0750599c33731,,"When deploying AI agents on Amazon Bedrock AgentCore with backend models (e.g., Claude), guardrails introduce multiple checkpoint hops in the request/response lifecycle."
+C-s1-prose-002,s1,prose,2,15,8dd42dab2479d32e70e44cf5c76f1b1b3f65b79a,,"While these checkpoints are essential for safety and compliance, they add measurable latency at each hop."
+C-s1-prose-003,s1,prose,3,15,b8c638bb5f2480d6234b9c522904a2a8f04a0752,navigational,This document defines best practices for implementing the complete Before → During → After closed-loop guardrails architecture while maintaining acceptable end-to-end latency through hop-by-hop monitoring.
+C-s1-quote-001,s1,quote,1,17,71d36a613e902c63c30fe7fe16e85275eb45d82b,,"**Regional availability (important):** Guardrails-in-policy (AgentCore Gateway policy guardrails, Hop #1/#5) is currently available only in US East (N. Virginia), Europe (London), Europe (Stockholm), Asia Pacific (Sydney), and Asia Pacific (Tokyo). Singapore (ap-southeast-1) and most other Asia Pacific Regions are NOT yet supported — confirm Regional support before designing a deployment. Standalone Bedrock Guardrails (via ApplyGuardrail / model invocation, Hop #2/#6) has broader Regional coverage."
+C-s1-quote-002,s1,quote,2,19,90ff6897c2c72d0963d78f7567be6928e574dae3,,"**Language support (important for non-English workloads):** Bedrock Guardrails content filters on the Classic tier support only English, French, and Spanish. The Standard tier adds broad multi-language coverage (including Chinese, Japanese, Korean) but **requires cross-Region inference**, meaning prompts and results may be processed outside your primary Region — evaluate this against your data-residency requirements together with the Regional constraint above. Per AWS: ""Guardrails are ineffective with languages that aren't supported."" See Section 3.4."
+C-s2-heading-001,s2,heading,1,21,a1fbe42c78b0a40eae0f3ed08d66b367b81d53e7,scope anchor,Architecture Overview: The Closed Loop
+C-s2-prose-001,s2,prose,1,23,1aba78d43b89ad5aff6e78d60d4aee798a6a10c0,leadin-stem,The AgentCore guardrails architecture follows a three-phase closed loop:
+C-s2-mermaid-001,s2,mermaid,1,25,c137598f53c7f38496dd20ff2e9666a66aef07b2,,BEFORE — Input Safety
+C-s2-mermaid-002,s2,mermaid,2,25,51728bbbb131a25bd4abab721a144afc4a99be22,,Gateway Guardrail + Input Guardrail
+C-s2-mermaid-003,s2,mermaid,3,25,5c1409d98b1df4f87611a84a6d28d88ebaaaeb7b,,DURING — Execution Control
+C-s2-mermaid-004,s2,mermaid,4,25,a724feba7581594e33637c5e58eec8c817b62690,,Agent Runtime + Tool Auth (Cedar) + Observability
+C-s2-mermaid-005,s2,mermaid,5,25,5e0e15b198957ff8278539742cc4a83c449d3fb6,,AFTER — Output Safety + Continuous Improvement
+C-s2-mermaid-006,s2,mermaid,6,25,2a35cfa166d6d3038b0e04db163d6e55dd45769d,,Output Guardrail + Evaluation + Optimization
+C-s2-mermaid-007,s2,mermaid,7,25,738563e9dee55e98f0079bbeeb0449b5d5ca9831,,"FEEDBACK LOOP (updated prompts, policies, thresholds)"
+C-s2-1-heading-001,s2-1,heading,1,41,75231bd2a88b62a9f5c7c6a82964c4fa50cd1b8c,scope anchor,Hop Numbering (Normative for This Document)
+C-s2-1-prose-001,s2-1,prose,1,43,50ced036d1d90d411106e90abebed44053bbc8bb,,"The hop numbering is **this document's own framework** (AWS documentation has no ""hop"" concept)."
+C-s2-1-prose-002,s2-1,prose,2,43,1f93b4b65d4d3d829b7561e0b8f465d6818c50e4,,"The table and the sequence diagram below are the normative definition; every other section, table, and diagram in this document uses these numbers."
+C-s2-1-thead-001,s2-1,thead,1,45,5586e8505ab75aceb6bbbde34f1aab7f28d6b26b,cells=3,Hop || Checkpoint || Phase
+C-s2-1-trow-001,s2-1,trow,1,47,346d14f895be342ec82314bb490186afd5946db7,cells=3,1 || AgentCore Gateway Policy Guardrails (input) || BEFORE
+C-s2-1-trow-002,s2-1,trow,2,48,a4c265daa47c9ed1bfd0eb64d0664a2969462a8c,cells=3,2 || Bedrock Guardrails — input evaluation (or ApplyGuardrail) || BEFORE
+C-s2-1-trow-003,s2-1,trow,3,49,71d97e6bc336cae009ec715793544674d483b85d,cells=3,3 || Model inference (not a guardrail checkpoint; included for the latency budget) || DURING
+C-s2-1-trow-004,s2-1,trow,4,50,d887ddbc0f8fece2bb4ffd6e986d2a95290d47c0,cells=3,4 || Agent-to-tool authorization (Cedar Policy) || DURING
+C-s2-1-trow-005,s2-1,trow,5,51,f6f93221ed2a137d367abc43239b0480fa2284a7,cells=3,5 || Tool request/response guardrails (Gateway Policy) || DURING
+C-s2-1-trow-006,s2-1,trow,6,52,5036e6214a5e61bbfa89ec2252f91c365155798c,cells=3,6 || Bedrock Guardrails — output evaluation || AFTER
+C-s2-1-prose-003,s2-1,prose,3,54,89df07593818ecdeaa6244018891faaedd1b41cc,navigational,Where each hop sits in a single request lifecycle (one tool call shown; Hops #4/#5 repeat for every tool call):
+C-s2-1-mermaid-001,s2-1,mermaid,1,56,088e29b0ab0079560dea5d3e5aeb2f7868af661e,,request
+C-s2-1-mermaid-002,s2-1,mermaid,2,56,d70ec1eaefef9cf94fe53eeed557b8421b05eea7,,"Hop #1 — Gateway Policy Guardrails (input) violation → block, HTTP 403, agent never invoked"
+C-s2-1-mermaid-003,s2-1,mermaid,3,56,ace0c5e90ac07202e99d0186576979bacac854c0,,forward
+C-s2-1-mermaid-004,s2-1,mermaid,4,56,9c7e05e5868afcf303ae4d1b7982921411378f96,,prompt
+C-s2-1-mermaid-005,s2-1,mermaid,5,56,083e63d6d515d4b5de7e6689322a3656e9beeb4b,,"Hop #2 — input evaluation violation → block, model inference skipped (no inference charge)"
+C-s2-1-mermaid-006,s2-1,mermaid,6,56,9d4e1e23bd5b727046a9e3b4b7db57bd8d6ee684,,pass
+C-s2-1-mermaid-007,s2-1,mermaid,7,56,d6aa1f3a789f3f3108666e0ac807ca5ca7dc5fa5,,invoke
+C-s2-1-mermaid-008,s2-1,mermaid,8,56,4eb3d6cca3794800bab5b49dfa4e22ca3e384377,,Hop #3 — model inference (latency budget only)
+C-s2-1-mermaid-009,s2-1,mermaid,9,56,00bac3315dc29236140eeee7e3a5b3d75fae0b92,,tool-call decision
+C-s2-1-mermaid-010,s2-1,mermaid,10,56,98edbf6a9b55c52ed2c9dfea7049975655037026,,tool call
+C-s2-1-mermaid-011,s2-1,mermaid,11,56,21bc6b369e05229082578f13442633997cd92d28,,"Hop #4 — Cedar authorization (deterministic, default-deny) Hop #5 — guardrails on tool request"
+C-s2-1-mermaid-012,s2-1,mermaid,12,56,43b312f47e9d631765937b8c391866f6c8f66026,,invoke tool
+C-s2-1-mermaid-013,s2-1,mermaid,13,56,fcaa612a19440594d0bce2c15c71d6f022a8791a,,tool response
+C-s2-1-mermaid-014,s2-1,mermaid,14,56,7da0dc3e21237aac4e405c5f20a82b37db0d0d50,,Hop #5 — guardrails on tool response (suppressOutput)
+C-s2-1-mermaid-015,s2-1,mermaid,15,56,ce4e249b18ade888d2735f868cfebae23e7187f4,,filtered result
+C-s2-1-mermaid-016,s2-1,mermaid,16,56,fcf6e78781b5ef6a84b7463a053a9e62d1781ace,,continue inference
+C-s2-1-mermaid-017,s2-1,mermaid,17,56,1381936dd1ea9734a39dc3c4505d02806c6aa2fd,,final answer
+C-s2-1-mermaid-018,s2-1,mermaid,18,56,0ec6d150549780250a9772c06b619bcc46a0e560,,response
+C-s2-1-mermaid-019,s2-1,mermaid,19,56,89cbbff8b0543d00d93cbaaa85858ef959b0d48a,,Hop #6 — output evaluation violation → block / mask before user sees it
+C-s2-1-quote-001,s2-1,quote,1,101,5d8a62f456e294c9ffb508d8e5b998f487ab1704,,"Note: this diagram is a logical model of the checkpoints, not a wire-level trace. When Hop #2/#6 run via `guardrailConfiguration` attached to the model invocation, they execute inside the Bedrock Runtime call rather than as separate API round-trips; Hop #2-ALT (ApplyGuardrail, Section 3.3) is a separate round-trip."
+C-s3-heading-001,s3,heading,1,103,82acf97b4d69ec8e91b6009394a41a6dfd2b9d9c,scope anchor,Phase 1: BEFORE — Input Safety Checkpoints
+C-s3-1-heading-001,s3-1,heading,1,105,23e5fd67ef149b774e9e2403045cc6fb4defe3a7,scope anchor,Checkpoint Hop #1: AgentCore Gateway Policy Guardrails
+C-s3-1-prose-001,s3-1,prose,1,107,9d2200789b7aaebc4a3e22af1781292a6578540f,,**Service:** Amazon Bedrock AgentCore Gateway + Policy in AgentCore
+C-s3-1-prose-002,s3-1,prose,2,109,72a64187e48543a3ba48ec4e5a542517c4de0c5a,runin-label,**What it does:**
+C-s3-1-bullet-001,s3-1,bullet,1,111,697660c5496b77c4e31a16543ac06521a153a942,,Intercepts incoming requests at the gateway level BEFORE they reach the agent
+C-s3-1-bullet-002,s3-1,bullet,2,112,8ee347475eccbcc59e17dc4e62179a914137fe1c,,Evaluates content against configured guardrail safeguards using Cedar policy conditions
+C-s3-1-bullet-003,s3-1,bullet,3,113,ee9a2b19a0e862e80d486eb34ef5e18808366834,,Blocks violating requests immediately — the agent is never invoked
+C-s3-1-prose-003,s3-1,prose,3,115,40e170053e4ab13483f515aeb6878be648ab8452,runin-label,**Supported Safeguards:**
+C-s3-1-bullet-004,s3-1,bullet,4,117,aa2c6a2b3683fedbc53ac5c7186996164f03f532,,"Prompt Attack detection (JAILBREAK, PROMPT_INJECTION, PROMPT_LEAKAGE)"
+C-s3-1-bullet-005,s3-1,bullet,5,118,3bcfa44ae65f03e0e652f197ad6f43b1b3d19b12,,"Content Filter (categories with configurable thresholds; confidence scores are discrete values {0, 0.2, 0.4, 0.6, 0.8, 1.0}, not a continuous range)"
+C-s3-1-bullet-006,s3-1,bullet,6,119,704f3708cf5bb3f58b2bdfd6e1860dfcf85c1b4b,,Sensitive Information detection
+C-s3-1-prose-004,s3-1,prose,4,121,ebbdb2506310cff903cfead28308665dfaf6eada,,"**Thresholds:** if you author policies through the natural-language authoring service and do not specify a threshold, AgentCore applies defaults of Content Filter = 0.2, Prompt Attack = 0.4, Sensitive Information = 0.2. **If you hand-write Cedar policies without the authoring service, you MUST provide the threshold value explicitly — there is no automatic default.** Content Filter categories: VIOLENCE, HATE, SEXUAL, MISCONDUCT, INSULTS."
+C-s3-1-prose-005,s3-1,prose,5,123,e6f69af568956445f5aaed3c989cc054e9a05a83,runin-label,**Configuration Method:**
+C-s3-1-bullet-007,s3-1,bullet,7,125,cc05ba7bb682508abe60d3758a3d1f93d0fc119b,,Define guardrails inline within Cedar policies using `when guardrails { ... }` or `unless guardrails { ... }` conditions
+C-s3-1-bullet-008,s3-1,bullet,8,126,e0879571de7d44ae6762f63d3c1dea1af6a38d79,,Attach the policy engine to your AgentCore Gateway
+C-s3-1-bullet-009,s3-1,bullet,9,127,5f99cb99d2e14c96032962e5b2a39653dc0cb161,,Gateway Execution Role must have permissions for both AgentCore operations (`bedrock-agentcore:*`) and Bedrock Guardrails. The required Guardrails permission is `bedrock:InvokeGuardrailChecks` — the Policy data plane uses FAS (Forward Access Session) credentials to call this API on your behalf. Note: InvokeGuardrailChecks (used by Gateway policy) is distinct from the standalone ApplyGuardrail API in Section 3.3.
+C-s3-1-quote-001,s3-1,quote,1,129,6a2a09e04d434cb796616b002498962bf04f6e69,,"**Critical setup gotcha (ENFORCE + default-deny):** Cedar is default-deny — if no policy matches, the request is denied. A policy engine in ENFORCE mode that contains only guardrail policies (and no explicit `permit`) will therefore **block ALL gateway traffic, including benign requests**. Always include an explicit baseline permit, e.g. `permit (principal, action, resource is AgentCore::Gateway);`, alongside your guardrail policies (this is exactly what the official getting-started guide does)."
+C-s3-1-prose-006,s3-1,prose,6,131,b77fc46d9f0e20923f7941cbcc3b241749e3663e,runin-label,**Latency Impact:**
+C-s3-1-bullet-010,s3-1,bullet,10,133,2abd5daeb070d62f690c66642b3ec23f50cdefba,,Added latency at the gateway entry point
+C-s3-1-bullet-011,s3-1,bullet,11,134,3f20839f0a38d70149af0ad5fcf4ac1fcd6811f7,,"If blocked, no further downstream processing occurs (saves overall latency)"
+C-s3-1-bullet-012,s3-1,bullet,12,135,973578e4f89b61151a9f9019495cbc9041e24642,,Note: AWS documentation does not publish parallelism or latency characteristics for Gateway policy guardrail evaluation — measure your own baseline with the `GuardrailLatency` metric (Section 6.2)
+C-s3-1-prose-007,s3-1,prose,7,137,a9df3319e57828b6fc91d5f6e08be1e309734827,runin-label,**Behavior notes:**
+C-s3-1-bullet-013,s3-1,bullet,13,139,aa6be383158a6bc3b1b37328bbc651d960d79fa3,,"Guardrail evaluation is **non-deterministic** — per AWS: ""The same input can result in different outputs. Policies, however, are deterministic."" Design thresholds and tests accordingly."
+C-s3-1-bullet-014,s3-1,bullet,14,140,75b90ee42b92d087ab529d5518cd2c8699a8a061,,"Fail-secure: Policy evaluation timeouts result in an automatic DENY decision (AgentCore Service Approval Accelerator v2.9, Policy section)."
+C-s3-1-bullet-015,s3-1,bullet,15,141,279583a72cad797b14a7e49be8f3c7768f6357bb,,Denied requests receive HTTP 403 with a message identifying the denying policy ID.
+C-s3-1-prose-008,s3-1,prose,8,143,ee73d397c093d2249a768ab55d42fa5287224076,runin-label,**Best Practices:**
+C-s3-1-numitem-001,s3-1,numitem,1,145,3e4df8425908aa2aeb62f9d8fe592b666d8cfe6e,,Configure only the minimum necessary safeguards at the gateway level to reduce latency
+C-s3-1-numitem-002,s3-1,numitem,2,146,dd09a9b2b1ff7ea09d6d84fe3e38511e0443aeb6,,Use aggressive thresholds (closer to 0) only for high-risk categories; use moderate thresholds for general content
+C-s3-1-numitem-003,s3-1,numitem,3,147,5ab7364b5b6e0adcbe631e68ea90373ac6d39d6c,,"Monitor the gateway Latency and Duration metrics (namespace `AWS/Bedrock-AgentCore`) plus the Policy metrics in Section 6.2 (GuardrailLatency, ConfidenceScore, DenyDecisions) in CloudWatch"
+C-s3-1-numitem-004,s3-1,numitem,4,148,e0009900090d5b458f4aa8688641e4d544ec2d5c,,Leverage the gateway's early-block behavior to save downstream compute costs
+C-s3-1-numitem-005,s3-1,numitem,5,149,fb2cfa35850a8676646be07a23872b6a0cf2712f,,Protect the enforcement mode: any principal with `bedrock-agentcore:UpdateGateway` can switch the gateway to LOG_ONLY or detach the policy engine entirely — AWS documents no separate condition key protecting this field. Grant UpdateGateway only to trusted principals and alarm on gateway configuration changes via CloudTrail.
+C-s3-1-prose-009,s3-1,prose,9,151,67c064ab212530f3c0f97e4eb3ca5225717585af,navigational,Reference: <https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy-guardrails-in-policies.html>
+C-s3-2-heading-001,s3-2,heading,1,153,0c048a421ce9ed91904f28946a8d8fde2cc72b7f,scope anchor,Checkpoint Hop #2: Bedrock Guardrails — Input Evaluation
+C-s3-2-prose-001,s3-2,prose,1,155,07a4157a74c8a4f6acd1621bbccd04222fed9b4e,,**Service:** Amazon Bedrock Guardrails (standalone service)
+C-s3-2-prose-002,s3-2,prose,2,157,72a64187e48543a3ba48ec4e5a542517c4de0c5a,runin-label,**What it does:**
+C-s3-2-bullet-001,s3-2,bullet,1,159,3563c3d66148917458a4d10fd4ab44eb15fabcb2,,Evaluates the user prompt BEFORE model inference when `guardrailConfiguration` is attached to the model invocation
+C-s3-2-bullet-002,s3-2,bullet,2,160,32bee2f6b73707ef4f809b511c9e8d13451ee5b8,,"If the input violates a configured policy, model inference is NOT executed — and you are not charged for model inference (you pay only the guardrail evaluation). If the OUTPUT is blocked instead, you still pay for the full model inference plus guardrail evaluation of both input and response. This billing asymmetry is the quantitative rationale for the ""fail fast at the outermost layer"" principle (Section 7.1):"
+C-s3-2-mermaid-001,s3-2,mermaid,1,162,4ba612aeada3978164dd26e274fa3cb89aed7f2a,,Input arrives
+C-s3-2-mermaid-002,s3-2,mermaid,2,162,e5c2ba33a665f778f492b089e0f1543b3700d751,,Hop #2 input guardrail
+C-s3-2-mermaid-003,s3-2,mermaid,3,162,35443a381862d858c9d0c9f5277bb30d1e9fb4ac,,BLOCKED at input 💰 pay: 1× guardrail eval ✅ model inference: $0
+C-s3-2-mermaid-004,s3-2,mermaid,4,162,90f4ae1180c80bd561d0791775bb79ade786bdf7,,violation
+C-s3-2-mermaid-005,s3-2,mermaid,5,162,848be494a447445e5232f2a65624ac059ad22428,,Hop #3 model inference 💰 full inference cost
+C-s3-2-mermaid-006,s3-2,mermaid,6,162,9d4e1e23bd5b727046a9e3b4b7db57bd8d6ee684,,pass
+C-s3-2-mermaid-007,s3-2,mermaid,7,162,9edfb8c6061a1196c0cf75178fb2fc17f6d9a79a,,Hop #6 output guardrail
+C-s3-2-mermaid-008,s3-2,mermaid,8,162,19017d0074ba312e2b2fb4be26e5ba109fbafb23,,BLOCKED at output 💰 pay: inference + 2× guardrail eval ❌ inference cost NOT refunded
+C-s3-2-mermaid-009,s3-2,mermaid,9,162,2959b55da23d4ca32e051a020aac786d31fcce42,,Response served 💰 pay: inference + 2× guardrail eval
+C-s3-2-bullet-003,s3-2,bullet,3,172,2548cd56edc53ca891820ef23b5906bb4b6f4142,,Supports the full range of guardrail policies (more comprehensive than Gateway-level)
+C-s3-2-prose-003,s3-2,prose,3,174,40e170053e4ab13483f515aeb6878be648ab8452,runin-label,**Supported Safeguards:**
+C-s3-2-bullet-004,s3-2,bullet,4,176,6edcca9c084f775da37e3bc9b7658a5d2692fd5d,,"Content Filters (hate, insults, sexual, violence, misconduct)"
+C-s3-2-bullet-005,s3-2,bullet,5,177,5e2682ce8ade31e48b506515e55ba1ec7d99fd47,,Denied Topics (custom-defined)
+C-s3-2-bullet-006,s3-2,bullet,6,178,811dafb84d1be7e3b24074a915d4976537b273da,,Word Filters (custom blocklists)
+C-s3-2-bullet-007,s3-2,bullet,7,179,9b887cee27f6e2f84bd89dbc1d7e384a716fdc17,,Sensitive Information Filters (PII detection/redaction)
+C-s3-2-bullet-008,s3-2,bullet,8,180,e75a272ca3edba90889ba4c590930714f26eda04,,"Prompt Attack detection — **requires input tagging on InvokeModel**: with InvokeModel / InvokeModelWithResponseStream, prompt-attack filtering is ONLY applied to content wrapped in input tags (""If there are no tags, prompt attacks … will not be filtered""). Use a random `tagSuffix` per request to prevent tag-injection. **Converse/ConverseStream behave differently**: message content is evaluated by default with no tagging needed — but once you add ANY `guardContent` block, the guardrail evaluates ONLY the guarded blocks and skips the rest (scope-limiting, not enabling; system prompts are the opposite — never evaluated unless wrapped in `guardContent`). Whether the prompt-attack filter specifically runs on untagged Converse messages is not documented — verify with a red-team test before relying on it."
+C-s3-2-bullet-009,s3-2,bullet,9,181,38ed3c10baf6c874e2c4a39636f253d9f4716cea,,Contextual Grounding checks (see limits in Section 5.1)
+C-s3-2-bullet-010,s3-2,bullet,10,182,4ea93015ab02e9e1e6c586f64ad51803434c4f79,,Automated Reasoning checks (detect mode only; English (US) only; available in 6 Regions; no streaming support)
+C-s3-2-prose-004,s3-2,prose,4,184,e6f69af568956445f5aaed3c989cc054e9a05a83,runin-label,**Configuration Method:**
+C-s3-2-bullet-011,s3-2,bullet,11,186,985889cdbdea264ba6384522a369dbf168843575,,Create a Guardrail resource in Amazon Bedrock Console or via API
+C-s3-2-bullet-012,s3-2,bullet,12,187,582f2b5644c8eedd677664b386f0db766332e950,,Obtain `guardrailIdentifier` and `guardrailVersion`
+C-s3-2-bullet-013,s3-2,bullet,13,188,f8e0c7864a5e7a1fbf8a9e3ec522b1f486109a9d,,Attach to model invocation in agent code
+C-s3-2-prose-005,s3-2,prose,5,190,b77fc46d9f0e20923f7941cbcc3b241749e3663e,runin-label,**Latency Impact:**
+C-s3-2-bullet-014,s3-2,bullet,14,192,c95b46809c4c31fa35c66d790f730eda69b9ea4a,,"For input evaluation, all configured policies are evaluated IN PARALLEL (officially documented: ""the input is evaluated in parallel for each configured policy"")"
+C-s3-2-bullet-015,s3-2,bullet,15,193,c5fa6c2a75f4d25f3c37c158fb60e3d96a3e9dbc,,Latency increases with the number of policies and input content length
+C-s3-2-bullet-016,s3-2,bullet,16,194,4913b39d52f41f54d7db80388f27d85f9dc8c122,,"If blocked, model inference is skipped (net latency and cost saving for violating inputs)"
+C-s3-2-prose-006,s3-2,prose,6,196,ee73d397c093d2249a768ab55d42fa5287224076,runin-label,**Best Practices:**
+C-s3-2-numitem-001,s3-2,numitem,1,198,97ab5d8e648b199ca44791ce14a65aa01a938905,,"A single guardrail resource supports separate input vs. output settings — content filters have independent `inputStrength` / `outputStrength`, and sensitive-info entities have independent `inputAction` / `outputAction`. Prefer one resource with per-direction settings over maintaining two resources."
+C-s3-2-numitem-002,s3-2,numitem,2,199,aba96a84893cb869897f79bffcf2dd4231271af3,,"Avoid redundant policies — if Gateway Guardrails already handle prompt attacks, consider removing duplicate checks here (but note the Regional and tagging constraints above before relying on either layer alone)"
+C-s3-2-numitem-003,s3-2,numitem,3,200,1d1eaeb5bfd75a33e6e43d2dae271c94c2864a65,,"Use the InvocationLatency CloudWatch metric under the **`AWS/Bedrock/Guardrails`** namespace to track ApplyGuardrail overhead. For guardrail overhead INSIDE a model invocation, CloudWatch has no direct metric — read the `invocationMetrics.guardrailProcessingLatency` field from the invocation trace/response instead."
+C-s3-2-numitem-004,s3-2,numitem,4,201,55d67c5c5fca0faf12077b19591533b67d7835e2,,"For latency-sensitive applications, enable only essential policies at this layer and defer comprehensive checks to async evaluation"
+C-s3-2-numitem-005,s3-2,numitem,5,202,2af758c6bc1bc722eae1f10be368e23ecd0072cc,,"AWS periodically and automatically updates the underlying guardrail models (""Updates apply automatically and require no action on your part""). Maintain a regression test set and re-validate guardrail behavior on a schedule — past evaluation results do not guarantee future behavior."
+C-s3-2-prose-007,s3-2,prose,7,204,cd69be58381cde44c41ce6b440a6284ec1462225,navigational,Reference: <https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-how.html>
+C-s3-3-heading-001,s3-3,heading,1,206,9e7266a26d5136da4e7e90c8f011bec0a77da3f6,scope anchor,Checkpoint Hop #2-ALT: ApplyGuardrail API (For Non-Bedrock Models)
+C-s3-3-prose-001,s3-3,prose,1,208,487ef66782e64741ab991ab1a9f88571568ab1bf,,**Service:** Amazon Bedrock Runtime — ApplyGuardrail API
+C-s3-3-prose-002,s3-3,prose,2,210,72a64187e48543a3ba48ec4e5a542517c4de0c5a,runin-label,**What it does:**
+C-s3-3-bullet-001,s3-3,bullet,1,212,e2303bed076ad4da1a3c0fd8666c00e896f280c8,,"Provides the same guardrail evaluation as Hop #2 but as a standalone API call, decoupled from foundation models"
+C-s3-3-bullet-002,s3-3,bullet,2,213,b4868a9d524f6b626322f1112c3d35a2a10e9d0a,,"Suitable for third-party models, self-hosted models, or LiteLLM Gateway scenarios"
+C-s3-3-bullet-003,s3-3,bullet,3,214,20fbefeb32bc1fbd7d93623427532f40e87da0c6,,Customer controls when and how the API is called
+C-s3-3-prose-003,s3-3,prose,3,216,e6f69af568956445f5aaed3c989cc054e9a05a83,runin-label,**Configuration Method:**
+C-s3-3-code-001,s3-3,code,1,218,f301bddc4c77f0b9c6f027a8ab1d00123cab0b1e,lang=python,"response = client.apply_guardrail( guardrailIdentifier=""your-guardrail-id"", guardrailVersion=""1"", source=""INPUT"", content=[{""text"": {""text"": user_prompt}}] )"
+C-s3-3-prose-004,s3-3,prose,4,227,b77fc46d9f0e20923f7941cbcc3b241749e3663e,runin-label,**Latency Impact:**
+C-s3-3-bullet-004,s3-3,bullet,4,229,f818b4ec774ed82b5ee080a7d6999267c6017629,,Adds a full round-trip API call to Bedrock Runtime
+C-s3-3-bullet-005,s3-3,bullet,5,230,805579e28cb0dc399fe367b2097cf81d647cc67e,,Consider batching content blocks for high-throughput workloads: passing multiple content items in a single ApplyGuardrail call reduces the number of round trips. (AWS publishes no specific speed-up figures; the related InvokeGuardrailChecks API documents a hard limit of 10 content blocks per message.)
+C-s3-3-prose-005,s3-3,prose,5,232,ee73d397c093d2249a768ab55d42fa5287224076,runin-label,**Best Practices:**
+C-s3-3-numitem-001,s3-3,numitem,1,234,050c21fe3e04c3a266ca25cd064f91af0aed83e5,,"Caching guardrail decisions is high-risk and should be tightly constrained if used at all: guardrail evaluation is non-deterministic, AWS auto-updates the underlying models, and ""similar"" inputs can differ exactly in the attack payload. If you cache, restrict it to **exact-match inputs only, with a short TTL, and never for the prompt-attack category**."
+C-s3-3-numitem-002,s3-3,numitem,2,235,019977dc53219535b4695aa6c075171decd88ae6,,Use content-array batching to reduce the number of API calls
+C-s3-3-numitem-003,s3-3,numitem,3,236,4db143f0beaf61a62e8da8c1b26201c5ecf5a647,,"Apply selective evaluation — not all inputs require full guardrail assessment (input tagging also enables evaluating only the user-supplied portion of a RAG prompt, reducing text units billed)"
+C-s3-3-numitem-004,s3-3,numitem,4,237,fa61c8efb545e199a5dbcfd37de9e897982c3c34,,Set timeouts and circuit breakers for the API call to prevent latency spikes from blocking the entire request. **Decide your failure posture explicitly**: AWS does not document fail-open vs. fail-closed behavior for Bedrock Guardrails errors during model invocation — your application owns this decision when calling ApplyGuardrail (fail-closed is the safe default for regulated workloads).
+C-s3-3-prose-006,s3-3,prose,6,239,a65a97c1b03d76d7099159fc8e1ae6f18ba6601e,navigational,Reference: <https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-use-independent-api.html>
+C-s3-4-heading-001,s3-4,heading,1,241,dc01104ac023a36f7fab20c7d54c25a76025bb11,scope anchor,Guardrail Tiers and Language Support
+C-s3-4-prose-001,s3-4,prose,1,243,5514fa93ee4679d513031686238570e03908046c,leadin-stem,Bedrock Guardrails offers two safeguard tiers with materially different coverage:
+C-s3-4-thead-001,s3-4,thead,1,245,c6de3419c1792c3d9d71a38356e9d47cbe6d5148,cells=3,|| **Classic tier** || **Standard tier**
+C-s3-4-trow-001,s3-4,trow,1,247,195da909f1ef778da2954c8858e7768ebcfbf8c6,cells=3,"Content filter / prompt attack languages || English, French, Spanish only || Dozens of languages, incl. Chinese (Simplified), Japanese, Korean, German, Hindi, Arabic, and more"
+C-s3-4-trow-002,s3-4,trow,2,248,77b07063570bc18f5d6edff60bdfd3fc1d278c48,cells=3,Prompt leakage detection || No || Yes
+C-s3-4-trow-003,s3-4,trow,3,249,ed4f1055b7e39daf6cee4ba179c4259149503121,cells=3,"Denied topic definition length || 200 chars || 1,000 chars"
+C-s3-4-trow-004,s3-4,trow,4,250,4e1833f3d35d8390d654d348127101153e0414fa,cells=3,Cross-Region inference || Not used || **Required** (`crossRegionConfig` / guardrail profile)
+C-s3-4-prose-002,s3-4,prose,2,252,e3ed284e0422188a249d50fd1cf4c961e4acdff3,runin-label,Tier selection decision:
+C-s3-4-mermaid-001,s3-4,mermaid,1,254,f16c072ec487b60eb3bf7f9150017f38b4ca8dcb,,Traffic language?
+C-s3-4-mermaid-002,s3-4,mermaid,2,254,7cffa881ab7250298e75d5470390ac079146cd03,,"Need prompt-leakage detection or 1,000-char topic definitions?"
+C-s3-4-mermaid-003,s3-4,mermaid,3,254,afb38e073dd0c0e7c236e7cb0d0a48d2c88cdc46,,EN / FR / ES only
+C-s3-4-mermaid-004,s3-4,mermaid,4,254,86fd314d7176f6fc33668a2c9e10190f63961590,,Standard tier (only option with real protection)
+C-s3-4-mermaid-005,s3-4,mermaid,5,254,adf03fdcd4f5f7da799109f1c865aca939bdd200,,Chinese / Japanese / Korean / other languages
+C-s3-4-mermaid-006,s3-4,mermaid,6,254,8939b49740ebe19c05e97f4bbbe81aa44ecf36fa,,Classic tier data stays in-Region
+C-s3-4-mermaid-007,s3-4,mermaid,7,254,816c52fd2bdd94a63cd0944823a6c0aa9384c103,,No
+C-s3-4-mermaid-008,s3-4,mermaid,8,254,5397e0583f14f6c88de06b1ef28f460a1fb5b0ae,,Yes
+C-s3-4-mermaid-009,s3-4,mermaid,9,254,f5f638e0fda0802fe0cdc30748637fc3cc8e6603,,Data-residency allows cross-Region inference within the geography?
+C-s3-4-mermaid-010,s3-4,mermaid,10,254,27da7426b7f969047b5d2912ea8dcda4bea01aaf,,Use Standard tier (crossRegionConfig required)
+C-s3-4-mermaid-011,s3-4,mermaid,11,254,3b917f71c9b95332293d9062b2fe5e45ac8b5d4f,,⚠️ Gap: no compliant guardrail option — escalate before deployment; Classic would be silently ineffective
+C-s3-4-prose-003,s3-4,prose,3,265,2bc9e8f11bbf2feeaedf810f1725549063cdca95,runin-label,Key implications:
+C-s3-4-bullet-001,s3-4,bullet,1,267,2a07ad48c70ebedec5339b7066862e4352e3815a,,"Official warning: ""Guardrails are ineffective with languages that aren't supported."" A Classic-tier guardrail provides essentially no protection for Chinese/Japanese/Korean traffic."
+C-s3-4-bullet-002,s3-4,bullet,2,268,ae9303a8ecb1d3cca0a59b69ae33ed5222dc6e11,,"Standard tier's mandatory cross-Region inference keeps data within the same geography (e.g., US requests stay in US Regions) at no extra cost, but ""your input prompts and output results might move outside of your primary Region"" — reconcile this with data-residency commitments and with the Guardrails-in-policy Regional constraint in Section 1."
+C-s3-4-bullet-003,s3-4,bullet,3,269,89482cee94aeac2be7623cd43f9a63eb1fcec650,,"Word filters support English, French, and Spanish only, on either tier."
+C-s3-4-bullet-004,s3-4,bullet,4,270,90ae21c551033cbcea8ee340d655d48554896100,,Automated Reasoning checks are English (US) only.
+C-s3-4-prose-004,s3-4,prose,4,272,5e18b2d1b10c3661d83e9391fa955afef4354270,navigational,References: <https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-supported-languages.html> and <https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-tiers.html>
+C-s4-heading-001,s4,heading,1,274,b36469628a76122a16a6eed1980d832fd5311f55,scope anchor,Phase 2: DURING — Execution Control and Observability
+C-s4-prose-001,s4,prose,1,276,7395b42713f87a43b26536a2c8ddf49a1d1de9d1,,(Hop #3 — model inference — is not a guardrail checkpoint; it appears in the latency budget in Section 6.1.)
+C-s4-1-heading-001,s4-1,heading,1,278,d3e7d7973756b04bde6a32d12c29a3a1b7e25ed2,scope anchor,Checkpoint Hop #4: Agent-to-Tool Authorization (Cedar Policy)
+C-s4-1-prose-001,s4-1,prose,1,280,20f8d9467790f250dea03daccd4f4082d96ad1c6,,**Service:** Amazon Bedrock AgentCore Policy (Cedar-based)
+C-s4-1-prose-002,s4-1,prose,2,282,72a64187e48543a3ba48ec4e5a542517c4de0c5a,runin-label,**What it does:**
+C-s4-1-bullet-001,s4-1,bullet,1,284,9300b4124fff284d6f3deb2239b566a040f543ef,,Intercepts EVERY agent-to-tool request through the AgentCore Gateway
+C-s4-1-bullet-002,s4-1,bullet,2,285,a1a8ccaf0dfba61ab64cf208212d38a94924ec5d,,Makes deterministic allow/deny decisions based on Cedar policy logic
+C-s4-1-bullet-003,s4-1,bullet,3,286,7f3f104886da684840b1f256e3472a8047e8312f,,Immune to prompt injection — operates outside the model's reasoning
+C-s4-1-prose-003,s4-1,prose,3,288,ad6dd9fd1c97c5e18b01778b649335b94249492a,runin-label,**Key Characteristics:**
+C-s4-1-bullet-004,s4-1,bullet,4,290,852634dc028b7b267d35be2aa80dd65470e834b4,,**Deterministic** (not probabilistic like guardrails)
+C-s4-1-bullet-005,s4-1,bullet,5,291,cf895deb1400dba8f9cd8192caf7cde17838cfa9,,"Default-deny: if no policy matches, the request is denied"
+C-s4-1-bullet-006,s4-1,bullet,6,292,69b823c844596d39498fae1b1e78571c64856fa8,,"Evaluates tool-call level authorization (which tool, what parameters, under what conditions)"
+C-s4-1-bullet-007,s4-1,bullet,7,293,918bea1dcfb1fe787a2ea91fd3058715af428491,,"Policy/guardrails apply to three gateway target types — MCP targets (`POST /mcp`, JSON-RPC `tools/call`), HTTP runtime targets (`POST /<target>/invocations`), and HTTP inference targets (`POST /inference`) — not MCP tools only"
+C-s4-1-bullet-008,s4-1,bullet,8,294,b121bde0816c75f46b1997344aea05eda700e90d,,Fail-secure: evaluation timeouts result in automatic DENY
+C-s4-1-prose-004,s4-1,prose,4,296,b77fc46d9f0e20923f7941cbcc3b241749e3663e,runin-label,**Latency Impact:**
+C-s4-1-bullet-009,s4-1,bullet,9,298,50b5986349f8c46f4c43c6cb3470e6c9651b8e18,,"Cedar policy evaluation is deterministic and fast (formal logic, not ML inference)"
+C-s4-1-bullet-010,s4-1,bullet,10,299,71135ee495e192899b73a660980e6cb4696e1eb9,,Minimal latency overhead compared to guardrail evaluation
+C-s4-1-bullet-011,s4-1,bullet,11,300,c7f225ac34bfbddde989435bdf3e8b209d670b64,,Spans are emitted for policy operations when tracing is enabled
+C-s4-1-prose-005,s4-1,prose,5,302,ee73d397c093d2249a768ab55d42fa5287224076,runin-label,**Best Practices:**
+C-s4-1-numitem-001,s4-1,numitem,1,304,db4a90bb0233c799bb989e27a46c926fe0586557,,Use Cedar Policy for tool-level access control — it's faster and more reliable than guardrails for authorization decisions
+C-s4-1-numitem-002,s4-1,numitem,2,305,80e78454d62efee284051475b83ad3c67b91e3ed,,Do NOT rely on guardrails alone for tool authorization — guardrails are probabilistic; Cedar is deterministic
+C-s4-1-numitem-003,s4-1,numitem,3,306,cdc61f6fde60d8936f43a25a95905533b61ff04a,,Follow least-privilege principle: explicitly permit only required tool actions
+C-s4-1-numitem-004,s4-1,numitem,4,307,071f52f4302bdad59774b717d7e2cc1e229c75a3,,Monitor policy evaluation latency via AgentCore Policy metrics in CloudWatch (Section 6.2)
+C-s4-1-numitem-005,s4-1,numitem,5,308,2256aa642a6142a4673dba8f6d4afcd6a29959aa,,Keep policy rules focused and minimal — overly complex policies add evaluation time
+C-s4-1-numitem-006,s4-1,numitem,6,309,e7d61201aa963c87faa3eec6196f50b64f6e82d1,,"Use the two-level LOG_ONLY controls deliberately: the policy ENGINE has a `mode` (ENFORCE default / LOG_ONLY) and each POLICY has an `enforcementMode` (ACTIVE default / LOG_ONLY). **Engine mode takes precedence — an engine in LOG_ONLY blocks nothing, even if individual policies are ACTIVE.** Verify engine mode is ENFORCE before relying on any policy in production."
+C-s4-1-mermaid-001,s4-1,mermaid,1,311,cb92393f59278fa9683dce4f1a81735a3be39d66,,Tool-call request
+C-s4-1-mermaid-002,s4-1,mermaid,2,311,03c3028945264bbb6eae7a6081d7a250eedbab22,,Engine mode?
+C-s4-1-mermaid-003,s4-1,mermaid,3,311,99bc3af65e5082ab0567dc7556de380d7495b392,,⚠️ NOTHING is blocked (even ACTIVE policies) all decisions logged only
+C-s4-1-mermaid-004,s4-1,mermaid,4,311,22561ca44daa6408ac6b10a537ebfe422c2c9b49,,LOG_ONLY
+C-s4-1-mermaid-005,s4-1,mermaid,5,311,da344beeeeea607bc0066114b13e5829fc4d67dd,,Policy enforcementMode?
+C-s4-1-mermaid-006,s4-1,mermaid,6,311,076df6e2cbd50fef6d4f71b04b1bbd411c0b7a7b,,ENFORCE
+C-s4-1-mermaid-007,s4-1,mermaid,7,311,80880083e80facf1f8167e0bcd758a089ad6f2aa,,Policy can DENY / suppressOutput (default-deny applies)
+C-s4-1-mermaid-008,s4-1,mermaid,8,311,c72633f673ef54769f56bbaf78d2baf4858bf7c3,,ACTIVE
+C-s4-1-mermaid-009,s4-1,mermaid,9,311,ec76dff170fe436d98a86e0380ff4a457cfe1042,,"Policy evaluated side-by-side, logs LogOnlyMatches / LogOnlyDecisionFlips, never blocks"
+C-s4-1-prose-006,s4-1,prose,6,320,712e0918a39d1a1b667c2590a440a5ffb0a18d72,navigational,Reference: <https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy.html>
+C-s4-1-prose-007,s4-1,prose,7,322,3d93439eefaa9cbf9f47e44f49c533d25a271bd2,,"**Limitations of guardrails in policy:** (1) no regex or pattern matching — guardrails use ML scoring, not regular expressions; (2) you cannot mix standard Cedar `when {…}` with `when guardrails {…}` — the guardrails block replaces the standard condition; (3) a `when guardrails {…}` block must contain at least one guardrail definition."
+C-s4-1-quote-001,s4-1,quote,1,324,670b873e3589ef469829b1fa4f0136906baf9317,,"**Complementary control — Gateway Lambda interceptors:** in addition to Cedar policy, AgentCore Gateway supports REQUEST/RESPONSE Lambda interceptors that provide tool-level, operation-level, and parameter-level access control (JWT claims validation, RBAC/ABAC, response filtering/sanitization, per-user rate limiting). They run at the same gateway boundary as Hops #4/#5 and can implement checks Cedar cannot express (e.g., regex validation). Security note: with `passRequestHeaders` enabled, ALL headers — including OAuth bearer tokens — are forwarded to the customer Lambda; treat interceptor Lambdas as security-sensitive boundaries. (AgentCore Service Approval Accelerator v2.9, Gateway section.)"
+C-s4-2-heading-001,s4-2,heading,1,326,6f825de409ffa80da22097c1b071198cc97db049,scope anchor,Checkpoint Hop #5: Tool Request/Response Guardrails
+C-s4-2-prose-001,s4-2,prose,1,328,e81bed72743d02a49549213a4c3507b6bd7318ed,,**Service:** AgentCore Gateway Policy — Guardrails on Tool I/O
+C-s4-2-prose-002,s4-2,prose,2,330,72a64187e48543a3ba48ec4e5a542517c4de0c5a,runin-label,**What it does:**
+C-s4-2-bullet-001,s4-2,bullet,1,332,9fd53b9e2ccb9d7dbecf6d5048257fede3539e7a,,Evaluates content in both tool requests (agent → tool) and tool responses (tool → agent). Request authorization uses the `permit` / `forbid` effects; tool-output filtering uses the `suppressOutput` effect — a distinct effect that evaluates an action's output after it completes and suppresses the output when a guardrail is violated.
+C-s4-2-bullet-002,s4-2,bullet,2,333,cc8c73aad28bd65222b2cdaf5344ceeb420d82e1,,Same guardrail safeguards as Hop #1 but applied to tool communication
+C-s4-2-bullet-003,s4-2,bullet,3,334,5e394094b9c3a6b4c66913834e63bb4325a6449c,,Prevents sensitive data leakage through tool interactions
+C-s4-2-prose-003,s4-2,prose,3,336,b77fc46d9f0e20923f7941cbcc3b241749e3663e,runin-label,**Latency Impact:**
+C-s4-2-bullet-004,s4-2,bullet,4,338,813b63596ee5e1de31f8f4107fcfd5f0b9143aa9,,Added for EACH tool invocation in the agent's execution loop
+C-s4-2-bullet-005,s4-2,bullet,5,339,895ba01195673682ba998f60ceca28673e9c2b3d,,"For multi-step agents making N tool calls, this adds N × guardrail_evaluation_time"
+C-s4-2-bullet-006,s4-2,bullet,6,340,61a7b65a09dbf31875531a754160d0ffe9d95e62,,Most significant latency impact in complex agent workflows
+C-s4-2-prose-004,s4-2,prose,4,342,ee73d397c093d2249a768ab55d42fa5287224076,runin-label,**Best Practices:**
+C-s4-2-numitem-001,s4-2,numitem,1,344,90d3b41276dc130351597775fcde3effcac2b5e1,,"**Selectively apply guardrails per tool** — not all tools handle sensitive content; skip guardrails for trusted internal tools. **Do NOT skip them for tools returning external/untrusted content** (web search, browsing, third-party APIs): tool responses are the primary carrier of indirect prompt injection, and e.g. the Web Search Tool performs no malicious-content classification of results — AWS guidance is to apply guardrails before search results influence agent reasoning (Accelerator v2.9, Web Search section)."
+C-s4-2-numitem-002,s4-2,numitem,2,345,db3bf52f244ce71bc57615ee4fb39774515519df,,**Monitor per-tool-call latency** — use the `GuardrailLatency` metric with the ToolName dimension plus distributed tracing spans to identify which tool interactions are slowest
+C-s4-2-numitem-003,s4-2,numitem,3,346,e8028ebdca836f41f624225e3184303da751ce70,,**Set guardrail thresholds appropriately per tool type** — a database query tool may need stricter PII filtering than a calculator tool
+C-s4-2-numitem-004,s4-2,numitem,4,347,45e4c80be5c310986b88aca3fefaa5048d508561,,PII caveat: the Bedrock Guardrails sensitive-information filter does not detect PII inside `tool_use` output parameters — do not treat Hop #5 as a complete PII barrier for structured tool arguments; validate structured parameters with Cedar or interceptors instead
+C-s4-2-prose-005,s4-2,prose,5,349,307b52ab8573b6c7c726ea6e989fe22ad9d44743,navigational,Reference: <https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy-guardrails-getting-started.html>
+C-s4-3-heading-001,s4-3,heading,1,351,14ed9c8e60b93d1417d97866c2bc3837dec6a793,scope anchor,Real-Time Observability (During Execution)
+C-s4-3-prose-001,s4-3,prose,1,353,43f88ea6b40098338b6310cb04bc5cd1e1b06413,,**Service:** Amazon Bedrock AgentCore Observability
+C-s4-3-prose-002,s4-3,prose,2,355,72a64187e48543a3ba48ec4e5a542517c4de0c5a,runin-label,**What it does:**
+C-s4-3-bullet-001,s4-3,bullet,1,357,76a72223d98be1a4140e9b600e2f482f608aa40a,,Provides OpenTelemetry-compatible distributed tracing across ALL agent components
+C-s4-3-bullet-002,s4-3,bullet,2,358,c7d58d77379f0c4edb78cffa008273b3a8423b3a,,"Automatically captures: LLM inference calls, tool invocations, memory operations"
+C-s4-3-bullet-003,s4-3,bullet,3,359,b341ba56f1cc7c93bc82668d4ff9c638639b0fb9,,"Publishes metrics, spans, and traces to Amazon CloudWatch"
+C-s4-3-prose-003,s4-3,prose,3,361,40acd64a9d48e939238644972bb29c7ea3d4322b,runin-label,**Key Metrics (Auto-Generated):**
+C-s4-3-bullet-004,s4-3,bullet,4,363,5a095dff69430ae671904580374559cb63e6285e,,"Session count, latency, duration"
+C-s4-3-bullet-005,s4-3,bullet,5,364,24e2a7e6761c75f753a875a2aa289eaed90e66c2,,Token usage and error rates
+C-s4-3-bullet-006,s4-3,bullet,6,365,b8f6be04c70c5ce379062dc8eee4b350bc84d452,,First-byte latency (time to first response token)
+C-s4-3-bullet-007,s4-3,bullet,7,366,ce8fda4dd3a41b5f3812dded66f74d6dd1855b75,,Total duration (end-to-end processing time)
+C-s4-3-prose-004,s4-3,prose,4,368,ee73d397c093d2249a768ab55d42fa5287224076,runin-label,**Best Practices:**
+C-s4-3-numitem-001,s4-3,numitem,1,370,17ce402187058e4984d99cd1ff2dbd8e67a6d031,,"Turn on tracing across EVERY agent component, not only the outer boundary — the trace must span the request end-to-end"
+C-s4-3-numitem-002,s4-3,numitem,2,371,f5a2c91e61756c1bd1e52a97fd81ca4d14ae90bd,,Enable CloudWatch Transaction Search FIRST — it is a prerequisite for enabling tracing on the gateway
+C-s4-3-numitem-003,s4-3,numitem,3,372,04d6f14d54687c4df75015225ffbc7a6f1de4b07,,Use AWS Distro for Open Telemetry (ADOT) SDK for custom runtime metrics (`aws-opentelemetry-distro` >= 0.10.0; note the ADOT Collector is not supported for agent observability)
+C-s4-3-numitem-004,s4-3,numitem,4,373,1e9fa6b850169e237d2fe0d04a72fb22d3fd977e,,"Instrument policy and guardrail operations with spans for hop-by-hop latency analysis; policy spans are written to the `aws/spans` log group, and gateway vended logs (which can include request/response bodies) correlate to spans via `trace_id`/`span_id`"
+C-s4-3-prose-005,s4-3,prose,5,375,fc3f7b466c3a304dfadbb0cf0fb385b32dca714f,navigational,Reference: <https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability.html>
+C-s4-4-heading-001,s4-4,heading,1,377,a2e7c0338fdee3d46b24a76130bf7040bca58a0f,scope anchor,Non-Bypassable Per-Tool-Use Hooks (Agent Containment Pattern)
+C-s4-4-prose-001,s4-4,prose,1,379,f629063edfcdab294b490ac5f7290aeadabd57f5,,"**Goal:** enforce a ""hook"" on EVERY tool use by the agent — analogous to PreToolUse/PostToolUse hooks in agent frameworks — such that the agent runtime **cannot skip, bypass, or disable the hook itself**, even if the model is prompt-injected or the agent code is compromised."
+C-s4-4-prose-002,s4-4,prose,2,381,9c5ad6cd327724de4c6aefa2de5026d9011acec6,,"**Threat model:** the thing you are defending against is the agent itself — a model that has been manipulated (or is simply wrong) into attempting a harmful tool call, and agent code that could attempt to (a) call tools directly without going through the checkpoint, (b) exfiltrate over the network, or (c) use its own AWS credentials to weaken or remove the enforcement layer."
+C-s4-4-prose-003,s4-4,prose,3,383,bc26cc55e120e9be64d07bee7e30d2fbf7aebda6,,"**The core principle: enforcement must live OUTSIDE the agent's execution environment.** Anything running inside the agent's process — framework callbacks, in-code validation, system-prompt instructions — is advisory only: the same code/model being contained can skip it."
+C-s4-4-prose-004,s4-4,prose,4,383,e6caed007b70091e5753ce83714d11a5d30e91fa,,"AgentCore's architecture provides an out-of-process enforcement point at the Gateway data plane, which the Accelerator describes explicitly: ""Policies intercept all agent traffic at the gateway boundary and **cannot be bypassed by agents or malicious actors**"" (Accelerator v2.9, Policy section)."
+C-s4-4-prose-005,s4-4,prose,5,383,4a3ebe38ae0e81f2cc51fd39b17af14ab58f183a,,"Cedar policy ""operates outside the model's reasoning"" and is therefore immune to prompt injection."
+C-s4-4-prose-006,s4-4,prose,6,385,0dc13bfdd80040e2f133a7590a807825a1e6b0a1,runin-label,**Hook mapping (framework concept → AgentCore primitive):**
+C-s4-4-thead-001,s4-4,thead,1,387,7c995e0315a37d27b526db7135d35a27fb426178,cells=3,Framework hook concept || AgentCore primitive || Enforcement location
+C-s4-4-trow-001,s4-4,trow,1,389,a85aae2be068d48f74fea6025764b9d53c3663ab,cells=3,"PreToolUse hook (allow/deny before execution) || Cedar Policy `permit` / `forbid` (Hop #4) — deterministic, default-deny, parameter-level conditions || Gateway data plane (outside agent microVM)"
+C-s4-4-trow-002,s4-4,trow,2,390,caf6228ff9f82c538e75426184275520c4bdb65c,cells=3,PreToolUse content check || Guardrails-in-policy `when guardrails {...}` on tool requests (Hop #5) || Gateway data plane
+C-s4-4-trow-003,s4-4,trow,3,391,5450f92a162a5c16db81380cea281f5c989938f9,cells=3,"PreToolUse custom logic (regex, external authz, per-user rate limits) || Gateway **REQUEST Lambda interceptor** || Gateway boundary, customer Lambda"
+C-s4-4-trow-004,s4-4,trow,4,392,e2f9d36b02820fe5ec3d64e91a5f6cd3a5f65d28,cells=3,PostToolUse output filter || `suppressOutput` effect — evaluates the action's output after completion and suppresses it on guardrail violation || Gateway data plane
+C-s4-4-trow-005,s4-4,trow,5,393,e04e582b89792a41546364d2cff73268b35222c8,cells=3,"PostToolUse transformation/sanitization || Gateway **RESPONSE Lambda interceptor** || Gateway boundary, customer Lambda"
+C-s4-4-trow-006,s4-4,trow,6,394,5a377d538e04525965d2c024ad907af731f6cf9e,cells=3,Hook audit trail || CloudTrail (policy CRUD + evaluation decisions) + Policy metrics/spans || Independent of agent
+C-s4-4-prose-007,s4-4,prose,7,396,956ca777318279d6a9ca008231c7ba282d0debfc,runin-label,**The five bypass routes and how to close each one:**
+C-s4-4-prose-008,s4-4,prose,8,398,2a1b7c763f18576a39267b63e33b29da46a906db,navigational,The hooks above only bind if every path AROUND them is closed.
+C-s4-4-prose-009,s4-4,prose,9,398,bf43a9894d8f4d2f882ff12c1e1498b9f2f6cd44,runin-label,"Each row is a way the agent could escape, and its closure:"
+C-s4-4-thead-002,s4-4,thead,2,400,c025cee608e312ae5e040d99ea86710267681051,cells=3,# || Bypass route || Closure
+C-s4-4-trow-007,s4-4,trow,7,402,3458228de39d793dbde52cd9e89803d27fc12671,cells=3,"1 || **Agent calls the tool API directly, skipping the Gateway** || Give the agent runtime NO direct tool credentials: tools are reachable only as Gateway targets, and outbound credentials live in AgentCore Identity's Token Vault (vended per-call by the Gateway, never stored in the runtime). The runtime execution role must not carry IAM permissions for the tool's underlying APIs."
+C-s4-4-trow-008,s4-4,trow,8,403,8fe6e6c7767a307af4ac7a6ad178e2d734e808d7,cells=3,2 || **Agent code makes arbitrary network calls (exfiltration / shadow tools)** || Network containment: run the Runtime in VPC mode with egress restricted to the Gateway endpoint (+ required AWS endpoints); Code Interpreter in Sandbox or VPC mode (Sandbox still allows DNS as a limited exfiltration channel — the Accelerator recommends Route 53 Resolver DNS Firewall or VPC mode for sensitive data). **Implementation details in Section 4.5.**
+C-s4-4-trow-009,s4-4,trow,9,404,deb5bf2f58b2d608afa42facbec26b387b6d277d,cells=3,"3 || **Agent uses its execution-role credentials to disable the policy engine** || This is the critical one: any code in the session can read the execution role's credentials via the microVM metadata service (Accelerator: ""any code executing within a tool session can access these credentials""). Therefore the execution role must NOT include `bedrock-agentcore:UpdateGateway`, policy/policy-engine mutation actions, or interceptor management — because `UpdateGateway` can switch the engine to LOG_ONLY or detach it entirely, and **AWS documents no condition key protecting the mode field**. Least privilege here IS the anti-jailbreak control."
+C-s4-4-trow-010,s4-4,trow,10,405,0f5a47dd3ea7a16e2af6403d17fd8297f2ec3439,cells=3,"4 || **Any principal in the account weakens enforcement (confused deputy, leaked creds)** || Account-level backstop: an SCP (or permission boundary) denying `UpdateGateway` / policy-engine mutations except from a designated break-glass admin role. This holds even if route #3's role hygiene regresses."
+C-s4-4-trow-011,s4-4,trow,11,406,f24ef53a75fed8e120c9cd9cc7cefa26bbb06897,cells=3,"5 || **Enforcement silently degrades (timeout, misconfig, LOG_ONLY left on)** || Fail-secure defaults do the first half: Cedar is default-deny and evaluation timeouts return automatic DENY. You own the second half: never run the engine in LOG_ONLY in production; alarm on CloudTrail `UpdateGateway`/policy-change events and on the `Mode`/`PolicyEnforcementMode` metric dimensions (Section 6.2 / 6.4)."
+C-s4-4-mermaid-001,s4-4,mermaid,1,408,370d8fb6a10ae3708982932c05d82a722062e773,,Agent Runtime (microVM) — UNTRUSTED for enforcement
+C-s4-4-mermaid-002,s4-4,mermaid,2,408,fdb6dff7ed267001c0acb4062f7a85e74ec73da6,,Agent code + model (in-process callbacks = advisory only)
+C-s4-4-mermaid-003,s4-4,mermaid,3,408,422d911b2725432deba3054876f0d23cb1721dca,,AgentCore Gateway data plane — enforcement boundary
+C-s4-4-mermaid-004,s4-4,mermaid,4,408,8a6a8572ee8a4bdb524a5ad2f6b0b103247e5724,,REQUEST Lambda interceptor (custom pre-hook)
+C-s4-4-mermaid-005,s4-4,mermaid,5,408,b4cc270a36c703335931ba4e2e7feb77a0c24ce5,,Cedar Policy engine (ENFORCE) default-deny · timeout → DENY permit / forbid + when guardrails
+C-s4-4-mermaid-006,s4-4,mermaid,6,408,5078360662c66453967d85faa2e98c1102e8c497,,RESPONSE interceptor + suppressOutput (post-hook output filtering)
+C-s4-4-mermaid-007,s4-4,mermaid,7,408,b5abf33ace8de511b092a0cbd1644ac4852c59a7,,"Tool / API target (credentials vended from Token Vault, never held by the runtime)"
+C-s4-4-mermaid-008,s4-4,mermaid,8,408,caa87b352f20232313740fc2df883c74e0fd75d0,,"CloudTrail + CloudWatch alarms (UpdateGateway, policy changes, DenyDecisions, Mode dimension)"
+C-s4-4-mermaid-009,s4-4,mermaid,9,408,a8d41121dbc3b355f6642c5abe644065a708151f,,ONLY path to tools
+C-s4-4-mermaid-010,s4-4,mermaid,10,408,2b95120ccbbd332ef01603e165785d73fc537d8a,,ALLOW
+C-s4-4-mermaid-011,s4-4,mermaid,11,408,46cb62049fa37818088f20acdbc68d8c0a30b95d,,DENY (403)
+C-s4-4-mermaid-012,s4-4,mermaid,12,408,cef9116b42a1bb9e8bacde3240885fafa68b3c45,,filtered output
+C-s4-4-mermaid-013,s4-4,mermaid,13,408,0c47887bd56081107503b59a601b4844146a4ae8,,"❌ direct tool/API call (no credentials, VPC egress blocked)"
+C-s4-4-mermaid-014,s4-4,mermaid,14,408,14722986f28a05ac47f05c38192b006375d610ee,,❌ UpdateGateway / policy mutation (execution role denied + SCP backstop)
+C-s4-4-mermaid-015,s4-4,mermaid,15,408,7876153ada8274a24c48647e87674701755f9d09,,audit
+C-s4-4-prose-010,s4-4,prose,10,434,696637ffe01fe74c3907b2274438ac0d67087c2f,,**What this pattern does NOT cover (be honest about the boundary):**
+C-s4-4-bullet-001,s4-4,bullet,1,436,91313d1c9ceb78ea744098d5e2fe20b2ef3b23a1,,"Guardrail content checks inside the hook are still non-deterministic ML — only the Cedar `permit`/`forbid` layer is deterministic. Put anything that must never happen (tool allowlists, parameter bounds) in Cedar, not in a guardrail threshold."
+C-s4-4-bullet-002,s4-4,bullet,2,437,225f2fc5f5ed4402c2d254b47d72f84db6091165,,"Hooks fire on tool USE. Harm that requires no tool call (e.g., harmful text generation) is Hop #2/#6's job, not this pattern's."
+C-s4-4-bullet-003,s4-4,bullet,3,438,ae05ecdf765a6a9beb56fb42e2a65df3fa9f19db,,Interceptor Lambdas are themselves security-sensitive: with `passRequestHeaders` enabled they receive bearer tokens; scope their IAM roles and code review them like any other trusted component.
+C-s4-4-prose-011,s4-4,prose,11,440,a46988368ed92a8655f661db46337a4af211258e,navigational,"References: Accelerator v2.9 (Policy, Gateway, Built-in Tools sections); <https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy.html>; <https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy-enforcement-modes.html>"
+C-s4-5-heading-001,s4-5,heading,1,442,6d20a57d31a56df5442c9bdd086108603b666978,scope anchor,Network Containment (Implementing Bypass Route #2)
+C-s4-5-prose-001,s4-5,prose,1,444,c5ac7b1290086ab281a182e6091a6a2bb7a37286,,"Section 4.4 closes bypass route #2 with one sentence — ""restrict egress."" This section makes that executable."
+C-s4-5-prose-002,s4-5,prose,2,444,db6600c7323e4010841f1ae0c6666c43ec09ed2a,navigational,Scope note: this covers only the network controls that serve **containment** (keeping the agent from going around the checkpoints).
+C-s4-5-prose-003,s4-5,prose,3,444,68ab0bdad1de0694458aa97cdbd089bac66acb85,,"Connectivity design — private Gateway targets via VPC Lattice Resource Gateway, Direct Connect to on-premises, private IdPs, custom domains — belongs in a separate network-architecture document; see the Accelerator v2.9 Gateway and Identity sections for those."
+C-s4-5-quote-001,s4-5,quote,1,446,f001147ab4c05e2656f1adc027239cc8460b9d69,,"Source caveat: most facts in this section come from the Accelerator v2.9 (NDA document); public AWS documentation covers AgentCore network modes only sparsely. Before external distribution, downgrade these citations to ""confirm with your AWS account team."""
+C-s4-5-1-heading-001,s4-5-1,heading,1,448,5099ebb0abb8e48d4f500d5b47d6846649b1cd62,scope anchor,Runtime egress lockdown
+C-s4-5-1-prose-001,s4-5-1,prose,1,450,0b12247da38a8ed10aef8fdf43457dd1ae4aa85c,leadin-stem,Run the Agent Runtime in **VPC mode** and restrict outbound traffic to only:
+C-s4-5-1-bullet-001,s4-5-1,bullet,1,452,8a76ca14fbeda187a9532ec7bc06151543076c85,,The AgentCore Gateway endpoint (the ONLY path to tools — this is what makes the Hop #4/#5 checkpoints unavoidable)
+C-s4-5-1-bullet-002,s4-5-1,bullet,2,453,b349e4bf9e8851b8da44e6cf6643bc97e98ad642,,"Required AWS service endpoints: Bedrock model endpoints (Hop #2/#3/#6), STS, CloudWatch Logs, X-Ray"
+C-s4-5-1-bullet-003,s4-5-1,bullet,3,454,8ba424ccaac3fd3d26583c68f0ca3eae3b4bc11c,,"Session storage: VPC-mode Runtime needs outbound S3 — scope it with an S3 Gateway endpoint policy conditioned on `aws:PrincipalServiceName = bedrock-agentcore.amazonaws.com` (Accelerator, Runtime section)"
+C-s4-5-1-prose-002,s4-5-1,prose,2,456,d41ad8e4ede8f3164a1adec5b719e0e750453d4d,,"Everything else — 0.0.0.0/0, arbitrary DNS-resolvable hosts — should be unreachable."
+C-s4-5-1-prose-003,s4-5-1,prose,3,456,04f4f68715a307da4e198b2ad367efef5a045a9a,,"An agent that cannot reach anything but the Gateway cannot exfiltrate or call shadow tools, regardless of what the model decides."
+C-s4-5-2-heading-001,s4-5-2,heading,1,458,040165e90626c04e1c4a38129ff0f580aeab69bc,scope anchor,Code Interpreter: the three network modes
+C-s4-5-2-prose-001,s4-5-2,prose,1,460,676406feab5934846f69dd33cae3b58f1fb4aff6,,The Code Interpreter is where the agent executes **arbitrary generated code** — the highest-risk network position in the architecture.
+C-s4-5-2-prose-002,s4-5-2,prose,2,460,f490895feca70d95415d44b025b04e07bbf111dc,runin-label,"It has three modes (Accelerator, Built-in Tools section):"
+C-s4-5-2-thead-001,s4-5-2,thead,1,462,8c78816eadb666f9d3ad9335a14ddb4b34553be2,cells=3,Mode || Reachability || Containment verdict
+C-s4-5-2-trow-001,s4-5-2,trow,1,464,4a03e08cefc4c757f5664680ecf07099c2f4911c,cells=3,**Public** || Unrestricted internet || Dev/test only — a prompt-injected agent can exfiltrate freely
+C-s4-5-2-trow-002,s4-5-2,trow,2,465,aa4dda73b35e01becfb8dc1e03af91f154102107,cells=3,"**Sandbox** || S3 + DNS only || Better, but **DNS is a real exfiltration channel** — the Accelerator's own words: ""DNS queries represent a limited data channel — organizations processing sensitive data should evaluate whether VPC Mode provides a stronger security boundary."" Mitigate with Route 53 Resolver DNS Firewall"
+C-s4-5-2-trow-003,s4-5-2,trow,3,466,ac57e59190badb7693869913db36d35a52f79bdb,cells=3,"**VPC** || Only what your subnets/SGs allow || Strongest boundary. ENIs created via the `AWSServiceRoleForBedrockAgentCoreNetwork` service-linked role; required endpoints: ECR, S3, CloudWatch Logs; DNS Firewall still recommended against DNS exfiltration"
+C-s4-5-3-heading-001,s4-5-3,heading,1,468,9412fbc34ca6020ec97ac3ab585f1b453ba1109f,scope anchor,PrivateLink coverage matrix
+C-s4-5-3-prose-001,s4-5-3,prose,1,470,7876434b4ff54a4fed95f63de5a23d4a96d465c2,,"If your environment mandates PrivateLink for all traffic, check coverage BEFORE designing the closed loop — the AFTER phase has gaps (Accelerator, Service Controls table):"
+C-s4-5-3-thead-001,s4-5-3,thead,1,472,20715ed6c5f07674abe5e31f8efab08ca9a390c7,cells=3,Service || Data plane || Control plane
+C-s4-5-3-trow-001,s4-5-3,trow,1,474,881d2e2dd5a1ffd27caef7f24699d2a349008cba,cells=3,"Runtime, Memory, Built-in Tools, Identity, Gateway, Policy || ✅ || ✅"
+C-s4-5-3-trow-002,s4-5-3,trow,2,475,0d279043b6a52aa48e50169749eff32e735f8ef8,cells=3,Evaluations || ❌ || ✅ (control plane only)
+C-s4-5-3-trow-003,s4-5-3,trow,3,476,bbc70deddb68ed080099eecb0276bf39392b44ac,cells=3,**Optimization** || ❌ || ❌ (**no PrivateLink today**)
+C-s4-5-3-prose-002,s4-5-3,prose,2,478,eb89954ca6a29ee0f482cebb085e615aa7ce1bda,,"Two policy caveats: (a) VPC endpoint policies restrict by IAM principal only — **OAuth-authenticated callers require Principal `*`** in the endpoint policy (constrain them via the resource/action instead); (b) the Gateway has a **third, separate** PrivateLink endpoint distinct from the data/control planes."
+C-s4-5-4-heading-001,s4-5-4,heading,1,480,ed193e26d6aae8ca1d9b53d78cd939cb134ca8f9,scope anchor,Two known traps
+C-s4-5-4-numitem-001,s4-5-4,numitem,1,482,44e711257b2f038c03ba477353612e3619f09a52,,"**VPC Lattice Resource Gateway ≠ PrivateLink endpoint.** The Resource Gateway is an ENI in your subnets for private **egress** to VPC targets; the PrivateLink VPC endpoint is for **ingress** to AgentCore. The Accelerator warns explicitly: ""Customers should not conflate these two constructs."" Mixing them up produces security groups that block the wrong direction."
+C-s4-5-4-numitem-002,s4-5-4,numitem,2,483,f0676d17e412bff98a07d0d8a29d6980ac1c1409,,"**Harness VPC mode must allow `public.ecr.aws`.** Session images are pulled from ECR Public, which has **no VPC endpoint** — VPC-mode deployments need an outbound route to it (typically NAT gateway + internet gateway), or sessions fail to start with image-pull timeouts. This is a mandatory hole in an otherwise-closed egress policy; scope it to the ECR Public IP ranges/domain rather than opening 0.0.0.0/0."
+C-s4-5-5-heading-001,s4-5-5,heading,1,485,bb9d973f64048f80ac0ac57be9c3db1fe33db154,scope anchor,"Enforcing VPC deployment via IAM (containment, not connectivity)"
+C-s4-5-5-prose-001,s4-5-5,prose,1,487,065ee8457ccb54ecd14a8e82ed9400b31fe9bfe7,,Network mode is itself a configuration an agent-deploying principal could weaken.
+C-s4-5-5-prose-002,s4-5-5,prose,2,487,d70728375ab3e48d51e43b8500d25331ec917510,,"Mandate VPC-connected deployments at the IAM layer with condition keys (Accelerator, Runtime section): `aws:SourceVpc` / `aws:SourceVpce` / `aws:SourceIp` on invocation, and `bedrock-agentcore:subnets` / `bedrock-agentcore:securityGroups` on deployment — so a runtime simply cannot be created outside the contained network."
+C-s4-5-5-prose-003,s4-5-5,prose,3,487,3053998948489ac2174f70e3d56e02f017e8877a,,This is the same control family as bypass route #4's SCP backstop: it survives even if an individual role's hygiene regresses.
+C-s4-5-5-mermaid-001,s4-5-5,mermaid,1,489,360c7c43c90c6bbef5d76b171e558934993ceeee,,Customer VPC — contained network
+C-s4-5-5-mermaid-002,s4-5-5,mermaid,2,489,0c8e706b2098f99bc13f7fd4c961c478f510bb13,,Agent Runtime (VPC mode)
+C-s4-5-5-mermaid-003,s4-5-5,mermaid,3,489,d03af19cb5c915fb9b1ed86f60940ee3b63fdc93,,Code Interpreter (VPC mode; DNS Firewall)
+C-s4-5-5-mermaid-004,s4-5-5,mermaid,4,489,35c93d10eb7979421ba761dc0358e74ba372d5e8,,S3 Gateway endpoint (policy: PrincipalServiceName = bedrock-agentcore)
+C-s4-5-5-mermaid-005,s4-5-5,mermaid,5,489,fda557089fd5f881749dbf7b574c72aec6e85959,,PrivateLink endpoints (data / control / gateway)
+C-s4-5-5-mermaid-006,s4-5-5,mermaid,6,489,41ff1335ee85bee5ebbbe545d523e571b15c2f6a,,AgentCore Gateway (Hops #4/#5 — unavoidable because it is the only route)
+C-s4-5-5-mermaid-007,s4-5-5,mermaid,7,489,b105893d923fa6a535fd18c5a2abcadbac66e026,,Bedrock / STS / CW Logs / X-Ray
+C-s4-5-5-mermaid-008,s4-5-5,mermaid,8,489,d71e40adf2c76965d788efa21e3a1b98f1ea333b,,public.ecr.aws (Harness images — no VPC endpoint)
+C-s4-5-5-mermaid-009,s4-5-5,mermaid,9,489,de99eee9032d1b61f0198a00b721c96da6aab89b,,❌ Arbitrary internet / shadow tools / exfiltration
+C-s4-5-5-mermaid-010,s4-5-5,mermaid,10,489,ac5d5bf4ee92e565388816f51009987dff45fbcc,,ONLY egress
+C-s4-5-5-mermaid-011,s4-5-5,mermaid,11,489,0308c6fd7dd306a375c0be3a1e1434c63394b09e,,scoped NAT route (mandatory exception)
+C-s4-5-5-mermaid-012,s4-5-5,mermaid,12,489,f81c943187e6fd788ef56676ef71d666efb4aefd,,"IAM condition keys: aws:SourceVpc/SourceVpce, bedrock-agentcore:subnets/securityGroups"
+C-s4-5-5-mermaid-013,s4-5-5,mermaid,13,489,d1590b43a9da21dc29f2467e71426024d22a8cb1,,deployment cannot exist outside this VPC
+C-s4-5-5-prose-004,s4-5-5,prose,4,513,2d2eb4530ef79c5bdaaae8bda430fe1915563f53,navigational,"References: Accelerator v2.9 (Runtime, Built-in Tools, Gateway, Service Controls sections); <https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/vpc.html> (VPC and AWS PrivateLink); <https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/agentcore-vpc.html> (Runtime and built-in tools VPC configuration); <https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/security-vpc-condition.html> (VPC condition keys)"
+C-s5-heading-001,s5,heading,1,515,8a7e196dde8dfab8ed2cbc6ae47ffd43e086c9a5,scope anchor,Phase 3: AFTER — Output Safety and Continuous Improvement
+C-s5-1-heading-001,s5-1,heading,1,517,a9a140123d684e51a1b3f76e7ab600fcd9bf23e3,scope anchor,Checkpoint Hop #6: Bedrock Guardrails — Output Evaluation
+C-s5-1-prose-001,s5-1,prose,1,519,15152359a3ed433056ef644d0af6b0a3edf198d9,,**Service:** Amazon Bedrock Guardrails (attached to model invocation)
+C-s5-1-prose-002,s5-1,prose,2,521,72a64187e48543a3ba48ec4e5a542517c4de0c5a,runin-label,**What it does:**
+C-s5-1-bullet-001,s5-1,bullet,1,523,0d8a63394e7706e2320d673d79f350e7fda4265e,,Evaluates the model's generated response AFTER inference
+C-s5-1-bullet-002,s5-1,bullet,2,524,aa56769b1d5e6000b6464a6289ed831ea6273360,,"Can apply the same guardrail policies as input evaluation, or different output-specific settings within the same guardrail resource (see Best Practice #2 below)"
+C-s5-1-bullet-003,s5-1,bullet,3,525,66e87bc8e72a9e1b25b91195838688cc862f2e3f,,Blocks the response before it reaches the user if violations are detected
+C-s5-1-bullet-004,s5-1,bullet,4,526,ac6bb3302726c468a240319ddb880353ff7a7db3,,Note: reasoning/chain-of-thought content blocks are excluded from guardrail evaluation
+C-s5-1-prose-003,s5-1,prose,3,528,b77fc46d9f0e20923f7941cbcc3b241749e3663e,runin-label,**Latency Impact:**
+C-s5-1-bullet-005,s5-1,bullet,5,530,78ad2abe6a87a2d6e871b6030a0437d7d5187346,,Adds post-inference evaluation latency before the user sees the response
+C-s5-1-bullet-006,s5-1,bullet,6,531,333eb442a393ab922ce3a27d235963d1e8754de4,,"For streaming responses, behavior depends on the streaming mode (see Best Practice #1)"
+C-s5-1-bullet-007,s5-1,bullet,7,532,88916d6ec82724ecfca3dc11c8b68c3b5264e99c,,AWS documents parallel policy evaluation explicitly for INPUT evaluation; no equivalent statement exists for output — measure output-side overhead yourself via `guardrailProcessingLatency`
+C-s5-1-prose-004,s5-1,prose,4,534,ee73d397c093d2249a768ab55d42fa5287224076,runin-label,**Best Practices:**
+C-s5-1-numitem-001,s5-1,numitem,1,536,f7a189fc271d03ac56e71397455f47e672e80291,,"For streaming, choose the official mode deliberately: **synchronous** (default) buffers and scans each chunk before sending — better accuracy, added latency; **asynchronous** (`streamProcessingMode: ASYNCHRONOUS`) sends chunks immediately and scans in the background — lower latency, but inappropriate content may reach the user before blocking kicks in, and **sensitive-information masking is NOT supported in asynchronous mode**. Use asynchronous only where that leakage window is acceptable."
+C-s5-1-mermaid-001,s5-1,mermaid,1,538,73e567df22a47a30f44fca8dbc931e7f5ecc5b90,,SYNCHRONOUS (default)
+C-s5-1-mermaid-002,s5-1,mermaid,2,538,13c553b3f8b66b2f8f2d39f93a7c0be32d810498,,Model emits chunk
+C-s5-1-mermaid-003,s5-1,mermaid,3,538,3f515e963c57f322842a0ee7879bacc51aa02669,,Guardrail buffers + scans chunk
+C-s5-1-mermaid-004,s5-1,mermaid,4,538,e901a5d21b94e5ab2939b5ac0e37609dcc939ea9,,Chunk sent to user
+C-s5-1-mermaid-005,s5-1,mermaid,5,538,6a1cec45eaf37b34e1b1d89130d7746fe4006346,,clean
+C-s5-1-mermaid-006,s5-1,mermaid,6,538,d4264ec776e6b28a3a2a6cb2e1512f740c442b40,,Blocked before user sees anything
+C-s5-1-mermaid-007,s5-1,mermaid,7,538,90f4ae1180c80bd561d0791775bb79ade786bdf7,,violation
+C-s5-1-mermaid-008,s5-1,mermaid,8,538,fb3fb6053707ab88a363ea601ee259d118102a18,,ASYNCHRONOUS (opt-in)
+C-s5-1-mermaid-009,s5-1,mermaid,9,538,993083bc5284070ae9ef23239f536f8e1b471b05,,Chunk sent to user IMMEDIATELY
+C-s5-1-mermaid-010,s5-1,mermaid,10,538,65816f3603eedae8e0a2f9c59e77045ee09d7df8,,Guardrail scans in background
+C-s5-1-mermaid-011,s5-1,mermaid,11,538,e7a3e39c94692e12e4d8c7bf06816dda2372ef7a,,⚠️ SUBSEQUENT chunks blocked — already-sent content has leaked · no PII masking in this mode
+C-s5-1-mermaid-012,s5-1,mermaid,12,538,4e49d1a1bfc72f767ef0c049571be9bde8f3d3f9,,violation found
+C-s5-1-prose-005,s5-1,prose,5,553,f1323275a5d29796fe281787fbc9ab3d9166c8a3,,Trade-off in one line: synchronous = accuracy first (adds latency); asynchronous = latency first (accepts a leakage window and loses masking).
+C-s5-1-numitem-002,s5-1,numitem,2,554,5818484b07a39ae4ad967413a05b82f2d19e49dd,,"Configure output-specific settings (`outputStrength`, `outputAction`) within your guardrail resource if output needs different policies than input"
+C-s5-1-numitem-003,s5-1,numitem,3,555,e9df07106998896a7803c68d3b8f43ff62f586cb,,"Monitor InvocationLatency (`AWS/Bedrock/Guardrails` namespace, GuardrailContentSource = Output dimension) separately for output evaluation"
+C-s5-1-numitem-004,s5-1,numitem,4,556,f0458e042e30eecadffe8d4469f801fd2c4c4aa2,,Consider Automated Reasoning checks for hallucination detection on critical outputs (note: detect mode only — the app must handle findings; English (US) only; no streaming support)
+C-s5-1-numitem-005,s5-1,numitem,5,557,58f631aa5189d5dbdd3dc3c15892ab870f66845a,,"Contextual Grounding limits to plan around: max 100,000 characters grounding source, 1,000 characters query, 5,000 characters response; supported for summarization/paraphrasing/QA — conversational chatbot QA is NOT supported; in streaming, an irrelevant response may only be flagged after it has fully streamed"
+C-s5-1-numitem-006,s5-1,numitem,6,558,9e2f155c869fc87a3095859d3ac31a6b60846fab,,PII masking caveats: masked PII still appears UNMASKED in model invocation logs (CloudWatch `input` field) and in the guardrail trace `match` field — scope log access and retention accordingly
+C-s5-1-prose-006,s5-1,prose,6,560,4700db43e238500c9233f1455de26b72eeca7829,navigational,References: <https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-how.html> and <https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-streaming.html>
+C-s5-2-heading-001,s5-2,heading,1,562,6c918958a79c3d97e8903b01b90f73771faa203f,scope anchor,Continuous Evaluation (Post-Serving)
+C-s5-2-prose-001,s5-2,prose,1,564,d7f70b35484b1c9e2600c91b65d690ec3593829b,,**Service:** Amazon Bedrock AgentCore Evaluations
+C-s5-2-prose-002,s5-2,prose,2,566,72a64187e48543a3ba48ec4e5a542517c4de0c5a,runin-label,**What it does:**
+C-s5-2-prose-003,s5-2,prose,3,568,797167f9165ae5868ee2dec03870567e765c7dc8,leadin-stem,"Provides automated assessment of agent performance quality, in three modes:"
+C-s5-2-bullet-001,s5-2,bullet,1,570,49b1307e7db73c26f89be5a2ad3e22bfe9f18d8e,,**On-demand:** directly analyzes a chosen set of spans (development / spot checks)
+C-s5-2-bullet-002,s5-2,bullet,2,571,e059bf405152e07f2c8ef10c6a8ea95c3c65ac4c,,**Batch:** runs evaluators against multiple agent sessions in a single asynchronous job
+C-s5-2-bullet-003,s5-2,bullet,3,572,3416b0b7d3a34b59859e6dc15d5956bdf8a9e77f,,"**Online:** continuously samples and evaluates LIVE production interactions (percentage-based sampling, e.g. 10%) without manual triggers"
+C-s5-2-prose-004,s5-2,prose,4,574,2257017ca54b983ce4812650e15e08c538a6854d,,Detects quality drops over time.
+C-s5-2-prose-005,s5-2,prose,5,576,ee73d397c093d2249a768ab55d42fa5287224076,runin-label,**Best Practices:**
+C-s5-2-numitem-001,s5-2,numitem,1,578,22a032ba520099fa6848d7c076be9a13fccd1aac,,Enable online evaluation in production to continuously monitor quality
+C-s5-2-numitem-002,s5-2,numitem,2,579,ccb084ccb73007fdc5a05fea6950a9e7917f829d,,"Define custom evaluators aligned with your business metrics (not just safety — also correctness, helpfulness)"
+C-s5-2-numitem-003,s5-2,numitem,3,580,d8a5af840c44bd1ad874b0770a7f1a58e44d893a,,Set CloudWatch alarms on evaluation score thresholds to detect regressions early
+C-s5-2-numitem-004,s5-2,numitem,4,581,31619b4f9fd773e491d3cb581a98be48475762c3,,Use evaluation results as input to the optimization feedback loop
+C-s5-2-numitem-005,s5-2,numitem,5,582,28b2ebb48e76f2af27def654524be1941f9a87ef,,"Data-residency note: built-in evaluators run on service-owned Bedrock credentials using Geo Cross-Region Inference (CRIS), routing model invocations across Regions within the geography; custom LLM-judge evaluators invoke YOUR designated Bedrock model in your own account (you retain billing, quota, and Region control). Quotas as of the devguide snapshot at writing time (2026-08): up to 1,000 evaluation configurations per Region per account; up to 1M input+output tokens/minute for large Regions — quota values change frequently; verify current values in the Service Quotas console before capacity planning."
+C-s5-2-prose-006,s5-2,prose,6,584,f202175a71debfa0f703c4a052b6c043c3532f82,navigational,Reference: <https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/evaluations.html>
+C-s5-3-heading-001,s5-3,heading,1,586,b1ad3b0c4042e8d0819db694b328f8b8b330b635,scope anchor,Optimization Feedback Loop
+C-s5-3-prose-001,s5-3,prose,1,588,54617bb0491dbb133b71a6ae454e4328591eb90e,,**Service:** Amazon Bedrock AgentCore Optimization
+C-s5-3-prose-002,s5-3,prose,2,590,72a64187e48543a3ba48ec4e5a542517c4de0c5a,runin-label,**What it does:**
+C-s5-3-bullet-001,s5-3,bullet,1,592,7fb4491d0880bf55e2ee6daabb30bdf139df3494,,Analyzes production traces and evaluation outputs
+C-s5-3-bullet-002,s5-3,bullet,2,593,e1edf3be36f83141232bdfde45168c13e95fb5cb,,Generates optimized system prompts or tool descriptions (Recommendations)
+C-s5-3-bullet-003,s5-3,bullet,3,594,fa42f3efd67156d951374357e2ce4bde29bff4a9,,Validates improvements offline using batch evaluations (an AgentCore Evaluations capability)
+C-s5-3-bullet-004,s5-3,bullet,4,595,7e9a3b80c9f091557cd8ecef96adca883b47562d,,Confirms improvements with A/B testing on live traffic (online)
+C-s5-3-prose-003,s5-3,prose,3,597,1705d864f33a8b22bf9b19664ac6653a30756485,runin-label,**Capabilities (per official documentation):**
+C-s5-3-numitem-001,s5-3,numitem,1,599,71efd3ed3bfa19a1eacc6441d6175ee119872cc7,,**Recommendations** — AI-generated improvements to system prompts and tool descriptions based on real agent traces; explains what changed and why
+C-s5-3-numitem-002,s5-3,numitem,2,600,a6d9b1a4e4fad029c2570cb671ba73ae039a1a74,,"**Configuration Bundles** — versioned, immutable snapshots of agent configuration; the unit of deployment and rollback for optimization changes"
+C-s5-3-numitem-003,s5-3,numitem,3,601,e7277554e84b15a03f90dd5689fa004e8dd56836,,**A/B Testing** — controlled traffic splitting between two variants through AgentCore Gateway; online evaluation scores each session; reports statistical significance (p < 0.05; traffic split is sticky by runtime session ID; variants injected via W3C baggage headers)
+C-s5-3-prose-004,s5-3,prose,4,603,ee73d397c093d2249a768ab55d42fa5287224076,runin-label,**Best Practices:**
+C-s5-3-numitem-004,s5-3,numitem,4,605,e3263762b2cf0d746ecf8b20d22bc62cf2b0f4f9,,Run recommendations targeting the specific evaluator metric that degraded
+C-s5-3-numitem-005,s5-3,numitem,5,606,343441db9e9883337b15af69d6d5c2d626dc3252,,Always validate with batch evaluation before promoting to A/B test
+C-s5-3-numitem-006,s5-3,numitem,6,607,f06d9e1ac72320eb5bc99c3cf1a8214eeadd2017,,Require statistical significance in A/B tests before full rollout
+C-s5-3-numitem-007,s5-3,numitem,7,608,e6f82d91ddf920e2a58443c793df121ad64b67ba,,Use Configuration Bundles for version control of system prompts and tool descriptions; restrict `UpdateConfigurationBundle` / `DeployConfigurationBundle` IAM permissions to principals authorized to change agent behavior
+C-s5-3-numitem-008,s5-3,numitem,8,609,8b91c5f2c7efd47d8bea01023be1443a4aa7b881,,Document each optimization cycle for audit trail
+C-s5-3-numitem-009,s5-3,numitem,9,610,7d892e8a05049ccc80b5a65a1d4242e4ef3a58b5,,"Private-network deployments: **AgentCore Optimization does not support PrivateLink today, and Evaluations supports PrivateLink for the control plane only** (Accelerator v2.9). If your environment mandates PrivateLink for all traffic, the closed loop's AFTER phase needs a network exception or must wait for support."
+C-s5-3-prose-005,s5-3,prose,5,612,d21443162351a77e190455ace2075c7960c2cc00,navigational,Reference: <https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/optimization.html>
+C-s6-heading-001,s6,heading,1,614,791ec827b4a62c00717187b74d345795fc79b050,scope anchor,Hop-by-Hop Latency Monitoring Design
+C-s6-1-heading-001,s6-1,heading,1,616,ca0da7f4a70ac98100b84c77be1a666c564504f2,scope anchor,Latency Budget Breakdown
+C-s6-1-prose-001,s6-1,prose,1,618,c86c8900689896f222361022574914c4b866401d,navigational,The following table shows the expected latency checkpoints in a typical agent invocation:
+C-s6-1-quote-001,s6-1,quote,1,620,e8d70d820f14e548511b4167b80acdecc9b3996a,,"**Disclaimer:** The latency figures in the table below are illustrative estimates for capacity-planning purposes only — they are NOT published or guaranteed by AWS. Actual latency varies by Region, model, content length, number of policies, and traffic conditions. Measure your own baselines using the CloudWatch metrics and spans referenced in Section 6.2."
+C-s6-1-thead-001,s6-1,thead,1,622,6d2ba22e3997e0b9b9c04ea64d7ed907d2b082e6,cells=5,**Hop #** || **Checkpoint** || **Service** || **Typical Latency Range** || **Monitoring Metric**
+C-s6-1-trow-001,s6-1,trow,1,624,90931f27c9884c4f824e5d301a8cc437a0bcf953,cells=5,1 || Gateway Guardrail (Input) || AgentCore Gateway Policy || 50–200ms || Gateway Latency + GuardrailLatency (`AWS/Bedrock-AgentCore`)
+C-s6-1-trow-002,s6-1,trow,2,625,9d133d3107ae20559c3e5dbc5997f16cb7b52e11,cells=5,2 || Bedrock Guardrail (Input) || Bedrock Guardrails || 100–500ms || InvocationLatency (`AWS/Bedrock/Guardrails` namespace)
+C-s6-1-trow-003,s6-1,trow,3,626,a7ed3ae1299bee8c7c607058f1ce0e4203c97840,cells=5,"3 || Model Inference || Bedrock Runtime || 500ms–30s || InvocationLatency (`AWS/Bedrock` namespace, model-specific)"
+C-s6-1-trow-004,s6-1,trow,4,627,8ed5744f4618a74455cd058c799bc569f8dd30b2,cells=5,4 || Tool Auth (Cedar Policy) || AgentCore Policy || 5–50ms || Policy invocation spans
+C-s6-1-trow-005,s6-1,trow,5,628,9137355fa1237a505ae3e39e7f56b0bc231147c7,cells=5,5 || Tool Guardrails (per call) || AgentCore Gateway Policy || 50–200ms × N calls || GuardrailLatency (ToolName dimension)
+C-s6-1-trow-006,s6-1,trow,6,629,ace9ee315f7359a3cd0053cf16676c31f2609311,cells=5,6 || Bedrock Guardrail (Output) || Bedrock Guardrails || 100–500ms || guardrailProcessingLatency (invocation trace)
+C-s6-1-trow-007,s6-1,trow,7,630,d228555190628c0b62058d2748f1d72272a01283,cells=5,— || **Total (single tool call)** || — || **~800ms–31s+** || End-to-end trace duration
+C-s6-1-prose-002,s6-1,prose,2,632,7f5e82fbbe02f54d98991b306eb976d35fd360ec,,"Note: For agents making multiple tool calls (e.g., 3–5 calls), Hop #4 and #5 repeat for each call, adding 165–750ms per additional tool invocation."
+C-s6-2-heading-001,s6-2,heading,1,634,4658634c4734448de601f5f54adec99f7f46a397,scope anchor,CloudWatch Metrics for Hop-by-Hop Monitoring
+C-agentcore-gateway-metrics-heading-001,agentcore-gateway-metrics,heading,1,636,cd3b17ed493f89f9a208ee945e7120532ca3be54,scope anchor,AgentCore Gateway Metrics
+C-agentcore-gateway-metrics-prose-001,agentcore-gateway-metrics,prose,1,638,41e403c6d5ecaa4ae946a6f33cd6db2d818ad9ed,,All gateway metrics are published under the `AWS/Bedrock-AgentCore` namespace and are batched at 1-minute intervals.
+C-agentcore-gateway-metrics-prose-002,agentcore-gateway-metrics,prose,2,638,63012fd6a9a726eeb0c7463c4f1b96cbb9648180,,(Note: FirstByteLatency is not a valid gateway metric name; use Latency.)
+C-agentcore-gateway-metrics-thead-001,agentcore-gateway-metrics,thead,1,640,39c9d29489a5ede42d7f36c00dfb52ec40d7875b,cells=3,**Metric** || **Description** || **Use**
+C-agentcore-gateway-metrics-trow-001,agentcore-gateway-metrics,trow,1,642,00c4dfda6591ff615d845f3c61f3f61653a3665e,cells=3,**Latency** || Initial response time — time from request received to first response token || Measures gateway processing incl. guardrail/policy evaluation
+C-agentcore-gateway-metrics-trow-002,agentcore-gateway-metrics,trow,2,643,6d9667a568d066b32e2d34cda3f064c7dea27683,cells=3,**Duration** || Total end-to-end processing time || Overall gateway hop latency
+C-agentcore-gateway-metrics-trow-003,agentcore-gateway-metrics,trow,3,644,9b6410bfe0d2444ecc202f610d3717d5ebca321b,cells=3,**Invocations** || Total number of requests made to the Data Plane API || Volume tracking
+C-agentcore-gateway-metrics-trow-004,agentcore-gateway-metrics,trow,4,645,df8a4bff01af9cd5e26d0a719388c575659385b6,cells=3,TargetExecutionTime || Time to execute the target (Lambda/OpenAPI/etc.) || Isolates target contribution to total Latency
+C-agentcore-gateway-metrics-trow-005,agentcore-gateway-metrics,trow,5,646,d2b1d25172e49232a65032e08a4cd9cf3d248803,cells=3,Throttles || Requests throttled (HTTP 429) || Capacity planning
+C-agentcore-gateway-metrics-trow-006,agentcore-gateway-metrics,trow,6,647,0a68147e7a165bbf5212c704ebedb5789fa06908,cells=3,SystemErrors || Requests failed with 5xx || Availability monitoring
+C-agentcore-gateway-metrics-trow-007,agentcore-gateway-metrics,trow,7,648,310bc11f09b3111a72aff3d1d83fd333a720b788,cells=3,UserErrors || Requests failed with 4xx (except 429) || Client error monitoring
+C-agentcore-policy-metrics-heading-001,agentcore-policy-metrics,heading,1,650,1a87f482a1cff53488473f87487b58b5860f0417,scope anchor,AgentCore Policy Metrics
+C-agentcore-policy-metrics-prose-001,agentcore-policy-metrics,prose,1,652,6df72bb07ea90aeadeffe3e871f492d8c59f85cf,,"Published by default under `AWS/Bedrock-AgentCore`, with dimensions including ToolName, Category, Filter, Mode, and PolicyEnforcementMode."
+C-agentcore-policy-metrics-prose-002,agentcore-policy-metrics,prose,2,652,b72dd8f24a4a2cff6e9882deaa18e67b0a9f3616,runin-label,Key metrics for guardrails-in-policy:
+C-agentcore-policy-metrics-thead-001,agentcore-policy-metrics,thead,1,654,39c9d29489a5ede42d7f36c00dfb52ec40d7875b,cells=3,**Metric** || **Description** || **Use**
+C-agentcore-policy-metrics-trow-001,agentcore-policy-metrics,trow,1,656,e2fd956efe3e6533586abd4aecdc94839a22ddbc,cells=3,**GuardrailLatency** || Time spent in guardrail evaluation within policy || Hop #1/#5 latency isolation
+C-agentcore-policy-metrics-trow-002,agentcore-policy-metrics,trow,2,657,df2056dbaafa959a0666e8eb1c634d2ccab660c8,cells=3,**ConfidenceScore / ConfidenceThreshold** || Observed score vs. configured threshold per evaluation || Threshold calibration (Section 7.1)
+C-agentcore-policy-metrics-trow-003,agentcore-policy-metrics,trow,3,658,636502c9199f15ca98ad72360873327e57339fdc,cells=3,**AllowDecisions / DenyDecisions** || Authorization outcomes || Rejection-rate tracking
+C-agentcore-policy-metrics-trow-004,agentcore-policy-metrics,trow,4,659,bb2e5200d2adaf5045e141591517e681122063a7,cells=3,**SuppressOutputs** || Tool outputs suppressed by suppressOutput effect || Hop #5 filtering rate
+C-agentcore-policy-metrics-trow-005,agentcore-policy-metrics,trow,5,660,a136de729c3f4e0fa41889f27c26020831e90701,cells=3,"**LogOnlyMatches / LogOnlyDecisionFlips / LogOnlyEvalIncomplete** || LOG_ONLY policy would-be matches, decision changes vs. ACTIVE policies, and incomplete evaluations || Safe-promotion signal: sustained zero LogOnlyDecisionFlips means promoting the policy will not block current traffic; alarm on LogOnlyEvalIncomplete"
+C-agentcore-policy-metrics-trow-006,agentcore-policy-metrics,trow,6,661,e1129bd9cd2e91bdce88fb727254892dbf20ae77,cells=3,"**MismatchErrors / TotalMismatchedPolicies / PolicyMismatch** || Guardrail evaluations that failed due to missing attributes or type mismatches || Fail-secure signal (pairs with bypass route #5, Section 4.4): a policy that cannot evaluate is a policy that may not be protecting you — alarm on it"
+C-agentcore-policy-metrics-trow-007,agentcore-policy-metrics,trow,7,662,4c32943f39d11e97e15dfbcc262a1a67e9ca6f67,cells=3,Policy spans (`aws/spans` log group) || Per-operation evaluation detail (AuthorizeAction etc.) || Trace-level hop analysis
+C-agentcore-policy-metrics-prose-003,agentcore-policy-metrics,prose,3,664,c9837c59451bade8e9e4ca1f42698beea64cf119,,"This table is not exhaustive — additional metrics (DeterminingPolicies, NoDeterminingPolicies, TemporalLatency, and others) are documented at <https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability-policy-metrics.html>."
+C-agentcore-policy-metrics-prose-004,agentcore-policy-metrics,prose,4,666,b80d8d6cc1cde218db0eb9759ba89cc69f1f64fc,,"Note on terminology: the value surfaced as ConfidenceScore is called a *severity score* for content filters and prompt attacks, and a *confidence score* for sensitive-information filters."
+C-bedrock-guardrails-metrics-heading-001,bedrock-guardrails-metrics,heading,1,668,eb2000e069f1150a8ff781a6e3a9a2d3c0a44656,scope anchor,Bedrock Guardrails Metrics
+C-bedrock-guardrails-metrics-prose-001,bedrock-guardrails-metrics,prose,1,670,d020a2bca9477c65b26149ea3922d2c52038e483,,Namespace: **`AWS/Bedrock/Guardrails`** (not `AWS/Bedrock` — that namespace holds model runtime metrics).
+C-bedrock-guardrails-metrics-prose-002,bedrock-guardrails-metrics,prose,2,670,5ece4202f2ad2b9ebfb8f2cf644ce005787c4fc9,,"Dimensions include Operation, GuardrailArn/GuardrailVersion, GuardrailContentSource (Input/Output), and GuardrailPolicyType."
+C-bedrock-guardrails-metrics-thead-001,bedrock-guardrails-metrics,thead,1,672,39c9d29489a5ede42d7f36c00dfb52ec40d7875b,cells=3,**Metric** || **Description** || **Use**
+C-bedrock-guardrails-metrics-trow-001,bedrock-guardrails-metrics,trow,1,674,7aee78963394a0c81433ab6bb77f7588101aa0a8,cells=3,**Invocations** || Number of guardrail API requests || Volume tracking
+C-bedrock-guardrails-metrics-trow-002,bedrock-guardrails-metrics,trow,2,675,6e4fad5fe75239fb6ce3dd76db06333b5c041367,cells=3,**InvocationLatency** || Latency of guardrail evaluation (ApplyGuardrail operation) || Guardrail overhead for standalone calls
+C-bedrock-guardrails-metrics-trow-003,bedrock-guardrails-metrics,trow,3,676,1b8f0c288942edf53a5be065c393819e45a09963,cells=3,**InvocationsIntervened** || Invocations where the guardrail took action || Block/mask rate
+C-bedrock-guardrails-metrics-trow-004,bedrock-guardrails-metrics,trow,4,677,8b5be02f7ea968d963114f3e6eabe7ba6a378fa7,cells=3,**TextUnitCount** || Text units processed || Cost tracking (billing is per text unit)
+C-bedrock-guardrails-metrics-trow-005,bedrock-guardrails-metrics,trow,5,678,4a1bd3a95cd2046e143e5b6efc0906686922fa88,cells=3,**InvocationClientErrors** || Client-side errors || Error rate monitoring
+C-bedrock-guardrails-metrics-trow-006,bedrock-guardrails-metrics,trow,6,679,11ae4504b6012d10098e66300a73bf2dde7b7443,cells=3,**InvocationServerErrors** || Server-side errors || Availability monitoring
+C-bedrock-guardrails-metrics-trow-007,bedrock-guardrails-metrics,trow,7,680,6964703ce575b4a36a19a6e22e008fb7d77c2c31,cells=3,**InvocationThrottles** || Throttled requests || Capacity planning
+C-bedrock-guardrails-metrics-prose-003,bedrock-guardrails-metrics,prose,3,682,f99d8d308d7777cb94102caafb19e8420dc458ce,,"For guardrail overhead inside a model invocation (Converse/InvokeModel with `guardrailConfiguration`), use the `invocationMetrics.guardrailProcessingLatency` field from the invocation trace — there is no CloudWatch metric for per-invocation guardrail overhead."
+C-bedrock-runtime-metrics-heading-001,bedrock-runtime-metrics,heading,1,684,e90ceabb5650584f43a601baa68a39380fae671d,scope anchor,Bedrock Runtime Metrics
+C-bedrock-runtime-metrics-thead-001,bedrock-runtime-metrics,thead,1,686,39c9d29489a5ede42d7f36c00dfb52ec40d7875b,cells=3,**Metric** || **Description** || **Use**
+C-bedrock-runtime-metrics-trow-001,bedrock-runtime-metrics,trow,1,688,37d57bb2b0b3fade364d0573f6a15d6fc0906bd3,cells=3,**InvocationLatency** || Full inference request time || Model inference duration
+C-bedrock-runtime-metrics-trow-002,bedrock-runtime-metrics,trow,2,689,fd767209a0fc31548d3606b82ece9adad4629c6c,cells=3,"**OutputTokensPerSecond (OTPS)** || Token generation throughput. Note: OTPS is a metric-math expression, not a published metric — `OTPS = OutputTokenCount / (InvocationLatency − TimeToFirstToken) × 1000` — and requires TimeToFirstToken, which is published only for streaming operations (ConverseStream / InvokeModelWithResponseStream) || Distinguish model-side throughput degradation from longer outputs"
+C-agentcore-runtime-session-metrics-heading-001,agentcore-runtime-session-metrics,heading,1,691,7aeff72c0e3cf0918b83f8d1fdc1dace346d3a37,scope anchor,AgentCore Runtime Session Metrics
+C-agentcore-runtime-session-metrics-thead-001,agentcore-runtime-session-metrics,thead,1,693,39c9d29489a5ede42d7f36c00dfb52ec40d7875b,cells=3,**Metric** || **Description** || **Use**
+C-agentcore-runtime-session-metrics-trow-001,agentcore-runtime-session-metrics,trow,1,695,933b107bffcc99706eddba326094f9b63c0d2cf1,cells=3,**Session latency** || End-to-end session duration || Total user-perceived latency
+C-agentcore-runtime-session-metrics-trow-002,agentcore-runtime-session-metrics,trow,2,696,4f8239b311007615f2188e494476d009155eb739,cells=3,**Token usage** || Tokens consumed per session || Cost tracking
+C-agentcore-runtime-session-metrics-trow-003,agentcore-runtime-session-metrics,trow,3,697,33b6a2ea39fb7cef5053de145545112cacf08385,cells=3,**Error rates** || Failures per session || Reliability monitoring
+C-s6-3-heading-001,s6-3,heading,1,699,50fa422b45ea3aa6a1862f902e677f542dff3ff2,scope anchor,Distributed Tracing Architecture
+C-s6-3-prose-001,s6-3,prose,1,701,c24036d6fa22684b5c9dd70d71948dafec728061,navigational,The following trace tree illustrates the span hierarchy for a single agent invocation with one tool call.
+C-s6-3-prose-002,s6-3,prose,2,701,fa36fbde40a8e3d911ed33847f5e60efcf402591,,Hop labels follow the normative numbering in Section 2.1.
+C-s6-3-quote-001,s6-3,quote,1,703,982b9e046e0e37690a9c62077bce58ae6cb37cf1,,"Note: the span names below (`policy.guardrails.input`, `bedrock.invoke_model`, …) are **illustrative**, not AWS-emitted names. Officially documented: policy spans are written to the `aws/spans` log group with operations such as AuthorizeAction. Verify actual span naming in your environment via CloudWatch Transaction Search before building dashboards on it."
+C-s6-3-mermaid-001,s6-3,mermaid,1,705,43a785e1424b6f2a11362b7133ffa6c280f091f3,,User Request
+C-s6-3-mermaid-002,s6-3,mermaid,2,705,fe8fe2e25c4f9607932e19cead304cadd443f24d,,Span: gateway.request
+C-s6-3-mermaid-003,s6-3,mermaid,3,705,4df14311f3a72ec37036e4a4f107b165c3426d20,,Span: policy.guardrails.input (Gateway Guardrail — Input) <b>Hop #1</b> — Duration: Xms
+C-s6-3-mermaid-004,s6-3,mermaid,4,705,e4d5d4b01870a125b28cf88be767c0826f31f663,,Span: agent.session
+C-s6-3-mermaid-005,s6-3,mermaid,5,705,aeb1309ce70713db27f0285fd868a7846e07482e,,Span: bedrock.guardrails.input (Bedrock Guardrail — Input) <b>Hop #2</b> — Duration: Xms
+C-s6-3-mermaid-006,s6-3,mermaid,6,705,6a53d2f19aa727f683834987350b4c5a4b406cda,,Span: bedrock.invoke_model (Model Inference) <b>Hop #3</b> — Duration: Xms
+C-s6-3-mermaid-007,s6-3,mermaid,7,705,9ea293778597c552c00482bedb49853893a7c3cf,,Span: gateway.tool_call[0]
+C-s6-3-mermaid-008,s6-3,mermaid,8,705,451be0e278d2e03951251781daff0b3585b89dfc,,Span: policy.cedar.eval <b>Hop #4</b> — Duration: Xms
+C-s6-3-mermaid-009,s6-3,mermaid,9,705,4655a6ec9fe6c4b889eee1adfbb6becf63dc7c4d,,Span: policy.guardrails.tool <b>Hop #5</b> — Duration: Xms
+C-s6-3-mermaid-010,s6-3,mermaid,10,705,b41f7fa70ec2a0bd96859c3480eb929e3d222dbc,,Span: tool.execution Duration: Xms
+C-s6-3-mermaid-011,s6-3,mermaid,11,705,2e1968bfc71745194c6e00d64689795d45fa0145,,Span: policy.guardrails.resp <b>Hop #5b</b> — Duration: Xms
+C-s6-3-mermaid-012,s6-3,mermaid,12,705,92d0e86fcfbe9bd07c201557d26d6398dc58c77d,,Span: bedrock.guardrails.output (Bedrock Guardrail — Output) <b>Hop #6</b> — Duration: Xms
+C-s6-3-mermaid-013,s6-3,mermaid,13,705,35f638b6f77401768c9a15e8e7270eebfefb1998,,End-to-End Duration: Total Xms
+C-s6-4-heading-001,s6-4,heading,1,721,e9da3eb3211305b583b8a92d3f5d5cecd662334d,scope anchor,Alerting Strategy for Latency
+C-s6-4-thead-001,s6-4,thead,1,723,19fc4ea203ad4fdb143e14e56b1bc8e014e07e97,cells=3,**Alert** || **Condition** || **Action**
+C-s6-4-trow-001,s6-4,trow,1,725,4e27e0a534a2b0d22f88e32ca59dada201bba90e,cells=3,Gateway guardrail latency spike || Latency > P99 + 50% || Investigate guardrail configuration complexity
+C-s6-4-trow-002,s6-4,trow,2,726,8df1e18f42ba78b7b552f80e69b038e65d706c9d,cells=3,Bedrock guardrail latency spike || InvocationLatency > P99 + 50% || Check for increased input size or throttling
+C-s6-4-trow-003,s6-4,trow,3,727,e62b8a20d569234dc08d979a86fd85bf5aadaf98,cells=3,End-to-end session latency || Total duration > SLA threshold || Identify bottleneck hop via traces
+C-s6-4-trow-004,s6-4,trow,4,728,43f3471992cea32bc25e2219d2e68ceae15f26b6,cells=3,Guardrail throttling || InvocationThrottles > 0 || Request quota increase or reduce call volume
+C-s6-4-trow-005,s6-4,trow,5,729,50bdf324a86f20c1e25042486e70935d5a8c0571,cells=3,High rejection rate || Block rate > 20% in 5 min || Investigate potential attack or misconfigured threshold
+C-s6-4-trow-006,s6-4,trow,6,730,2a2e2f239586558b3c023811e3184948681fc133,cells=3,Incomplete LOG_ONLY evaluation || LogOnlyEvalIncomplete > 0 || Calibration data is partial — extend the observation window
+C-s6-4-trow-007,s6-4,trow,7,731,862b89785d50a62f18848454671f2039b753c72d,cells=3,Policy engine mode change || CloudTrail UpdateGateway event || Verify the change was authorized (Section 3.1 BP#5)
+C-s7-heading-001,s7,heading,1,733,ba76754b93b6023c69bb73db2769ecf373dfea51,scope anchor,Best Practices Summary: Latency Optimization with Guardrails
+C-s7-1-heading-001,s7-1,heading,1,735,b0d13977f2eb2d3fb75fb7eddc479c002f129e67,scope anchor,Design Principles
+C-s7-1-prose-001,s7-1,prose,1,737,42aaee06722065f3b59f229d0608252d27e31964,,**Threshold tuning workflow (LOG_ONLY → ENFORCE):** AWS recommends calibrating guardrail thresholds before enforcing.
+C-s7-1-prose-002,s7-1,prose,2,737,bd1c41db3efb0e7dfc742f5fc4e8be7ef8f0abd1,,(1) Set the policy engine to LOG_ONLY — decisions are logged to CloudWatch but nothing is blocked.
+C-s7-1-prose-003,s7-1,prose,3,737,3bd8b92f9f2d2a7b5dabdc2be45215f4b53d66f2,,(2) Run a golden test set or real production traffic through the gateway the policy engine is attached to.
+C-s7-1-prose-004,s7-1,prose,4,737,eb88228dc71cb0eb5be91fc7b22033f5122da953,,"(3) Label results and use the confidence scores in the logs to build a confusion matrix, comparing precision/recall across candidate thresholds."
+C-s7-1-prose-005,s7-1,prose,5,737,73bd3155a07ba5859d1c6254c94d51f6c7606b89,,"(4) Once calibrated to your tolerance for false positives vs. missed detections, switch the engine to ENFORCE — and verify an explicit permit policy exists first (Section 3.1), or ENFORCE will block all traffic."
+C-s7-1-prose-006,s7-1,prose,6,737,6011e655073593b482cefc7da2f8c019d2bdcbf5,,Watch LogOnlyDecisionFlips: a sustained zero means promotion will not block current traffic.
+C-s7-1-mermaid-001,s7-1,mermaid,1,739,3c213289938e515cf1dbe5cb55b1371019ed3b35,,"1. Engine = LOG_ONLY (nothing blocked, scores logged)"
+C-s7-1-mermaid-002,s7-1,mermaid,2,739,57823a90b379c74436e716b899e401011556ac7d,,2. Run golden test set / production traffic
+C-s7-1-mermaid-003,s7-1,mermaid,3,739,b7d58f97054be67d2e78cd0e3c4d9b7480bde0db,,3. Build confusion matrix from logged ConfidenceScores; compare candidate thresholds
+C-s7-1-mermaid-004,s7-1,mermaid,4,739,044bdd542bb2c3512310e9a1527f4f88b67bdfd3,,LogOnlyDecisionFlips sustained at zero?
+C-s7-1-mermaid-005,s7-1,mermaid,5,739,f9fbf499a2e05d172632f24d02862e2b9df8bd46,,No — tune threshold
+C-s7-1-mermaid-006,s7-1,mermaid,6,739,6411c932cefe2de500aee5630d42faeb949565ba,,4. Verify explicit permit policy exists
+C-s7-1-mermaid-007,s7-1,mermaid,7,739,5397e0583f14f6c88de06b1ef28f460a1fb5b0ae,,Yes
+C-s7-1-mermaid-008,s7-1,mermaid,8,739,acd51f86d76f375a663e5cabe875af42706e7d40,,Switch engine to ENFORCE
+C-s7-1-thead-001,s7-1,thead,1,749,3f8ca7fef743121bd61a039a27013ba69ff00a59,cells=3,**#** || **Principle** || **Rationale**
+C-s7-1-trow-001,s7-1,trow,1,751,b43d55271fb2d6ed3a7994b338183239b032d624,cells=3,"1 || **Layer guardrails by risk, not by feature** || Not every checkpoint needs every policy. Match guardrail scope to the actual risk at each hop."
+C-s7-1-trow-002,s7-1,trow,2,752,a897ea8dbc3c9a9174b9910fb3fe28f2c18e3868,cells=3,2 || **Fail fast at the outermost layer** || Block obviously harmful content at the Gateway (Hop #1) to avoid unnecessary downstream processing — and note the billing asymmetry: input blocks avoid model-inference charges entirely; output blocks do not.
+C-s7-1-trow-003,s7-1,trow,3,753,2f42651bad42b1047c5b5e8467939f808511bb69,cells=3,3 || **Use deterministic controls for authorization** || Cedar Policy (Hop #4) is faster and more reliable than guardrails for tool-level access control. Guardrails are non-deterministic by AWS's own documentation; Cedar is deterministic and fail-secure (timeout → DENY).
+C-s7-1-trow-004,s7-1,trow,4,754,aa9da82141ec84daff72d78aa46e05c7e99faec1,cells=3,4 || **Monitor every hop independently** || End-to-end latency hides which hop is degrading. Use distributed tracing spans and per-hop metrics (Section 6.2) for each checkpoint.
+C-s7-1-trow-005,s7-1,trow,5,755,2a307a7ad616f2aa5297ad340b4ec14c609b3784,cells=3,"5 || **Deduplicate policies across layers** || If Gateway Guardrails handle prompt attacks, don't repeat the same check at the model level — but only after confirming Regional availability (Hop #1) and input tagging (Hop #2) so deduplication doesn't create a gap."
+C-s7-1-trow-006,s7-1,trow,6,756,ab825103c12f29781bc36f2cd11d924f3b048c38,cells=3,6 || **Batch for high-throughput** || Use content-array batching for ApplyGuardrail API calls. Treat caching as a last resort with strict constraints (Section 3.3 BP#1).
+C-s7-1-trow-007,s7-1,trow,7,757,dc80bfb85c50f4751b986242b3dd9fec7ef1a064,cells=3,7 || **Set latency budgets per hop** || Define acceptable latency for each checkpoint and alert when exceeded.
+C-s7-2-heading-001,s7-2,heading,1,759,7e9a08152466fc34822645e46859261d8ec3dd42,scope anchor,Anti-Patterns to Avoid
+C-s7-2-thead-001,s7-2,thead,1,761,d01ae504c728d2675c8c0242b5ef1edcd7b644ba,cells=3,**Anti-Pattern** || **Problem** || **Recommendation**
+C-s7-2-trow-001,s7-2,trow,1,763,5fa14e1b1418bba2c63874f0aa1a6ee3794b099a,cells=3,**Enabling ALL guardrail policies at EVERY hop** || Excessive latency accumulation || Apply minimum necessary policies per hop
+C-s7-2-trow-002,s7-2,trow,2,764,57d4b143a8df371f994c0504eb1bb1991aae381b,cells=3,"Using guardrails for tool authorization || Probabilistic, can be bypassed via prompt injection || Use Cedar Policy for deterministic authorization"
+C-s7-2-trow-003,s7-2,trow,3,765,cc54a7a9f73ef0caefdd28ae16f20fef05bde066,cells=3,**Guardrail-only policy set in ENFORCE mode** || Default-deny blocks ALL traffic without an explicit permit || Always include a baseline permit policy (Section 3.1)
+C-s7-2-trow-004,s7-2,trow,4,766,65da87be17646d2b7df751dc111c4970cff76559,cells=3,**No observability instrumentation** || Cannot identify latency bottlenecks || Enable full distributed tracing from day one
+C-s7-2-trow-005,s7-2,trow,5,767,dd092557ad7b6227b57f7412649e28c6bb213909,cells=3,Same guardrail thresholds for all content || Over-blocking legitimate content or under-blocking harmful content || Tune thresholds per hop and content type
+C-s7-2-trow-006,s7-2,trow,6,768,50f931fdc7b0b00b21fbc22c7d461ef88ce2ff91,cells=3,**Ignoring guardrail throttling** || Silent failures under load || Monitor InvocationThrottles and implement retry/backoff
+C-s7-2-trow-007,s7-2,trow,7,769,cb0c6a3ac6a54cb7e42867df3c2068b9dc646502,cells=3,Skipping guardrails on external-content tools || Tool responses are the primary indirect-prompt-injection vector || Apply prompt-attack + content guardrails to untrusted tool outputs (Section 4.2)
+C-s7-2-trow-008,s7-2,trow,8,770,442f9acfeb2bf6e26948f2aa7b18db374cbef006,cells=3,"Classic-tier guardrails on non-EN/FR/ES traffic || ""Guardrails are ineffective with languages that aren't supported"" || Use Standard tier (and plan for its cross-Region inference requirement)"
+C-s7-2-trow-009,s7-2,trow,9,771,2c2d6b1a2107a6fa084c71caf4f5483f88462a50,cells=3,"Manual prompt optimization only || Slow, inconsistent, not evidence-based || Use AgentCore Optimization for automated improvement"
+C-s7-3-heading-001,s7-3,heading,1,773,905ee9b93425c20275951807aaf073d5e34699e1,scope anchor,Recommended Guardrail Distribution
+C-s7-3-thead-001,s7-3,thead,1,775,62b4729ba8d880f6701c0160578bab8ac17367cd,cells=3,**Hop** || **Recommended Policies** || **Rationale**
+C-s7-3-trow-001,s7-3,trow,1,777,ff3c4ea4cadd7ecec7aa73a442e854d45367b163,cells=3,"**Gateway (Input)** || Prompt Attack (HIGH threshold), Content Filter (MEDIUM) || Fast early blocking of obvious threats"
+C-s7-3-trow-002,s7-3,trow,2,778,d7f2dca9993797cd7dde36515a5ab1290383e631,cells=3,"**Bedrock Guardrails (Input)** || Denied Topics, Sensitive Info, Content Filter (fine-grained), Prompt Attack (with input tagging) || Comprehensive input safety after gateway filter"
+C-s7-3-trow-003,s7-3,trow,3,779,4f5f95404ebe8eaa07496c74d7d13e53dbb5de17,cells=3,"**Cedar Policy (Tool Auth)** || Tool-level allow/deny, parameter validation || Deterministic authorization — no ML overhead"
+C-s7-3-trow-004,s7-3,trow,4,780,9b94ed854f1a2acc53bebebab70052ea3ba5e7c5,cells=3,**Tool I/O Guardrails** || Sensitive Info (PII on tool responses); Prompt Attack on external/untrusted tool responses || Prevent data leakage and indirect prompt injection from tool outputs
+C-s7-3-trow-005,s7-3,trow,5,781,4d8729ac1adba83e71eb3943bccb4a9283cfb072,cells=3,"**Bedrock Guardrails (Output)** || Content Filter, Sensitive Info, Contextual Grounding (within its character limits) || Final safety check before user sees response"
+C-s8-heading-001,s8,heading,1,783,6fbaad04b21e4c2f44c7546137861adf74dcfce4,scope anchor,Implementation Checklist
+C-s8-prose-001,s8,prose,1,785,b98a1fc32e6514c0f68b73806ee44696dd5445dd,fragment,**Phase 1: Foundation**
+C-s8-checkitem-001,s8,checkitem,1,787,90d98ac29be291d87df38c512b7374e39d635af3,,Create Bedrock Guardrail resources (with per-direction input/output settings)
+C-s8-checkitem-002,s8,checkitem,2,788,f5f6218544cc8dcdf14d7e6fa03e115deb29b0c7,,**Verify tier vs. traffic language** (Section 3.4): non-EN/FR/ES traffic REQUIRES Standard tier — Classic is silently ineffective; confirm data-residency allows Standard's mandatory cross-Region inference
+C-s8-checkitem-003,s8,checkitem,3,789,f3c8df6847722ab1755eca212eb95cba7aae3369,,Set up AgentCore Gateway with Policy Engine — confirm Guardrails-in-policy is available in your Region
+C-s8-checkitem-004,s8,checkitem,4,790,fe4d2055b0ea33438035a2401bebeabdf75ca02b,,"**Write an explicit baseline permit policy BEFORE enabling ENFORCE** (default-deny gotcha, Section 3.1)"
+C-s8-checkitem-005,s8,checkitem,5,791,fefbdde7162f5474d1d1759fcc8a19f92b41845c,,Define Cedar policies for tool authorization
+C-s8-checkitem-006,s8,checkitem,6,792,1dc9231e340379eb80e441250695d1e634c7bf9d,,Configure guardrails in Gateway Policy (Cedar `when guardrails` conditions — thresholds are mandatory in hand-written policies)
+C-s8-checkitem-007,s8,checkitem,7,793,a7bdf158aa07a9ba192eb57c46ba164641b6bc5d,,Configure input tagging (with random `tagSuffix`) wherever prompt-attack filtering is expected at the model layer
+C-s8-checkitem-008,s8,checkitem,8,794,33a5c9cb5d5a92e0acbca472564cc28c07a3c48b,,"Apply network containment (Section 4.5): Runtime VPC mode with egress allowlist, Code Interpreter Sandbox/VPC mode + DNS Firewall, VPC condition keys on deployment IAM; check the PrivateLink matrix if in a private network"
+C-s8-checkitem-009,s8,checkitem,9,795,86b20c2fff8d9354e24305fe1df42476423cef04,,"Enable CloudWatch Transaction Search, then AgentCore Observability tracing"
+C-s8-checkitem-010,s8,checkitem,10,796,8ae357248e08a0c05b843df17cb67ba5cd617c4a,,Instrument agent code with ADOT SDK for custom spans
+C-s8-prose-002,s8,prose,2,798,57487aee9bc4b707071b3e81d065d77d3d6f89fa,fragment,**Phase 2: Monitoring**
+C-s8-checkitem-011,s8,checkitem,11,800,4adde3e3440e74be4cd3f4750d89f5f4378c2d9c,,"Create CloudWatch dashboard with hop-by-hop latency metrics (GuardrailLatency, InvocationLatency, guardrailProcessingLatency)"
+C-s8-checkitem-012,s8,checkitem,12,801,3194e791d0d3a38794c201d790492998469db366,,"Set up alarms for each latency checkpoint, plus LogOnlyEvalIncomplete and UpdateGateway configuration changes"
+C-s8-checkitem-013,s8,checkitem,13,802,39e473fe8fac12267150d3ec906f14af334e2e05,,"Configure guardrail-specific metrics monitoring (invocation count, latency, throttles, InvocationsIntervened, TextUnitCount)"
+C-s8-checkitem-014,s8,checkitem,14,803,c7944e79fc83f30f8bfeebad64ad9526cc8d12e2,,Enable distributed tracing across all agent components
+C-s8-checkitem-015,s8,checkitem,15,804,55a3ac020c6abdea04b8d2b143a8eaa400b7f5d4,,Create operational runbook for latency spike investigation
+C-s8-prose-003,s8,prose,3,806,f86d2aa81ec0938b7293031586d4b435a5131727,,**Phase 3: Optimization**
+C-s8-checkitem-016,s8,checkitem,16,808,c9e21a643bdf68dc000f842c4fb2aa7a0cde5460,,Enable AgentCore Evaluations (online mode) for continuous quality assessment — verify PrivateLink posture first if in a private network (Section 5.3 BP#6)
+C-s8-checkitem-017,s8,checkitem,17,809,2e9b5e725e0c18ca172b39f96e321d6d0ccc58af,,Establish baseline latency measurements for each hop
+C-s8-checkitem-018,s8,checkitem,18,810,b0fd6b8ace1433f103b6b6bad55595d8aaae5eee,,Run AgentCore Optimization Recommendations when quality degrades
+C-s8-checkitem-019,s8,checkitem,19,811,b3d0d754ba33b18e9a94594b9f7ee68bf166fd21,,Validate with batch evaluations before A/B testing
+C-s8-checkitem-020,s8,checkitem,20,812,3e8c0f63a6d63c8b65d7a4c3b2ea6a00c1c0cbf5,,Implement A/B testing via Gateway traffic splitting
+C-s8-checkitem-021,s8,checkitem,21,813,dd682f5ee1cdb677e652ce59224b4430541d56d3,,Document optimization cycles and threshold tuning decisions
+C-s8-prose-004,s8,prose,4,815,c6aef22fe6bf90355f0a0ff661362a7d305cc53d,fragment,**Phase 4: Maintenance**
+C-s8-checkitem-022,s8,checkitem,22,817,0f3c20ef4b227a88884f3d1d48b1b99081314816,,Review guardrail policies quarterly — remove redundant checks
+C-s8-checkitem-023,s8,checkitem,23,818,a3c7d5e8e6f29bbd9be9e285d4b6607165fe4887,,Monitor latency trends — adjust as model/traffic patterns change
+C-s8-checkitem-024,s8,checkitem,24,819,c4dd065ffde142e747a37db09df6d8cb3ab78762,,Update Cedar policies as new tools are added
+C-s8-checkitem-025,s8,checkitem,25,820,c7ab69be112f755d5f78fb0f061f9b632a851432,,Revisit threshold values based on false positive/negative rates
+C-s8-checkitem-026,s8,checkitem,26,821,366ab7b4ee7436347d081cb0ad014e62a6277883,,Re-run the guardrail regression test set periodically — AWS auto-updates the underlying guardrail models with no action on your part
+C-s9-heading-001,s9,heading,1,823,ddbc3a9ba3166f610bd917274a2116295e98333f,scope anchor,Reference Architecture: Complete Closed Loop
+C-s9-prose-001,s9,prose,1,825,7f431150d3c82829fe25a51722fbf9dd9efd77b7,navigational,The following diagram shows the complete end-to-end architecture across all three phases:
+C-s9-mermaid-001,s9,mermaid,1,827,9f8a2389a20ca0752aa9e95093515517e90e194c,,User
+C-s9-mermaid-002,s9,mermaid,2,827,c137598f53c7f38496dd20ff2e9666a66aef07b2,,BEFORE — Input Safety
+C-s9-mermaid-003,s9,mermaid,3,827,321ea1d549122e5754ffaddb71fa794047b1f180,,Hop #1: Gateway Guardrail (AgentCore Policy) ~50–200ms
+C-s9-mermaid-004,s9,mermaid,4,827,d9bb5f6968ff2c5092fa4264043779d2c7f54093,,Hop #2: Input Guardrail (Bedrock Guardrails) ~100–500ms
+C-s9-mermaid-005,s9,mermaid,5,827,9d4e1e23bd5b727046a9e3b4b7db57bd8d6ee684,,pass
+C-s9-mermaid-006,s9,mermaid,6,827,ed7646ac4433afa00041d0b62cbbea8112a156fe,,Block (HTTP 403)
+C-s9-mermaid-007,s9,mermaid,7,827,90f4ae1180c80bd561d0791775bb79ade786bdf7,,violation
+C-s9-mermaid-008,s9,mermaid,8,827,20286147ac7a7a7d23ad71015244361f53dd50c1,,"Block (no model inference, no inference charge)"
+C-s9-mermaid-009,s9,mermaid,9,827,5c1409d98b1df4f87611a84a6d28d88ebaaaeb7b,,DURING — Execution Control
+C-s9-mermaid-010,s9,mermaid,10,827,05440065caf2ad4548daa48104494091273747fd,,Hop #3: Model Inference (Bedrock Runtime) ~500ms–30s
+C-s9-mermaid-011,s9,mermaid,11,827,5fd710eb6f3c67584d43dcb13b4474b751fded81,,Hop #4: Cedar Tool Auth (AgentCore Policy) ~5–50ms · default-deny · fail-secure
+C-s9-mermaid-012,s9,mermaid,12,827,aa0a22a236a5b3b71a11ca36a34221fb2015314c,,Hop #5: Tool Guardrails × N calls (Gateway Policy: permit/forbid + suppressOutput) ~50–200ms per call
+C-s9-mermaid-013,s9,mermaid,13,827,7c7b1c73d3399d1a9d723c44a8327f393e34823a,,Observability: Traces / Spans / Metrics → CloudWatch
+C-s9-mermaid-014,s9,mermaid,14,827,b871916621c54f19296609a4e7ec64ed53636884,,DENY
+C-s9-mermaid-015,s9,mermaid,15,827,d72a7cad18fb61442d7f3e0c5a3ba0d6ea33069f,,no matching permit
+C-s9-mermaid-016,s9,mermaid,16,827,b0f4f28692f1f7b87728850cacaa0fd1dbcc1ec7,,traces
+C-s9-mermaid-017,s9,mermaid,17,827,5e0e15b198957ff8278539742cc4a83c449d3fb6,,AFTER — Output Safety + Continuous Improvement
+C-s9-mermaid-018,s9,mermaid,18,827,01021cad75a6631eff6497eb96ea3df75b32a204,,Hop #6: Output Guardrail (Bedrock Guardrails) ~100–500ms
+C-s9-mermaid-019,s9,mermaid,19,827,25a37ca8bf3ece6df210a613ae93b1e5fba703a8,,Response to User
+C-s9-mermaid-020,s9,mermaid,20,827,f4757c116e7be2e2d7e6a6151b81920401dfccab,,AgentCore Evaluations (Online sampling / Batch jobs / On-demand spans)
+C-s9-mermaid-021,s9,mermaid,21,827,298784a170254817a401498ab44ffb4e042fbe47,,AgentCore Optimization · Recommendations (analyze traces) · Batch Evaluation via Evaluations (offline validation) · A/B Testing (live traffic via Gateway)
+C-s9-mermaid-022,s9,mermaid,22,827,577f0c566e3ce7dd47a294b29d093b9625b5334f,,"Configuration Bundles (versioned, immutable) → updated system prompts → updated tool descriptions → adjusted guardrail thresholds → updated Cedar policies"
+C-s9-mermaid-023,s9,mermaid,23,827,dd9eab2d5b45182a9c2493590e1a5900a847caab,,Block / Mask
+C-s9-mermaid-024,s9,mermaid,24,827,da7cb90783a6e64722817f884c36d2bc6dadf4b0,,spans feed evaluation
+C-s9-mermaid-025,s9,mermaid,25,827,0f1eca4619c8a2151d25d6778bf80fc6077c1e72,,CLOSED LOOP: deploy updated config
+C-s10-heading-001,s10,heading,1,870,28e26efe2b81f4de212c4acd28c792c04272bd22,scope anchor,Key AWS Documentation References
+C-s10-thead-001,s10,thead,1,872,7c47e2972e092d3778cbbde222ce73f17ebbc960,cells=2,**Topic** || **URL**
+C-s10-trow-001,s10,trow,1,874,026110e1944f76292c2983a1b980cdab4cdc413f,cells=2,How Bedrock Guardrails Works || <https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-how.html>
+C-s10-trow-002,s10,trow,2,875,fe3dbc669517992dc3da62393da04697f0fc131a,cells=2,Guardrails in AgentCore Policy || <https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy-guardrails-in-policies.html>
+C-s10-trow-003,s10,trow,3,876,42fe9234c5ff5e5ae756c3edb2d92b8a4274335f,cells=2,Getting Started with Gateway Guardrails || <https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy-guardrails-getting-started.html>
+C-s10-trow-004,s10,trow,4,877,b88f534252ce84a65038b77e2a54f3febe822144,cells=2,Policy in AgentCore || <https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy.html>
+C-s10-trow-005,s10,trow,5,878,00ded84a9603be1e777d829c776de26acca9c46d,cells=2,Understanding Cedar Policies || <https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy-understanding-cedar.html>
+C-s10-trow-006,s10,trow,6,879,0faa5ec867bff31f87c71e7bd63dc9f1e9611ea8,cells=2,Policy Conditions (when guardrails) || <https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy-conditions.html>
+C-s10-trow-007,s10,trow,7,880,62bb3037ed9b9226c64710afe3481f2559129637,cells=2,Testing Policies (LOG_ONLY workflow) || <https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy-test-a-policy.html>
+C-s10-trow-008,s10,trow,8,881,dc4b46bc83e7b7829581c8f9c9a6f0012a7fd2f5,cells=2,ApplyGuardrail API || <https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-use-independent-api.html>
+C-s10-trow-009,s10,trow,9,882,25ee8441d1706d584f768b90f3c05bb8d878d061,cells=2,Guardrails Streaming Modes || <https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-streaming.html>
+C-s10-trow-010,s10,trow,10,883,fcd7027ea35adcb2dcbfbf8ca06509bf29e817a5,cells=2,Guardrails Tiers || <https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-tiers.html>
+C-s10-trow-011,s10,trow,11,884,e1bcfbbdb31f49df7fd1fdf398de14bc01bfe233,cells=2,Guardrails Supported Languages || <https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-supported-languages.html>
+C-s10-trow-012,s10,trow,12,885,c58db7011002c6322f1118d84d909045f1757195,cells=2,Guardrails Input Tagging || <https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-tagging.html>
+C-s10-trow-013,s10,trow,13,886,65e7ae034904f07873af3af7dd1f6613301b3775,cells=2,AgentCore Observability || <https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability.html>
+C-s10-trow-014,s10,trow,14,887,1aa7953398ce36ca83ff62806d8006d00bd9cef8,cells=2,AgentCore Gateway Metrics || <https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability-gateway-metrics.html>
+C-s10-trow-015,s10,trow,15,888,90b381c225f49bd87af11b9afa80252a96aad1c6,cells=2,AgentCore Policy Metrics || <https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability-policy-metrics.html>
+C-s10-trow-016,s10,trow,16,889,08ba9e2a12d2c781d499152f3788f18623415316,cells=2,Monitor Bedrock Guardrails with CloudWatch || <https://docs.aws.amazon.com/bedrock/latest/userguide/monitoring-guardrails-cw-metrics.html>
+C-s10-trow-017,s10,trow,17,890,985eddaaa2896d4cc2a59d1f6203e5671f4593f8,cells=2,Monitor Bedrock Runtime Metrics || <https://docs.aws.amazon.com/bedrock/latest/userguide/monitoring-runtime-metrics.html>
+C-s10-trow-018,s10,trow,18,891,65eb404ab6f9091f6f28640a8b72183a617d4b0e,cells=2,AgentCore Evaluations || <https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/evaluations.html>
+C-s10-trow-019,s10,trow,19,892,02ed494f89baa6db24b64846d44073ff595ad78c,cells=2,AgentCore Optimization || <https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/optimization.html>
+C-s10-trow-020,s10,trow,20,893,a3e7e73e13e0532d142f75e7918df3374a27468f,cells=2,AgentCore A/B Testing || <https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/ab-testing.html>
+C-s10-trow-021,s10,trow,21,894,8eb171949e3dd946c62bd87915188735316dc312,cells=2,Well-Architected Agentic AI Lens || <https://docs.aws.amazon.com/wellarchitected/latest/agentic-ai-lens/agentic-ai-lens.html>
+C-s10-trow-022,s10,trow,22,895,cf86e10dc557993cbce7129f7dad80fdf4c3331b,cells=2,Input Validation Best Practices || <https://docs.aws.amazon.com/prescriptive-guidance/latest/agentic-ai-security/best-practices-input-validation.html>
+C-s10-trow-023,s10,trow,23,896,5d6ef175d091a23245398259206fc7ee0acb38dd,cells=2,AgentCore Memory Best Practices (Memory security; not guardrails-specific) || <https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/best-practices.html>
+C-s10-trow-024,s10,trow,24,897,f0a84ec9e289d9cc2d27225592cd56bdcb8bdc02,cells=2,Diagnose InvocationLatency with OTPS || <https://docs.aws.amazon.com/bedrock/latest/userguide/monitoring-runtime-otps.html>
+C-appA-heading-001,appA,heading,1,899,219c57f081a42326ec42e2aa4877a7344bb2ab2a,scope anchor,Guardrails Checkpoint Decision Matrix
+C-appA-prose-001,appA,prose,1,901,d2c1029b6a54d2640ff198ad6c9bdde6e4eaf9af,navigational,Use this matrix to decide which guardrails to enable at each hop:
+C-appA-thead-001,appA,thead,1,903,dca1399e1177632a228b56ad12e2217875929598,cells=5,**Content Risk** || **Gateway (Hop#1)** || **Input Guard (Hop#2)** || **Tool I/O (Hop#5)** || **Output Guard (Hop#6)**
+C-appA-trow-001,appA,trow,1,905,775afa10ab0e7b67de90aedde63d601272a66064,cells=5,**Prompt Injection/Attack** || ✅ HIGH || Optional (deduplicate; requires input tagging) || ✅ for external/untrusted tool responses (indirect injection vector) || ❌
+C-appA-trow-002,appA,trow,2,906,4409ee69ff19f4e1a723bc417682432f99e5fe2e,cells=5,**Violent Content** || ✅ MEDIUM || ✅ LOW || ❌ || ✅ MEDIUM
+C-appA-trow-003,appA,trow,3,907,3bac76c19bfa22dba90749d9c2db20df6d1ad953,cells=5,**Sexual Content** || ✅ MEDIUM || ✅ LOW || ❌ || ✅ MEDIUM
+C-appA-trow-004,appA,trow,4,908,02d99cadf1a0fdce277bce469bf9e4375eaf444f,cells=5,**Hate Speech** || ✅ MEDIUM || ✅ LOW || ❌ || ✅ MEDIUM
+C-appA-trow-005,appA,trow,5,909,2df87f7cd1ede5d77d4fd0cd6c6d515b256410ea,cells=5,**PII/Sensitive Info** || ❌ || ✅ (detect) || ✅ (redact; note tool_use parameters are not scanned) || ✅ (redact)
+C-appA-trow-006,appA,trow,6,910,2a1f79357d0758763957c7be59f3912db67760fb,cells=5,**Denied Topics** || ❌ || ✅ || ❌ || ✅
+C-appA-trow-007,appA,trow,7,911,5c576cbc693a5eae9df914fc276f363313c9b977,cells=5,**Word Blocklist** || ❌ || ✅ || ❌ || ✅
+C-appA-trow-008,appA,trow,8,912,e1b90e22161108172b207d4193da979a2057ec11,cells=5,"**Hallucination** || ❌ || ❌ || ❌ || ✅ (Contextual Grounding / Automated Reasoning, detect-only)"
+C-appA-trow-009,appA,trow,9,913,4fd0a481f12394f7f08919e7e732e3047272db07,cells=5,**Tool Authorization** || ❌ || ❌ || ✅ (Cedar) || ❌
+C-appB-heading-001,appB,heading,1,915,2454687778ec4430e96a0585edcf73b7767080e4,scope anchor,Latency Optimization Techniques
+C-appB-thead-001,appB,thead,1,917,78439fe2209f405ec7030cf56d601fa1e192bb0c,cells=3,**Technique** || **Description** || **Latency Reduction**
+C-appB-trow-001,appB,trow,1,919,ed5ceaa27b5cc2a9ce97f88603b26e205c74069f,cells=3,**Parallel policy evaluation** || Bedrock evaluates all input policies in parallel (built-in) || Significant vs. sequential
+C-appB-trow-002,appB,trow,2,920,88ed7189c2e8b9d07e929e144655e8cd95fb889a,cells=3,**Early blocking at Gateway** || Block at Hop#1 to skip Hops #2–6 entirely || Up to 100% of downstream hops (and avoids model-inference charges)
+C-appB-trow-003,appB,trow,3,921,b13bf4ac400fcad2ebe29aa20b2108900ce04a3f,cells=3,**Content block batching** || Batch multiple content blocks in a single ApplyGuardrail call || Fewer round trips (AWS publishes no specific figures; InvokeGuardrailChecks caps at 10 content blocks/message)
+C-appB-trow-004,appB,trow,4,922,2122108048ec4e5983dee68e0b99680c31d3e56c,cells=3,**Selective application** || Only apply guardrails to content that needs evaluation; input tagging scopes evaluation to user content || Proportional to skip rate
+C-appB-trow-005,appB,trow,5,923,893b6cb7b0c0bb841c190e2e5a9f4daca8796482,cells=3,**Deduplicate across layers** || Remove same policy from multiple hops (verify no coverage gap first) || Removes redundant evaluation time
+C-appB-trow-006,appB,trow,6,924,935bcc6b71a1a1978d688369c105df1e49ef4b48,cells=3,**Latency-optimized inference** || Use Bedrock latency-optimized inference for model calls || Reduces Hop#3 time
+C-appB-trow-007,appB,trow,7,925,8d96e0e2583019a744db364bb9ab5f083024ad66,cells=3,"**Asynchronous streaming mode** || Official ASYNCHRONOUS streamProcessingMode: chunks stream immediately, scanning in background || Removes buffering delay (trade-off: leakage window before blocking; no PII masking in async mode)"
+C-appB-quote-001,appB,quote,1,927,619b61b4fe1535f4775745fd849d797e420d1005,,"Removed from this list in v1.2: ""intelligent caching"" as a general technique — guardrails are non-deterministic and auto-updated by AWS; see Section 3.3 BP#1 for the narrow conditions under which caching is defensible."
+C-appC-heading-001,appC,heading,1,929,314296372b3912a1f4c44508b50fcdeda1b0f676,scope anchor,Change Log v1.1 → v1.2
+C-appC-prose-001,appC,prose,1,931,144572f1209f6c88b35d0d6411785d17dc32219d,leadin-stem,**Factual corrections (verified against official AWS documentation):**
+C-appC-numitem-001,appC,numitem,1,933,f1206c2cc2a950b8677f3aa7c17a90c663a12973,,Guardrails CloudWatch namespace corrected to `AWS/Bedrock/Guardrails` throughout (was: `AWS/Bedrock`).
+C-appC-numitem-002,appC,numitem,2,934,eadd61f59c200903e1a49c431eae8b1ed2880a02,,Default policy thresholds clarified: applied only via the natural-language authoring service; hand-written Cedar requires explicit thresholds.
+C-appC-numitem-003,appC,numitem,3,935,4a72396ff3bb02197b70a0f3dccad7c8d56896a5,,"AgentCore Optimization ""(Preview)"" label removed — the service is GA (Accelerator v2.9 service table)."
+C-appC-numitem-004,appC,numitem,4,936,2025ca2859de0926d27dd562f74b48e49d425351,,Optimization capabilities corrected to Recommendations / Configuration Bundles / A/B Testing; Batch Evaluation reassigned to AgentCore Evaluations.
+C-appC-numitem-005,appC,numitem,5,937,1120b61ab28c2333d648681577839084064e7257,,Parallel-evaluation claims scoped to what AWS documents (input evaluation only); removed for Gateway policy.
+C-appC-numitem-006,appC,numitem,6,938,c5bc9d24789e1863cc06672910a98ea46101ac24,,"best-practices.html reference relabeled — that page covers AgentCore Memory, not guardrails."
+C-appC-numitem-007,appC,numitem,7,939,c79b6e8a457daa14621c868cabe964b8fe3231b7,,"Unofficial ""190x"" / ""80–90%"" figures removed from Appendix B (already removed from §3.3 in v1.1)."
+C-appC-numitem-008,appC,numitem,8,940,1cc4847a6242bf5849e1c1aa306c55a34a04bbb9,,§6.4 alert condition corrected from FirstByteLatency to Latency.
+C-appC-numitem-009,appC,numitem,9,941,8135556f9e9eccc48e1071314e30e190dc9356dd,,"Hop numbering unified (1–6, Model Inference = Hop #3) across headings, Executive Summary, tables, and diagrams."
+C-appC-prose-002,appC,prose,2,943,57ca6e6bba53b18d1f2717b763ff534da866992a,runin-label,**Risk-based revisions:**
+C-appC-numitem-010,appC,numitem,10,945,a8662bcd49a1db4e32c2f7631f3f7e1ca692d3d3,,Caching guidance rewritten with strict constraints (§3.3 BP#1).
+C-appC-numitem-011,appC,numitem,11,946,db2351691027b10c979af7bd9f928d6a5834542f,,Async output evaluation aligned to official streaming modes with masking/leakage warnings (§5.1 BP#1).
+C-appC-numitem-012,appC,numitem,12,947,21147f21e2cf027a8ca340ecbb8aadad77c589a4,,Appendix A now recommends prompt-attack screening on untrusted tool responses (indirect prompt injection).
+C-appC-prose-003,appC,prose,3,949,0fcb2cf085216cfe04008a5a749484d6787e37b9,,"**Additions:** ENFORCE default-deny permit gotcha; two-level LOG_ONLY precedence + UpdateGateway risk; prompt-attack input-tagging requirement; expanded Policy metrics (GuardrailLatency, LogOnlyDecisionFlips, etc.); guardrailProcessingLatency guidance; new §3.4 Tiers & Language Support; billing asymmetry; PII log/tool_use caveats; fail-secure vs. undocumented failure behavior; Gateway Lambda interceptors; PrivateLink gaps for Evaluations/Optimization; CRIS data-residency note; Contextual Grounding limits; OTPS clarification; Evaluations three modes."
+C-appC-prose-004,appC,prose,4,951,432063343d65dce973b3cdfb94673f0e59f473ce,,"**New section:** §4.4 Non-Bypassable Per-Tool-Use Hooks (agent containment pattern) — maps framework-style Pre/PostToolUse hooks to out-of-process AgentCore primitives (Cedar Policy, guardrails-in-policy, suppressOutput, Lambda interceptors) and closes the five bypass routes (direct tool calls, network egress, execution-role self-disable, account-level tampering, silent degradation)."
+C-appC-prose-005,appC,prose,5,953,2186e203278ffa1ef53b283fc5e4182b15d3c61d,,**New section:** §2.1 Hop Numbering — declares the hop framework as this document's own (not an AWS concept) and anchors it with a normative sequence diagram placing #1–#6 on the request lifecycle.
+C-appC-prose-006,appC,prose,6,955,df29e7c2e6c2d2016951227b00cf438a7228a93d,,"**Post-review refinements (external agent review, 2026-08-08):** §6.2 Policy table gained MismatchErrors family + non-exhaustive note; §3.2 prompt-attack entry now distinguishes Converse default-evaluation and the guardContent scope-limiting trap (prompt-attack behavior on untagged Converse messages is undocumented — red-team it); §5.2 quotas stamped with as-of date + Service Quotas caveat; §8 tier/language check promoted to its own checklist item."
+C-appC-prose-007,appC,prose,7,957,c3c04d977dd7a3039791619319dfb3b81a136399,,"**New section:** §4.5 Network Containment — makes bypass route #2 executable: Runtime egress lockdown (S3 Gateway-endpoint scoping), Code Interpreter three network modes + DNS-exfiltration warning, PrivateLink coverage matrix (Optimization gap), two known traps (Lattice Resource Gateway ≠ PrivateLink; ECR Public mandatory egress exception), and IAM VPC condition keys enforcing contained deployment."
+C-appC-prose-008,appC,prose,8,957,9321a880b48808ae6b7a401a53013b4a46d653e2,,Connectivity design deliberately out of scope. §8 Phase 1 checklist gains a network-containment item.
+C-appC-prose-009,appC,prose,9,959,18895d353266c9251e3b7294ed12ab25eb1a12a5,,"**Format change (v1.2):** this Markdown file is the canonical version of the document, with Mermaid diagrams for human- and AI-agent readability: hop-numbering sequence diagram (§2.1, normative), closed-loop overview (§2), billing asymmetry (§3.2), tier selection decision tree (§3.4), two-level LOG_ONLY precedence (§4.1), containment boundary (§4.4), streaming mode comparison (§5.1), trace tree (§6.3, with span-name disclaimer), threshold-tuning workflow (§7.1), reference architecture (§9)."
+C-appC-prose-010,appC,prose,10,959,3d9d33560f7affc03a802fa0b58a78eec798fbf1,,The .docx lineage ends at v1.1; regenerate Word/PDF exports from this file if needed.
+C-appC-prose-011,appC,prose,11,961,fcd2e2e7fd94a680383963f68829c7ec2c7fed52,navigational,*End of Document*

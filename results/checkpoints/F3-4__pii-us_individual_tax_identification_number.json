@@ -1,0 +1,815 @@
+{
+  "case_id": "F3-4",
+  "cell": "pii-us_individual_tax_identification_number",
+  "done": {
+    "08c0590e5889": {
+      "action": "GUARDRAIL_INTERVENED",
+      "action_reason": "Guardrail blocked.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5",
+        "guardrailId": "wwjmltbo1dt5",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "client_duration_ms": 1325.500042,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 43,
+          "total": 43
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/r20260810T0345Z/f3/F3-4-pii-us_individual_tax_identification_number/0004_apply_guardrail_ok.json",
+      "grounding": [],
+      "guardrail_latency_ms": 160,
+      "hit": true,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 43,
+          "total": 43
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "08c0590e5889",
+      "label": "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER",
+      "n_blocks": 1,
+      "pii_actions": {
+        "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER": "BLOCKED"
+      },
+      "pii_detected": [
+        "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER"
+      ],
+      "request_id": "05b07a3e-8ac2-4184-8ee0-44e7b0c75600",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "900-70-0000",
+      "surface": "plain",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    },
+    "1017c0fb1b1f": {
+      "action": "GUARDRAIL_INTERVENED",
+      "action_reason": "Guardrail blocked.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5",
+        "guardrailId": "wwjmltbo1dt5",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "client_duration_ms": 1179.498708,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 41,
+          "total": 41
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/r20260810T0345Z/f3/F3-4-pii-us_individual_tax_identification_number/0008_apply_guardrail_ok.json",
+      "grounding": [],
+      "guardrail_latency_ms": 63,
+      "hit": true,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 41,
+          "total": 41
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "1017c0fb1b1f",
+      "label": "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER",
+      "n_blocks": 1,
+      "pii_actions": {
+        "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER": "BLOCKED"
+      },
+      "pii_detected": [
+        "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER"
+      ],
+      "request_id": "bb7212ea-2ea7-408d-ae18-42cb0b629a05",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "900-70-0000",
+      "surface": "plain",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    },
+    "13226d285d8a": {
+      "action": "GUARDRAIL_INTERVENED",
+      "action_reason": "Guardrail blocked.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5",
+        "guardrailId": "wwjmltbo1dt5",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "client_duration_ms": 1259.088833,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 57,
+          "total": 57
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/r20260810T0345Z/f3/F3-4-pii-us_individual_tax_identification_number/0007_apply_guardrail_ok.json",
+      "grounding": [],
+      "guardrail_latency_ms": 64,
+      "hit": true,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 57,
+          "total": 57
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "13226d285d8a",
+      "label": "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER",
+      "n_blocks": 1,
+      "pii_actions": {
+        "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER": "BLOCKED"
+      },
+      "pii_detected": [
+        "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER"
+      ],
+      "request_id": "9634f84f-c6f5-4efe-b242-1a6980ba0d33",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "999-88-9999",
+      "surface": "plain",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    },
+    "13c94f863fb0": {
+      "action": "GUARDRAIL_INTERVENED",
+      "action_reason": "Guardrail blocked.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5",
+        "guardrailId": "wwjmltbo1dt5",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "client_duration_ms": 1405.390459,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 40,
+          "total": 40
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/smoke20260810T0305Z/f3/F3-4-pii-us_individual_tax_identification_number/0001_apply_guardrail_ok.json",
+      "grounding": [],
+      "guardrail_latency_ms": 68,
+      "hit": true,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 40,
+          "total": 40
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "13c94f863fb0",
+      "label": "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER",
+      "n_blocks": 1,
+      "pii_actions": {
+        "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER": "BLOCKED"
+      },
+      "pii_detected": [
+        "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER"
+      ],
+      "request_id": "9856dd8d-597c-44e1-8e12-57a1f252bf3e",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "900-70-0000",
+      "surface": "plain",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    },
+    "1e965ac7e811": {
+      "action": "GUARDRAIL_INTERVENED",
+      "action_reason": "Guardrail blocked.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5",
+        "guardrailId": "wwjmltbo1dt5",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "client_duration_ms": 3169.276542,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 41,
+          "total": 41
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/r20260810T0345Z/f3/F3-4-pii-us_individual_tax_identification_number/0001_apply_guardrail_ok.json",
+      "grounding": [],
+      "guardrail_latency_ms": 56,
+      "hit": true,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 41,
+          "total": 41
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "1e965ac7e811",
+      "label": "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER",
+      "n_blocks": 1,
+      "pii_actions": {
+        "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER": "BLOCKED"
+      },
+      "pii_detected": [
+        "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER"
+      ],
+      "request_id": "31cde35a-5806-4e69-8ad1-3d6094475853",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "999-88-9999",
+      "surface": "plain",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    },
+    "4c3f0518c926": {
+      "action": "GUARDRAIL_INTERVENED",
+      "action_reason": "Guardrail blocked.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5",
+        "guardrailId": "wwjmltbo1dt5",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "client_duration_ms": 397.422,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 50,
+          "total": 50
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/smoke20260810T0305Z/f3/F3-4-pii-us_individual_tax_identification_number/0002_apply_guardrail_ok.json",
+      "grounding": [],
+      "guardrail_latency_ms": 65,
+      "hit": true,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 50,
+          "total": 50
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "4c3f0518c926",
+      "label": "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER",
+      "n_blocks": 1,
+      "pii_actions": {
+        "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER": "BLOCKED"
+      },
+      "pii_detected": [
+        "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER"
+      ],
+      "request_id": "b251684f-c829-4f7c-a153-82e047f1e652",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "999-88-9999",
+      "surface": "plain",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    },
+    "66102eafd371": {
+      "action": "GUARDRAIL_INTERVENED",
+      "action_reason": "Guardrail blocked.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5",
+        "guardrailId": "wwjmltbo1dt5",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "client_duration_ms": 1144.757041,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 55,
+          "total": 55
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/r20260810T0345Z/f3/F3-4-pii-us_individual_tax_identification_number/0006_apply_guardrail_ok.json",
+      "grounding": [],
+      "guardrail_latency_ms": 58,
+      "hit": true,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 55,
+          "total": 55
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "66102eafd371",
+      "label": "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER",
+      "n_blocks": 1,
+      "pii_actions": {
+        "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER": "BLOCKED"
+      },
+      "pii_detected": [
+        "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER"
+      ],
+      "request_id": "296af263-c964-4961-961d-067aaaf68d8a",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "900-70-0000",
+      "surface": "plain",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    },
+    "7076a4b4908f": {
+      "action": "GUARDRAIL_INTERVENED",
+      "action_reason": "Guardrail blocked.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5",
+        "guardrailId": "wwjmltbo1dt5",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "client_duration_ms": 1162.973208,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 43,
+          "total": 43
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/r20260810T0345Z/f3/F3-4-pii-us_individual_tax_identification_number/0002_apply_guardrail_ok.json",
+      "grounding": [],
+      "guardrail_latency_ms": 69,
+      "hit": true,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 43,
+          "total": 43
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "7076a4b4908f",
+      "label": "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER",
+      "n_blocks": 1,
+      "pii_actions": {
+        "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER": "BLOCKED"
+      },
+      "pii_detected": [
+        "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER"
+      ],
+      "request_id": "e10212d3-93d0-4916-b9d2-b7a04c673d41",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "900-70-0000",
+      "surface": "plain",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    },
+    "8b402fc387c3": {
+      "action": "GUARDRAIL_INTERVENED",
+      "action_reason": "Guardrail blocked.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5",
+        "guardrailId": "wwjmltbo1dt5",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "client_duration_ms": 411.724041,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 47,
+          "total": 47
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/smoke20260810T0305Z/f3/F3-4-pii-us_individual_tax_identification_number/0003_apply_guardrail_ok.json",
+      "grounding": [],
+      "guardrail_latency_ms": 74,
+      "hit": true,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 47,
+          "total": 47
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "8b402fc387c3",
+      "label": "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER",
+      "n_blocks": 1,
+      "pii_actions": {
+        "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER": "BLOCKED"
+      },
+      "pii_detected": [
+        "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER"
+      ],
+      "request_id": "65665926-d1e4-4da3-bf19-a74ff5504219",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "900-70-0000",
+      "surface": "plain",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    },
+    "e5f90f694389": {
+      "action": "GUARDRAIL_INTERVENED",
+      "action_reason": "Guardrail blocked.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5",
+        "guardrailId": "wwjmltbo1dt5",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "client_duration_ms": 1183.909041,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 52,
+          "total": 52
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/r20260810T0345Z/f3/F3-4-pii-us_individual_tax_identification_number/0003_apply_guardrail_ok.json",
+      "grounding": [],
+      "guardrail_latency_ms": 60,
+      "hit": true,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 52,
+          "total": 52
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "e5f90f694389",
+      "label": "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER",
+      "n_blocks": 1,
+      "pii_actions": {
+        "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER": "BLOCKED"
+      },
+      "pii_detected": [
+        "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER"
+      ],
+      "request_id": "f7dc3c45-3971-4089-83a2-46dd3f7322d7",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "999-88-9999",
+      "surface": "plain",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    },
+    "f161b4660fbd": {
+      "action": "GUARDRAIL_INTERVENED",
+      "action_reason": "Guardrail blocked.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5",
+        "guardrailId": "wwjmltbo1dt5",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "client_duration_ms": 1092.5645,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 55,
+          "total": 55
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/r20260810T0345Z/f3/F3-4-pii-us_individual_tax_identification_number/0005_apply_guardrail_ok.json",
+      "grounding": [],
+      "guardrail_latency_ms": 63,
+      "hit": true,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 55,
+          "total": 55
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "f161b4660fbd",
+      "label": "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER",
+      "n_blocks": 1,
+      "pii_actions": {
+        "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER": "BLOCKED"
+      },
+      "pii_detected": [
+        "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER"
+      ],
+      "request_id": "9c23d03a-baa5-493c-838a-f0a1d586b78d",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "999-88-9999",
+      "surface": "plain",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    }
+  },
+  "failed": {},
+  "meta": {
+    "arm": "pii-us_individual_tax_identification_number",
+    "case_id": "F3-4",
+    "corpus": "pii/positive/us_individual_tax_identification_number.jsonl",
+    "guardrail_version": "DRAFT",
+    "is_smoke": false,
+    "output_scope": "FULL",
+    "planned_n": 11,
+    "qualifiers": [],
+    "region": "us-east-1",
+    "run_id": "r20260810T0345Z",
+    "sdk": "1.43.67",
+    "source": "INPUT"
+  },
+  "n_done": 11,
+  "n_failed": 0
+}

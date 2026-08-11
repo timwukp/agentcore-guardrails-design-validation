@@ -1,0 +1,311 @@
+{
+  "ambient_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "aws_calls": 0,
+  "billable_calls": 0,
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F1-22",
+    "clear_here": true
+  },
+  "case_id": "F1-22",
+  "client_side_enforcement": "botocore.validate.ParamValidator enforces required members, tagged-union arity and string/list MINIMUMS. It enforces no maximum and performs no enum membership check (direction 7: `sync`, `ASYNCHRONOUS` and `NOT_A_MODE` all pass). Every documented minimum and required field is therefore decidable offline; every documented maximum and value is not",
+  "deploy_configuration_bundle_is_absent": "§5.3 L608 tells readers to 'restrict UpdateConfigurationBundle / DeployConfigurationBundle IAM permissions'. Seven ConfigurationBundle operations exist and none of them is DeployConfigurationBundle — the model carries Create/Delete/Get/GetVersion/ListVersions/List/Update. Across all four services the only Deploy* operations are CustomModelDeployment, which is unrelated. An IAM policy written from that sentence would name a non-existent action, which denies nothing",
+  "direction_9_classification": {
+    "accounted": [
+      {
+        "all_values": [
+          "sync",
+          "async"
+        ],
+        "matched_values": [
+          "sync",
+          "async"
+        ],
+        "service": "bedrock-runtime",
+        "shape": "GuardrailStreamProcessingMode",
+        "token": "SYNC",
+        "why": "a LEGITIMATE hit and F1-12's own subject: the SYNC and ASYNC tokens match its two values `sync` and `async`. It is in this table because the table's job is to account for every hit, not to hold only the false ones — and it is the reason the F1-12 verdict below reads the ENUM directly instead of reading a hit count: the hit proves a stream-processing mode enum exists, and F1-12 asks whether its values are the document's SYNCHRONOUS / ASYNCHRONOUS, which they are not"
+      },
+      {
+        "all_values": [
+          "sync",
+          "async"
+        ],
+        "matched_values": [
+          "async"
+        ],
+        "service": "bedrock-runtime",
+        "shape": "GuardrailStreamProcessingMode",
+        "token": "ASYNC",
+        "why": "a LEGITIMATE hit and F1-12's own subject: the SYNC and ASYNC tokens match its two values `sync` and `async`. It is in this table because the table's job is to account for every hit, not to hold only the false ones — and it is the reason the F1-12 verdict below reads the ENUM directly instead of reading a hit count: the hit proves a stream-processing mode enum exists, and F1-12 asks whether its values are the document's SYNCHRONOUS / ASYNCHRONOUS, which they are not"
+      },
+      {
+        "all_values": [
+          "REQUEST",
+          "ACCOUNT_ENFORCED",
+          "ORGANIZATION_ENFORCED"
+        ],
+        "matched_values": [
+          "ACCOUNT_ENFORCED",
+          "ORGANIZATION_ENFORCED"
+        ],
+        "service": "bedrock-runtime",
+        "shape": "GuardrailOrigin",
+        "token": "ENFORCE",
+        "why": "where a guardrail came from. ACCOUNT_ENFORCED / ORGANIZATION_ENFORCED contain the token ENFORCE and describe account- and organization-level enforcement (the F5-9 surface), not an Automated Reasoning detect-vs-enforce mode"
+      },
+      {
+        "all_values": [
+          "CREATING",
+          "UPDATING",
+          "UPDATE_UNSUCCESSFUL",
+          "DELETING",
+          "READY",
+          "FAILED",
+          "SYNCHRONIZING",
+          "SYNCHRONIZE_UNSUCCESSFUL",
+          "CREATE_PENDING_AUTH",
+          "UPDATE_PENDING_AUTH",
+          "SYNCHRONIZE_PENDING_AUTH"
+        ],
+        "matched_values": [
+          "SYNCHRONIZING",
+          "SYNCHRONIZE_UNSUCCESSFUL",
+          "SYNCHRONIZE_PENDING_AUTH"
+        ],
+        "service": "bedrock-agentcore-control",
+        "shape": "TargetStatus",
+        "token": "SYNC",
+        "why": "a gateway-target lifecycle enum. SYNCHRONIZING / SYNCHRONIZE_UNSUCCESSFUL / SYNCHRONIZE_PENDING_AUTH contain the token SYNC and describe target synchronisation, not a guardrail stream-processing mode"
+      },
+      {
+        "all_values": [
+          "LOG_ONLY",
+          "ENFORCE"
+        ],
+        "matched_values": [
+          "ENFORCE"
+        ],
+        "service": "bedrock-agentcore-control",
+        "shape": "GatewayPolicyEngineMode",
+        "token": "ENFORCE",
+        "why": "a LEGITIMATE hit, and it is F1-5's own subject: ENFORCE is a policy-engine mode. It is listed here so the ENFORCE token's hit count is fully accounted for, not to excuse it"
+      }
+    ],
+    "classified_against": [
+      "GatewayPolicyEngineMode",
+      "GuardrailOrigin",
+      "GuardrailStreamProcessingMode",
+      "TargetStatus"
+    ],
+    "documented_tokens_present": [],
+    "n_accounted": 5,
+    "n_hits": 5,
+    "n_unclassified": 0,
+    "unclassified": [],
+    "why_classified_not_dropped": "two of the five hits are substring accidents on enums that mean something else (TargetStatus.SYNCHRONIZING contains SYNC; GuardrailOrigin.ACCOUNT_ENFORCED contains ENFORCE) and three are legitimate. Dropping the accidents silently would assert the classification instead of recording it; a hit on an unlisted shape therefore falls through to `unclassified` and forces INCONCLUSIVE with the shape named. Every hit is accounted for either way, which is what makes the zero-unclassified guard meaningful"
+  },
+  "examined": {
+    "n_enum_values": 1076,
+    "n_enums": 271,
+    "n_member_paths": 14774,
+    "n_operations": 350,
+    "n_services": 4,
+    "n_shape_names": 3432
+  },
+  "expiry": "dated by botocore 1.43.67",
+  "instrument": "lib/f1_surface.py, run as a subprocess under .venv-oracle: the botocore service models for bedrock, bedrock-runtime, bedrock-agentcore-control and bedrock-agentcore, read locally in ten directions. No operation is invoked",
+  "is_smoke": false,
+  "kind": "EXISTENCE",
+  "min_botocore_required": "1.43.32",
+  "mutations": 0,
+  "oracle_text": "TRUE if all three API groups exist and Batch Evaluation belongs to Evaluations; FALSE if the capability split differs",
+  "parent_interpreter": "/Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python",
+  "parent_is_oracle_interpreter": true,
+  "pinned_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "planned_n": null,
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F1-22",
+    "evidence": {
+      "detail": {
+        "batch_evaluation_carries_no_optimization_root": true,
+        "batch_evaluation_named_evaluation": true,
+        "groups": {
+          "ab_testing": {
+            "n_hits": 5,
+            "operations": [
+              "CreateABTest",
+              "DeleteABTest",
+              "GetABTest",
+              "ListABTests",
+              "UpdateABTest"
+            ],
+            "services": [
+              "bedrock-agentcore"
+            ]
+          },
+          "batch_evaluation": {
+            "n_hits": 5,
+            "operations": [
+              "DeleteBatchEvaluation",
+              "GetBatchEvaluation",
+              "ListBatchEvaluations",
+              "StartBatchEvaluation",
+              "StopBatchEvaluation"
+            ],
+            "services": [
+              "bedrock-agentcore"
+            ]
+          },
+          "configuration_bundles": {
+            "n_hits": 7,
+            "operations": [
+              "CreateConfigurationBundle",
+              "DeleteConfigurationBundle",
+              "GetConfigurationBundle",
+              "GetConfigurationBundleVersion",
+              "ListConfigurationBundleVersions",
+              "ListConfigurationBundles",
+              "UpdateConfigurationBundle"
+            ],
+            "services": [
+              "bedrock-agentcore-control"
+            ]
+          },
+          "evaluation_job": {
+            "n_hits": 5,
+            "operations": [
+              "BatchDeleteEvaluationJob",
+              "CreateEvaluationJob",
+              "GetEvaluationJob",
+              "ListEvaluationJobs",
+              "StopEvaluationJob"
+            ],
+            "services": [
+              "bedrock"
+            ]
+          },
+          "on_demand_evaluation": {
+            "n_hits": 1,
+            "operations": [
+              "Evaluate"
+            ],
+            "services": [
+              "bedrock-agentcore"
+            ]
+          },
+          "online_evaluation": {
+            "n_hits": 5,
+            "operations": [
+              "CreateOnlineEvaluationConfig",
+              "DeleteOnlineEvaluationConfig",
+              "GetOnlineEvaluationConfig",
+              "ListOnlineEvaluationConfigs",
+              "UpdateOnlineEvaluationConfig"
+            ],
+            "services": [
+              "bedrock-agentcore-control"
+            ]
+          },
+          "recommendations": {
+            "n_hits": 4,
+            "operations": [
+              "DeleteRecommendation",
+              "GetRecommendation",
+              "ListRecommendations",
+              "StartRecommendation"
+            ],
+            "services": [
+              "bedrock-agentcore"
+            ]
+          }
+        },
+        "n_operations_searched": 350,
+        "services_searched": [
+          "bedrock",
+          "bedrock-runtime",
+          "bedrock-agentcore-control",
+          "bedrock-agentcore"
+        ]
+      },
+      "observed": true
+    },
+    "family": "descriptive_no_test",
+    "kind": "EXISTENCE",
+    "mutation_required": false,
+    "n_attempted": 0,
+    "n_met": true,
+    "n_usable": 0,
+    "notes": [],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [],
+    "verdict": "TRUE"
+  },
+  "run_id": "r20260810T180012Z",
+  "services_available": [
+    "bedrock",
+    "bedrock-agentcore",
+    "bedrock-agentcore-control",
+    "bedrock-runtime"
+  ],
+  "services_unavailable": {},
+  "sweep_interpreter": "/Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python",
+  "sweep_python": "3.12.12",
+  "the_split_spans_three_services": {
+    "bedrock": [
+      "BatchDeleteEvaluationJob",
+      "CreateEvaluationJob",
+      "GetEvaluationJob",
+      "ListEvaluationJobs",
+      "StopEvaluationJob"
+    ],
+    "bedrock-agentcore": [
+      "CreateABTest",
+      "DeleteABTest",
+      "DeleteBatchEvaluation",
+      "DeleteRecommendation",
+      "Evaluate",
+      "GetABTest",
+      "GetBatchEvaluation",
+      "GetRecommendation",
+      "ListABTests",
+      "ListBatchEvaluations",
+      "ListRecommendations",
+      "StartBatchEvaluation",
+      "StartRecommendation",
+      "StopBatchEvaluation",
+      "UpdateABTest"
+    ],
+    "bedrock-agentcore-control": [
+      "CreateConfigurationBundle",
+      "CreateOnlineEvaluationConfig",
+      "DeleteConfigurationBundle",
+      "DeleteOnlineEvaluationConfig",
+      "GetConfigurationBundle",
+      "GetConfigurationBundleVersion",
+      "GetOnlineEvaluationConfig",
+      "ListConfigurationBundleVersions",
+      "ListConfigurationBundles",
+      "ListOnlineEvaluationConfigs",
+      "UpdateConfigurationBundle",
+      "UpdateOnlineEvaluationConfig"
+    ],
+    "reading": "Recommendations, A/B tests, Batch Evaluation and the on-demand `Evaluate` are on the DATA plane; Configuration Bundles and Online Evaluation configs are on the CONTROL plane; and `bedrock` carries a separate, older EvaluationJob family that is model evaluation and not agent evaluation at all. §5.3 names the capabilities and no service, so a reader looking for ConfigurationBundle on bedrock-agentcore will not find it",
+    "why_this_was_worth_measuring": "this project has twice published an absence after searching one service, and both surfaces were on another. This group is where that would have happened a third time: searching only bedrock-agentcore-control finds Configuration Bundles and Online Evaluation and MISSES Recommendations, A/B testing and Batch Evaluation entirely"
+  },
+  "v13_candidate": "§5.3 — name the service each capability lives on, and drop or rename DeployConfigurationBundle, which is not in the API",
+  "verdict": "TRUE",
+  "verdict_reading": "all three exist and Batch Evaluation is named as an Evaluations capability, which is what the document says. The naming argument is weaker evidence than a structural one and is labelled as such; the structural check that WOULD settle it (an IAM action prefix or a console grouping) is not in any service model",
+  "verdict_rule": "TRUE iff all three Optimization groups exist AND Batch Evaluation sits with Evaluations. The second half needs a stated method, because the SDK exposes no capability grouping at all: there is no field saying 'this operation belongs to Optimization'. The taxonomy is therefore decided by operation NAMING — every BatchEvaluation operation carries the *Evaluation* root and none carries Recommendation, ConfigurationBundle or ABTest — and that reasoning is the evidence, not a hidden step",
+  "why_no_aws_call": "boto3.client loads the service model from the installed package; no operation is invoked and no socket is opened",
+  "why_subprocess": "so the interpreter that loaded the model is a RECORDED ARGUMENT rather than whichever python launched this file: the content of these cases is which fields a specific botocore models, and system python3 and .venv-baseline both carry 1.42.79, under which enforcementMode and InvokeGuardrailChecks are absent — an absence that is a fact about pip (F1-1, DEV-P1-15). It is NOT because .venv-oracle cannot evaluate an oracle: that venv carries numpy 2.5.2 and scipy 1.18.0 and imports every lib/ module cleanly, so the rationale in f8_regional/07_absent_surface.py is stale prose and was re-derived rather than copied. `parent_is_oracle_interpreter` records whether the subprocess is a necessity or a redundancy on this run"
+}

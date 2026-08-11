@@ -1,0 +1,163 @@
+{
+  "case_id": "F4-cells",
+  "cell": "enforce__guardrail_only__benign",
+  "done": {
+    "t0001": {
+      "args_key": "benign",
+      "attempts": 1,
+      "authorize_exception": false,
+      "cell": "enforce__guardrail_only__benign",
+      "default_deny": true,
+      "duration_ms": 877.499,
+      "engine_mode": "ENFORCE",
+      "expect": "denied",
+      "f4_6_adverse": true,
+      "f4_6_detail": {
+        "authorize_exception": false,
+        "default_deny_named": true,
+        "http_status": 200,
+        "outcome": "policy_denied",
+        "policy_id_found": "",
+        "policy_id_present": false,
+        "policy_ids_searched": [
+          "grx_f4_guardrail_r20260810T130945Z-unf5f4or3a",
+          "grx_pol_baseline_r20260810T130945Z_v2-538ef5yagx"
+        ],
+        "status_is_403": false
+      },
+      "f4_6_indeterminate_truncation": false,
+      "f4_6_why": "status is 200, not 403; the message names no policy id this run created",
+      "hit": false,
+      "http_status": 200,
+      "is_error": null,
+      "jsonrpc_error": {
+        "code": -32002,
+        "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (denied by default).]"
+      },
+      "outcome": "policy_denied",
+      "policy_modes": {
+        "baseline": "LOG_ONLY",
+        "guardrail": "ACTIVE"
+      },
+      "request_id": "e648b6d6-4626-4f9d-949a-72394138b4a9",
+      "retry_delay_s": 0.0,
+      "session_id": "7225d638-7275-417a-bebc-423e21f6b526",
+      "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (denied by default).]",
+      "text_archived_complete": true,
+      "text_len": 126,
+      "trial_id": "t0001",
+      "trial_index": 1,
+      "unclassified": false,
+      "why_hit": "denied, as the document predicts"
+    },
+    "t0002": {
+      "args_key": "benign",
+      "attempts": 1,
+      "authorize_exception": false,
+      "cell": "enforce__guardrail_only__benign",
+      "default_deny": true,
+      "duration_ms": 733.729,
+      "engine_mode": "ENFORCE",
+      "expect": "denied",
+      "f4_6_adverse": true,
+      "f4_6_detail": {
+        "authorize_exception": false,
+        "default_deny_named": true,
+        "http_status": 200,
+        "outcome": "policy_denied",
+        "policy_id_found": "",
+        "policy_id_present": false,
+        "policy_ids_searched": [
+          "grx_f4_guardrail_r20260810T130945Z-unf5f4or3a",
+          "grx_pol_baseline_r20260810T130945Z_v2-538ef5yagx"
+        ],
+        "status_is_403": false
+      },
+      "f4_6_indeterminate_truncation": false,
+      "f4_6_why": "status is 200, not 403; the message names no policy id this run created",
+      "hit": false,
+      "http_status": 200,
+      "is_error": null,
+      "jsonrpc_error": {
+        "code": -32002,
+        "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (denied by default).]"
+      },
+      "outcome": "policy_denied",
+      "policy_modes": {
+        "baseline": "LOG_ONLY",
+        "guardrail": "ACTIVE"
+      },
+      "request_id": "ac99e4bb-89b4-49b2-82b8-1f229ce1510c",
+      "retry_delay_s": 0.0,
+      "session_id": "7225d638-7275-417a-bebc-423e21f6b526",
+      "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (denied by default).]",
+      "text_archived_complete": true,
+      "text_len": 126,
+      "trial_id": "t0002",
+      "trial_index": 2,
+      "unclassified": false,
+      "why_hit": "denied, as the document predicts"
+    },
+    "t0003": {
+      "args_key": "benign",
+      "attempts": 1,
+      "authorize_exception": false,
+      "cell": "enforce__guardrail_only__benign",
+      "default_deny": true,
+      "duration_ms": 786.131,
+      "engine_mode": "ENFORCE",
+      "expect": "denied",
+      "f4_6_adverse": true,
+      "f4_6_detail": {
+        "authorize_exception": false,
+        "default_deny_named": true,
+        "http_status": 200,
+        "outcome": "policy_denied",
+        "policy_id_found": "",
+        "policy_id_present": false,
+        "policy_ids_searched": [
+          "grx_f4_guardrail_r20260810T130945Z-unf5f4or3a",
+          "grx_pol_baseline_r20260810T130945Z_v2-538ef5yagx"
+        ],
+        "status_is_403": false
+      },
+      "f4_6_indeterminate_truncation": false,
+      "f4_6_why": "status is 200, not 403; the message names no policy id this run created",
+      "hit": false,
+      "http_status": 200,
+      "is_error": null,
+      "jsonrpc_error": {
+        "code": -32002,
+        "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (denied by default).]"
+      },
+      "outcome": "policy_denied",
+      "policy_modes": {
+        "baseline": "LOG_ONLY",
+        "guardrail": "ACTIVE"
+      },
+      "request_id": "357792d2-dfff-4303-9e4f-094b1049977b",
+      "retry_delay_s": 0.0,
+      "session_id": "7225d638-7275-417a-bebc-423e21f6b526",
+      "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (denied by default).]",
+      "text_archived_complete": true,
+      "text_len": 126,
+      "trial_id": "t0003",
+      "trial_index": 3,
+      "unclassified": false,
+      "why_hit": "denied, as the document predicts"
+    }
+  },
+  "failed": {},
+  "meta": {
+    "corpus": "benign",
+    "guardrail_version": "none:policy-embedded-guardrail-functions",
+    "is_smoke": true,
+    "operation": "InvokeGateway",
+    "output_scope": "tool_result",
+    "qualifiers": "engine=ENFORCE;baseline=LOG_ONLY;guardrail=ACTIVE",
+    "region": "us-east-1",
+    "source": "gateway_tools_call"
+  },
+  "n_done": 3,
+  "n_failed": 0
+}

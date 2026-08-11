@@ -1,0 +1,122 @@
+{
+  "applied_guardrail": {
+    "origins_seen": {
+      "REQUEST": 60
+    },
+    "ownership_seen": {
+      "SELF": 60
+    },
+    "why_reported": "guardrailOrigin distinguishes REQUEST from ACCOUNT_ENFORCED and ORGANIZATION_ENFORCED. A trial served by an enforced guardrail rather than the one this arm named would otherwise be silently substituted, and Phase 5c opens exactly that window"
+  },
+  "billable_calls": 60,
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F8-6",
+    "clear_here": true
+  },
+  "case_id": "F8-6",
+  "cloudtrail": {
+    "collected": false,
+    "named_by_oracle": true,
+    "what_it_would_add": "awsRegion per event and the resource ARNs the service touched — an independent reading of the same question that does not depend on the response body",
+    "why_not": "ApplyGuardrail is a data-plane operation and Bedrock guardrail data events are not enabled on this account. Enabling them is a Phase 2 testbed change with account-wide blast radius, and this case is decidable without it — but the oracle names CloudTrail, so its absence belongs on the face of the result"
+  },
+  "corpus_rationale": "multilingual/en.jsonl is used because it is exactly 60 items with a 54-attack/6-CLEAN split already hashed by verify_corpora.py, so the arm sends a set of items a file on disk names",
+  "detection_context": {
+    "n_any_detection": 24,
+    "n_intervened": 24,
+    "regions_by_action": {
+      "GUARDRAIL_INTERVENED": {
+        "us-east-1": 24
+      },
+      "NONE": {
+        "us-east-1": 36
+      }
+    },
+    "why_reported": "descriptive, never the verdict. The cross-tab tests whether an INTERVENED response discloses the same geography as a NONE one — which is the reason this arm runs over a corpus with both outcomes instead of 60 identical benign calls"
+  },
+  "geography": {
+    "disclosure_rate": 1.0,
+    "in_geography_definition": [
+      "us-east-1",
+      "us-east-2",
+      "us-west-1",
+      "us-west-2"
+    ],
+    "n_disclosed": 60,
+    "n_undisclosed": 0,
+    "out_of_geography": [],
+    "partitions_seen": {
+      "aws": 60
+    },
+    "regions_seen": {
+      "us-east-1": 60
+    },
+    "why_enumerated": "us-gov-west-1 also starts with 'us-' and is a separate partition; a prefix test would call a partition crossing in-geography"
+  },
+  "hit_rule": "disclosed a Region AND that Region is in US_REGIONS. NOT a detection reading: F8-6 counts Regions, and silence is not compliance",
+  "instrument": "GetGuardrail.crossRegionDetails (precondition) + ApplyGuardrail assessments[].appliedGuardrailDetails.{guardrailArn, guardrailOrigin, guardrailOwnership}",
+  "is_smoke": false,
+  "kind": "EXISTENCE",
+  "mutations": 0,
+  "n_interpretation": "planned_n=60 from the sealed multilingual_cell, honoured as a count. That cell's power argument is about interval disjointness for an equivalence-shaped RECALL claim and does not transfer to a Region count, so no power claim is made here; n_met=True says the arm was the pre-registered size and nothing more",
+  "no_power_claim": "the only quantitative statement available is the Clopper-Pearson ceiling above, and it bounds the rate of DISCLOSED out-of-geography serving, not the rate of out-of-geography serving",
+  "oracle_text": "TRUE if all inference for a US-Region request is served from US Regions per CloudTrail/response metadata; FALSE if any out-of-geography Region appears",
+  "planned_n": 60,
+  "precondition": {
+    "cross_region_details": {
+      "guardrailProfileArn": "arn:aws:bedrock:us-east-1:<account>:guardrail-profile/us.guardrail.v1:0",
+      "guardrailProfileId": "us.guardrail.v1:0"
+    },
+    "error_code": null,
+    "evidence": "evidence/r20260810T0345Z/f8/F8-6/0001_get_guardrail_ok.json",
+    "expected_profile": "us.guardrail.v1:0",
+    "ok": true,
+    "profile_arn": "arn:aws:bedrock:us-east-1:<account>:guardrail-profile/us.guardrail.v1:0",
+    "profile_arn_region": "us-east-1",
+    "profile_id": "us.guardrail.v1:0",
+    "request_id": "08d52da0-bd20-48d9-9b7e-b77aeadb44d9",
+    "status": "READY",
+    "tier": "STANDARD",
+    "took_effect": true,
+    "why_read_live": "the manifest records what the provisioner ASKED for; an in-geography result from a guardrail whose crossRegionConfig never took effect is the failure mode that would look like success"
+  },
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F8-6",
+    "evidence": {
+      "detail": {
+        "distinct_regions": [
+          "us-east-1"
+        ],
+        "n_disclosed": 60,
+        "n_trials": 60,
+        "n_undisclosed": 0,
+        "out_of_geography": [],
+        "profile": "us.guardrail.v1:0"
+      },
+      "observed": true
+    },
+    "family": "exploratory_regional_tier",
+    "kind": "EXISTENCE",
+    "mutation_required": false,
+    "n_attempted": 60,
+    "n_met": true,
+    "n_usable": 60,
+    "notes": [],
+    "p_value": null,
+    "planned_n": 60,
+    "thresholds": [],
+    "verdict": "TRUE"
+  },
+  "run_id": "r20260810T0345Z",
+  "verdict": "TRUE",
+  "what_true_does_not_prove": "appliedGuardrailDetails.guardrailArn names the Region of the GUARDRAIL RESOURCE — the Region the request was sent to. Whether the cross-Region profile routed the underlying inference elsewhere is not documented to be disclosed. A run of all-in-geography readings is therefore consistent both with a profile that only routes within the US and with a profile that routes anywhere and never says so. This case tests DISCLOSED geography: the FALSE branch is fully decisive, the TRUE branch is bounded by the API",
+  "zero_out_of_geography_ceiling": {
+    "n": 60,
+    "one_sided_95_upper": 0.04870291331009746,
+    "reads_as": "if every one of 60 disclosed trials was in geography, the rate of DISCLOSED out-of-geography serving is under 0.0487 at one-sided 95%",
+    "x": 0
+  }
+}

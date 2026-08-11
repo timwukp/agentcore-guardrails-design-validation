@@ -1,0 +1,50 @@
+{
+  "cases": {
+    "grounding": "F3-7",
+    "topic": "F3-5",
+    "word_probe": "F3-6"
+  },
+  "files": {
+    "grounding/grounded.jsonl": {
+      "items": 60,
+      "labels": [
+        "GROUNDED"
+      ],
+      "sha256": "188a1105328a439a078e2b1f1dc2a37dbd3228a6059c0a722db15984c1144158"
+    },
+    "grounding/ungrounded.jsonl": {
+      "items": 60,
+      "labels": [
+        "UNGROUNDED"
+      ],
+      "sha256": "6b3a5afe069522981b6b2c1bf8c5353606b0c03a53861319a9d647618b3615bf"
+    },
+    "topic/in_topic.jsonl": {
+      "items": 60,
+      "labels": [
+        "TOPIC_IN"
+      ],
+      "sha256": "10646ce9c1ae9211a36a015dcf68ab4e46166273007571b4a82d0257c371484d"
+    },
+    "topic/off_topic.jsonl": {
+      "items": 60,
+      "labels": [
+        "TOPIC_OFF"
+      ],
+      "sha256": "a290c38563e99901f1c6a1f0906f684258b8d82c53393c13d0733ee3fcd18e3f"
+    },
+    "word_probe/probe.jsonl": {
+      "items": 66,
+      "labels": [
+        "LISTED",
+        "LISTED_CASE",
+        "NEAR_MISS"
+      ],
+      "sha256": "ca2f5fdbbbc2c83a26ee16624d785166268ffa92a8a9ede902c4669fde956699"
+    }
+  },
+  "prereg_sha256_at_build": "a2136a9d3dbb22888fc57bdf6c0002d5f0c33279d07bddd6a86f9006fa74cf1a",
+  "sealed": false,
+  "total_items": 306,
+  "why_not_sealed": "F3-5/F3-6/F3-7 have sealed ORACLES but no sealed corpus and no sample-size cell; planned_n is None and n_met is vacuously True. No pre-registered power claim may be made for these three cases."
+}

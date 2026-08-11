@@ -1,0 +1,193 @@
+{
+  "billable_calls": 0,
+  "billable_note": "CreateGuardrail and DeleteGuardrail are control-plane calls and bill no text units; this case sends no ApplyGuardrail at all",
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F8-5",
+    "clear_here": true
+  },
+  "case_id": "F8-5",
+  "client_side_check": {
+    "client_side_enforces_max": false,
+    "instrument_is_sound": true,
+    "param_validator": {
+      "1": "client-side OK",
+      "1000": "client-side OK",
+      "1001": "client-side OK",
+      "200": "client-side OK",
+      "201": "client-side OK",
+      "5000": "client-side OK"
+    },
+    "sdk": {
+      "boto3": "1.42.79",
+      "botocore": "1.42.79"
+    },
+    "sdk_declared_max": 200,
+    "sdk_declared_max_note": "the model declares definition max=200 REGARDLESS of tier, on the same field the document says accepts 1000 on STANDARD. Reported whatever the server does: an SDK ceiling below a documented service ceiling is a surface §3.4 does not mention",
+    "why_checked": "botocore.validate.range_check has only a `min` branch and _validate_string performs no length check, so an over-length definition reaches the service and the verdict is the SERVER's. If a future botocore adds the max branch this flag flips and every 'rejected' below becomes a client-side rejection — a finding about the SDK that would read as one about AWS"
+  },
+  "deletions": [
+    {
+      "deleted": true,
+      "error_code": null,
+      "guardrail_id": "vbf38mk02wnp",
+      "label": "classic-200",
+      "name": "grx-gr-f8-5-classic-200-smoke20260810T0305Z",
+      "request_id": "526ba71d-6786-452f-8092-b39d7e6963a4"
+    }
+  ],
+  "filler_rationale": "the definition is 'a' repeated. A 1001-character English sentence and a 200-character one differ in content as well as length, and a rejection could then be about what the definition says; here length is the only thing that varies across the four probes",
+  "instrument": "CreateGuardrail with topicPolicyConfig.tierConfig.tierName set per probe; the error branch of the response IS the observation",
+  "is_smoke": false,
+  "kind": "BOUNDARY",
+  "limits_provenance": {
+    "consequence": "oracle._decide's BOUNDARY branch emits limits=[] for this case, so the two numbers are carried here instead — an empty limits list beside a boundary verdict would leave a reader guessing which boundary was tested",
+    "f8_5_thresholds": [],
+    "read_from": "F1-10's sealed thresholds",
+    "why_empty": "the per-tier denied-topic limits (CLASSIC 200, STANDARD 1000). The oracle says 'each tier accepts its limit'; F1-10 is the case that pins the two numbers, and it does so from prose that states them"
+  },
+  "limits_tested": {
+    "CLASSIC": 200,
+    "STANDARD": 1000
+  },
+  "mutation_note": "4 CreateGuardrail probes, 1 of which created a resource, deleted in a finally. This case and F8-7 are the only Phase 1 cases that create AWS resources; neither touches results/phase1_guardrails.json",
+  "mutations": 4,
+  "no_power_claim": "planned_n(F8-5) is None and this is not a rate: four deterministic probes, each decided by one service response. n_met=True is vacuous and carries no information",
+  "oracle_text": "TRUE if each tier accepts its limit and rejects limit+1; FALSE otherwise",
+  "per_tier": {
+    "CLASSIC": {
+      "at_limit": {
+        "accepted": true,
+        "error_code": null,
+        "length": 200,
+        "request_id": "6dd0f7cf-903c-431e-ac69-31c22ce3a664"
+      },
+      "boundary_holds": true,
+      "documented_limit": 200,
+      "over_limit": {
+        "accepted": false,
+        "error_code": "ValidationException",
+        "error_message": "One or more of your guardrail topic definitions exceeds the maximum allowed length. Shorten your topic definitions or update your guardrail topic policy configuration to support longer definitions. For more information, see the Amazon Bedrock documentation.",
+        "length": 201,
+        "request_id": "8ea9ca00-a6e4-4cd3-981d-5f63afe6b9de"
+      }
+    },
+    "STANDARD": {
+      "at_limit": {
+        "accepted": false,
+        "error_code": "ValidationException",
+        "length": 1000,
+        "request_id": "632240fc-8352-4fd3-be4a-f692707bded4"
+      },
+      "boundary_holds": false,
+      "documented_limit": 1000,
+      "over_limit": {
+        "accepted": false,
+        "error_code": "ThrottlingException",
+        "error_message": "Too many requests, please wait before trying again. You have sent too many requests.  Wait before trying again.",
+        "length": 1001,
+        "request_id": "f880b75c-e843-44b4-9349-b06c38477249"
+      }
+    }
+  },
+  "planned_n": null,
+  "probes": [
+    {
+      "accepted": true,
+      "error_code": null,
+      "error_message": null,
+      "evidence": "evidence/smoke20260810T0305Z/f8/F8-5/0001_create_guardrail_ok.json",
+      "expect": "accepted",
+      "guardrail_id": "vbf38mk02wnp",
+      "http_status": 202,
+      "label": "classic-200",
+      "length": 200,
+      "matches_expected": true,
+      "name": "grx-gr-f8-5-classic-200-smoke20260810T0305Z",
+      "observed": "accepted",
+      "request_id": "6dd0f7cf-903c-431e-ac69-31c22ce3a664",
+      "tier": "CLASSIC"
+    },
+    {
+      "accepted": false,
+      "error_code": "ValidationException",
+      "error_message": "One or more of your guardrail topic definitions exceeds the maximum allowed length. Shorten your topic definitions or update your guardrail topic policy configuration to support longer definitions. For more information, see the Amazon Bedrock documentation.",
+      "evidence": "evidence/smoke20260810T0305Z/f8/F8-5/0002_create_guardrail_err.json",
+      "expect": "rejected",
+      "guardrail_id": null,
+      "http_status": 400,
+      "label": "classic-201",
+      "length": 201,
+      "matches_expected": true,
+      "name": "grx-gr-f8-5-classic-201-smoke20260810T0305Z",
+      "observed": "rejected",
+      "request_id": "8ea9ca00-a6e4-4cd3-981d-5f63afe6b9de",
+      "tier": "CLASSIC"
+    },
+    {
+      "accepted": false,
+      "error_code": "ValidationException",
+      "error_message": "Can't configure guardrail policy tier. Enable cross-Region inference for your guardrail to use Standard tier. For more information, see the Amazon Bedrock documentation.",
+      "evidence": "evidence/smoke20260810T0305Z/f8/F8-5/0003_create_guardrail_err.json",
+      "expect": "accepted",
+      "guardrail_id": null,
+      "http_status": 400,
+      "label": "standard-1000",
+      "length": 1000,
+      "matches_expected": false,
+      "name": "grx-gr-f8-5-standard-1000-smoke20260810T0305Z",
+      "observed": "rejected",
+      "request_id": "632240fc-8352-4fd3-be4a-f692707bded4",
+      "tier": "STANDARD"
+    },
+    {
+      "accepted": false,
+      "error_code": "ThrottlingException",
+      "error_message": "Too many requests, please wait before trying again. You have sent too many requests.  Wait before trying again.",
+      "evidence": "evidence/smoke20260810T0305Z/f8/F8-5/0004_create_guardrail_err.json",
+      "expect": "rejected",
+      "guardrail_id": null,
+      "http_status": 429,
+      "label": "standard-1001",
+      "length": 1001,
+      "matches_expected": true,
+      "name": "grx-gr-f8-5-standard-1001-smoke20260810T0305Z",
+      "observed": "rejected",
+      "request_id": "f880b75c-e843-44b4-9349-b06c38477249",
+      "tier": "STANDARD"
+    }
+  ],
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F8-5",
+    "evidence": {
+      "at_limit_accepted": false,
+      "limits": [],
+      "over_limit_rejected": true
+    },
+    "family": "exploratory_regional_tier",
+    "kind": "BOUNDARY",
+    "mutation_required": false,
+    "n_attempted": 0,
+    "n_met": true,
+    "n_usable": 0,
+    "notes": [],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [],
+    "verdict": "FALSE"
+  },
+  "residue": {
+    "clean": true,
+    "n_created": 1,
+    "n_delete_attempted": 1,
+    "n_deleted": 1,
+    "never_attempted": [],
+    "surviving": [],
+    "why_two_lists": "a probe whose delete was never ATTEMPTED contributes no row to `deletions`, so a residue computed from that list alone would report zero survivors for exactly the case where one exists"
+  },
+  "run_id": "smoke20260810T0305Z",
+  "verdict": "FALSE",
+  "why_new_guardrails": "the provisioner's `topic` guardrail is CLASSIC-only (tierConfig CLASSIC, ~140-char definition) because F3-5 needs one stable topic configuration. Changing its tier to answer the STANDARD half would silently change F3-5's instrument, so this case creates and deletes its own probes"
+}

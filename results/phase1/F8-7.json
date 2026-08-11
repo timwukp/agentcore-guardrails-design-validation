@@ -1,0 +1,163 @@
+{
+  "arms": "ApplyGuardrail — NOT RUN",
+  "billable_calls": 0,
+  "blockers": {
+    "blockers": [
+      "verdict is INCONCLUSIVE, which supports no amendment: RECORDED and INCONCLUSIVE are findings about what was observed, not about what the document got wrong"
+    ],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F8-7",
+    "clear_here": false
+  },
+  "case_id": "F8-7",
+  "deletions": [],
+  "instrument": "CreateGuardrail (wordPolicyConfig + contentPolicyConfig.tierConfig) -> GetGuardrail (tier and word list read back) -> ApplyGuardrail (source=INPUT, outputScope=FULL), wordPolicy assessment",
+  "is_smoke": false,
+  "kind": "EXISTENCE",
+  "mechanism_under_test": "wordPolicyConfig.wordsConfig (custom terms) only. managedWordListsConfig (enum ['PROFANITY'] and nothing else) is a DIFFERENT claim about a lexicon AWS supplies, and testing it would require authoring and labelling profanity in four scripts with one annotator and therefore no kappa — see DEVIATIONS.md/DEV-P1-9",
+  "mutations": 4,
+  "oracle_text": "TRUE if non-EN/FR/ES word filters are inert on both tiers; FALSE if effective",
+  "planned_n": null,
+  "probe_guardrails": {},
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F8-7",
+    "evidence": {
+      "detail": {
+        "rejections": [
+          {
+            "attribution": "the supported-language-only policy was ALSO refused, so the rejection is not attributable to the non-EN/FR/ES words and neither oracle is engaged",
+            "control_only_accepted": false,
+            "control_only_error_code": "ValidationException",
+            "control_only_request_id": "40a220b2-10a0-41ca-8155-d26cdc421d54",
+            "evidence": [
+              "evidence/r20260810T0345Z/f8/F8-7/0001_create_guardrail_err.json",
+              "evidence/r20260810T0345Z/f8/F8-7/0002_create_guardrail_err.json"
+            ],
+            "full_config_error_code": "ValidationException",
+            "full_config_error_message": "At least one content filter strength must be set to not NONE.",
+            "full_config_http_status": 400,
+            "full_config_request_id": "0dc5f4cb-c2c7-4215-8f45-fc83765a3517",
+            "tier": "CLASSIC"
+          },
+          {
+            "attribution": "the supported-language-only policy was ALSO refused, so the rejection is not attributable to the non-EN/FR/ES words and neither oracle is engaged",
+            "control_only_accepted": false,
+            "control_only_error_code": "ValidationException",
+            "control_only_request_id": "cd61b726-791e-4c93-b154-ea252d800740",
+            "evidence": [
+              "evidence/r20260810T0345Z/f8/F8-7/0003_create_guardrail_err.json",
+              "evidence/r20260810T0345Z/f8/F8-7/0004_create_guardrail_err.json"
+            ],
+            "full_config_error_code": "ValidationException",
+            "full_config_error_message": "At least one content filter strength must be set to not NONE.",
+            "full_config_http_status": 400,
+            "full_config_request_id": "01df0df5-9312-45f7-a78a-fc3180536a67",
+            "tier": "STANDARD"
+          }
+        ]
+      },
+      "measured": false,
+      "reason": "CreateGuardrail rejected a word policy carrying non-EN/FR/ES terms, so their inertness could not be observed. A refused configuration is not an inert one",
+      "why_not_recorded": "RECORDED is a sealed property of the case, meaning the pre-registration declared the outcome unknown and both answers are findings. This case's sealed kind is EXISTENCE: it made a prediction, and the prediction was not tested"
+    },
+    "family": "exploratory_regional_tier",
+    "kind": "EXISTENCE",
+    "mutation_required": false,
+    "n_attempted": 0,
+    "n_met": true,
+    "n_usable": 0,
+    "notes": [
+      "not measured: CreateGuardrail rejected a word policy carrying non-EN/FR/ES terms, so their inertness could not be observed. A refused configuration is not an inert one"
+    ],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [],
+    "verdict": "INCONCLUSIVE"
+  },
+  "rejections": [
+    {
+      "attribution": "the supported-language-only policy was ALSO refused, so the rejection is not attributable to the non-EN/FR/ES words and neither oracle is engaged",
+      "control_only_accepted": false,
+      "control_only_error_code": "ValidationException",
+      "control_only_request_id": "40a220b2-10a0-41ca-8155-d26cdc421d54",
+      "evidence": [
+        "evidence/r20260810T0345Z/f8/F8-7/0001_create_guardrail_err.json",
+        "evidence/r20260810T0345Z/f8/F8-7/0002_create_guardrail_err.json"
+      ],
+      "full_config_error_code": "ValidationException",
+      "full_config_error_message": "At least one content filter strength must be set to not NONE.",
+      "full_config_http_status": 400,
+      "full_config_request_id": "0dc5f4cb-c2c7-4215-8f45-fc83765a3517",
+      "tier": "CLASSIC"
+    },
+    {
+      "attribution": "the supported-language-only policy was ALSO refused, so the rejection is not attributable to the non-EN/FR/ES words and neither oracle is engaged",
+      "control_only_accepted": false,
+      "control_only_error_code": "ValidationException",
+      "control_only_request_id": "cd61b726-791e-4c93-b154-ea252d800740",
+      "evidence": [
+        "evidence/r20260810T0345Z/f8/F8-7/0003_create_guardrail_err.json",
+        "evidence/r20260810T0345Z/f8/F8-7/0004_create_guardrail_err.json"
+      ],
+      "full_config_error_code": "ValidationException",
+      "full_config_error_message": "At least one content filter strength must be set to not NONE.",
+      "full_config_http_status": 400,
+      "full_config_request_id": "01df0df5-9312-45f7-a78a-fc3180536a67",
+      "tier": "STANDARD"
+    }
+  ],
+  "residue": {
+    "clean": true,
+    "n_created": 0,
+    "n_delete_attempted": 0,
+    "n_deleted": 0,
+    "never_attempted": [],
+    "surviving": [],
+    "why_two_lists": "a probe whose delete was never ATTEMPTED contributes no row to `deletions`, so a residue computed from that list alone would report zero survivors for exactly the case where one exists"
+  },
+  "run_id": "r20260810T0345Z",
+  "sibling_case": {
+    "case_id": "F1-26",
+    "difference": "F1-26 accepts 'rejected OR provably inert'; F8-7's sealed text says only 'inert'. The disjunction decides the rejected-create branch of this script",
+    "oracle": "TRUE if a non-EN/FR/ES word filter is rejected or provably inert on both tiers; FALSE if it blocks correctly"
+  },
+  "term_rationale": {
+    "de": "LATIN SCRIPT, unsupported language. The other side of the same seam as the accented supported terms: if this blocks and zh/ja/ko do not, the boundary is script; if it does not block, the boundary really is language",
+    "en": "positive control; the same nonsense term F3-6 found blocking, so the control has no natural-language ambiguity",
+    "es": "supported language, non-ASCII (ñ), same discriminating role as fr",
+    "fr": "supported language, non-ASCII: separates a language boundary from a script boundary",
+    "ja": "kanji compound; Japanese is written without spaces, so the embedded surface also probes whitespace tokenisation",
+    "ko": "Hangul; a third script among the unsupported set",
+    "ru": "Cyrillic: a non-CJK, non-Latin script, so 'not ASCII' and 'CJK' do not co-vary across the unsupported set",
+    "zh-CN": "Simplified-only orthography; shares no codepoint with the zh-TW probe, so the two are genuinely separate trials rather than one term counted twice",
+    "zh-TW": "Traditional-only orthography (颱, 風): distinct bytes from the zh-CN probe"
+  },
+  "tier_carrier": "contentPolicyConfig.tierConfig.tierName, with one VIOLENCE filter at NONE/NONE, actions NONE and both enabled flags False — the weakest filter `filtersConfig` (min: 1) admits. wordPolicyConfig has no tierConfig member, so 'on either tier' cannot be expressed on the word policy itself",
+  "verdict": "INCONCLUSIVE",
+  "vocabulary": {
+    "listed": [
+      "moonquake",
+      "réveillon",
+      "cumpleaños",
+      "颱風警報",
+      "台风警报",
+      "月震観測",
+      "달지진관측",
+      "Mondbebenmessung",
+      "лунотрясение"
+    ],
+    "max_term_len": 16,
+    "n_listed_supported": 3,
+    "n_listed_unsupported": 6,
+    "ok": true,
+    "problems": [],
+    "sdk_max_term_len": 100,
+    "unlisted": [
+      "quaxlinate",
+      "地層下陷"
+    ]
+  },
+  "vocabulary_provenance": "constructed in this script, not loaded from a corpus: the multilingual corpora carry no word-filter items, corpora_deviation/word_probe is English-only by construction, and a term list is the CONFIGURATION of the guardrail under test as well as its input",
+  "why_inconclusive": "the rejection satisfies F1-26's 'rejected or provably inert' disjunction and is recorded in full for it; F8-7's sealed text says 'inert', and a configuration that cannot be created was never observed to be inert"
+}

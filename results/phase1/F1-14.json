@@ -1,0 +1,213 @@
+{
+  "ambient_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "aws_calls": 0,
+  "billable_calls": 0,
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F1-14",
+    "clear_here": true
+  },
+  "case_id": "F1-14",
+  "client_side_enforcement": "botocore.validate.ParamValidator enforces required members, tagged-union arity and string/list MINIMUMS. It enforces no maximum and performs no enum membership check (direction 7: `sync`, `ASYNCHRONOUS` and `NOT_A_MODE` all pass). Every documented minimum and required field is therefore decidable offline; every documented maximum and value is not",
+  "direction_9_classification": {
+    "accounted": [
+      {
+        "all_values": [
+          "sync",
+          "async"
+        ],
+        "matched_values": [
+          "sync",
+          "async"
+        ],
+        "service": "bedrock-runtime",
+        "shape": "GuardrailStreamProcessingMode",
+        "token": "SYNC",
+        "why": "a LEGITIMATE hit and F1-12's own subject: the SYNC and ASYNC tokens match its two values `sync` and `async`. It is in this table because the table's job is to account for every hit, not to hold only the false ones — and it is the reason the F1-12 verdict below reads the ENUM directly instead of reading a hit count: the hit proves a stream-processing mode enum exists, and F1-12 asks whether its values are the document's SYNCHRONOUS / ASYNCHRONOUS, which they are not"
+      },
+      {
+        "all_values": [
+          "sync",
+          "async"
+        ],
+        "matched_values": [
+          "async"
+        ],
+        "service": "bedrock-runtime",
+        "shape": "GuardrailStreamProcessingMode",
+        "token": "ASYNC",
+        "why": "a LEGITIMATE hit and F1-12's own subject: the SYNC and ASYNC tokens match its two values `sync` and `async`. It is in this table because the table's job is to account for every hit, not to hold only the false ones — and it is the reason the F1-12 verdict below reads the ENUM directly instead of reading a hit count: the hit proves a stream-processing mode enum exists, and F1-12 asks whether its values are the document's SYNCHRONOUS / ASYNCHRONOUS, which they are not"
+      },
+      {
+        "all_values": [
+          "REQUEST",
+          "ACCOUNT_ENFORCED",
+          "ORGANIZATION_ENFORCED"
+        ],
+        "matched_values": [
+          "ACCOUNT_ENFORCED",
+          "ORGANIZATION_ENFORCED"
+        ],
+        "service": "bedrock-runtime",
+        "shape": "GuardrailOrigin",
+        "token": "ENFORCE",
+        "why": "where a guardrail came from. ACCOUNT_ENFORCED / ORGANIZATION_ENFORCED contain the token ENFORCE and describe account- and organization-level enforcement (the F5-9 surface), not an Automated Reasoning detect-vs-enforce mode"
+      },
+      {
+        "all_values": [
+          "CREATING",
+          "UPDATING",
+          "UPDATE_UNSUCCESSFUL",
+          "DELETING",
+          "READY",
+          "FAILED",
+          "SYNCHRONIZING",
+          "SYNCHRONIZE_UNSUCCESSFUL",
+          "CREATE_PENDING_AUTH",
+          "UPDATE_PENDING_AUTH",
+          "SYNCHRONIZE_PENDING_AUTH"
+        ],
+        "matched_values": [
+          "SYNCHRONIZING",
+          "SYNCHRONIZE_UNSUCCESSFUL",
+          "SYNCHRONIZE_PENDING_AUTH"
+        ],
+        "service": "bedrock-agentcore-control",
+        "shape": "TargetStatus",
+        "token": "SYNC",
+        "why": "a gateway-target lifecycle enum. SYNCHRONIZING / SYNCHRONIZE_UNSUCCESSFUL / SYNCHRONIZE_PENDING_AUTH contain the token SYNC and describe target synchronisation, not a guardrail stream-processing mode"
+      },
+      {
+        "all_values": [
+          "LOG_ONLY",
+          "ENFORCE"
+        ],
+        "matched_values": [
+          "ENFORCE"
+        ],
+        "service": "bedrock-agentcore-control",
+        "shape": "GatewayPolicyEngineMode",
+        "token": "ENFORCE",
+        "why": "a LEGITIMATE hit, and it is F1-5's own subject: ENFORCE is a policy-engine mode. It is listed here so the ENFORCE token's hit count is fully accounted for, not to excuse it"
+      }
+    ],
+    "classified_against": [
+      "GatewayPolicyEngineMode",
+      "GuardrailOrigin",
+      "GuardrailStreamProcessingMode",
+      "TargetStatus"
+    ],
+    "documented_tokens_present": [],
+    "n_accounted": 5,
+    "n_hits": 5,
+    "n_unclassified": 0,
+    "unclassified": [],
+    "why_classified_not_dropped": "two of the five hits are substring accidents on enums that mean something else (TargetStatus.SYNCHRONIZING contains SYNC; GuardrailOrigin.ACCOUNT_ENFORCED contains ENFORCE) and three are legitimate. Dropping the accidents silently would assert the classification instead of recording it; a hit on an unlisted shape therefore falls through to `unclassified` and forces INCONCLUSIVE with the shape named. Every hit is accounted for either way, which is what makes the zero-unclassified guard meaningful"
+  },
+  "examined": {
+    "n_enum_values": 1076,
+    "n_enums": 271,
+    "n_member_paths": 14774,
+    "n_operations": 350,
+    "n_services": 4,
+    "n_shape_names": 3432
+  },
+  "expiry": "dated by botocore 1.43.67",
+  "false_positive_accounting": {
+    "GuardrailOrigin": "where a guardrail came from. ACCOUNT_ENFORCED / ORGANIZATION_ENFORCED contain the token ENFORCE and describe account- and organization-level enforcement (the F5-9 surface), not an Automated Reasoning detect-vs-enforce mode",
+    "why_it_matters_here": "the ENFORCE token does hit on bedrock-RUNTIME, on GuardrailOrigin's ACCOUNT_ENFORCED / ORGANIZATION_ENFORCED. Counted naively it would look like an Automated Reasoning enforce mode. It is the account-level enforcement surface — F5-9's subject, not this one — and `bedrock`, the service that actually carries the AR operations, has zero mode hits"
+  },
+  "instrument": "lib/f1_surface.py, run as a subprocess under .venv-oracle: the botocore service models for bedrock, bedrock-runtime, bedrock-agentcore-control and bedrock-agentcore, read locally in ten directions. No operation is invoked",
+  "is_smoke": false,
+  "kind": "EXISTENCE",
+  "min_botocore_required": "1.43.32",
+  "mutations": 0,
+  "oracle_text": "TRUE if the SDK exposes no enforce mode, rejects non-en-US, and rejects streaming; FALSE if any is permitted",
+  "parent_interpreter": "/Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python",
+  "parent_is_oracle_interpreter": true,
+  "pinned_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "planned_n": null,
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F1-14",
+    "evidence": {
+      "detail": {
+        "conjunct_no_enforce_mode": {
+          "bedrock_mode_enum_hits": {},
+          "create_guardrail_ar_paths": [
+            "automatedReasoningPolicyConfig",
+            "automatedReasoningPolicyConfig.confidenceThreshold",
+            "automatedReasoningPolicyConfig.policies"
+          ],
+          "holds": true,
+          "n_bedrock_enum_values_examined": 254,
+          "n_bedrock_enums_examined": 75
+        },
+        "conjunct_no_streaming": {
+          "ConverseStream_ar_output_roots": [
+            "stream.metadata.trace.guardrail.inputAssessment{}.automatedReasoningPolicy",
+            "stream.metadata.trace.guardrail.inputAssessment{}.invocationMetrics.usage.automatedReasoningPolicies",
+            "stream.metadata.trace.guardrail.inputAssessment{}.invocationMetrics.usage.automatedReasoningPolicyUnits",
+            "stream.metadata.trace.guardrail.outputAssessments{}[].automatedReasoningPolicy",
+            "stream.metadata.trace.guardrail.outputAssessments{}[].invocationMetrics.usage.automatedReasoningPolicies",
+            "stream.metadata.trace.guardrail.outputAssessments{}[].invocationMetrics.usage.automatedReasoningPolicyUnits"
+          ],
+          "ConverseStream_attachable": true,
+          "ConverseStream_guardrail_input_paths": [
+            "guardrailConfig",
+            "guardrailConfig.guardrailIdentifier",
+            "guardrailConfig.guardrailVersion",
+            "guardrailConfig.streamProcessingMode",
+            "guardrailConfig.trace"
+          ],
+          "ConverseStream_n_ar_output_paths": 132,
+          "Converse_n_ar_output_paths": 239,
+          "InvokeModelWithResponseStream_n_ar_output_paths": 0,
+          "holds": false
+        }
+      },
+      "observed": false
+    },
+    "family": "descriptive_no_test",
+    "kind": "EXISTENCE",
+    "mutation_required": false,
+    "n_attempted": 0,
+    "n_met": true,
+    "n_usable": 0,
+    "notes": [],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [],
+    "verdict": "FALSE"
+  },
+  "run_id": "r20260810T180012Z",
+  "services_available": [
+    "bedrock",
+    "bedrock-agentcore",
+    "bedrock-agentcore-control",
+    "bedrock-runtime"
+  ],
+  "services_unavailable": {},
+  "sweep_interpreter": "/Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python",
+  "sweep_python": "3.12.12",
+  "the_other_two_conjuncts": {
+    "no_enforce_mode": "holds on the model. Direction 9 examined 75 enums and 254 enum values on `bedrock` for DETECT and ENFORCE and found NONE, and automatedReasoningPolicyConfig carries only ['automatedReasoningPolicyConfig', 'automatedReasoningPolicyConfig.confidenceThreshold', 'automatedReasoningPolicyConfig.policies']",
+    "non_en_US_rejected": "not re-measured here. F8-8 settled it as a sibling case: no field on any AutomatedReasoning operation can express a language or locale, so the request cannot be constructed",
+    "why_reported_anyway": "a conjunction reported as FALSE with only the failing conjunct shown invites the reading that the other two also failed. They did not, and the document is right about them"
+  },
+  "v13_candidate": "§3.2 L182 — 'no streaming support' is contradicted by the shipped model: ConverseStream is guardrail-attachable and its trace carries the AR assessment through the same shape as Converse. Amend to state what is actually absent (a mode selector and a language selector) and mark the streaming clause pending the Phase 4 live probe",
+  "verdict": "FALSE",
+  "verdict_reading": "FALSE. `ConverseStream` accepts guardrailConfig.guardrailIdentifier and models 132 Automated-Reasoning paths under stream.metadata.trace.guardrail.* — the SAME GuardrailTraceAssessment shape `Converse` carries 239 of. A guardrail with an automatedReasoningPolicyConfig is therefore attachable to the streaming operation and the streaming response has a slot for its assessment. The SDK does not reject streaming; it models it",
+  "verdict_rule": "the sealed oracle is a three-way conjunction — no enforce mode, non-en-US rejected, streaming rejected — and 'FALSE if any is permitted'. One refuted conjunct decides it, so the verdict rests on the streaming half alone and the other two are reported without being needed",
+  "what_false_does_not_prove": "that AWS PERFORMS Automated Reasoning on a streamed response. A slot on a response shape shows the wire format carries the concept, not that the service fills it — the service could accept the request and return an empty assessment, which would leave the document's practical advice intact on grounds this case did not measure. The live probe belongs in Phase 4: attach an AR-carrying guardrail to ConverseStream and read stream.metadata.trace.guardrail.outputAssessments[].automatedReasoningPolicy",
+  "why_no_aws_call": "boto3.client loads the service model from the installed package; no operation is invoked and no socket is opened",
+  "why_presence_is_the_strong_direction": "F8-8's sibling verdict was TRUE from an ABSENT field, where FALSE was unreachable by construction. This is the mirror image and the stronger one: the oracle's FALSE branch is 'if any is permitted', and a field that exists, is settable and has a matching response slot is what permitted means at the SDK layer. No inference is required",
+  "why_subprocess": "so the interpreter that loaded the model is a RECORDED ARGUMENT rather than whichever python launched this file: the content of these cases is which fields a specific botocore models, and system python3 and .venv-baseline both carry 1.42.79, under which enforcementMode and InvokeGuardrailChecks are absent — an absence that is a fact about pip (F1-1, DEV-P1-15). It is NOT because .venv-oracle cannot evaluate an oracle: that venv carries numpy 2.5.2 and scipy 1.18.0 and imports every lib/ module cleanly, so the rationale in f8_regional/07_absent_surface.py is stale prose and was re-derived rather than copied. `parent_is_oracle_interpreter` records whether the subprocess is a necessity or a redundancy on this run"
+}

@@ -1,0 +1,908 @@
+{
+  "search_range": [
+    "1.40.0",
+    "1.43.67"
+  ],
+  "candidate_count": 249,
+  "bisects": {
+    "enforcement_mode": {
+      "predicate": "enforcement_mode",
+      "first_version_with_field": "1.43.32",
+      "newest_probed": "1.43.67",
+      "oldest_probed": "1.40.0",
+      "probe_order": [
+        "1.43.67",
+        "1.40.0",
+        "1.42.41",
+        "1.43.5",
+        "1.43.36",
+        "1.43.20",
+        "1.43.28",
+        "1.43.32",
+        "1.43.30",
+        "1.43.31"
+      ],
+      "conclusion": "field first appears in botocore 1.43.32",
+      "monotonicity": {
+        "checked": [
+          {
+            "version": "1.43.31",
+            "index": 212,
+            "predicate_true": false,
+            "expected": false
+          },
+          {
+            "version": "1.43.32",
+            "index": 213,
+            "predicate_true": true,
+            "expected": true
+          },
+          {
+            "version": "1.43.33",
+            "index": 214,
+            "predicate_true": true,
+            "expected": true
+          },
+          {
+            "version": "1.42.23",
+            "index": 106,
+            "predicate_true": false,
+            "expected": false
+          }
+        ],
+        "monotone": true,
+        "note": ""
+      }
+    },
+    "definition_policy": {
+      "predicate": "definition_policy",
+      "first_version_with_field": "1.43.32",
+      "newest_probed": "1.43.67",
+      "oldest_probed": "1.40.0",
+      "probe_order": [],
+      "conclusion": "field first appears in botocore 1.43.32",
+      "monotonicity": {
+        "checked": [
+          {
+            "version": "1.43.31",
+            "index": 212,
+            "predicate_true": false,
+            "expected": false
+          },
+          {
+            "version": "1.43.32",
+            "index": 213,
+            "predicate_true": true,
+            "expected": true
+          },
+          {
+            "version": "1.43.33",
+            "index": 214,
+            "predicate_true": true,
+            "expected": true
+          },
+          {
+            "version": "1.42.23",
+            "index": 106,
+            "predicate_true": false,
+            "expected": false
+          }
+        ],
+        "monotone": true,
+        "note": ""
+      }
+    },
+    "invoke_guardrail_checks": {
+      "predicate": "invoke_guardrail_checks",
+      "first_version_with_field": "1.43.30",
+      "newest_probed": "1.43.67",
+      "oldest_probed": "1.40.0",
+      "probe_order": [
+        "1.43.29"
+      ],
+      "conclusion": "field first appears in botocore 1.43.30",
+      "monotonicity": {
+        "checked": [
+          {
+            "version": "1.43.29",
+            "index": 210,
+            "predicate_true": false,
+            "expected": false
+          },
+          {
+            "version": "1.43.30",
+            "index": 211,
+            "predicate_true": true,
+            "expected": true
+          },
+          {
+            "version": "1.43.31",
+            "index": 212,
+            "predicate_true": true,
+            "expected": true
+          },
+          {
+            "version": "1.42.22",
+            "index": 105,
+            "predicate_true": false,
+            "expected": false
+          }
+        ],
+        "monotone": true,
+        "note": ""
+      }
+    }
+  },
+  "surfaces": {
+    "1.40.0": {
+      "version": "1.40.0",
+      "has_create_policy": false,
+      "create_policy_members": [],
+      "policy_definition_members": [],
+      "has_enforcement_mode": false,
+      "enforcement_mode_location": "",
+      "enforcement_mode_values": [],
+      "has_definition_policy": false,
+      "has_definition_cedar": false,
+      "policy_validation_modes": [],
+      "engine_modes": [],
+      "policy_ops": [],
+      "has_invoke_guardrail_checks": false,
+      "guardrail_check_members": [],
+      "error": ""
+    },
+    "1.42.22": {
+      "version": "1.42.22",
+      "has_create_policy": true,
+      "create_policy_members": [
+        "name",
+        "definition",
+        "description",
+        "validationMode",
+        "policyEngineId",
+        "clientToken"
+      ],
+      "policy_definition_members": [
+        "cedar"
+      ],
+      "has_enforcement_mode": false,
+      "enforcement_mode_location": "",
+      "enforcement_mode_values": [],
+      "has_definition_policy": false,
+      "has_definition_cedar": true,
+      "policy_validation_modes": [
+        "FAIL_ON_ANY_FINDINGS",
+        "IGNORE_ALL_FINDINGS"
+      ],
+      "engine_modes": [
+        "LOG_ONLY",
+        "ENFORCE"
+      ],
+      "policy_ops": [
+        "CreatePolicy",
+        "CreatePolicyEngine",
+        "DeletePolicy",
+        "DeletePolicyEngine",
+        "DeleteResourcePolicy",
+        "GetPolicy",
+        "GetPolicyEngine",
+        "GetPolicyGeneration",
+        "GetResourcePolicy",
+        "ListPolicies",
+        "ListPolicyEngines",
+        "ListPolicyGenerationAssets",
+        "ListPolicyGenerations",
+        "PutResourcePolicy",
+        "StartPolicyGeneration",
+        "UpdatePolicy",
+        "UpdatePolicyEngine"
+      ],
+      "has_invoke_guardrail_checks": false,
+      "guardrail_check_members": [],
+      "error": ""
+    },
+    "1.42.23": {
+      "version": "1.42.23",
+      "has_create_policy": true,
+      "create_policy_members": [
+        "name",
+        "definition",
+        "description",
+        "validationMode",
+        "policyEngineId",
+        "clientToken"
+      ],
+      "policy_definition_members": [
+        "cedar"
+      ],
+      "has_enforcement_mode": false,
+      "enforcement_mode_location": "",
+      "enforcement_mode_values": [],
+      "has_definition_policy": false,
+      "has_definition_cedar": true,
+      "policy_validation_modes": [
+        "FAIL_ON_ANY_FINDINGS",
+        "IGNORE_ALL_FINDINGS"
+      ],
+      "engine_modes": [
+        "LOG_ONLY",
+        "ENFORCE"
+      ],
+      "policy_ops": [
+        "CreatePolicy",
+        "CreatePolicyEngine",
+        "DeletePolicy",
+        "DeletePolicyEngine",
+        "DeleteResourcePolicy",
+        "GetPolicy",
+        "GetPolicyEngine",
+        "GetPolicyGeneration",
+        "GetResourcePolicy",
+        "ListPolicies",
+        "ListPolicyEngines",
+        "ListPolicyGenerationAssets",
+        "ListPolicyGenerations",
+        "PutResourcePolicy",
+        "StartPolicyGeneration",
+        "UpdatePolicy",
+        "UpdatePolicyEngine"
+      ],
+      "has_invoke_guardrail_checks": false,
+      "guardrail_check_members": [],
+      "error": ""
+    },
+    "1.42.41": {
+      "version": "1.42.41",
+      "has_create_policy": true,
+      "create_policy_members": [
+        "name",
+        "definition",
+        "description",
+        "validationMode",
+        "policyEngineId",
+        "clientToken"
+      ],
+      "policy_definition_members": [
+        "cedar"
+      ],
+      "has_enforcement_mode": false,
+      "enforcement_mode_location": "",
+      "enforcement_mode_values": [],
+      "has_definition_policy": false,
+      "has_definition_cedar": true,
+      "policy_validation_modes": [
+        "FAIL_ON_ANY_FINDINGS",
+        "IGNORE_ALL_FINDINGS"
+      ],
+      "engine_modes": [
+        "LOG_ONLY",
+        "ENFORCE"
+      ],
+      "policy_ops": [
+        "CreatePolicy",
+        "CreatePolicyEngine",
+        "DeletePolicy",
+        "DeletePolicyEngine",
+        "DeleteResourcePolicy",
+        "GetPolicy",
+        "GetPolicyEngine",
+        "GetPolicyGeneration",
+        "GetResourcePolicy",
+        "ListPolicies",
+        "ListPolicyEngines",
+        "ListPolicyGenerationAssets",
+        "ListPolicyGenerations",
+        "PutResourcePolicy",
+        "StartPolicyGeneration",
+        "UpdatePolicy",
+        "UpdatePolicyEngine"
+      ],
+      "has_invoke_guardrail_checks": false,
+      "guardrail_check_members": [],
+      "error": ""
+    },
+    "1.43.5": {
+      "version": "1.43.5",
+      "has_create_policy": true,
+      "create_policy_members": [
+        "name",
+        "definition",
+        "description",
+        "validationMode",
+        "policyEngineId",
+        "clientToken"
+      ],
+      "policy_definition_members": [
+        "cedar",
+        "policyGeneration"
+      ],
+      "has_enforcement_mode": false,
+      "enforcement_mode_location": "",
+      "enforcement_mode_values": [],
+      "has_definition_policy": false,
+      "has_definition_cedar": true,
+      "policy_validation_modes": [
+        "FAIL_ON_ANY_FINDINGS",
+        "IGNORE_ALL_FINDINGS"
+      ],
+      "engine_modes": [
+        "LOG_ONLY",
+        "ENFORCE"
+      ],
+      "policy_ops": [
+        "CreatePolicy",
+        "CreatePolicyEngine",
+        "DeletePolicy",
+        "DeletePolicyEngine",
+        "DeleteResourcePolicy",
+        "GetPolicy",
+        "GetPolicyEngine",
+        "GetPolicyGeneration",
+        "GetResourcePolicy",
+        "ListPolicies",
+        "ListPolicyEngines",
+        "ListPolicyGenerationAssets",
+        "ListPolicyGenerations",
+        "PutResourcePolicy",
+        "StartPolicyGeneration",
+        "UpdatePolicy",
+        "UpdatePolicyEngine"
+      ],
+      "has_invoke_guardrail_checks": false,
+      "guardrail_check_members": [],
+      "error": ""
+    },
+    "1.43.20": {
+      "version": "1.43.20",
+      "has_create_policy": true,
+      "create_policy_members": [
+        "name",
+        "definition",
+        "description",
+        "validationMode",
+        "policyEngineId",
+        "clientToken"
+      ],
+      "policy_definition_members": [
+        "cedar",
+        "policyGeneration"
+      ],
+      "has_enforcement_mode": false,
+      "enforcement_mode_location": "",
+      "enforcement_mode_values": [],
+      "has_definition_policy": false,
+      "has_definition_cedar": true,
+      "policy_validation_modes": [
+        "FAIL_ON_ANY_FINDINGS",
+        "IGNORE_ALL_FINDINGS"
+      ],
+      "engine_modes": [
+        "LOG_ONLY",
+        "ENFORCE"
+      ],
+      "policy_ops": [
+        "CreatePolicy",
+        "CreatePolicyEngine",
+        "DeletePolicy",
+        "DeletePolicyEngine",
+        "DeleteResourcePolicy",
+        "GetPolicy",
+        "GetPolicyEngine",
+        "GetPolicyEngineSummary",
+        "GetPolicyGeneration",
+        "GetPolicyGenerationSummary",
+        "GetPolicySummary",
+        "GetResourcePolicy",
+        "ListPolicies",
+        "ListPolicyEngineSummaries",
+        "ListPolicyEngines",
+        "ListPolicyGenerationAssets",
+        "ListPolicyGenerationSummaries",
+        "ListPolicyGenerations",
+        "ListPolicySummaries",
+        "PutResourcePolicy",
+        "StartPolicyGeneration",
+        "UpdatePolicy",
+        "UpdatePolicyEngine"
+      ],
+      "has_invoke_guardrail_checks": false,
+      "guardrail_check_members": [],
+      "error": ""
+    },
+    "1.43.28": {
+      "version": "1.43.28",
+      "has_create_policy": true,
+      "create_policy_members": [
+        "name",
+        "definition",
+        "description",
+        "validationMode",
+        "policyEngineId",
+        "clientToken"
+      ],
+      "policy_definition_members": [
+        "cedar",
+        "policyGeneration"
+      ],
+      "has_enforcement_mode": false,
+      "enforcement_mode_location": "",
+      "enforcement_mode_values": [],
+      "has_definition_policy": false,
+      "has_definition_cedar": true,
+      "policy_validation_modes": [
+        "FAIL_ON_ANY_FINDINGS",
+        "IGNORE_ALL_FINDINGS"
+      ],
+      "engine_modes": [
+        "LOG_ONLY",
+        "ENFORCE"
+      ],
+      "policy_ops": [
+        "CreatePolicy",
+        "CreatePolicyEngine",
+        "DeletePolicy",
+        "DeletePolicyEngine",
+        "DeleteResourcePolicy",
+        "GetPolicy",
+        "GetPolicyEngine",
+        "GetPolicyEngineSummary",
+        "GetPolicyGeneration",
+        "GetPolicyGenerationSummary",
+        "GetPolicySummary",
+        "GetResourcePolicy",
+        "ListPolicies",
+        "ListPolicyEngineSummaries",
+        "ListPolicyEngines",
+        "ListPolicyGenerationAssets",
+        "ListPolicyGenerationSummaries",
+        "ListPolicyGenerations",
+        "ListPolicySummaries",
+        "PutResourcePolicy",
+        "StartPolicyGeneration",
+        "UpdatePolicy",
+        "UpdatePolicyEngine"
+      ],
+      "has_invoke_guardrail_checks": false,
+      "guardrail_check_members": [],
+      "error": ""
+    },
+    "1.43.29": {
+      "version": "1.43.29",
+      "has_create_policy": true,
+      "create_policy_members": [
+        "name",
+        "definition",
+        "description",
+        "validationMode",
+        "policyEngineId",
+        "clientToken"
+      ],
+      "policy_definition_members": [
+        "cedar",
+        "policyGeneration"
+      ],
+      "has_enforcement_mode": false,
+      "enforcement_mode_location": "",
+      "enforcement_mode_values": [],
+      "has_definition_policy": false,
+      "has_definition_cedar": true,
+      "policy_validation_modes": [
+        "FAIL_ON_ANY_FINDINGS",
+        "IGNORE_ALL_FINDINGS"
+      ],
+      "engine_modes": [
+        "LOG_ONLY",
+        "ENFORCE"
+      ],
+      "policy_ops": [
+        "CreatePolicy",
+        "CreatePolicyEngine",
+        "DeletePolicy",
+        "DeletePolicyEngine",
+        "DeleteResourcePolicy",
+        "GetPolicy",
+        "GetPolicyEngine",
+        "GetPolicyEngineSummary",
+        "GetPolicyGeneration",
+        "GetPolicyGenerationSummary",
+        "GetPolicySummary",
+        "GetResourcePolicy",
+        "ListPolicies",
+        "ListPolicyEngineSummaries",
+        "ListPolicyEngines",
+        "ListPolicyGenerationAssets",
+        "ListPolicyGenerationSummaries",
+        "ListPolicyGenerations",
+        "ListPolicySummaries",
+        "PutResourcePolicy",
+        "StartPolicyGeneration",
+        "UpdatePolicy",
+        "UpdatePolicyEngine"
+      ],
+      "has_invoke_guardrail_checks": false,
+      "guardrail_check_members": [],
+      "error": ""
+    },
+    "1.43.30": {
+      "version": "1.43.30",
+      "has_create_policy": true,
+      "create_policy_members": [
+        "name",
+        "definition",
+        "description",
+        "validationMode",
+        "policyEngineId",
+        "clientToken"
+      ],
+      "policy_definition_members": [
+        "cedar",
+        "policyGeneration"
+      ],
+      "has_enforcement_mode": false,
+      "enforcement_mode_location": "",
+      "enforcement_mode_values": [],
+      "has_definition_policy": false,
+      "has_definition_cedar": true,
+      "policy_validation_modes": [
+        "FAIL_ON_ANY_FINDINGS",
+        "IGNORE_ALL_FINDINGS"
+      ],
+      "engine_modes": [
+        "LOG_ONLY",
+        "ENFORCE"
+      ],
+      "policy_ops": [
+        "CreatePolicy",
+        "CreatePolicyEngine",
+        "DeletePolicy",
+        "DeletePolicyEngine",
+        "DeleteResourcePolicy",
+        "GetPolicy",
+        "GetPolicyEngine",
+        "GetPolicyEngineSummary",
+        "GetPolicyGeneration",
+        "GetPolicyGenerationSummary",
+        "GetPolicySummary",
+        "GetResourcePolicy",
+        "ListPolicies",
+        "ListPolicyEngineSummaries",
+        "ListPolicyEngines",
+        "ListPolicyGenerationAssets",
+        "ListPolicyGenerationSummaries",
+        "ListPolicyGenerations",
+        "ListPolicySummaries",
+        "PutResourcePolicy",
+        "StartPolicyGeneration",
+        "UpdatePolicy",
+        "UpdatePolicyEngine"
+      ],
+      "has_invoke_guardrail_checks": true,
+      "guardrail_check_members": [
+        "messages",
+        "checks"
+      ],
+      "error": ""
+    },
+    "1.43.31": {
+      "version": "1.43.31",
+      "has_create_policy": true,
+      "create_policy_members": [
+        "name",
+        "definition",
+        "description",
+        "validationMode",
+        "policyEngineId",
+        "clientToken"
+      ],
+      "policy_definition_members": [
+        "cedar",
+        "policyGeneration"
+      ],
+      "has_enforcement_mode": false,
+      "enforcement_mode_location": "",
+      "enforcement_mode_values": [],
+      "has_definition_policy": false,
+      "has_definition_cedar": true,
+      "policy_validation_modes": [
+        "FAIL_ON_ANY_FINDINGS",
+        "IGNORE_ALL_FINDINGS"
+      ],
+      "engine_modes": [
+        "LOG_ONLY",
+        "ENFORCE"
+      ],
+      "policy_ops": [
+        "CreatePolicy",
+        "CreatePolicyEngine",
+        "DeletePolicy",
+        "DeletePolicyEngine",
+        "DeleteResourcePolicy",
+        "GetPolicy",
+        "GetPolicyEngine",
+        "GetPolicyEngineSummary",
+        "GetPolicyGeneration",
+        "GetPolicyGenerationSummary",
+        "GetPolicySummary",
+        "GetResourcePolicy",
+        "ListPolicies",
+        "ListPolicyEngineSummaries",
+        "ListPolicyEngines",
+        "ListPolicyGenerationAssets",
+        "ListPolicyGenerationSummaries",
+        "ListPolicyGenerations",
+        "ListPolicySummaries",
+        "PutResourcePolicy",
+        "StartPolicyGeneration",
+        "UpdatePolicy",
+        "UpdatePolicyEngine"
+      ],
+      "has_invoke_guardrail_checks": true,
+      "guardrail_check_members": [
+        "messages",
+        "checks"
+      ],
+      "error": ""
+    },
+    "1.43.32": {
+      "version": "1.43.32",
+      "has_create_policy": true,
+      "create_policy_members": [
+        "name",
+        "definition",
+        "description",
+        "validationMode",
+        "enforcementMode",
+        "policyEngineId",
+        "clientToken"
+      ],
+      "policy_definition_members": [
+        "cedar",
+        "policyGeneration",
+        "policy"
+      ],
+      "has_enforcement_mode": true,
+      "enforcement_mode_location": "CreatePolicyRequest.enforcementMode;CreatePolicyResponse.enforcementMode;DeletePolicyResponse.enforcementMode;GetPolicyResponse.enforcementMode;GetPolicySummaryResponse.enforcementMode;Policy.enforcementMode;PolicySummary.enforcementMode;UpdatePolicyRequest.enforcementMode;UpdatePolicyResponse.enforcementMode",
+      "enforcement_mode_values": [
+        "ACTIVE",
+        "LOG_ONLY"
+      ],
+      "has_definition_policy": true,
+      "has_definition_cedar": true,
+      "policy_validation_modes": [
+        "FAIL_ON_ANY_FINDINGS",
+        "IGNORE_ALL_FINDINGS"
+      ],
+      "engine_modes": [
+        "LOG_ONLY",
+        "ENFORCE"
+      ],
+      "policy_ops": [
+        "CreatePolicy",
+        "CreatePolicyEngine",
+        "DeletePolicy",
+        "DeletePolicyEngine",
+        "DeleteResourcePolicy",
+        "GetPolicy",
+        "GetPolicyEngine",
+        "GetPolicyEngineSummary",
+        "GetPolicyGeneration",
+        "GetPolicyGenerationSummary",
+        "GetPolicySummary",
+        "GetResourcePolicy",
+        "ListPolicies",
+        "ListPolicyEngineSummaries",
+        "ListPolicyEngines",
+        "ListPolicyGenerationAssets",
+        "ListPolicyGenerationSummaries",
+        "ListPolicyGenerations",
+        "ListPolicySummaries",
+        "PutResourcePolicy",
+        "StartPolicyGeneration",
+        "UpdatePolicy",
+        "UpdatePolicyEngine"
+      ],
+      "has_invoke_guardrail_checks": true,
+      "guardrail_check_members": [
+        "messages",
+        "checks"
+      ],
+      "error": ""
+    },
+    "1.43.33": {
+      "version": "1.43.33",
+      "has_create_policy": true,
+      "create_policy_members": [
+        "name",
+        "definition",
+        "description",
+        "validationMode",
+        "enforcementMode",
+        "policyEngineId",
+        "clientToken"
+      ],
+      "policy_definition_members": [
+        "cedar",
+        "policyGeneration",
+        "policy"
+      ],
+      "has_enforcement_mode": true,
+      "enforcement_mode_location": "CreatePolicyRequest.enforcementMode;CreatePolicyResponse.enforcementMode;DeletePolicyResponse.enforcementMode;GetPolicyResponse.enforcementMode;GetPolicySummaryResponse.enforcementMode;Policy.enforcementMode;PolicySummary.enforcementMode;UpdatePolicyRequest.enforcementMode;UpdatePolicyResponse.enforcementMode",
+      "enforcement_mode_values": [
+        "ACTIVE",
+        "LOG_ONLY"
+      ],
+      "has_definition_policy": true,
+      "has_definition_cedar": true,
+      "policy_validation_modes": [
+        "FAIL_ON_ANY_FINDINGS",
+        "IGNORE_ALL_FINDINGS"
+      ],
+      "engine_modes": [
+        "LOG_ONLY",
+        "ENFORCE"
+      ],
+      "policy_ops": [
+        "CreatePolicy",
+        "CreatePolicyEngine",
+        "DeletePolicy",
+        "DeletePolicyEngine",
+        "DeleteResourcePolicy",
+        "GetPolicy",
+        "GetPolicyEngine",
+        "GetPolicyEngineSummary",
+        "GetPolicyGeneration",
+        "GetPolicyGenerationSummary",
+        "GetPolicySummary",
+        "GetResourcePolicy",
+        "ListPolicies",
+        "ListPolicyEngineSummaries",
+        "ListPolicyEngines",
+        "ListPolicyGenerationAssets",
+        "ListPolicyGenerationSummaries",
+        "ListPolicyGenerations",
+        "ListPolicySummaries",
+        "PutResourcePolicy",
+        "StartPolicyGeneration",
+        "UpdatePolicy",
+        "UpdatePolicyEngine"
+      ],
+      "has_invoke_guardrail_checks": true,
+      "guardrail_check_members": [
+        "messages",
+        "checks"
+      ],
+      "error": ""
+    },
+    "1.43.36": {
+      "version": "1.43.36",
+      "has_create_policy": true,
+      "create_policy_members": [
+        "name",
+        "definition",
+        "description",
+        "validationMode",
+        "enforcementMode",
+        "policyEngineId",
+        "clientToken"
+      ],
+      "policy_definition_members": [
+        "cedar",
+        "policyGeneration",
+        "policy"
+      ],
+      "has_enforcement_mode": true,
+      "enforcement_mode_location": "CreatePolicyRequest.enforcementMode;CreatePolicyResponse.enforcementMode;DeletePolicyResponse.enforcementMode;GetPolicyResponse.enforcementMode;GetPolicySummaryResponse.enforcementMode;Policy.enforcementMode;PolicySummary.enforcementMode;UpdatePolicyRequest.enforcementMode;UpdatePolicyResponse.enforcementMode",
+      "enforcement_mode_values": [
+        "ACTIVE",
+        "LOG_ONLY"
+      ],
+      "has_definition_policy": true,
+      "has_definition_cedar": true,
+      "policy_validation_modes": [
+        "FAIL_ON_ANY_FINDINGS",
+        "IGNORE_ALL_FINDINGS"
+      ],
+      "engine_modes": [
+        "LOG_ONLY",
+        "ENFORCE"
+      ],
+      "policy_ops": [
+        "CreatePolicy",
+        "CreatePolicyEngine",
+        "DeletePolicy",
+        "DeletePolicyEngine",
+        "DeleteResourcePolicy",
+        "GetPolicy",
+        "GetPolicyEngine",
+        "GetPolicyEngineSummary",
+        "GetPolicyGeneration",
+        "GetPolicyGenerationSummary",
+        "GetPolicySummary",
+        "GetResourcePolicy",
+        "ListPolicies",
+        "ListPolicyEngineSummaries",
+        "ListPolicyEngines",
+        "ListPolicyGenerationAssets",
+        "ListPolicyGenerationSummaries",
+        "ListPolicyGenerations",
+        "ListPolicySummaries",
+        "PutResourcePolicy",
+        "StartPolicyGeneration",
+        "UpdatePolicy",
+        "UpdatePolicyEngine"
+      ],
+      "has_invoke_guardrail_checks": true,
+      "guardrail_check_members": [
+        "messages",
+        "checks"
+      ],
+      "error": ""
+    },
+    "1.43.67": {
+      "version": "1.43.67",
+      "has_create_policy": true,
+      "create_policy_members": [
+        "name",
+        "definition",
+        "description",
+        "validationMode",
+        "enforcementMode",
+        "policyEngineId",
+        "clientToken"
+      ],
+      "policy_definition_members": [
+        "cedar",
+        "policyGeneration",
+        "policy"
+      ],
+      "has_enforcement_mode": true,
+      "enforcement_mode_location": "CreatePolicyRequest.enforcementMode;CreatePolicyResponse.enforcementMode;DeletePolicyResponse.enforcementMode;GetPolicyResponse.enforcementMode;GetPolicySummaryResponse.enforcementMode;Policy.enforcementMode;PolicySummary.enforcementMode;UpdatePolicyRequest.enforcementMode;UpdatePolicyResponse.enforcementMode",
+      "enforcement_mode_values": [
+        "ACTIVE",
+        "LOG_ONLY"
+      ],
+      "has_definition_policy": true,
+      "has_definition_cedar": true,
+      "policy_validation_modes": [
+        "FAIL_ON_ANY_FINDINGS",
+        "IGNORE_ALL_FINDINGS"
+      ],
+      "engine_modes": [
+        "LOG_ONLY",
+        "ENFORCE"
+      ],
+      "policy_ops": [
+        "CreatePolicy",
+        "CreatePolicyEngine",
+        "DeletePolicy",
+        "DeletePolicyEngine",
+        "DeleteResourcePolicy",
+        "GetPolicy",
+        "GetPolicyEngine",
+        "GetPolicyEngineSummary",
+        "GetPolicyGeneration",
+        "GetPolicyGenerationSummary",
+        "GetPolicySummary",
+        "GetResourcePolicy",
+        "ListPolicies",
+        "ListPolicyEngineSummaries",
+        "ListPolicyEngines",
+        "ListPolicyGenerationAssets",
+        "ListPolicyGenerationSummaries",
+        "ListPolicyGenerations",
+        "ListPolicySummaries",
+        "PutResourcePolicy",
+        "StartPolicyGeneration",
+        "UpdatePolicy",
+        "UpdatePolicyEngine"
+      ],
+      "has_invoke_guardrail_checks": true,
+      "guardrail_check_members": [
+        "messages",
+        "checks"
+      ],
+      "error": ""
+    }
+  },
+  "wheels_downloaded": 14
+}

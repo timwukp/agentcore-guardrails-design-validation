@@ -1,0 +1,544 @@
+{
+  "adverse": 3,
+  "ambient_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "blockers": {
+    "blockers": [
+      "n_usable=3 is below the pre-registered 120"
+    ],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F4-6",
+    "clear_here": false
+  },
+  "case_id": "F4-6",
+  "cell_summaries": [
+    {
+      "cell": "enforce__permit_forbid__benign",
+      "checkpoint": "results/checkpoints/F4-cells__enforce__permit_forbid__benign.json",
+      "failure_codes": [],
+      "n_attempted": 3,
+      "n_failed": 0,
+      "n_recorded": 3,
+      "n_unclassified": 0,
+      "n_usable": 3,
+      "planned_n": 3,
+      "role": "oracle",
+      "x": 3
+    }
+  ],
+  "cells_read": {
+    "enforce__permit_forbid__benign": {
+      "role": "oracle",
+      "why": "the most-read cell in the family, and one measurement rather than four. It is F4-5's oracle arm (does forbid override permit), F4-6's oracle arm (what does the denial look like), F4-2's paired ENFORCE arm (establishing that this IS a request ENFORCE denies, without which F4-2's oracle sentence has no subject) and F4-3's (ENFORCE, ACTIVE) 2x2 cell, which is F4-3's mandatory mutation"
+    }
+  },
+  "config_log": [
+    {
+      "cell": "enforce__guardrail_only__benign",
+      "dwell_s": 15.0,
+      "engine": {
+        "axis": "engine",
+        "changed": false,
+        "engine_arn_unchanged": true,
+        "from": "ENFORCE",
+        "to": "ENFORCE",
+        "verified": true,
+        "why_no_call": "the gateway is already in this mode, read live rather than assumed from the ledger. Sending an UpdateGateway to set a field to its current value would be a mutation with no measurement behind it, and every mutation on a shared testbed is a chance to reset a member this script does not re-send"
+      },
+      "policies": [
+        {
+          "axis": "policy",
+          "changed": true,
+          "definition_resent": false,
+          "from": "ACTIVE",
+          "logical": "baseline",
+          "polls": 3,
+          "readback_mode": "LOG_ONLY",
+          "readback_status": "ACTIVE",
+          "request_id": "cd85b918-e695-4b3a-b14a-0878c67243b0",
+          "status_before": "ACTIVE",
+          "to": "LOG_ONLY",
+          "update_response_mode": "LOG_ONLY",
+          "verified": true
+        },
+        {
+          "axis": "policy",
+          "changed": true,
+          "definition_resent": false,
+          "from": "LOG_ONLY",
+          "logical": "guardrail",
+          "polls": 3,
+          "readback_mode": "ACTIVE",
+          "readback_status": "ACTIVE",
+          "request_id": "29244756-deaa-4c26-8b8f-6cc8f11ade43",
+          "status_before": "ACTIVE",
+          "to": "ACTIVE",
+          "update_response_mode": "ACTIVE",
+          "verified": true
+        }
+      ],
+      "why_fixed_dwell": "a settle loop conditioned on the data plane would poll until the gateway agreed with the document. `trial_index` is on every row so a propagation lag longer than this dwell shows up as adverse events clustered at the start of a cell rather than as an unexplained verdict"
+    },
+    {
+      "cell": "enforce__baseline_permit__benign",
+      "dwell_s": 15.0,
+      "engine": {
+        "axis": "engine",
+        "changed": false,
+        "engine_arn_unchanged": true,
+        "from": "ENFORCE",
+        "to": "ENFORCE",
+        "verified": true,
+        "why_no_call": "the gateway is already in this mode, read live rather than assumed from the ledger. Sending an UpdateGateway to set a field to its current value would be a mutation with no measurement behind it, and every mutation on a shared testbed is a chance to reset a member this script does not re-send"
+      },
+      "policies": [
+        {
+          "axis": "policy",
+          "changed": true,
+          "definition_resent": false,
+          "from": "LOG_ONLY",
+          "logical": "baseline",
+          "polls": 3,
+          "readback_mode": "ACTIVE",
+          "readback_status": "ACTIVE",
+          "request_id": "09ed8460-8445-46e7-8b1f-d91b12aa78b3",
+          "status_before": "ACTIVE",
+          "to": "ACTIVE",
+          "update_response_mode": "ACTIVE",
+          "verified": true
+        },
+        {
+          "axis": "policy",
+          "changed": false,
+          "definition_resent": false,
+          "from": "ACTIVE",
+          "logical": "guardrail",
+          "status_before": "ACTIVE",
+          "to": "ACTIVE",
+          "verified": true,
+          "why_no_call": "already in this mode, read live. See `_set_engine_mode` — an update with no measurement behind it is pure risk"
+        }
+      ],
+      "why_fixed_dwell": "a settle loop conditioned on the data plane would poll until the gateway agreed with the document. `trial_index` is on every row so a propagation lag longer than this dwell shows up as adverse events clustered at the start of a cell rather than as an unexplained verdict"
+    },
+    {
+      "cell": "enforce__narrow_only__unmatched",
+      "dwell_s": 15.0,
+      "engine": {
+        "axis": "engine",
+        "changed": false,
+        "engine_arn_unchanged": true,
+        "from": "ENFORCE",
+        "to": "ENFORCE",
+        "verified": true,
+        "why_no_call": "the gateway is already in this mode, read live rather than assumed from the ledger. Sending an UpdateGateway to set a field to its current value would be a mutation with no measurement behind it, and every mutation on a shared testbed is a chance to reset a member this script does not re-send"
+      },
+      "policies": [
+        {
+          "axis": "policy",
+          "changed": true,
+          "definition_resent": false,
+          "from": "ACTIVE",
+          "logical": "baseline",
+          "polls": 2,
+          "readback_mode": "LOG_ONLY",
+          "readback_status": "ACTIVE",
+          "request_id": "8e0c202d-0080-44c5-8adc-82ee894d6f49",
+          "status_before": "ACTIVE",
+          "to": "LOG_ONLY",
+          "update_response_mode": "LOG_ONLY",
+          "verified": true
+        },
+        {
+          "axis": "policy",
+          "changed": true,
+          "definition_resent": false,
+          "from": "LOG_ONLY",
+          "logical": "narrow",
+          "polls": 3,
+          "readback_mode": "ACTIVE",
+          "readback_status": "ACTIVE",
+          "request_id": "a5ef0474-77be-4b7a-8821-368609a0cde2",
+          "status_before": "ACTIVE",
+          "to": "ACTIVE",
+          "update_response_mode": "ACTIVE",
+          "verified": true
+        }
+      ],
+      "why_fixed_dwell": "a settle loop conditioned on the data plane would poll until the gateway agreed with the document. `trial_index` is on every row so a propagation lag longer than this dwell shows up as adverse events clustered at the start of a cell rather than as an unexplained verdict"
+    },
+    {
+      "cell": "enforce__narrow_only__matched",
+      "dwell_s": 15.0,
+      "engine": {
+        "axis": "engine",
+        "changed": false,
+        "engine_arn_unchanged": true,
+        "from": "ENFORCE",
+        "to": "ENFORCE",
+        "verified": true,
+        "why_no_call": "the gateway is already in this mode, read live rather than assumed from the ledger. Sending an UpdateGateway to set a field to its current value would be a mutation with no measurement behind it, and every mutation on a shared testbed is a chance to reset a member this script does not re-send"
+      },
+      "policies": [
+        {
+          "axis": "policy",
+          "changed": false,
+          "definition_resent": false,
+          "from": "LOG_ONLY",
+          "logical": "baseline",
+          "status_before": "ACTIVE",
+          "to": "LOG_ONLY",
+          "verified": true,
+          "why_no_call": "already in this mode, read live. See `_set_engine_mode` — an update with no measurement behind it is pure risk"
+        },
+        {
+          "axis": "policy",
+          "changed": false,
+          "definition_resent": false,
+          "from": "ACTIVE",
+          "logical": "narrow",
+          "status_before": "ACTIVE",
+          "to": "ACTIVE",
+          "verified": true,
+          "why_no_call": "already in this mode, read live. See `_set_engine_mode` — an update with no measurement behind it is pure risk"
+        }
+      ],
+      "why_fixed_dwell": "a settle loop conditioned on the data plane would poll until the gateway agreed with the document. `trial_index` is on every row so a propagation lag longer than this dwell shows up as adverse events clustered at the start of a cell rather than as an unexplained verdict"
+    },
+    {
+      "cell": "enforce__permit_forbid__benign",
+      "dwell_s": 15.0,
+      "engine": {
+        "axis": "engine",
+        "changed": false,
+        "engine_arn_unchanged": true,
+        "from": "ENFORCE",
+        "to": "ENFORCE",
+        "verified": true,
+        "why_no_call": "the gateway is already in this mode, read live rather than assumed from the ledger. Sending an UpdateGateway to set a field to its current value would be a mutation with no measurement behind it, and every mutation on a shared testbed is a chance to reset a member this script does not re-send"
+      },
+      "policies": [
+        {
+          "axis": "policy",
+          "changed": true,
+          "definition_resent": false,
+          "from": "LOG_ONLY",
+          "logical": "baseline",
+          "polls": 2,
+          "readback_mode": "ACTIVE",
+          "readback_status": "ACTIVE",
+          "request_id": "cf4769d6-0a5f-4e3c-8243-726bb399aa28",
+          "status_before": "ACTIVE",
+          "to": "ACTIVE",
+          "update_response_mode": "ACTIVE",
+          "verified": true
+        },
+        {
+          "axis": "policy",
+          "changed": true,
+          "definition_resent": false,
+          "from": "LOG_ONLY",
+          "logical": "forbid",
+          "polls": 3,
+          "readback_mode": "ACTIVE",
+          "readback_status": "ACTIVE",
+          "request_id": "7b160b16-77d6-491e-b1df-1ebb88eda256",
+          "status_before": "ACTIVE",
+          "to": "ACTIVE",
+          "update_response_mode": "ACTIVE",
+          "verified": true
+        }
+      ],
+      "why_fixed_dwell": "a settle loop conditioned on the data plane would poll until the gateway agreed with the document. `trial_index` is on every row so a propagation lag longer than this dwell shows up as adverse events clustered at the start of a cell rather than as an unexplained verdict"
+    },
+    {
+      "cell": "enforce__permit_only__benign",
+      "dwell_s": 15.0,
+      "engine": {
+        "axis": "engine",
+        "changed": false,
+        "engine_arn_unchanged": true,
+        "from": "ENFORCE",
+        "to": "ENFORCE",
+        "verified": true,
+        "why_no_call": "the gateway is already in this mode, read live rather than assumed from the ledger. Sending an UpdateGateway to set a field to its current value would be a mutation with no measurement behind it, and every mutation on a shared testbed is a chance to reset a member this script does not re-send"
+      },
+      "policies": [
+        {
+          "axis": "policy",
+          "changed": false,
+          "definition_resent": false,
+          "from": "ACTIVE",
+          "logical": "baseline",
+          "status_before": "ACTIVE",
+          "to": "ACTIVE",
+          "verified": true,
+          "why_no_call": "already in this mode, read live. See `_set_engine_mode` — an update with no measurement behind it is pure risk"
+        },
+        {
+          "axis": "policy",
+          "changed": true,
+          "definition_resent": false,
+          "from": "ACTIVE",
+          "logical": "forbid",
+          "polls": 3,
+          "readback_mode": "LOG_ONLY",
+          "readback_status": "ACTIVE",
+          "request_id": "c7c5e557-4350-48d2-bf6f-47e1770feffb",
+          "status_before": "ACTIVE",
+          "to": "LOG_ONLY",
+          "update_response_mode": "LOG_ONLY",
+          "verified": true
+        }
+      ],
+      "why_fixed_dwell": "a settle loop conditioned on the data plane would poll until the gateway agreed with the document. `trial_index` is on every row so a propagation lag longer than this dwell shows up as adverse events clustered at the start of a cell rather than as an unexplained verdict"
+    },
+    {
+      "cell": "log_only__permit_forbid__benign",
+      "dwell_s": 15.0,
+      "engine": {
+        "axis": "engine",
+        "changed": true,
+        "engine_arn_unchanged": true,
+        "from": "ENFORCE",
+        "readback_arn_matches": true,
+        "readback_mode": "LOG_ONLY",
+        "request_id": "4623dbc9-8ad5-46d1-a02e-5b5924fc9c58",
+        "resent_members": [
+          "authorizerType",
+          "description",
+          "exceptionLevel",
+          "name",
+          "policyEngineConfiguration",
+          "protocolConfiguration",
+          "protocolType",
+          "roleArn"
+        ],
+        "status_after": "READY",
+        "to": "LOG_ONLY",
+        "update_response_mode": "LOG_ONLY",
+        "verified": true
+      },
+      "policies": [
+        {
+          "axis": "policy",
+          "changed": false,
+          "definition_resent": false,
+          "from": "ACTIVE",
+          "logical": "baseline",
+          "status_before": "ACTIVE",
+          "to": "ACTIVE",
+          "verified": true,
+          "why_no_call": "already in this mode, read live. See `_set_engine_mode` — an update with no measurement behind it is pure risk"
+        },
+        {
+          "axis": "policy",
+          "changed": true,
+          "definition_resent": false,
+          "from": "LOG_ONLY",
+          "logical": "forbid",
+          "polls": 2,
+          "readback_mode": "ACTIVE",
+          "readback_status": "ACTIVE",
+          "request_id": "5cdbde3a-9fb2-4ce4-bb89-6898bb73a3b2",
+          "status_before": "ACTIVE",
+          "to": "ACTIVE",
+          "update_response_mode": "ACTIVE",
+          "verified": true
+        }
+      ],
+      "why_fixed_dwell": "a settle loop conditioned on the data plane would poll until the gateway agreed with the document. `trial_index` is on every row so a propagation lag longer than this dwell shows up as adverse events clustered at the start of a cell rather than as an unexplained verdict"
+    },
+    {
+      "cell": "log_only__permit_only__benign",
+      "dwell_s": 15.0,
+      "engine": {
+        "axis": "engine",
+        "changed": false,
+        "engine_arn_unchanged": true,
+        "from": "LOG_ONLY",
+        "to": "LOG_ONLY",
+        "verified": true,
+        "why_no_call": "the gateway is already in this mode, read live rather than assumed from the ledger. Sending an UpdateGateway to set a field to its current value would be a mutation with no measurement behind it, and every mutation on a shared testbed is a chance to reset a member this script does not re-send"
+      },
+      "policies": [
+        {
+          "axis": "policy",
+          "changed": false,
+          "definition_resent": false,
+          "from": "ACTIVE",
+          "logical": "baseline",
+          "status_before": "ACTIVE",
+          "to": "ACTIVE",
+          "verified": true,
+          "why_no_call": "already in this mode, read live. See `_set_engine_mode` — an update with no measurement behind it is pure risk"
+        },
+        {
+          "axis": "policy",
+          "changed": true,
+          "definition_resent": false,
+          "from": "ACTIVE",
+          "logical": "forbid",
+          "polls": 3,
+          "readback_mode": "LOG_ONLY",
+          "readback_status": "ACTIVE",
+          "request_id": "d8115af2-afe3-4dd5-b2ff-d2afadc5d517",
+          "status_before": "ACTIVE",
+          "to": "LOG_ONLY",
+          "update_response_mode": "LOG_ONLY",
+          "verified": true
+        }
+      ],
+      "why_fixed_dwell": "a settle loop conditioned on the data plane would poll until the gateway agreed with the document. `trial_index` is on every row so a propagation lag longer than this dwell shows up as adverse events clustered at the start of a cell rather than as an unexplained verdict"
+    }
+  ],
+  "expiry": "these are service behaviours, not model reads. AWS could change Cedar evaluation, the engine-mode precedence rule or the denial envelope at any time; if it does, that is an AWS-BEHAVIOR-CHANGES.md entry rather than a correction to this record",
+  "guards": [],
+  "instrument": "signed MCP tools/call POSTs to the main gateway's /mcp endpoint as the grx-caller role, classified by lib/mcp.classify(); both mode axes driven by UpdateGateway/UpdatePolicy and verified by readback from independent calls",
+  "is_smoke": true,
+  "kind": "ZERO_EVENTS",
+  "local_amendment_blockers": [],
+  "local_amendment_blockers_why": "conditions that leave the sealed VERDICT intact but withdraw support from the REMEDY a v1.3 amendment would carry. They live in the record because check_amendment_readiness.py reads FINDING provenance blocks and replication days, not case payloads",
+  "measured_start": {
+    "baseline_mode": "ACTIVE",
+    "engine_mode": "ENFORCE"
+  },
+  "mutation": {
+    "cell": null,
+    "why": "this case's seal names no mutation cell"
+  },
+  "mutation_cell": null,
+  "mutation_mandatory_per_seal": false,
+  "n_usable": 3,
+  "operationalization_no_permit": "F4-1 and F4-4 need 'no permit in the enforced set'. The baseline permit is driven to enforcementMode=LOG_ONLY rather than deleted, because re-creating it would need IGNORE_ALL_FINDINGS and a failed re-create would strand the shared testbed. This is an OPERATIONALIZATION of the document's condition, not the literal condition, and it is what F4-1's mandatory mutation resolves: if the denial disappears when the permit returns to ACTIVE, a LOG_ONLY permit demonstrably did not grant",
+  "oracle_cell": "enforce__permit_forbid__benign",
+  "oracle_text": "TRUE if the response is 403 AND the body/headers identify the policy ID; FALSE if the status differs or the policy ID is absent",
+  "planned_n": 120,
+  "policies": {
+    "forbid": {
+      "name": "grx_f4_forbid_r20260810T130945Z",
+      "statement": "forbid (principal, action, resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n\");",
+      "why": "an unconstrained forbid over the same gateway the baseline permit grants. Cedar's forbid-wins rule is what F4-5 tests, and this is the minimal statement that puts a permit and a forbid over one request. It is also the denial that F4-2, F4-3 and F4-6 all need to exist"
+    },
+    "guardrail": {
+      "name": "grx_f4_guardrail_r20260810T130945Z",
+      "statement": "forbid (principal, action == AgentCore::Action::\"grxecho___echo\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n\")\nwhen guardrails {\n    BedrockGuardrails::ContentFilter([\"HATE\"], [context.input.text])[\"HATE\"].confidenceScore.greaterThan(decimal(\"0.2\"))\n};",
+      "why": "a GUARDRAIL policy in the §3.1 gotcha's sense, and a `forbid` rather than a `permit` because that is the point of the gotcha: guardrail policies constrain, they do not GRANT. With the baseline permit driven to LOG_ONLY this is the only ACTIVE policy on the engine and nothing in the enforced set permits anything, which is the condition the document says blocks all traffic. The ContentFilter/HATE/context.input.text/0.2 shape is taken from lib/cedar.py's own samples rather than invented, because the point is that a guardrail policy EXISTS, not that it fires — and a rejected CreatePolicy would leave F4-1 unmeasured for a reason F4-1 is not about. The input path is F4-0's result, not a preference: an output path in an authorization effect is rejected at CreatePolicy"
+    },
+    "narrow": {
+      "name": "grx_f4_narrow_r20260810T130945Z",
+      "statement": "permit (principal, action == AgentCore::Action::\"grxecho___echo\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n\")\nwhen { context.input has amount && context.input.amount.lessThan(decimal(\"500.0\")) };",
+      "why": "a permit that matches SOME requests and not others, so 'matched no policy' can be the single independent variable. amount < 500 admits BENIGN_ARGS (100.0) and excludes UNMATCHED_ARGS (4242.0); same tool, same argument names, so the only difference between F4-4's arm and its control is whether a policy could match"
+    }
+  },
+  "record": {
+    "alpha": 0.00625,
+    "case_id": "F4-6",
+    "evidence": {
+      "ceiling_method": "wilson one-sided",
+      "ceiling_one_sided": 1.0,
+      "interval": "1 [0.2863, 1] (n=3, wilson, 99%)",
+      "n": 3,
+      "x": 3
+    },
+    "family": "confirmatory",
+    "kind": "ZERO_EVENTS",
+    "mutation_required": false,
+    "n_attempted": 3,
+    "n_met": false,
+    "n_usable": 3,
+    "notes": [
+      "n_usable=3 is below the pre-registered 120; the verdict stands on the data collected but its interval is wider than the design promised, so it does not clear the amendment bar"
+    ],
+    "p_value": null,
+    "planned_n": 120,
+    "thresholds": [
+      403.0
+    ],
+    "verdict": "FALSE"
+  },
+  "region": "us-east-1",
+  "replication_required": "the conflict-resolution protocol requires reproduction on >=2 separate UTC days before the document is amended. One run of this script is one day",
+  "run_id": "r20260810T130945Z",
+  "unverified_context_path": "the narrow permit conditions on `context.input.amount`. No `context.` path appears anywhere in the document under test; the shape comes from lib/cedar.py's own samples. F4-4's control cell exists precisely because an unmatched path would make the policy inert and F4-4 would read TRUE for the wrong reason",
+  "update_gateway_shape_check": {
+    "absent_from_model": [],
+    "handled": [
+      "authorizerConfiguration",
+      "authorizerType",
+      "customTransformConfiguration",
+      "description",
+      "exceptionLevel",
+      "gatewayIdentifier",
+      "interceptorConfigurations",
+      "kmsKeyArn",
+      "name",
+      "policyEngineConfiguration",
+      "protocolConfiguration",
+      "protocolType",
+      "roleArn",
+      "wafConfiguration"
+    ],
+    "live_members": [
+      "authorizerConfiguration",
+      "authorizerType",
+      "customTransformConfiguration",
+      "description",
+      "exceptionLevel",
+      "gatewayIdentifier",
+      "interceptorConfigurations",
+      "kmsKeyArn",
+      "name",
+      "policyEngineConfiguration",
+      "protocolConfiguration",
+      "protocolType",
+      "roleArn",
+      "wafConfiguration"
+    ],
+    "ok": true,
+    "required": [
+      "authorizerType",
+      "gatewayIdentifier",
+      "name",
+      "roleArn"
+    ],
+    "sdk": {
+      "boto3": "1.43.67",
+      "botocore": "1.43.67"
+    },
+    "unhandled": [],
+    "why_checked": "UpdateGateway is a REPLACE, so an omitted member is a reset. A member this SDK accepts and this script does not re-send would be wiped by the first mode switch; resetting exceptionLevel alone would change the body of every error message every later phase reads, including the denial bodies F4-6 measures"
+  },
+  "update_policy_definition_probe": {
+    "deleted": true,
+    "echoed_definition_member": "policy",
+    "enforcement_mode_after": "LOG_ONLY",
+    "error_code": "",
+    "http_ok": true,
+    "http_status": 202,
+    "logical": "f4_defprobe",
+    "ok": true,
+    "preserved": true,
+    "probe": "update_policy_without_definition",
+    "request_id": "332c02f8-3a53-4b41-86c7-fd35b2175ed5",
+    "statement_after": "permit(principal, action, resource is AgentCore::Gateway);",
+    "statement_before": "permit(principal, action, resource is AgentCore::Gateway);",
+    "status_after": "ACTIVE",
+    "status_at_readback": "ACTIVE",
+    "status_ok": true,
+    "status_waits": [
+      "ACTIVE"
+    ],
+    "subject_carries_validation_findings": true,
+    "subject_created": true,
+    "subject_is_baseline_statement": true,
+    "subject_why": "byte-identical to cedar.baseline_permit(), so the subject carries the same two Overly Permissive findings as the resource the probe exists to protect",
+    "why": "an UpdatePolicy carrying (policyEngineId, policyId, enforcementMode, validationMode=IGNORE_ALL_FINDINGS) and NO `definition` member left the Cedar body byte-identical and the policy ACTIVE. Note what this does and does not show: the body is not REPLACED, but per F1-11 it is still VALIDATED, so `validationMode` is what makes the policy axis drivable on a statement that carries findings — not the omission"
+  },
+  "validation_mode_for_f4_policies": "IGNORE_ALL_FINDINGS",
+  "verdict": "FALSE",
+  "why_cells_are_shared": "a cell is one live configuration plus one request shape; a case is a question asked of one or more cells. Six cases read eight cells, and enforce__permit_forbid__benign answers four of them from ONE set of responses. Re-sending the same request under the same configuration once per case would cost 600 extra gateway calls and add no information",
+  "why_validation_off": "F4 is not the validation experiment — F1-3 is, and it established that the unconstrained permit needs IGNORE_ALL_FINDINGS to create at all (DC-1). A policy that failed to create is not a mode measurement, so letting the finding gate reject one of these statements would turn a mode question into a validation one"
+}

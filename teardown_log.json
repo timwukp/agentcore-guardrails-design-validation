@@ -1,0 +1,117 @@
+{
+  "channels_ok": true,
+  "dry_run": true,
+  "n_failed": 0,
+  "n_ledger_resources": 0,
+  "n_logs_orphans": 0,
+  "n_orphans_left": 0,
+  "n_refused_protected": 0,
+  "n_tagged_found": 12,
+  "region": "us-east-1",
+  "rows": [
+    {
+      "kind": "guardrail",
+      "logical": "phase1-billing",
+      "name": "grx-gr-billing-r20260810T011502Z",
+      "op": "delete_guardrail",
+      "priority": 40,
+      "state": "would-delete"
+    },
+    {
+      "kind": "guardrail",
+      "logical": "phase1-cf-high",
+      "name": "grx-gr-cf-high-r20260810T011502Z",
+      "op": "delete_guardrail",
+      "priority": 40,
+      "state": "would-delete"
+    },
+    {
+      "kind": "guardrail",
+      "logical": "phase1-cf-low",
+      "name": "grx-gr-cf-low-r20260810T011502Z",
+      "op": "delete_guardrail",
+      "priority": 40,
+      "state": "would-delete"
+    },
+    {
+      "kind": "guardrail",
+      "logical": "phase1-cf-medium",
+      "name": "grx-gr-cf-medium-r20260810T011502Z",
+      "op": "delete_guardrail",
+      "priority": 40,
+      "state": "would-delete"
+    },
+    {
+      "kind": "guardrail",
+      "logical": "phase1-determinism",
+      "name": "grx-gr-determinism-r20260810T011502Z",
+      "op": "delete_guardrail",
+      "priority": 40,
+      "state": "would-delete"
+    },
+    {
+      "kind": "guardrail",
+      "logical": "phase1-grounding",
+      "name": "grx-gr-grounding-r20260810T011502Z",
+      "op": "delete_guardrail",
+      "priority": 40,
+      "state": "would-delete"
+    },
+    {
+      "kind": "guardrail",
+      "logical": "phase1-pii",
+      "name": "grx-gr-pii-r20260810T011502Z",
+      "op": "delete_guardrail",
+      "priority": 40,
+      "state": "would-delete"
+    },
+    {
+      "kind": "guardrail",
+      "logical": "phase1-tier-classic",
+      "name": "grx-gr-tier-classic-r20260810T011502Z",
+      "op": "delete_guardrail",
+      "priority": 40,
+      "state": "would-delete"
+    },
+    {
+      "kind": "guardrail",
+      "logical": "phase1-tier-standard",
+      "name": "grx-gr-tier-standard-r20260810T011502Z",
+      "op": "delete_guardrail",
+      "priority": 40,
+      "state": "would-delete"
+    },
+    {
+      "kind": "guardrail",
+      "logical": "phase1-topic",
+      "name": "grx-gr-topic-r20260810T011502Z",
+      "op": "delete_guardrail",
+      "priority": 40,
+      "state": "would-delete"
+    },
+    {
+      "kind": "guardrail",
+      "logical": "phase1-words",
+      "name": "grx-gr-words-r20260810T011502Z",
+      "op": "delete_guardrail",
+      "priority": 40,
+      "state": "would-delete"
+    },
+    {
+      "kind": "guardrail",
+      "logical": "phase1-xregion",
+      "name": "grx-gr-xregion-r20260810T011502Z",
+      "op": "delete_guardrail",
+      "priority": 40,
+      "state": "would-delete"
+    }
+  ],
+  "run_id": null,
+  "tag_channel_blind_to": [
+    "logs (delivery-source, delivery-destination, delivery, log-group) \u2014 swept directly by channel 3"
+  ],
+  "tag_channel_covers": [
+    "guardrail"
+  ],
+  "timestamp": "2026-08-10T12:36:23+00:00"
+}

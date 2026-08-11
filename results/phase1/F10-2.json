@@ -1,0 +1,480 @@
+{
+  "arm_tally": {
+    "arm": "ladder",
+    "case_id": "F10-2",
+    "checkpoint": "results/checkpoints/F10-2__ladder.json",
+    "corpus": "constructed:ladder",
+    "failure_codes": [],
+    "n_attempted": 27,
+    "n_failed": 0,
+    "n_usable": 27,
+    "planned_n": 27,
+    "x": 0
+  },
+  "billable_calls": 27,
+  "billable_text_units_predicted": 48,
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F10-2",
+    "clear_here": true
+  },
+  "case_id": "F10-2",
+  "false_means_what": "scaling FALSE means the unit is not 1000 characters or the step is not where the price sheet puts it — a cost-model finding that changes every projection in COST.md. matching FALSE means the service reports two different consumed quantities for one request, which is a finding about the API's own self-consistency. They are separate amendments",
+  "guardrail": {
+    "guardrail_id": "s5vk53hdnahz",
+    "key": "billing",
+    "purpose": "content filters at MEDIUM with every action NONE — F10-2's text-unit length ladder (evaluation without intervention)",
+    "why_actions_are_none": "a text unit is consumed by EVALUATION, not by intervention, so a billing ladder wants every filter enabled and every action NONE. Under BLOCK, a filler string that tripped a filter would make the ladder a mixture of two treatments"
+  },
+  "instrument": {
+    "blocks_per_call": 1,
+    "counters_read": [
+      "usage (top level)",
+      "assessments[].invocationMetrics.usage",
+      "guardrailCoverage.textCharacters{guarded,total}"
+    ],
+    "operation": "ApplyGuardrail",
+    "output_scope": "FULL",
+    "sdk": {
+      "boto3": "1.43.67",
+      "botocore": "1.43.67"
+    },
+    "shape_verified_against": "botocore 1.43.67: both usage sites are the same 9-counter shape, and guardrailCoverage carries textCharacters{guarded,total}",
+    "source": "INPUT"
+  },
+  "instrument_faults": {
+    "all_counters_zero": false,
+    "coverage_total_vs_sent": [],
+    "interventions": [],
+    "missing_counter_items": [],
+    "n_coverage_total_mismatch": 0,
+    "n_interventions": 0,
+    "n_missing_counter": 0,
+    "n_partial_coverage": 0,
+    "partial_coverage": [],
+    "sound": true,
+    "why_all_zero_is_a_fault": "a scaling verdict over an all-zero vector holds by construction and says nothing about scaling",
+    "why_intervention_is_a_fault": "a blocked request is a different treatment from an evaluated one; the provisioner's `billing` guardrail sets every action to NONE with every filter ENABLED precisely so evaluation happens and intervention cannot",
+    "why_partial_is_a_fault": "guarded < total means the service evaluated less than we sent, so the unit count is correct for what it evaluated while the predictor is denominated in what we sent"
+  },
+  "is_smoke": false,
+  "kind": "EXISTENCE",
+  "ladder": {
+    "filler": {
+      "deterministic_in_length": true,
+      "pool_size": 30,
+      "why_prose_not_repeats": "a 3000-character run of one character is not obviously a text; if the service collapses whitespace or repeats, the ladder would measure the normaliser"
+    },
+    "lengths": [
+      1,
+      500,
+      999,
+      1000,
+      1001,
+      1500,
+      2000,
+      2001,
+      3000
+    ],
+    "n_items": 27,
+    "order": "replicate-major: r0 across all lengths, then r1, then r2. Grouping a length's replicates together would make a service-side drift part-way through the run look like a length effect",
+    "trials_per_length": 3
+  },
+  "matching": {
+    "comparison": "top-level `usage` vs `assessments[].invocationMetrics.usage`, counter by counter over the union of both key sets",
+    "disagreements": [],
+    "holds": true,
+    "n_agreeing": 27,
+    "n_comparable": 27,
+    "n_disagreeing": 0,
+    "n_disagreements_shown": 0,
+    "n_no_invocation_usage_block": 0,
+    "n_rows": 27,
+    "why_union": "a counter present in one place and absent from the other is a disagreement; intersecting the key sets would skip exactly that"
+  },
+  "mutations": 0,
+  "no_power_claim": "planned_n(F10-2) is None — the seal names no n, so n_met is vacuous. 3 replicates per length exist to catch a transient, not to estimate a rate: the relationship under test is an exact step function, so one disagreeing trial refutes it and no interval is required for FALSE",
+  "oracle_text": "TRUE if TextUnitCount scales with content length as documented and matches the billed quantity; FALSE if the relationship differs",
+  "planned_n": null,
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F10-2",
+    "evidence": {
+      "detail": {
+        "matching_holds": true,
+        "n_comparable": 27,
+        "n_disagreeing": 0,
+        "n_lengths": 9,
+        "n_lengths_matching": 9,
+        "scaling_holds": true
+      },
+      "observed": true
+    },
+    "family": "descriptive_no_test",
+    "kind": "EXISTENCE",
+    "mutation_required": false,
+    "n_attempted": 27,
+    "n_met": true,
+    "n_usable": 27,
+    "notes": [],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [],
+    "verdict": "TRUE"
+  },
+  "run_id": "r20260810T0345Z",
+  "scaling": {
+    "cells": [
+      {
+        "all_match_predicted": true,
+        "chars_sent": 1,
+        "item_ids": [
+          "L00001-r0-cd3d8a639e64",
+          "L00001-r1-7956acf4ed83",
+          "L00001-r2-79585fa8f26e"
+        ],
+        "length": 1,
+        "missing_counter": 0,
+        "n_trials": 3,
+        "observed": [
+          1,
+          1,
+          1
+        ],
+        "observed_distinct": [
+          1
+        ],
+        "predicted": 1,
+        "replicates_agree": true,
+        "request_ids": [
+          "746af4f8-0c68-4140-8f49-b19212154b68",
+          "807afa6d-f3cf-435b-805e-15ddac677bbf",
+          "326d3cbb-40b7-4f47-a834-b6c7e19bba25"
+        ]
+      },
+      {
+        "all_match_predicted": true,
+        "chars_sent": 500,
+        "item_ids": [
+          "L00500-r0-d1843354f569",
+          "L00500-r1-f7af50d3f53c",
+          "L00500-r2-21847d9fa29f"
+        ],
+        "length": 500,
+        "missing_counter": 0,
+        "n_trials": 3,
+        "observed": [
+          1,
+          1,
+          1
+        ],
+        "observed_distinct": [
+          1
+        ],
+        "predicted": 1,
+        "replicates_agree": true,
+        "request_ids": [
+          "1e9796b5-b52c-4e8e-b4fd-80bcb86a17c5",
+          "0f5664b6-595b-4cd6-aa15-195c8e8a3d0a",
+          "a4e89e1c-ca8b-4c07-b086-8f42f5ba6085"
+        ]
+      },
+      {
+        "all_match_predicted": true,
+        "chars_sent": 999,
+        "item_ids": [
+          "L00999-r0-9623a26a0006",
+          "L00999-r1-ea08bcd38465",
+          "L00999-r2-83fafa154d93"
+        ],
+        "length": 999,
+        "missing_counter": 0,
+        "n_trials": 3,
+        "observed": [
+          1,
+          1,
+          1
+        ],
+        "observed_distinct": [
+          1
+        ],
+        "predicted": 1,
+        "replicates_agree": true,
+        "request_ids": [
+          "29e098cf-1314-4453-8b08-4b5d9de7253b",
+          "0090010a-c85b-43c2-bba5-094cf6c12d1e",
+          "013914f4-7605-41d4-b882-86f0de6871fe"
+        ]
+      },
+      {
+        "all_match_predicted": true,
+        "chars_sent": 1000,
+        "item_ids": [
+          "L01000-r0-70d55ea12f77",
+          "L01000-r1-e722c5e535e6",
+          "L01000-r2-e545f2cb3c7c"
+        ],
+        "length": 1000,
+        "missing_counter": 0,
+        "n_trials": 3,
+        "observed": [
+          1,
+          1,
+          1
+        ],
+        "observed_distinct": [
+          1
+        ],
+        "predicted": 1,
+        "replicates_agree": true,
+        "request_ids": [
+          "953553ab-c686-49ce-bec8-5270f66ef5e4",
+          "d8a508ac-862b-4f19-bc58-70359f68642b",
+          "8b72c024-ea09-49c0-879c-b08dba6bbbaa"
+        ]
+      },
+      {
+        "all_match_predicted": true,
+        "chars_sent": 1001,
+        "item_ids": [
+          "L01001-r0-c2bbd7b4131a",
+          "L01001-r1-63a4dfae665c",
+          "L01001-r2-481e7b023704"
+        ],
+        "length": 1001,
+        "missing_counter": 0,
+        "n_trials": 3,
+        "observed": [
+          2,
+          2,
+          2
+        ],
+        "observed_distinct": [
+          2
+        ],
+        "predicted": 2,
+        "replicates_agree": true,
+        "request_ids": [
+          "b1627187-0f74-4e8f-99de-86fb50103aa5",
+          "abb95376-cc75-4d2b-b3fc-81734784699a",
+          "884f56ed-92cb-4a71-9b90-43074248b3f4"
+        ]
+      },
+      {
+        "all_match_predicted": true,
+        "chars_sent": 1500,
+        "item_ids": [
+          "L01500-r0-2a97a2a158e7",
+          "L01500-r1-07fc8ec9e1a7",
+          "L01500-r2-6f2be3962b91"
+        ],
+        "length": 1500,
+        "missing_counter": 0,
+        "n_trials": 3,
+        "observed": [
+          2,
+          2,
+          2
+        ],
+        "observed_distinct": [
+          2
+        ],
+        "predicted": 2,
+        "replicates_agree": true,
+        "request_ids": [
+          "562f2578-f640-4f1b-a74a-bb5ffc4f51d0",
+          "e110b5fa-4f47-47e5-a62d-a52c149f7ed3",
+          "fab39ad9-651c-46da-bfd2-960a4d140709"
+        ]
+      },
+      {
+        "all_match_predicted": true,
+        "chars_sent": 2000,
+        "item_ids": [
+          "L02000-r0-8052f94f4623",
+          "L02000-r1-26a49b87463f",
+          "L02000-r2-3f9e16c78d4f"
+        ],
+        "length": 2000,
+        "missing_counter": 0,
+        "n_trials": 3,
+        "observed": [
+          2,
+          2,
+          2
+        ],
+        "observed_distinct": [
+          2
+        ],
+        "predicted": 2,
+        "replicates_agree": true,
+        "request_ids": [
+          "212602e1-3e9d-42eb-8863-020a0877c7e7",
+          "8ccb1163-5efa-4a41-bec6-91ff982815fb",
+          "0a78d5f9-2f41-4fef-bd6b-eecae69e15e6"
+        ]
+      },
+      {
+        "all_match_predicted": true,
+        "chars_sent": 2001,
+        "item_ids": [
+          "L02001-r0-21e29317d489",
+          "L02001-r1-15388a459ba2",
+          "L02001-r2-94eb7f984feb"
+        ],
+        "length": 2001,
+        "missing_counter": 0,
+        "n_trials": 3,
+        "observed": [
+          3,
+          3,
+          3
+        ],
+        "observed_distinct": [
+          3
+        ],
+        "predicted": 3,
+        "replicates_agree": true,
+        "request_ids": [
+          "78ab8c20-d8c4-4f35-8e05-3a4de5d9de0d",
+          "b9e6d7cf-ae22-4ab7-9401-c68839256233",
+          "7277e778-987d-4cf5-8335-0373c6c88828"
+        ]
+      },
+      {
+        "all_match_predicted": true,
+        "chars_sent": 3000,
+        "item_ids": [
+          "L03000-r0-4716d1541106",
+          "L03000-r1-a62b17bcf66c",
+          "L03000-r2-1e8fb0d10af1"
+        ],
+        "length": 3000,
+        "missing_counter": 0,
+        "n_trials": 3,
+        "observed": [
+          3,
+          3,
+          3
+        ],
+        "observed_distinct": [
+          3
+        ],
+        "predicted": 3,
+        "replicates_agree": true,
+        "request_ids": [
+          "f6922b6d-77ac-4caa-83c6-58993aea5a93",
+          "23d388a1-0830-4ccf-b9e4-11800b98f69f",
+          "51dd7567-7ef5-49ed-8e31-f1805a004308"
+        ]
+      }
+    ],
+    "chars_per_unit_assumed": 1000,
+    "chars_per_unit_source": "cost_model.yaml:47, verified against the Pricing API usagetype USE1-Guardrail-ContentPolicyUnitsConsumed",
+    "counter_read": "contentPolicyUnits",
+    "holds": true,
+    "mismatched_lengths": [],
+    "n_lengths": 9,
+    "n_lengths_matching": 9,
+    "observed_vector": {
+      "1": [
+        1
+      ],
+      "1000": [
+        1
+      ],
+      "1001": [
+        2
+      ],
+      "1500": [
+        2
+      ],
+      "2000": [
+        2
+      ],
+      "2001": [
+        3
+      ],
+      "3000": [
+        3
+      ],
+      "500": [
+        1
+      ],
+      "999": [
+        1
+      ]
+    },
+    "predicted_vector": {
+      "1": 1,
+      "1000": 1,
+      "1001": 2,
+      "1500": 2,
+      "2000": 2,
+      "2001": 3,
+      "3000": 3,
+      "500": 1,
+      "999": 1
+    },
+    "why_per_length": "a pooled units-per-1000-characters ratio is producible by both a per-character model and a step function, so it cannot distinguish the hypotheses this ladder was built to separate"
+  },
+  "sibling_cases_not_decided_here": {
+    "F10-1": {
+      "claim": "input-blocked requests incur no model-inference charge; output-blocked ones do (doc lines 160, 752)",
+      "in_declared_seal_gaps": true,
+      "seal": "unassigned_by_seal",
+      "why_not_here": "that is a claim about MODEL INFERENCE under Converse/InvokeModel with an attached guardrail. ApplyGuardrail invokes no model, so no ladder run can bear on it"
+    },
+    "F10-3": {
+      "claim": "tagging only the user-supplied portion of a RAG prompt bills fewer text units than not tagging it (doc line 236)",
+      "in_declared_seal_gaps": true,
+      "seal": "unassigned_by_seal",
+      "why_not_here": "that needs a tagged-vs-untagged PAIR over one RAG-shaped prompt, using qualifiers=['guard_content']; a length ladder is a different design"
+    },
+    "F7-3": {
+      "claim": "the AWS/Bedrock/Guardrails namespace carries the 7 documented metrics, TextUnitCount among them (doc line 677)",
+      "seal": "descriptive_no_test",
+      "why_not_here": "F7-3 asks whether the METRIC exists under that namespace; F10-2 asks whether the QUANTITY is what the documentation says. Doc lines 677 and 802 are triaged to both cases for exactly that reason"
+    },
+    "why_listed": "a billing arm that reported on all of these would be reporting a quantifier three times wider than it measured"
+  },
+  "usage_breadth": {
+    "counter_totals": {
+      "automatedReasoningPolicies": 0,
+      "automatedReasoningPolicyUnits": 0,
+      "contentPolicyImageUnits": 0,
+      "contentPolicyUnits": 48,
+      "contextualGroundingPolicyUnits": 0,
+      "sensitiveInformationPolicyFreeUnits": 0,
+      "sensitiveInformationPolicyUnits": 0,
+      "topicPolicyUnits": 0,
+      "wordPolicyUnits": 0
+    },
+    "counter_used_for_scaling": "contentPolicyUnits",
+    "counters_seen": [
+      "automatedReasoningPolicies",
+      "automatedReasoningPolicyUnits",
+      "contentPolicyImageUnits",
+      "contentPolicyUnits",
+      "contextualGroundingPolicyUnits",
+      "sensitiveInformationPolicyFreeUnits",
+      "sensitiveInformationPolicyUnits",
+      "topicPolicyUnits",
+      "wordPolicyUnits"
+    ],
+    "nonzero_counters": [
+      "contentPolicyUnits"
+    ],
+    "why_reported": "the guardrail has only a content policy, so no other counter should move; showing all of them makes that auditable rather than asserted"
+  },
+  "verdict": "TRUE",
+  "verdict_rule": "TRUE iff BOTH halves hold: units == ceil(L/1000) at every one of the 9 lengths AND top-level `usage` equals `assessments[].invocationMetrics.usage` on every comparable trial. Either half failing gives FALSE; an unsound instrument gives INCONCLUSIVE",
+  "what_true_does_not_prove": {
+    "cloudwatch_half": "the CloudWatch `TextUnitCount` metric is the same quantity aggregated per minute and dimensioned by GuardrailArn. Whether a per-trial row can be joined to it is F3-10's reconstruction question, and whether the namespace carries the metric at all is F7-3's",
+    "no_invoice_was_read": "TRUE says the API reported the documented quantity in both of the places it reports it. It does NOT say an invoice charged that amount: no Cost Explorer, CUR or Pricing figure is read here",
+    "one_guardrail_one_policy": "measured on a content-filter-only guardrail, so it bounds contentPolicyUnits and says nothing about the per-policy unit accounting of topics, words, PII or grounding — usage_breadth shows those counters stayed at zero here",
+    "why_not": "Cost Explorer's finest granularity is a day and it lands hours late; this account carries ~$27k/mo of unrelated spend and the ladder's own cost is cents, so the signal is far below the noise floor of any billing-side instrument available to us. A dollar claim would assert a resolution the instrument does not have"
+  },
+  "x_is_unused": "the tally's `x` counts any detection, which this case's oracle does not read — it counts TEXT UNITS. It should be 0 throughout, and a non-zero value is the same signal the intervention fault check reads"
+}

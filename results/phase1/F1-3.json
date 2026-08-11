@@ -1,0 +1,436 @@
+{
+  "ambient_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "arm_label_provenance": "carried by the harness and by the request parameters recorded in the evidence store, NOT read back from the service: validationMode is on exactly two member paths in the whole API (CreatePolicy:in, UpdatePolicy:in) and GetPolicy's output shape does not include it",
+  "arms": [
+    {
+      "arm": "default",
+      "classification": {
+        "classified_against": [
+          "overly permissive",
+          "overlypermissive",
+          "too permissive",
+          "permits all",
+          "unconstrained",
+          "overly broad"
+        ],
+        "matched_tokens": [
+          "overly permissive"
+        ],
+        "n_reasons": 2,
+        "overly_permissive": true,
+        "reasons": [
+          "Overly Permissive: Policy Engine will allow every request for the specified principal (AgentCore::IamEntity), action (Any Future Tools) and resource (gateway/*) combination if the policy is added or updated",
+          "Overly Permissive: Policy Engine will allow every request for the specified principal (AgentCore::OAuthUser), action (Any Future Tools) and resource (gateway/*) combination if the policy is added or updated"
+        ],
+        "why_classified": "the sealed oracle names an 'Overly Permissive finding', not any failure. A CREATE_FAILED for a syntax error or a throttle would pass a bare did-it-fail check while measuring nothing about the claim, so an unmatched failure is reported unclassified and forces INCONCLUSIVE"
+      },
+      "create_failed": true,
+      "created": true,
+      "duration_ms": 395.549625,
+      "enforcement_mode_at_accept": "ACTIVE",
+      "enforcement_mode_settled": "ACTIVE",
+      "http_ok": true,
+      "http_status": 202,
+      "policy_id": "grx_f1_3_dflt_r20260810T130945Z-xrctv_anj2",
+      "policy_name": "grx_f1_3_dflt_r20260810T130945Z",
+      "reached_usable_state": false,
+      "request_id": "3295a104-c42a-4edf-9e12-38d14328236d",
+      "statement": "permit(principal, action, resource is AgentCore::Gateway);",
+      "statement_kind": "baseline",
+      "status_at_accept": "CREATING",
+      "status_reasons": [
+        "Overly Permissive: Policy Engine will allow every request for the specified principal (AgentCore::IamEntity), action (Any Future Tools) and resource (gateway/*) combination if the policy is added or updated",
+        "Overly Permissive: Policy Engine will allow every request for the specified principal (AgentCore::OAuthUser), action (Any Future Tools) and resource (gateway/*) combination if the policy is added or updated"
+      ],
+      "terminal_status": "CREATE_FAILED",
+      "timed_out": false,
+      "validation_mode": null,
+      "validation_mode_sent": false,
+      "why_this_arm": "the document's instruction executed literally: the bare permit statement with no validationMode parameter at all. THIS is the arm the sealed oracle is about. The parameter is omitted rather than set to its documented default because an omitted parameter and an explicitly-defaulted one are different requests, and only the first is what a reader following §3.1 produces"
+    },
+    {
+      "arm": "failfind",
+      "classification": {
+        "classified_against": [
+          "overly permissive",
+          "overlypermissive",
+          "too permissive",
+          "permits all",
+          "unconstrained",
+          "overly broad"
+        ],
+        "matched_tokens": [
+          "overly permissive"
+        ],
+        "n_reasons": 2,
+        "overly_permissive": true,
+        "reasons": [
+          "Overly Permissive: Policy Engine will allow every request for the specified principal (AgentCore::IamEntity), action (Any Future Tools) and resource (gateway/*) combination if the policy is added or updated",
+          "Overly Permissive: Policy Engine will allow every request for the specified principal (AgentCore::OAuthUser), action (Any Future Tools) and resource (gateway/*) combination if the policy is added or updated"
+        ],
+        "why_classified": "the sealed oracle names an 'Overly Permissive finding', not any failure. A CREATE_FAILED for a syntax error or a throttle would pass a bare did-it-fail check while measuring nothing about the claim, so an unmatched failure is reported unclassified and forces INCONCLUSIVE"
+      },
+      "create_failed": true,
+      "created": true,
+      "duration_ms": 379.236292,
+      "enforcement_mode_at_accept": "ACTIVE",
+      "enforcement_mode_settled": "ACTIVE",
+      "http_ok": true,
+      "http_status": 202,
+      "policy_id": "grx_f1_3_failfind_r20260810T130945Z-3fmdnuwjn0",
+      "policy_name": "grx_f1_3_failfind_r20260810T130945Z",
+      "reached_usable_state": false,
+      "request_id": "8ce5feec-6cdd-42df-8598-54be2546ae1a",
+      "statement": "permit(principal, action, resource is AgentCore::Gateway);",
+      "statement_kind": "baseline",
+      "status_at_accept": "CREATING",
+      "status_reasons": [
+        "Overly Permissive: Policy Engine will allow every request for the specified principal (AgentCore::IamEntity), action (Any Future Tools) and resource (gateway/*) combination if the policy is added or updated",
+        "Overly Permissive: Policy Engine will allow every request for the specified principal (AgentCore::OAuthUser), action (Any Future Tools) and resource (gateway/*) combination if the policy is added or updated"
+      ],
+      "terminal_status": "CREATE_FAILED",
+      "timed_out": false,
+      "validation_mode": "FAIL_ON_ANY_FINDINGS",
+      "validation_mode_sent": true,
+      "why_this_arm": "the documented default, stated explicitly. If this agrees with the omitted arm, the service default is confirmed to be fail-on-findings and the document's silence is a documentation gap rather than a surprising service behaviour — a distinction that changes how §3.1 should be amended"
+    },
+    {
+      "arm": "ignorefind",
+      "classification": {
+        "classified_against": [
+          "overly permissive",
+          "overlypermissive",
+          "too permissive",
+          "permits all",
+          "unconstrained",
+          "overly broad"
+        ],
+        "matched_tokens": [],
+        "n_reasons": 0,
+        "overly_permissive": false,
+        "reasons": [],
+        "why_classified": "the sealed oracle names an 'Overly Permissive finding', not any failure. A CREATE_FAILED for a syntax error or a throttle would pass a bare did-it-fail check while measuring nothing about the claim, so an unmatched failure is reported unclassified and forces INCONCLUSIVE"
+      },
+      "create_failed": false,
+      "created": true,
+      "duration_ms": 376.100875,
+      "enforcement_mode_at_accept": "ACTIVE",
+      "enforcement_mode_settled": "ACTIVE",
+      "http_ok": true,
+      "http_status": 202,
+      "policy_id": "grx_f1_3_ignfind_r20260810T130945Z-och_5fd9xm",
+      "policy_name": "grx_f1_3_ignfind_r20260810T130945Z",
+      "reached_usable_state": true,
+      "request_id": "21aa50ea-99fe-448a-baa9-236b704ebb07",
+      "statement": "permit(principal, action, resource is AgentCore::Gateway);",
+      "statement_kind": "baseline",
+      "status_at_accept": "CREATING",
+      "status_reasons": [],
+      "terminal_status": "ACTIVE",
+      "timed_out": false,
+      "validation_mode": "IGNORE_ALL_FINDINGS",
+      "validation_mode_sent": true,
+      "why_this_arm": "the MUTATION arm, and what the AWS getting-started page passes for this exact statement. If the finding gate is the cause of the failure, disabling it must let the identical statement through. If this arm ALSO fails, the cause is something else, the reading collapses, and 'add IGNORE_ALL_FINDINGS' would be the wrong remedy to write into the document — which is why it is run"
+    },
+    {
+      "arm": "narrow",
+      "classification": {
+        "classified_against": [
+          "overly permissive",
+          "overlypermissive",
+          "too permissive",
+          "permits all",
+          "unconstrained",
+          "overly broad"
+        ],
+        "matched_tokens": [],
+        "n_reasons": 0,
+        "overly_permissive": false,
+        "reasons": [],
+        "why_classified": "the sealed oracle names an 'Overly Permissive finding', not any failure. A CREATE_FAILED for a syntax error or a throttle would pass a bare did-it-fail check while measuring nothing about the claim, so an unmatched failure is reported unclassified and forces INCONCLUSIVE"
+      },
+      "create_failed": false,
+      "created": true,
+      "duration_ms": 450.328667,
+      "enforcement_mode_at_accept": "ACTIVE",
+      "enforcement_mode_settled": "ACTIVE",
+      "http_ok": true,
+      "http_status": 202,
+      "policy_id": "grx_f1_3_narrow_r20260810T130945Z-hpdhbza8jf",
+      "policy_name": "grx_f1_3_narrow_r20260810T130945Z",
+      "reached_usable_state": true,
+      "request_id": "90e36e47-efbb-4da8-9593-8fb8228828fd",
+      "statement": "permit (principal == AgentCore::IamEntity::\"arn:aws:sts::<account>:assumed-role/grx-caller-r20260810T130945Z\", action, resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n\");",
+      "statement_kind": "narrow",
+      "status_at_accept": "CREATING",
+      "status_reasons": [],
+      "terminal_status": "ACTIVE",
+      "timed_out": false,
+      "validation_mode": null,
+      "validation_mode_sent": false,
+      "why_this_arm": "the CONTROL: a statement scoped to one principal and one gateway, under the same omitted-mode condition as the document's arm. It is what makes that arm's failure attributable to over-permissiveness rather than to this engine, this account, this region or this day. Without it, 'CreatePolicy failed' is equally consistent with an engine that refuses everything"
+    }
+  ],
+  "billable_calls": 0,
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F1-3",
+    "clear_here": true
+  },
+  "case_id": "F1-3",
+  "control_binding": {
+    "caller_role": "grx-caller-r20260810T130945Z",
+    "gateway_arn_masked": "arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n",
+    "why_both_required": "cedar.gateway_resource(None) returns `resource is AgentCore::Gateway` — the baseline. A permissive fallback would replace the control with a copy of the treatment, both arms would fail, and the pair would read as 'even the narrow policy is rejected': the wrong conclusion from a design that looked complete"
+  },
+  "default_mode_identity": {
+    "agree": true,
+    "fail_on_any_findings_status": "CREATE_FAILED",
+    "omitted_status": "CREATE_FAILED",
+    "reading": "if the two agree, the service default IS fail-on-findings and the document's silence is a documentation gap rather than surprising service behaviour. That distinction sets the amendment: state the default and the remedy, rather than describe a trap"
+  },
+  "enforcement_mode_observed": {
+    "settled_values": {
+      "default": "ACTIVE",
+      "failfind": "ACTIVE",
+      "ignorefind": "ACTIVE",
+      "narrow": "ACTIVE"
+    },
+    "why_recorded_not_tested": "`enforcementMode` is a SECOND parameter §3.1 never mentions, and it exists on CreatePolicy:in only from botocore 1.43.32 (F1-1). What the service defaults it to is F4's subject, not this case's; recording it here costs nothing and gives F4 a same-engine reference point"
+  },
+  "engine_id": "grx_f1_3_pe_r20260810T130945Z-86_jn23cyn",
+  "expiry": "a service behaviour, not a model read: AWS could change the default validationMode or the validator's finding set at any time. If it does, that is an AWS-BEHAVIOR-CHANGES.md entry, not a correction to this record",
+  "gateway_is_read_only_here": "the Phase-2 gateway ARN appears only inside a Cedar resource reference. No UpdateGateway, no attach, no call through it: the live testbed is untouched",
+  "instrument": "paired CreatePolicy against a FRESH policy engine with validationMode as the only independent variable; each policy polled to a terminal status via infra/03_policy_engine.wait_status (3s interval, 180s ceiling)",
+  "is_smoke": false,
+  "kind": "EXISTENCE",
+  "local_amendment_blockers": [],
+  "local_amendment_blockers_why": "conditions that leave the sealed VERDICT intact but withdraw support from the REMEDY a v1.3 amendment would carry. They live in the record because check_amendment_readiness.py reads FINDING provenance blocks and replication days, not case payloads — so a claim that the mutation 'gates the amendment' would otherwise be prose asserting an enforcement nothing performs",
+  "mutation": {
+    "arm": "ignorefind",
+    "inverted": true,
+    "mandatory_per_seal": false,
+    "status": "ACTIVE",
+    "validation_mode": "IGNORE_ALL_FINDINGS",
+    "why_it_matters": "if disabling the finding gate lets the IDENTICAL statement through, the gate is the cause of the failure — which is what makes 'pass validationMode=IGNORE_ALL_FINDINGS, or scope the statement' a CORRECT remedy to write into the document. Had this arm also failed, the reading would have collapsed and the remedy would have been wrong. The seal does not mark the mutation mandatory for F1-3, so it does not gate the verdict — and it is not overridden here, because a harness that overrode its own seal would be deciding its own question. What a non-inverting mutation does instead is land in `local_amendment_blockers`, withdrawing support from the remedy while leaving the verdict where the seal put it"
+  },
+  "n_rationale": "n=1 per arm, by design and not by budget. This is a deterministic control-plane validator outcome, not a rate; PREREGISTRATION.yaml binds no n for F1-3 (planned_n is None, family descriptive_no_test). Four arms of one call each is what a single-independent-variable design needs, and the replication requirement is a second DAY, not a larger n on one day",
+  "oracle_text": "TRUE if CreatePolicy with 'permit(principal, action, resource is AgentCore::Gateway);' and no validationMode reaches CREATE_FAILED with an Overly Permissive finding; FALSE if it reaches a usable state",
+  "planned_n": null,
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F1-3",
+    "evidence": {
+      "detail": {
+        "arms": [
+          {
+            "arm": "default",
+            "classification": {
+              "classified_against": [
+                "overly permissive",
+                "overlypermissive",
+                "too permissive",
+                "permits all",
+                "unconstrained",
+                "overly broad"
+              ],
+              "matched_tokens": [
+                "overly permissive"
+              ],
+              "n_reasons": 2,
+              "overly_permissive": true,
+              "reasons": [
+                "Overly Permissive: Policy Engine will allow every request for the specified principal (AgentCore::IamEntity), action (Any Future Tools) and resource (gateway/*) combination if the policy is added or updated",
+                "Overly Permissive: Policy Engine will allow every request for the specified principal (AgentCore::OAuthUser), action (Any Future Tools) and resource (gateway/*) combination if the policy is added or updated"
+              ],
+              "why_classified": "the sealed oracle names an 'Overly Permissive finding', not any failure. A CREATE_FAILED for a syntax error or a throttle would pass a bare did-it-fail check while measuring nothing about the claim, so an unmatched failure is reported unclassified and forces INCONCLUSIVE"
+            },
+            "create_failed": true,
+            "created": true,
+            "duration_ms": 395.549625,
+            "enforcement_mode_at_accept": "ACTIVE",
+            "enforcement_mode_settled": "ACTIVE",
+            "http_ok": true,
+            "http_status": 202,
+            "policy_id": "grx_f1_3_dflt_r20260810T130945Z-xrctv_anj2",
+            "policy_name": "grx_f1_3_dflt_r20260810T130945Z",
+            "reached_usable_state": false,
+            "request_id": "3295a104-c42a-4edf-9e12-38d14328236d",
+            "statement": "permit(principal, action, resource is AgentCore::Gateway);",
+            "statement_kind": "baseline",
+            "status_at_accept": "CREATING",
+            "status_reasons": [
+              "Overly Permissive: Policy Engine will allow every request for the specified principal (AgentCore::IamEntity), action (Any Future Tools) and resource (gateway/*) combination if the policy is added or updated",
+              "Overly Permissive: Policy Engine will allow every request for the specified principal (AgentCore::OAuthUser), action (Any Future Tools) and resource (gateway/*) combination if the policy is added or updated"
+            ],
+            "terminal_status": "CREATE_FAILED",
+            "timed_out": false,
+            "validation_mode": null,
+            "validation_mode_sent": false,
+            "why_this_arm": "the document's instruction executed literally: the bare permit statement with no validationMode parameter at all. THIS is the arm the sealed oracle is about. The parameter is omitted rather than set to its documented default because an omitted parameter and an explicitly-defaulted one are different requests, and only the first is what a reader following §3.1 produces"
+          },
+          {
+            "arm": "failfind",
+            "classification": {
+              "classified_against": [
+                "overly permissive",
+                "overlypermissive",
+                "too permissive",
+                "permits all",
+                "unconstrained",
+                "overly broad"
+              ],
+              "matched_tokens": [
+                "overly permissive"
+              ],
+              "n_reasons": 2,
+              "overly_permissive": true,
+              "reasons": [
+                "Overly Permissive: Policy Engine will allow every request for the specified principal (AgentCore::IamEntity), action (Any Future Tools) and resource (gateway/*) combination if the policy is added or updated",
+                "Overly Permissive: Policy Engine will allow every request for the specified principal (AgentCore::OAuthUser), action (Any Future Tools) and resource (gateway/*) combination if the policy is added or updated"
+              ],
+              "why_classified": "the sealed oracle names an 'Overly Permissive finding', not any failure. A CREATE_FAILED for a syntax error or a throttle would pass a bare did-it-fail check while measuring nothing about the claim, so an unmatched failure is reported unclassified and forces INCONCLUSIVE"
+            },
+            "create_failed": true,
+            "created": true,
+            "duration_ms": 379.236292,
+            "enforcement_mode_at_accept": "ACTIVE",
+            "enforcement_mode_settled": "ACTIVE",
+            "http_ok": true,
+            "http_status": 202,
+            "policy_id": "grx_f1_3_failfind_r20260810T130945Z-3fmdnuwjn0",
+            "policy_name": "grx_f1_3_failfind_r20260810T130945Z",
+            "reached_usable_state": false,
+            "request_id": "8ce5feec-6cdd-42df-8598-54be2546ae1a",
+            "statement": "permit(principal, action, resource is AgentCore::Gateway);",
+            "statement_kind": "baseline",
+            "status_at_accept": "CREATING",
+            "status_reasons": [
+              "Overly Permissive: Policy Engine will allow every request for the specified principal (AgentCore::IamEntity), action (Any Future Tools) and resource (gateway/*) combination if the policy is added or updated",
+              "Overly Permissive: Policy Engine will allow every request for the specified principal (AgentCore::OAuthUser), action (Any Future Tools) and resource (gateway/*) combination if the policy is added or updated"
+            ],
+            "terminal_status": "CREATE_FAILED",
+            "timed_out": false,
+            "validation_mode": "FAIL_ON_ANY_FINDINGS",
+            "validation_mode_sent": true,
+            "why_this_arm": "the documented default, stated explicitly. If this agrees with the omitted arm, the service default is confirmed to be fail-on-findings and the document's silence is a documentation gap rather than a surprising service behaviour — a distinction that changes how §3.1 should be amended"
+          },
+          {
+            "arm": "ignorefind",
+            "classification": {
+              "classified_against": [
+                "overly permissive",
+                "overlypermissive",
+                "too permissive",
+                "permits all",
+                "unconstrained",
+                "overly broad"
+              ],
+              "matched_tokens": [],
+              "n_reasons": 0,
+              "overly_permissive": false,
+              "reasons": [],
+              "why_classified": "the sealed oracle names an 'Overly Permissive finding', not any failure. A CREATE_FAILED for a syntax error or a throttle would pass a bare did-it-fail check while measuring nothing about the claim, so an unmatched failure is reported unclassified and forces INCONCLUSIVE"
+            },
+            "create_failed": false,
+            "created": true,
+            "duration_ms": 376.100875,
+            "enforcement_mode_at_accept": "ACTIVE",
+            "enforcement_mode_settled": "ACTIVE",
+            "http_ok": true,
+            "http_status": 202,
+            "policy_id": "grx_f1_3_ignfind_r20260810T130945Z-och_5fd9xm",
+            "policy_name": "grx_f1_3_ignfind_r20260810T130945Z",
+            "reached_usable_state": true,
+            "request_id": "21aa50ea-99fe-448a-baa9-236b704ebb07",
+            "statement": "permit(principal, action, resource is AgentCore::Gateway);",
+            "statement_kind": "baseline",
+            "status_at_accept": "CREATING",
+            "status_reasons": [],
+            "terminal_status": "ACTIVE",
+            "timed_out": false,
+            "validation_mode": "IGNORE_ALL_FINDINGS",
+            "validation_mode_sent": true,
+            "why_this_arm": "the MUTATION arm, and what the AWS getting-started page passes for this exact statement. If the finding gate is the cause of the failure, disabling it must let the identical statement through. If this arm ALSO fails, the cause is something else, the reading collapses, and 'add IGNORE_ALL_FINDINGS' would be the wrong remedy to write into the document — which is why it is run"
+          },
+          {
+            "arm": "narrow",
+            "classification": {
+              "classified_against": [
+                "overly permissive",
+                "overlypermissive",
+                "too permissive",
+                "permits all",
+                "unconstrained",
+                "overly broad"
+              ],
+              "matched_tokens": [],
+              "n_reasons": 0,
+              "overly_permissive": false,
+              "reasons": [],
+              "why_classified": "the sealed oracle names an 'Overly Permissive finding', not any failure. A CREATE_FAILED for a syntax error or a throttle would pass a bare did-it-fail check while measuring nothing about the claim, so an unmatched failure is reported unclassified and forces INCONCLUSIVE"
+            },
+            "create_failed": false,
+            "created": true,
+            "duration_ms": 450.328667,
+            "enforcement_mode_at_accept": "ACTIVE",
+            "enforcement_mode_settled": "ACTIVE",
+            "http_ok": true,
+            "http_status": 202,
+            "policy_id": "grx_f1_3_narrow_r20260810T130945Z-hpdhbza8jf",
+            "policy_name": "grx_f1_3_narrow_r20260810T130945Z",
+            "reached_usable_state": true,
+            "request_id": "90e36e47-efbb-4da8-9593-8fb8228828fd",
+            "statement": "permit (principal == AgentCore::IamEntity::\"arn:aws:sts::<account>:assumed-role/grx-caller-r20260810T130945Z\", action, resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n\");",
+            "statement_kind": "narrow",
+            "status_at_accept": "CREATING",
+            "status_reasons": [],
+            "terminal_status": "ACTIVE",
+            "timed_out": false,
+            "validation_mode": null,
+            "validation_mode_sent": false,
+            "why_this_arm": "the CONTROL: a statement scoped to one principal and one gateway, under the same omitted-mode condition as the document's arm. It is what makes that arm's failure attributable to over-permissiveness rather than to this engine, this account, this region or this day. Without it, 'CreatePolicy failed' is equally consistent with an engine that refuses everything"
+          }
+        ],
+        "control_arm_status": "ACTIVE",
+        "default_arm_create_failed": true,
+        "default_arm_overly_permissive": true,
+        "default_arm_status_at_accept": "CREATING",
+        "documented_default_agrees": true,
+        "engine_id": "grx_f1_3_pe_r20260810T130945Z-86_jn23cyn",
+        "mutation_arm_status": "ACTIVE"
+      },
+      "observed": true
+    },
+    "family": "descriptive_no_test",
+    "kind": "EXISTENCE",
+    "mutation_required": false,
+    "n_attempted": 1,
+    "n_met": true,
+    "n_usable": 1,
+    "notes": [],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [],
+    "verdict": "TRUE"
+  },
+  "region": "us-east-1",
+  "replication_required": "the conflict-resolution protocol requires reproduction on >=2 separate UTC days before the document is amended. This is day 1 of that requirement; Phase 2's sighting does not count as a day because it was not this experiment",
+  "run_id": "r20260810T130945Z",
+  "run_id_adopted": "from state.json (r20260810T130945Z), not minted. State.load_or_new raises on a mismatch because two ids in one ledger split the RunId tag and leave half the resources invisible to a single sweep. The replication rule is unaffected: 07a_compare_runs.py counts days from t_start_utc in the records",
+  "statements": {
+    "baseline": "permit(principal, action, resource is AgentCore::Gateway);",
+    "narrow": "permit (principal == AgentCore::IamEntity::\"arn:aws:sts::<account>:assumed-role/grx-caller-r20260810T130945Z\", action, resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n\");"
+  },
+  "text_units": 0,
+  "verdict": "TRUE",
+  "verdict_rule": "TRUE iff the document's arm — validationMode omitted, bare permit statement — settles CREATE_FAILED with an over-permissiveness finding, WHILE the narrow control under the same condition reaches a usable state. The control is part of the rule and not a sanity check: without it the observation is equally consistent with an engine that refuses everything",
+  "what_true_does_not_prove": "that the statement is invalid Cedar, or that AWS is wrong to reject it. Rejecting an unconstrained permit is defensible service behaviour. The finding is about OUR document telling readers to send it without telling them what happens — the defect is documentary, and the amendment is to state the mode and the remedy",
+  "what_true_means_for_the_document": "§3.1, §7.2 and §8 all instruct the reader to add this statement and none mentions validationMode. A reader following the checklist verbatim gets a policy in CREATE_FAILED — and because CreatePolicy returns HTTP 202 with a policyId, nothing at the call site says so. ALL THREE sites must be amended: per feedback_grep_the_claim_not_the_phrasing, a claim corrected at one of three sites is not corrected, and claims.csv's sites[] list is the checklist",
+  "why_fresh_engine": "Phase 2 saw this once as a side effect of provisioning (dc1_reproduced, n=1) with no comparison arm, and that engine now holds a live baseline policy while the service's validator is documented to reason about the policy SET — so policy count there is an uncontrolled variable and a second attempt would not even be a repeat. infra/03_policy_engine.py's own docstring refuses the sighting as the result: 'it must be run as a clean experiment against a fresh engine with the validation mode as its independent variable'",
+  "why_the_status_not_the_response": "CreatePolicy returns HTTP 202 Accepted and a policyId for a policy that is already doomed; the outcome settles asynchronously into `status` and `statusReasons`. A reader following the document gets no error at the call site, which is what makes this a documentation defect rather than an inconvenience"
+}

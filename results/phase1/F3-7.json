@@ -1,0 +1,91 @@
+{
+  "billable_calls": 120,
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F3-7",
+    "clear_here": true
+  },
+  "blocks_per_trial": [
+    3
+  ],
+  "case_id": "F3-7",
+  "corpus_root": "corpora_deviation (unsealed; DEVIATIONS.md/DEV-P1-4)",
+  "correlated_observations": {
+    "consequence": "the items are built from (source, query) units x response surfaces, so they are NOT independent observations; the Wilson intervals the oracle compares are computed at the item count and are narrower than the unit count would justify",
+    "content_units": {
+      "grounded": 12,
+      "ungrounded": 12
+    },
+    "items_per_cell": {
+      "grounded": 60,
+      "ungrounded": 60
+    }
+  },
+  "grounded": {
+    "ci": "0.03333 [0.009189, 0.1136] (n=60, wilson, 95%)",
+    "failure_codes": [],
+    "n": 60,
+    "x": 2
+  },
+  "grounding_score_summary": {
+    "grounded": {
+      "max": 1.0,
+      "min": 0.27,
+      "n": 60,
+      "p50": 0.99
+    },
+    "threshold": 0.7,
+    "ungrounded": {
+      "max": 0.79,
+      "min": 0.0,
+      "n": 60,
+      "p50": 0.0
+    },
+    "why": "the scores are the continuous quantity behind the 0.7 threshold; a verdict pair with overlapping score ranges says something different from one with separated ranges and the same block/no-block counts"
+  },
+  "instrument": "ApplyGuardrail (source=OUTPUT, outputScope=FULL), 3 content blocks: grounding_source + query + untagged response",
+  "is_smoke": false,
+  "kind": "DISJOINT_INTERVALS",
+  "mutations": 0,
+  "no_power_claim": "planned_n(F3-7) is None, so n_met=True is vacuous; combined with the correlated observations above, no power claim is available",
+  "oracle_text": "TRUE if the ungrounded-detection rate's Wilson lower bound exceeds the grounded-pair FPR's upper bound; FALSE if the intervals overlap, i.e. the check cannot tell grounded from ungrounded within the documented limits",
+  "pairing": "the two arms share pair_id, source and query and differ only in the response; ungrounded responses CONTRADICT the source rather than being nonsense, since garbled text would trip RELEVANCE and this arm would report grounding detection it never measured",
+  "planned_n": null,
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F3-7",
+    "evidence": {
+      "detection": "0.9333 [0.8407, 0.9738] (n=60, wilson, 95%)",
+      "disjoint": "True",
+      "false_positive": "0.03333 [0.009189, 0.1136] (n=60, wilson, 95%)",
+      "gap": 0.7271086841249422
+    },
+    "family": "exploratory_detection",
+    "kind": "DISJOINT_INTERVALS",
+    "mutation_required": false,
+    "n_attempted": 120,
+    "n_met": true,
+    "n_usable": 120,
+    "notes": [],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [],
+    "verdict": "TRUE"
+  },
+  "relevance_detections": {
+    "grounded": 2,
+    "ungrounded": 10,
+    "why_separate": "RELEVANCE scores the response against the QUERY, GROUNDING against the SOURCE; pooling them would let a relevance block be reported as grounding discrimination"
+  },
+  "run_id": "r20260810T0345Z",
+  "source_is_output": "contextual grounding scores a RESPONSE. At source=INPUT the service returns 200 / action=NONE and OMITS contextualGroundingPolicy entirely — no error — so the first run of this case published FALSE from 120 trials in which the filter never executed (DEVIATIONS.md/DEV-P1-18). Every trial here carries require_policy=contextualGroundingPolicy, so an absent block is a failed trial and not a negative",
+  "text_units_note": "each trial sends 3 blocks; `text_units` on each row is the service's own count and is what F10-2 cross-checks",
+  "ungrounded": {
+    "ci": "0.9333 [0.8407, 0.9738] (n=60, wilson, 95%)",
+    "failure_codes": [],
+    "n": 60,
+    "x": 56
+  },
+  "verdict": "TRUE"
+}

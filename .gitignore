@@ -1,0 +1,14 @@
+# Local-only by policy, not by size: the evidence tree is the audit archive whose
+# purpose is that a claim can be taken to AWS Support by request id and FULL ARN
+# (see check_redaction.py's docstring). It is never distributed; the release path
+# is results/ plus the Markdown deliverables, which the redaction gate scans.
+evidence/
+
+# Environments and caches
+.venv/
+.venv-*/
+__pycache__/
+.pytest_cache/
+node_modules/
+f1_config/.wheel_cache/
+.DS_Store
