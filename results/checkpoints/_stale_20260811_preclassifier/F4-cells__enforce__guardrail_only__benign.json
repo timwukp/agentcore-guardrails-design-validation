@@ -1,0 +1,127 @@
+{
+  "case_id": "F4-cells",
+  "cell": "enforce__guardrail_only__benign",
+  "done": {
+    "t0001": {
+      "args_key": "benign",
+      "attempts": 1,
+      "authorize_exception": false,
+      "cell": "enforce__guardrail_only__benign",
+      "default_deny": false,
+      "duration_ms": 444.529,
+      "engine_mode": "ENFORCE",
+      "expect": "denied",
+      "f4_6_adverse": false,
+      "f4_6_detail": {},
+      "f4_6_indeterminate_truncation": false,
+      "f4_6_why": "",
+      "hit": false,
+      "http_status": 200,
+      "is_error": null,
+      "jsonrpc_error": {
+        "code": -32002,
+        "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: a guardrail policy could not be evaluated - missing an attribute. Please retry.]"
+      },
+      "outcome": "jsonrpc_error",
+      "policy_modes": {
+        "baseline": "LOG_ONLY",
+        "guardrail": "ACTIVE"
+      },
+      "request_id": "049fe66a-48af-40e8-b69d-c6c843caa8b4",
+      "retry_delay_s": 0.0,
+      "session_id": "d8023220-99d7-4382-b2bd-9ea90bd3f261",
+      "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: a guardrail policy could not be evaluated - missing an attribute. Please retry.]",
+      "text_archived_complete": true,
+      "text_len": 174,
+      "trial_id": "t0001",
+      "trial_index": 1,
+      "unclassified": false,
+      "why_hit": "not an answer to this question: jsonrpc_error"
+    },
+    "t0002": {
+      "args_key": "benign",
+      "attempts": 1,
+      "authorize_exception": false,
+      "cell": "enforce__guardrail_only__benign",
+      "default_deny": false,
+      "duration_ms": 449.3,
+      "engine_mode": "ENFORCE",
+      "expect": "denied",
+      "f4_6_adverse": false,
+      "f4_6_detail": {},
+      "f4_6_indeterminate_truncation": false,
+      "f4_6_why": "",
+      "hit": false,
+      "http_status": 200,
+      "is_error": null,
+      "jsonrpc_error": {
+        "code": -32002,
+        "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: a guardrail policy could not be evaluated - missing an attribute. Please retry.]"
+      },
+      "outcome": "jsonrpc_error",
+      "policy_modes": {
+        "baseline": "LOG_ONLY",
+        "guardrail": "ACTIVE"
+      },
+      "request_id": "23da6a05-5795-468b-a2e1-8080889638e5",
+      "retry_delay_s": 0.0,
+      "session_id": "d8023220-99d7-4382-b2bd-9ea90bd3f261",
+      "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: a guardrail policy could not be evaluated - missing an attribute. Please retry.]",
+      "text_archived_complete": true,
+      "text_len": 174,
+      "trial_id": "t0002",
+      "trial_index": 2,
+      "unclassified": false,
+      "why_hit": "not an answer to this question: jsonrpc_error"
+    },
+    "t0003": {
+      "args_key": "benign",
+      "attempts": 1,
+      "authorize_exception": false,
+      "cell": "enforce__guardrail_only__benign",
+      "default_deny": false,
+      "duration_ms": 459.932,
+      "engine_mode": "ENFORCE",
+      "expect": "denied",
+      "f4_6_adverse": false,
+      "f4_6_detail": {},
+      "f4_6_indeterminate_truncation": false,
+      "f4_6_why": "",
+      "hit": false,
+      "http_status": 200,
+      "is_error": null,
+      "jsonrpc_error": {
+        "code": -32002,
+        "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: a guardrail policy could not be evaluated - missing an attribute. Please retry.]"
+      },
+      "outcome": "jsonrpc_error",
+      "policy_modes": {
+        "baseline": "LOG_ONLY",
+        "guardrail": "ACTIVE"
+      },
+      "request_id": "22ea92cd-bb8c-4e5a-aa1d-62686640b34e",
+      "retry_delay_s": 0.0,
+      "session_id": "d8023220-99d7-4382-b2bd-9ea90bd3f261",
+      "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: a guardrail policy could not be evaluated - missing an attribute. Please retry.]",
+      "text_archived_complete": true,
+      "text_len": 174,
+      "trial_id": "t0003",
+      "trial_index": 3,
+      "unclassified": false,
+      "why_hit": "not an answer to this question: jsonrpc_error"
+    }
+  },
+  "failed": {},
+  "meta": {
+    "corpus": "benign",
+    "guardrail_version": "none:policy-embedded-guardrail-functions",
+    "is_smoke": true,
+    "operation": "InvokeGateway",
+    "output_scope": "tool_result",
+    "qualifiers": "engine=ENFORCE;baseline=LOG_ONLY;guardrail=ACTIVE",
+    "region": "us-east-1",
+    "source": "gateway_tools_call"
+  },
+  "n_done": 3,
+  "n_failed": 0
+}

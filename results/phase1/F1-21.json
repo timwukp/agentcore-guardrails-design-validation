@@ -1,0 +1,191 @@
+{
+  "ambient_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "aws_calls": 0,
+  "billable_calls": 0,
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F1-21",
+    "clear_here": true
+  },
+  "case_id": "F1-21",
+  "client_side_enforcement": "botocore.validate.ParamValidator enforces required members, tagged-union arity and string/list MINIMUMS. It enforces no maximum and performs no enum membership check (direction 7: `sync`, `ASYNCHRONOUS` and `NOT_A_MODE` all pass). Every documented minimum and required field is therefore decidable offline; every documented maximum and value is not",
+  "consequence_for_5c": "the blast-radius narrowing still works — includedModels scoped to one provably-unused model — but the request must also carry excludedModels (min: 0, so an empty list satisfies it) or ParamValidator refuses to serialise it. A 5c script written from the plan's premise would have failed at the validator inside its <=5-minute window, with the account-level guardrail already the thing being changed",
+  "direction_9_classification": {
+    "accounted": [
+      {
+        "all_values": [
+          "sync",
+          "async"
+        ],
+        "matched_values": [
+          "sync",
+          "async"
+        ],
+        "service": "bedrock-runtime",
+        "shape": "GuardrailStreamProcessingMode",
+        "token": "SYNC",
+        "why": "a LEGITIMATE hit and F1-12's own subject: the SYNC and ASYNC tokens match its two values `sync` and `async`. It is in this table because the table's job is to account for every hit, not to hold only the false ones — and it is the reason the F1-12 verdict below reads the ENUM directly instead of reading a hit count: the hit proves a stream-processing mode enum exists, and F1-12 asks whether its values are the document's SYNCHRONOUS / ASYNCHRONOUS, which they are not"
+      },
+      {
+        "all_values": [
+          "sync",
+          "async"
+        ],
+        "matched_values": [
+          "async"
+        ],
+        "service": "bedrock-runtime",
+        "shape": "GuardrailStreamProcessingMode",
+        "token": "ASYNC",
+        "why": "a LEGITIMATE hit and F1-12's own subject: the SYNC and ASYNC tokens match its two values `sync` and `async`. It is in this table because the table's job is to account for every hit, not to hold only the false ones — and it is the reason the F1-12 verdict below reads the ENUM directly instead of reading a hit count: the hit proves a stream-processing mode enum exists, and F1-12 asks whether its values are the document's SYNCHRONOUS / ASYNCHRONOUS, which they are not"
+      },
+      {
+        "all_values": [
+          "REQUEST",
+          "ACCOUNT_ENFORCED",
+          "ORGANIZATION_ENFORCED"
+        ],
+        "matched_values": [
+          "ACCOUNT_ENFORCED",
+          "ORGANIZATION_ENFORCED"
+        ],
+        "service": "bedrock-runtime",
+        "shape": "GuardrailOrigin",
+        "token": "ENFORCE",
+        "why": "where a guardrail came from. ACCOUNT_ENFORCED / ORGANIZATION_ENFORCED contain the token ENFORCE and describe account- and organization-level enforcement (the F5-9 surface), not an Automated Reasoning detect-vs-enforce mode"
+      },
+      {
+        "all_values": [
+          "CREATING",
+          "UPDATING",
+          "UPDATE_UNSUCCESSFUL",
+          "DELETING",
+          "READY",
+          "FAILED",
+          "SYNCHRONIZING",
+          "SYNCHRONIZE_UNSUCCESSFUL",
+          "CREATE_PENDING_AUTH",
+          "UPDATE_PENDING_AUTH",
+          "SYNCHRONIZE_PENDING_AUTH"
+        ],
+        "matched_values": [
+          "SYNCHRONIZING",
+          "SYNCHRONIZE_UNSUCCESSFUL",
+          "SYNCHRONIZE_PENDING_AUTH"
+        ],
+        "service": "bedrock-agentcore-control",
+        "shape": "TargetStatus",
+        "token": "SYNC",
+        "why": "a gateway-target lifecycle enum. SYNCHRONIZING / SYNCHRONIZE_UNSUCCESSFUL / SYNCHRONIZE_PENDING_AUTH contain the token SYNC and describe target synchronisation, not a guardrail stream-processing mode"
+      },
+      {
+        "all_values": [
+          "LOG_ONLY",
+          "ENFORCE"
+        ],
+        "matched_values": [
+          "ENFORCE"
+        ],
+        "service": "bedrock-agentcore-control",
+        "shape": "GatewayPolicyEngineMode",
+        "token": "ENFORCE",
+        "why": "a LEGITIMATE hit, and it is F1-5's own subject: ENFORCE is a policy-engine mode. It is listed here so the ENFORCE token's hit count is fully accounted for, not to excuse it"
+      }
+    ],
+    "classified_against": [
+      "GatewayPolicyEngineMode",
+      "GuardrailOrigin",
+      "GuardrailStreamProcessingMode",
+      "TargetStatus"
+    ],
+    "documented_tokens_present": [],
+    "n_accounted": 5,
+    "n_hits": 5,
+    "n_unclassified": 0,
+    "unclassified": [],
+    "why_classified_not_dropped": "two of the five hits are substring accidents on enums that mean something else (TargetStatus.SYNCHRONIZING contains SYNC; GuardrailOrigin.ACCOUNT_ENFORCED contains ENFORCE) and three are legitimate. Dropping the accidents silently would assert the classification instead of recording it; a hit on an unlisted shape therefore falls through to `unclassified` and forces INCONCLUSIVE with the shape named. Every hit is accounted for either way, which is what makes the zero-unclassified guard meaningful"
+  },
+  "examined": {
+    "n_enum_values": 1076,
+    "n_enums": 271,
+    "n_member_paths": 14774,
+    "n_operations": 350,
+    "n_services": 4,
+    "n_shape_names": 3432
+  },
+  "expiry": "dated by botocore 1.43.67",
+  "instrument": "lib/f1_surface.py, run as a subprocess under .venv-oracle: the botocore service models for bedrock, bedrock-runtime, bedrock-agentcore-control and bedrock-agentcore, read locally in ten directions. No operation is invoked",
+  "is_smoke": false,
+  "kind": "EXISTENCE",
+  "min_botocore_required": "1.43.32",
+  "mutations": 0,
+  "no_claim_row": "this case has NO row in claims/triage.csv, by design. claims/triage_rules.PLATFORM_CASES states why, verbatim: Prerequisite for F5-9. Establishes the PutEnforcedGuardrailConfiguration surface and its required fields WITHOUT applying enforcement, so the 5c blast-radius controls are validated before the <=5-minute live window opens. The document does not describe this API; only its consequence (an agent cannot decline an account-level guardrail) is claimed, and that is F5-9.",
+  "oracle_text": "TRUE if guardrailVersion and modelEnforcement.includedModels are required as modelled; FALSE if either is optional in practice",
+  "parent_interpreter": "/Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python",
+  "parent_is_oracle_interpreter": true,
+  "pinned_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "planned_n": null,
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F1-21",
+    "evidence": {
+      "detail": {
+        "excluded_models_required": true,
+        "guardrail_version_required": true,
+        "included_models_required": true,
+        "model_enforcement_itself_required": false,
+        "n_members_examined": 10,
+        "required_paths": [
+          "guardrailInferenceConfig",
+          "guardrailInferenceConfig.guardrailIdentifier",
+          "guardrailInferenceConfig.guardrailVersion",
+          "guardrailInferenceConfig.modelEnforcement.excludedModels",
+          "guardrailInferenceConfig.modelEnforcement.includedModels"
+        ],
+        "top_level_members": [
+          "configId",
+          "guardrailInferenceConfig"
+        ],
+        "top_level_required": [
+          "guardrailInferenceConfig"
+        ]
+      },
+      "observed": true
+    },
+    "family": "descriptive_no_test",
+    "kind": "EXISTENCE",
+    "mutation_required": false,
+    "n_attempted": 0,
+    "n_met": true,
+    "n_usable": 0,
+    "notes": [],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [],
+    "verdict": "TRUE"
+  },
+  "run_id": "r20260810T180012Z",
+  "selective_content_guarding": "the shape also carries selectiveContentGuarding.{system,messages} over SelectiveGuardingMode {SELECTIVE, COMPREHENSIVE}, which the document does not mention at all. Recorded because a reader planning account-level enforcement would want to know it exists; it answers no sealed claim",
+  "services_available": [
+    "bedrock",
+    "bedrock-agentcore",
+    "bedrock-agentcore-control",
+    "bedrock-runtime"
+  ],
+  "services_unavailable": {},
+  "sweep_interpreter": "/Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python",
+  "sweep_python": "3.12.12",
+  "verdict": "TRUE",
+  "verdict_reading": "both are required, and the surface is narrower than the plan assumed in one way and wider in another: `modelEnforcement` is itself OPTIONAL at the top level, so the requirement is conditional on supplying that block at all — and when it is supplied, `excludedModels` is required TOO, not just `includedModels`. The plan's 5c design said 'only includedModels is required'; that is refuted, and 5c must send both lists",
+  "verdict_rule": "TRUE iff guardrailVersion and modelEnforcement.includedModels are both required as modelled. 'Required in practice' is decidable here and not only on the model, because ParamValidator DOES enforce required members — an omitted one never reaches the service, so no live call could observe it being optional",
+  "what_true_does_not_prove": "anything about what account-level enforcement DOES. This case deliberately applies none — its whole purpose per the sealed triage note is to validate the 5c controls before the live window opens. The consequence claim (an agent cannot decline an account-level guardrail) is F5-9",
+  "why_no_aws_call": "boto3.client loads the service model from the installed package; no operation is invoked and no socket is opened",
+  "why_subprocess": "so the interpreter that loaded the model is a RECORDED ARGUMENT rather than whichever python launched this file: the content of these cases is which fields a specific botocore models, and system python3 and .venv-baseline both carry 1.42.79, under which enforcementMode and InvokeGuardrailChecks are absent — an absence that is a fact about pip (F1-1, DEV-P1-15). It is NOT because .venv-oracle cannot evaluate an oracle: that venv carries numpy 2.5.2 and scipy 1.18.0 and imports every lib/ module cleanly, so the rationale in f8_regional/07_absent_surface.py is stale prose and was re-derived rather than copied. `parent_is_oracle_interpreter` records whether the subprocess is a necessity or a redundancy on this run"
+}

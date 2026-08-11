@@ -1,0 +1,181 @@
+{
+  "ambient_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "artifact": "results/f1_sdk_bisect.json",
+  "aws_calls": 0,
+  "billable_calls": 0,
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F1-2",
+    "clear_here": true
+  },
+  "case_id": "F1-2",
+  "deciding_value": [
+    "messages",
+    "checks"
+  ],
+  "expiry": "a statement about released wheels, which are immutable — so unlike every other F1 case this result cannot silently drift. A LATER release removing the field would be an AWS-BEHAVIOR-CHANGES.md entry, not a correction here",
+  "field_locations": "",
+  "instrument": "f1_config/01_sdk_bisect.py: pip download of botocore wheels, service-2.json.gz read out of each wheel, shape members asserted offline. No AWS API is called and no wheel is installed",
+  "is_smoke": false,
+  "kind": "EXISTENCE",
+  "min_botocore_required": "1.43.32",
+  "monotonicity_checked": [
+    {
+      "expected": false,
+      "index": 210,
+      "predicate_true": false,
+      "version": "1.43.29"
+    },
+    {
+      "expected": true,
+      "index": 211,
+      "predicate_true": true,
+      "version": "1.43.30"
+    },
+    {
+      "expected": true,
+      "index": 212,
+      "predicate_true": true,
+      "version": "1.43.31"
+    },
+    {
+      "expected": false,
+      "index": 105,
+      "predicate_true": false,
+      "version": "1.42.22"
+    }
+  ],
+  "mutations": 0,
+  "n_candidates": 249,
+  "n_versions_probed": 14,
+  "oracle_text": "TRUE if the operation is present in the service model; FALSE if absent",
+  "planned_n": null,
+  "probe_order": [
+    "1.43.29"
+  ],
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F1-2",
+    "evidence": {
+      "detail": {
+        "adjacent_below": "1.43.29",
+        "boundary": {
+          "absent_versions": [
+            "1.40.0",
+            "1.42.22",
+            "1.42.23",
+            "1.42.41",
+            "1.43.5",
+            "1.43.20",
+            "1.43.28",
+            "1.43.29"
+          ],
+          "adjacent_below": [
+            "1.43.29"
+          ],
+          "adjacent_below_has_field": false,
+          "adjacent_below_version": "1.43.29",
+          "candidate_index_of_first": 211,
+          "candidate_indices": {
+            "1.42.22": 105,
+            "1.43.29": 210,
+            "1.43.30": 211,
+            "1.43.31": 212
+          },
+          "checked": [
+            {
+              "expected": false,
+              "index": 210,
+              "predicate_true": false,
+              "version": "1.43.29"
+            },
+            {
+              "expected": true,
+              "index": 211,
+              "predicate_true": true,
+              "version": "1.43.30"
+            },
+            {
+              "expected": true,
+              "index": 212,
+              "predicate_true": true,
+              "version": "1.43.31"
+            },
+            {
+              "expected": false,
+              "index": 105,
+              "predicate_true": false,
+              "version": "1.42.22"
+            }
+          ],
+          "claimed_first": "1.43.30",
+          "conclusion": "field first appears in botocore 1.43.30",
+          "established": true,
+          "field": "guardrail_check_members",
+          "monotone_flag": true,
+          "monotone_note": "",
+          "n_absent": 8,
+          "n_checked": 4,
+          "n_present": 6,
+          "n_versions_probed": 14,
+          "predicate": "invoke_guardrail_checks",
+          "prediction_mismatches": [],
+          "present_versions": [
+            "1.43.30",
+            "1.43.31",
+            "1.43.32",
+            "1.43.33",
+            "1.43.36",
+            "1.43.67"
+          ],
+          "probe_order": [
+            "1.43.29"
+          ],
+          "surface_derived_first": "1.43.30",
+          "surfaces_agree": true,
+          "why": "1.43.30 (candidate index 211) carries 'guardrail_check_members' and 1.43.29 (candidate index 210, immediately below it in the 249-release list) does not. Monotone over 4 checked versions with every prediction held"
+        },
+        "candidate_index": 211,
+        "companion_boundary": null,
+        "companion_field": null,
+        "deciding_field": "guardrail_check_members",
+        "deciding_value": [
+          "messages",
+          "checks"
+        ],
+        "first_version": "1.43.30"
+      },
+      "observed": true
+    },
+    "family": "descriptive_no_test",
+    "kind": "EXISTENCE",
+    "mutation_required": false,
+    "n_attempted": 0,
+    "n_met": true,
+    "n_usable": 0,
+    "notes": [],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [],
+    "verdict": "TRUE"
+  },
+  "run_id": "r20260810T180352Z",
+  "search_range": [
+    "1.40.0",
+    "1.43.67"
+  ],
+  "verdict": "TRUE",
+  "verdict_reading": "1.43.30 (candidate index 211) carries 'guardrail_check_members' and 1.43.29 (candidate index 210, immediately below it in the 249-release list) does not. Monotone over 4 checked versions with every prediction held",
+  "verdict_rule": "TRUE iff the deciding field is present at the claimed first version, no probed version below it carries the field, the release at the immediately preceding CANDIDATE INDEX was probed and lacks it, and every monotonicity prediction held. All four, because each alone is satisfiable by an artifact that measured the wrong thing",
+  "what_these_verdicts_date": "the released SDK, not the service. A field callable from Python at a given botocore may have been reachable by raw HTTP earlier; the bisect has no instrument that could see that and does not claim to",
+  "what_true_does_not_prove": "when AWS shipped the feature. This dates the SDK surface. The service may have accepted the field earlier over raw HTTP, and the bisect has no instrument that could see that",
+  "wheel_downloads": 0,
+  "wheels_downloaded": 14,
+  "why_a_separate_script": "01_sdk_bisect.py imports only the standard library and never calls P.emit, so its result never reached results/phase1/ — the index Phase 9 enumerates. It is not edited because it is the dated instrument of a published result, and because its stdlib-only import list is a property worth keeping: it is the one script that must run without this project's venvs, since its job is to install fourteen other botocores",
+  "why_it_matters": "DEV-P1-15 is the incident where an absence read on botocore 1.42.79 was nearly published as an absence in the API. These two verdicts put a dated floor under every other F1 case's 'absent from the model'",
+  "why_this_field_decides": "F1-2's oracle is presence of the OPERATION in bedrock-runtime. The recorded input members are the presence witness because an operation present with no members would be a broken model read rather than a shipped API"
+}

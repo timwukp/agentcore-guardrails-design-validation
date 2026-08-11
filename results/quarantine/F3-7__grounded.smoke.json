@@ -1,0 +1,287 @@
+{
+  "case_id": "F3-7",
+  "cell": "grounded",
+  "done": {
+    "0883334ba528": {
+      "action": "NONE",
+      "action_reason": "No action.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/j30orj6hdh1a",
+        "guardrailId": "j30orj6hdh1a",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "blocks_present": [
+        "appliedGuardrailDetails",
+        "contextualGroundingPolicy",
+        "invocationMetrics"
+      ],
+      "client_duration_ms": 550.499416,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 66,
+          "total": 194
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/r20260810T103210Z/f3/F3-7-grounded/0002_apply_guardrail_ok.json",
+      "grounding": [
+        {
+          "action": "NONE",
+          "detected": false,
+          "score": 0.73,
+          "threshold": 0.7,
+          "type": "GROUNDING"
+        },
+        {
+          "action": "NONE",
+          "detected": false,
+          "score": 1.0,
+          "threshold": 0.7,
+          "type": "RELEVANCE"
+        }
+      ],
+      "guardrail_latency_ms": 155,
+      "hit": false,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 66,
+          "total": 194
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 1,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 0,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "0883334ba528",
+      "label": "GROUNDED",
+      "n_blocks": 3,
+      "pii_actions": {},
+      "pii_detected": [],
+      "request_id": "7e311d74-2ecf-43eb-8eea-a551f449fff9",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "attributed",
+      "surface": "attributed",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 1,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 0,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    },
+    "353ef6adae5e": {
+      "action": "NONE",
+      "action_reason": "No action.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/j30orj6hdh1a",
+        "guardrailId": "j30orj6hdh1a",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "blocks_present": [
+        "appliedGuardrailDetails",
+        "contextualGroundingPolicy",
+        "invocationMetrics"
+      ],
+      "client_duration_ms": 1213.00125,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 43,
+          "total": 171
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/r20260810T103210Z/f3/F3-7-grounded/0001_apply_guardrail_ok.json",
+      "grounding": [
+        {
+          "action": "NONE",
+          "detected": false,
+          "score": 1.0,
+          "threshold": 0.7,
+          "type": "GROUNDING"
+        },
+        {
+          "action": "NONE",
+          "detected": false,
+          "score": 1.0,
+          "threshold": 0.7,
+          "type": "RELEVANCE"
+        }
+      ],
+      "guardrail_latency_ms": 149,
+      "hit": false,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 43,
+          "total": 171
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 1,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 0,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "353ef6adae5e",
+      "label": "GROUNDED",
+      "n_blocks": 3,
+      "pii_actions": {},
+      "pii_detected": [],
+      "request_id": "458eceb3-5ae2-4eef-94f0-aa7d5d1fbbf6",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "plain",
+      "surface": "plain",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 1,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 0,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    },
+    "bd3e50f58c46": {
+      "action": "NONE",
+      "action_reason": "No action.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/j30orj6hdh1a",
+        "guardrailId": "j30orj6hdh1a",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "blocks_present": [
+        "appliedGuardrailDetails",
+        "contextualGroundingPolicy",
+        "invocationMetrics"
+      ],
+      "client_duration_ms": 498.024167,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 45,
+          "total": 173
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/r20260810T103210Z/f3/F3-7-grounded/0003_apply_guardrail_ok.json",
+      "grounding": [
+        {
+          "action": "NONE",
+          "detected": false,
+          "score": 1.0,
+          "threshold": 0.7,
+          "type": "GROUNDING"
+        },
+        {
+          "action": "NONE",
+          "detected": false,
+          "score": 1.0,
+          "threshold": 0.7,
+          "type": "RELEVANCE"
+        }
+      ],
+      "guardrail_latency_ms": 148,
+      "hit": false,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 45,
+          "total": 173
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 1,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 0,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "bd3e50f58c46",
+      "label": "GROUNDED",
+      "n_blocks": 3,
+      "pii_actions": {},
+      "pii_detected": [],
+      "request_id": "293f6646-1805-4d2b-a11b-d82281ff905e",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "listed",
+      "surface": "listed",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 1,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 0,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    }
+  },
+  "failed": {},
+  "meta": {
+    "arm": "grounded",
+    "case_id": "F3-7",
+    "corpus": "grounding/grounded.jsonl",
+    "guardrail_version": "DRAFT",
+    "is_smoke": true,
+    "output_scope": "FULL",
+    "planned_n": 3,
+    "qualifiers": [],
+    "region": "us-east-1",
+    "run_id": "r20260810T103210Z",
+    "sdk": "1.43.67",
+    "source": "OUTPUT"
+  },
+  "n_done": 3,
+  "n_failed": 0
+}

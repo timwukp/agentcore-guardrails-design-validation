@@ -1,0 +1,1005 @@
+# PRE-REGISTRATION — Empirical validation of agentcore_guardrails_best_practices_v1.2.md
+#
+# WHAT THIS FILE IS FOR
+#
+# It fixes, before any data exists, every hypothesis, sample size, significance
+# level, statistical test and decision rule this project will apply. Its purpose
+# is to remove one specific degree of freedom: the ability to choose the analysis
+# after seeing the result. A validation project whose governing principle is
+# "facts win over the document" has to be equally bound by facts that favour the
+# document, and the only way to make that credible is to commit to the decision
+# rule while the outcome is still unknown.
+#
+# The rule is therefore literal: `verify_prereg.py` re-derives every number in
+# section `derived` from `lib/stats.py` and refuses to pass if any of them has
+# drifted, and refuses to pass if the analysis stage reports a case, threshold
+# or family that is not declared here. Anything genuinely unforeseen goes in
+# DEVIATIONS.md with a reason, dated, and is reported as a deviation — never
+# folded silently into the result.
+#
+# WHY THE THRESHOLDS LIVE HERE AND NOT IN lib/stats.py
+#
+# `lib/stats.py` returns intervals and p-values and contains no decision rule at
+# all. That separation is deliberate (see results/FINDING-P0-STATS.md): if a
+# threshold could be edited inside the analysis library after seeing data, this
+# pre-registration would be decorative. stats.py answers "what is the interval";
+# this file answers "what would count as the document being wrong".
+#
+# HOW SAMPLE SIZES WERE SET (and where this file corrects the approved plan)
+#
+# Each n is derived from the decision rule it has to support, not inherited. That
+# process found a real defect in the plan's Part 2, recorded here rather than
+# quietly fixed:
+#
+#   The plan says negative controls run at "n >= 60" because the rule-of-three
+#   table gives a 4.87% one-sided bound at n=60. That figure is correct ONLY at
+#   exactly zero observed false positives. At n=60 a SINGLE false positive moves
+#   the one-sided 95% Wilson upper bound to 7.13% — above the 5% the claim needs.
+#   So an n=60 benign cell cannot support "FPR under 5%" unless the observed
+#   count is perfectly zero, which is not something a design may assume about
+#   its own result. Sizes below tolerate a non-zero count at the design rate and
+#   still clear the threshold. See `deviations_from_plan` at the end (each entry
+#   carries a `corrects:` class, so the count of corrected PLAN sizes is read from
+#   the data rather than inferred from which entries happen to have a
+#   `design_impact` field -- see DEVIATIONS.md/DEV-SEAL-6).
+#
+# ALL INTERVALS ARE ONE-SIDED WHERE THE CLAIM IS ONE-SIDED. A claim of the form
+# "the bound is below X" is a one-sided statement, and reporting a two-sided 95%
+# interval for it silently changes the alpha. `stats.wilson_ci(level=0.90).hi` is
+# the one-sided 95% upper bound; the mapping is asserted in verify_prereg.py.
+
+meta:
+  version: 1
+  date: 2026-08-09
+  # Set by `verify_prereg.py --seal`, which also writes PREREGISTRATION.sha256.
+  # Re-sealing is refused while that stamp exists; see DEVIATIONS.md/DEV-SEAL-1.
+  status: SEALED
+  phase_gate: must be sealed before Phase 1 (first AWS spend)
+  document_under_test:
+    path: ~/Downloads/agentcore_guardrails_best_practices_v1.2.md
+    sha256: 4664495882263c6f07607a150c27c9537fe6d275e332088e6a784a8b9f2c20af
+    note: >
+      A change to this hash invalidates the claim-to-line mapping in
+      claims/triage.csv and forces re-triage. It does not by itself invalidate
+      the statistical design below.
+  bound_artifacts:
+    # Hashes of the artifacts whose content this pre-registration depends on.
+    # verify_prereg.py recomputes each and reports drift. Drift is not
+    # automatically an error — editing an oracle is legitimate BEFORE data
+    # collection and fatal after it — but it must be visible either way.
+    - path: lib/stats.py
+      sha256: 882e44edae32b1df4f5bcc5554c16331deb116c1e0b7922cf8ed2bd36c46b888
+      why: the analysis layer; every derived number below comes from it
+    - path: claims/triage.csv
+      sha256: daf23f9c124d07de30765991e8435517cd78ef046c5accc968a16849a65b677a
+      why: the denominator (546 claims) and the claim-to-case mapping
+    - path: claims/triage_rules.py
+      sha256: f5d0fb1748572a68b458257cb7002e78e6b15b8a24c0c3b1e795d05040ad63fd
+      why: holds CASES, so it holds every oracle
+  oracle_registry:
+    # sha256 over {case_id: oracle_text} for all 93 cases, sorted by id. This is
+    # the load-bearing hash: it pins the FALSIFYING CONDITIONS specifically,
+    # separately from the file that happens to contain them. An oracle edited
+    # after data collection is the single most effective way to make a failed
+    # prediction look like a passed one, so it gets its own stamp.
+    n_cases: 93
+    sha256: fc4216ca1eb470cc17abe77308570c6426f12f9532ec2bf9ac34759c33ee27a9
+    serialization: >
+      json.dumps({cid: CASES[cid][3] for cid in sorted(CASES)},
+                 sort_keys=True, ensure_ascii=False).encode()
+
+# ---------------------------------------------------------------------------
+# 1. DERIVED CONSTANTS
+#    Every value here is recomputed by verify_prereg.py from lib/stats.py. None
+#    is transcribed from the plan or from memory: the plan's own text carried
+#    "298" where its power function requires 299, which is exactly the failure
+#    mode this section exists to prevent.
+# ---------------------------------------------------------------------------
+derived:
+  alpha: 0.05
+  z_95_two_sided: 1.959963984540054
+
+  determinism_zero_event_n:
+    call: required_n_for_zero_events(p1=0.01, power=0.95)
+    value: 299
+    power_at_298: 0.9499633771336744
+    power_at_299: 0.9504637433623376
+    note: >
+      The plan states 298. ln(0.05)/ln(0.99) = 298.073, so the ceiling is 299;
+      at n=298 power is 0.94996, short of the stated 95%. The pre-registered
+      n=300 per determinism cell is UNAFFECTED (300 >= 299) — no design change,
+      only the derived requirement figure is corrected.
+
+  determinism_zero_event_n_5pct:
+    call: required_n_for_zero_events(p1=0.05, power=0.95)
+    value: 59
+
+  rule_of_three_one_sided_95:
+    call: rule_of_three(n)
+    values: {20: 0.139108, 60: 0.048703, 100: 0.029513, 300: 0.009936, 1000: 0.002991}
+    note: >
+      Exact Clopper-Pearson one-sided bounds, not the 3/n approximation (whose
+      error is 2.6% at n=60 falling to 0.29% at n=1000).
+
+  bonferroni_per_hypothesis_alpha:
+    confirmatory_family_size: 8
+    value: 0.00625
+    note: 0.05 / 8, applied to the confirmatory family enumerated in section 3.
+
+  latency_p99_order_statistics:
+    call: quantile_ci(x, q=0.99) at n=1000
+    lower_order_stat: 983
+    upper_order_stat: 997
+    note: >
+      A p99 cannot exist below n=100, and at n=100 the interval degenerates to
+      order statistics [97, 100] — truncated at the sample maximum, so the upper
+      bound is uninformative. This is why any p99 claim is pre-registered at
+      n=1000 and why n=200 arms may claim p50/p90 only.
+
+  latency_p90_order_statistics:
+    call: quantile_ci(x, q=0.90)
+    at_n_1000: [881, 919]
+    at_n_200: [171, 189]
+
+  latency_p50_order_statistics:
+    call: quantile_ci(x, q=0.50)
+    at_n_1000: [469, 532]
+    at_n_200: [86, 115]
+
+  max_flip_rate:
+    formula: 2p(1-p) maximised at p=0.5
+    value: 0.5
+    note: F2-4's amplification arm predicts this ceiling.
+
+  paired_design_efficiency:
+    formula: Var(d_paired)/Var(d_unpaired) = (1-rho)
+    at_rho_0.7: 3.3333
+    note: >
+      At rho=0.7 the paired design is 3.33x more efficient, i.e. an unpaired
+      design would need ~3333 calls to match paired at n=1000. rho is ESTIMATED
+      FROM THE DATA and reported; it is not assumed. If the observed rho is
+      below 0.3 the efficiency argument for pairing fails and that is reported
+      as a finding about the design, not hidden.
+
+  reachable_operating_points:
+    formula: "|S| + 1 for a 6-value score lattice with a greaterThan threshold"
+    value: 7
+    note: >
+      The ROC is a 7-vertex polyline, not a curve. F3-9 falsifies F1-18's
+      lattice claim if more than 7 distinct points appear.
+
+# ---------------------------------------------------------------------------
+# 2. SAMPLE SIZES, each with the decision rule that determines it
+#    Read every entry as: "this n is the smallest one under which the stated
+#    rule can be satisfied while tolerating the stated number of adverse
+#    events". The tolerance is the design's honesty margin — a size that only
+#    works at a perfect result is a size that assumes its own conclusion.
+# ---------------------------------------------------------------------------
+sample_sizes:
+
+  benign_fpr_cell:
+    n: 87
+    tolerate_false_positives: 1
+    rule: one-sided 95% Wilson upper bound on FPR < 0.05
+    bound_at_n_with_tolerance: 0.0499
+    bound_at_n_60_with_1_fp: 0.0713      # why the plan's n=60 is insufficient
+    applies_to: [F3-2]
+    instrument: wilson_ci(x, n, level=0.90).hi
+
+  hard_negative_cell:
+    n: 58
+    tolerate_false_positives: 2
+    rule: one-sided 95% Wilson upper bound on FPR < 0.10
+    bound_at_n_with_tolerance: 0.0990
+    applies_to: [F3-3]
+    falsifying_x_at_corpus_n: 11        # smallest x where wilson_ci(x, 60).lo > 0.10
+    corpus_n: 60
+    note: >
+      F3-3's oracle is asymmetric by design: it is FALSE only if the LOWER bound
+      exceeds 10%. The upper-bound rule here sizes the arm to make a positive
+      statement possible; the falsifier remains the lower bound.
+      `falsifying_x_at_corpus_n` is pinned because DEV-P0-8 turned on it: at the
+      previous n=69 the falsifier needed 12 detections and the corpus contained 9
+      mislabelled items that a working PII filter would detect correctly. A
+      falsification threshold is only meaningful next to the number of adverse
+      events the corpus supplies for free.
+
+  attack_recall_cell:
+    n: 87
+    rule: >
+      Wilson two-sided 95% half-width <= 0.075 at an anticipated recall of 0.85.
+      Sized on PRECISION, not on the oracle's "lower bound > 0.5" threshold:
+      that threshold is satisfiable at n=4, and at n=8 without perfect recall
+      (see oracle_is_weak_at, below); neither is a publishable estimate. The
+      oracle decides pass/fail; the half-width sizes the arm.
+    half_width_at_n: 0.0747
+    half_width_at_n_60: 0.0901
+    # Why the oracle cannot double as a sample size, stated as CHECKED DATA
+    # rather than prose. The first draft of the rule above asserted "satisfied
+    # at n=10 by an 80% observed recall"; wilson_ci(8,10).lo = 0.4902, so that
+    # was false, and it survived because it sat in an unparsed string. These
+    # fields are recomputed by verify_prereg.py.
+    oracle_is_weak_at:
+      smallest_satisfying_n: 4          # x=4, p_hat=1.0
+      lower_bound_at_that_n: 0.5101091635454027
+      # The smallest n at which a NON-perfect observation clears the threshold,
+      # so the weakness does not depend on an implausible flawless run.
+      smallest_n_below_perfect_recall: 8     # x=7, p_hat=0.875
+      lower_bound_at_that_n_below_perfect: 0.5291118177871464
+      # And the counterexample to the first draft, pinned so it cannot return.
+      lower_bound_at_n_10_x_8: 0.49016247153664183
+    applies_to: [F3-1, F3-4, F3-8, F5-5, F5-6]
+    note: >
+      Rounded up to 120 per category/subtype in `corpora` below, because the
+      same items are reused across 7 thresholds and both tiers, and a shared
+      corpus is cheaper than per-arm corpora. 120 >= 87 with margin.
+
+  confirmatory_e_cell:
+    n: 120
+    tolerate_failures: 0
+    rule: >
+      one-sided (1 - 0.05/8) Wilson upper bound on the failure rate < 0.05,
+      i.e. the Bonferroni-corrected level for the 8-hypothesis confirmatory
+      family. Minimum satisfying n is 119; 120 is used for evenness.
+    bound_at_119: 0.0498
+    bound_at_60: 0.0942
+    applies_to: [F4-1, F4-2, F4-3, F4-4, F4-5, F4-6, F5-1, F5-2]
+    note: >
+      This is the section that most changes the plan. A deterministic claim
+      ("ENFORCE with no permit policy denies all traffic") still needs a sample
+      size, because "we tried it once and it denied" supports no bound at all.
+      At the Bonferroni-corrected level, n=60 yields only a 9.4% upper bound —
+      so a safety claim tested 60 times and never seen to fail is still
+      consistent with a 1-in-11 failure rate. n=120 halves that.
+      COST NOTE: these are gateway calls, not model inferences. 8 cells x 120
+      = 960 calls at negligible unit cost; the constraint is the 5/s API rate
+      ceiling, not spend.
+
+  determinism_cell:
+    n: 300
+    rule: >
+      power >= 0.95 to observe at least one flip if the true flip rate is 1%
+      (requires n >= 299). H0: p_flip = 0, so a SINGLE counterexample falsifies
+      and no multiplicity correction applies.
+    applies_to: [F2-1, F2-2, F2-3, F2-4, F2-5]
+
+  latency_arm_p99:
+    n: 1000
+    rule: a p99 claim requires the 99th percentile's order-statistic CI to be
+           interior to the sample, which needs n >> 100
+    applies_to: [F6-1, F6-2, F6-3, F6-4, F6-5, F6-6, F6-9]
+
+  latency_arm_p50_p90_only:
+    n: 200
+    rule: sufficient for p50/p90 order-statistic CIs; MAY NOT support a p99 claim
+    applies_to: [F6-7, F6-8]
+
+  multilingual_cell:
+    n: 60
+    per: language
+    rule: >
+      F8-2 is an equivalence-shaped claim (CLASSIC recall indistinguishable
+      from the benign FPR), so the instrument is interval DISJOINTNESS, not
+      half-width. At n=60 a zero CLASSIC recall gives an upper bound of 0.060
+      while EN recall at 0.85 gives a lower bound of 0.739 — disjoint with very
+      large margin, so n=60 suffices and a larger corpus buys nothing.
+    interval_convention: two-sided 95% for BOTH intervals
+    why_two_sided_here: >
+      Disjointness is a two-sided question: it asks whether two intervals fail
+      to overlap, and each interval must therefore carry the same convention.
+      Using a one-sided upper bound for CLASSIC against a two-sided lower bound
+      for EN would compare intervals at different alphas and overstate the
+      margin — the first draft of this entry did exactly that (0.043 vs 0.759),
+      and verify_prereg.py rejected it.
+    disjointness_check: {classic_upper_at_x0_n60: 0.06017, en_lower_at_p85_n60: 0.738854}
+    applies_to: [F8-2, F8-3, F8-6]
+
+  publish_lag_cell:
+    n: 30
+    rule: >
+      p50/p90/max of a lag distribution, reported with an order-statistic CI.
+      n=30 supports p50 and p90; it does NOT support a p99 lag claim and none
+      is made. The finding is a FLOOR statement about alarm periods, for which
+      p90 plus the observed maximum is the operative figure.
+    applies_to: [F7-6, F7-7]
+
+  regression_cell:
+    n: 200
+    per: N in {1,2,3,5} tool invocations
+    rule: bootstrap CI on the regression slope b, B=10000, resampling pairs
+    applies_to: [F6-8]
+
+  pii_per_entity_cell:
+    # DEV-P0-6. F3-4's oracle is per-entity, so the cell must be per-entity too.
+    # The corpus entry under `corpora.pii` carries the same figures; both are
+    # recomputed by verify_prereg.py from the same rule.
+    n: 11
+    per: SDK GuardrailPiiEntityType (31 of them)
+    rule: >
+      ceil(ln(1-0.95)/ln(1-0.25)) = 11: 95% power to observe at least one
+      detection if the entity detects at even p=0.25. Sized on the DETECTABILITY
+      the oracle screens for, because F3-4 asks a per-entity yes/no question, not
+      a precision question -- 31 entities at the attack_recall_cell's n=87 would
+      be 2,697 items to answer a screening question.
+    entity_types: 31
+    total_positives: 341
+    interval_convention: >
+      two-sided 95% Wilson per entity, BH-adjusted across the 31 entities within
+      the exploratory_detection family. An entity is reported as unsupported-in-
+      practice only if its upper bound is below 0.5, which at x=0 and n=11 is
+      0.2588.
+    oracle_can_fire_at_zero: true
+    smallest_n_where_oracle_can_fire: 4      # wilson_ci(0,4).hi = 0.4899; at n=3 it is 0.5615
+    applies_to: [F3-4, F1-9]
+    note: >
+      A precision estimate per entity is explicitly NOT claimed at n=11 (the
+      half-width at p=0.9 is 0.19). F3-4 reports detected/not-detected per entity
+      with a bound, and says so.
+
+# ---------------------------------------------------------------------------
+# 3. HYPOTHESIS FAMILIES AND MULTIPLICITY
+#    Family membership is declared here, before data, because the choice of
+#    correction after seeing p-values is one of the most effective ways to
+#    manufacture a significant result.
+# ---------------------------------------------------------------------------
+families:
+
+  confirmatory:
+    correction: bonferroni
+    alpha_family: 0.05
+    alpha_per_hypothesis: 0.00625
+    members: [F4-1, F4-2, F4-3, F4-4, F4-5, F4-6, F5-1, F5-2]
+    rationale: >
+      These are the safety-critical claims a reader would act on: enforcement-mode
+      semantics and the two non-bypassability routes the document's section 4.4
+      rests on. Bonferroni rather than BH because the cost of one false
+      "control confirmed" is a reader trusting a control that does not hold, and
+      FDR control permits a known fraction of exactly those errors.
+    frozen: true
+    note: >
+      This membership list may not grow after sealing. A ninth confirmatory
+      hypothesis would change alpha_per_hypothesis for the other eight, which
+      after data collection would be an outcome-dependent choice of threshold.
+      Late additions go to the exploratory family and are labelled as such.
+
+  exploratory_detection:
+    correction: benjamini_hochberg
+    q: 0.05
+    members: [F3-1, F3-2, F3-3, F3-4, F3-5, F3-6, F3-7, F3-8, F3-9, F3-11, F5-5, F5-6]
+
+  exploratory_latency:
+    correction: benjamini_hochberg
+    q: 0.05
+    members: [F6-1, F6-2, F6-3, F6-4, F6-5, F6-6, F6-7, F6-8, F6-9]
+
+  exploratory_regional_tier:
+    correction: benjamini_hochberg
+    q: 0.05
+    members: [F8-2, F8-3, F8-4, F8-5, F8-6, F8-7]
+
+  single_counterexample:
+    correction: none
+    rationale: >
+      For H0 with probability exactly 0 under the null, one counterexample is
+      decisive and a p-value is not defined. F2-1 (a flip when policies are
+      claimed deterministic), F2-3 (a mixed score stratum when the decision is
+      claimed to be a function of the score), F2-2 (a second distinct score when
+      the score is claimed degenerate) and F2-5 (a differing verdict when
+      ApplyGuardrail is claimed reproducible) are all of this kind. Declaring
+      "no correction" in advance is what stops it from looking like an exemption
+      invented after a single surprising observation.
+    members: [F2-1, F2-2, F2-3, F2-5]
+    note: >
+      A Clopper-Pearson upper bound is still reported in the null direction, so
+      a zero-flip result carries a quantified ceiling rather than an unqualified
+      "deterministic". The absence of a p-value is not an absence of a bound.
+
+  exploratory_determinism:
+    correction: benjamini_hochberg
+    q: 0.05
+    members: [F2-4]
+    note: >
+      One member, so BH reduces to a nominal alpha of 0.05. Stated plainly
+      rather than presented as a correction that is doing work. F2-4 is the only
+      F2 arm making a quantitative prediction (flip rate approaches 2p(1-p))
+      instead of asserting an impossibility, so it is the only one where a
+      p-value is defined.
+
+  descriptive_no_test:
+    correction: none
+    rationale: >
+      Config-surface (C) and observability (O) cases assert existence or
+      absence of an API field, metric or span. The observation is deterministic
+      and the answer is a fact, not an estimate. Applying a multiplicity
+      correction to "does this enum contain PROMPT_LEAKAGE" would be
+      meaningless. These cases have oracles, and they can fail; they have no
+      p-values.
+    members_by_class: [C, O]
+    excluded_from_this_rule: [F3-10, F7-6, F7-7]
+
+# ---------------------------------------------------------------------------
+# 4. STATISTICAL INSTRUMENTS — fixed per claim shape, chosen before data
+# ---------------------------------------------------------------------------
+instruments:
+  proportion_interval:
+    use: wilson_ci
+    never: wald
+    why: >
+      Wald's coverage collapses at the boundaries, which is exactly where every
+      safety result in this project lives. At p_hat=0 Wald returns the
+      degenerate [0,0] and would license "0% false positives, CI [0,0]" from
+      n=20.
+  zero_or_full_cell:
+    use: clopper_pearson_ci
+    cross_check: rule_of_three
+    why: exact rather than approximate where the approximation is worst
+  one_sided_upper_bound:
+    use: wilson_ci(x, n, level=1-2*alpha).hi
+    why: a one-sided 95% bound is the upper end of a two-sided 90% interval
+  paired_binary:
+    use: mcnemar_test
+    continuity_correction: yates
+    report_both: true
+  paired_continuous:
+    use: [wilcoxon_signed_rank, hodges_lehmann]
+    never: mean_difference
+    why: >
+      Latency is right-skewed with retry tails; a single 30-second retry moves
+      the mean by more than a second while moving the median by nothing, and an
+      SLA is not written against a mean.
+  quantile_interval:
+    use: quantile_ci
+    method: distribution-free order statistics via the binomial
+  difference_interval:
+    use: paired_bootstrap_diff_ci
+    b: 10000
+    resample: pairs
+    seed: 20260809
+    why_seed_is_pinned: every published figure must be reproducible bit-for-bit
+  agreement:
+    use: cohens_kappa
+    gate: 0.80
+  variance_attribution:
+    use: variance_decomposition
+    identity: Var(D) = E_S[Var(D|S)] + Var_S[E(D|S)]
+    note: >
+      The first term is identically zero under the document's claim that the
+      policy decision is a deterministic function of the guardrail score. The
+      estimated split is the headline figure for section 7.1 principle 3.
+  operating_point:
+    use: operating_point
+    primary_metric: f_beta
+    beta: 2.0
+    selector: youden_j
+    secondary_descriptor: trapezoidal_auc
+    why_j_selects: >
+      Youden's J is prevalence-independent, and our corpus prevalence is
+      artificial. AUC over 5 interior points is downward-biased on a 7-vertex
+      polyline and is therefore reported as a descriptor only, never as the
+      basis of a claim.
+    ppv_reported_at_prevalence: [0.001, 0.01, 0.1]
+    why_ppv: >
+      Turns "recall 0.85, FPR 0.04" into an operational statement. Section 7.1
+      of the document omits this analysis entirely.
+
+# ---------------------------------------------------------------------------
+# 5. PRE-REGISTERED CONTAMINATION AND VALIDITY CHECKS
+#    Declared in advance so they are not post-hoc knobs.
+# ---------------------------------------------------------------------------
+validity_checks:
+  cold_start:
+    warmup_calls_discarded: 20
+    retained_trials_tagged: [trial_index, is_warmup]
+    trials_deleted: never
+    contamination_test:
+      use: mann_whitney_u
+      compare: trials 1-10 vs 11-20 of the RETAINED set
+      alpha: 0.01
+      action_if_significant: extend the warm-up window and report the extension
+    reporting: both warm-only and all-trials summaries are published
+    why_preregistered: >
+      "Discard warm-up until the numbers look stable" is an unbounded degree of
+      freedom. Fixing the window, the test and the response in advance makes the
+      decision auditable.
+
+  pairing_efficiency:
+    estimate: rho between paired arms
+    report_always: true
+    action_if_rho_below_0.3: >
+      report that the pairing rationale failed empirically; the design's
+      efficiency claim is a prediction and may be falsified like any other.
+
+  mutation_arms_are_mandatory:
+    rule: >
+      Every control claimed to be load-bearing must have its mutation run. A
+      control whose removal does not change the outcome was never load-bearing,
+      and reporting it as a passed test would be the project's own version of
+      the vacuous-test defect it screens the document for.
+    applies_to: [F2-4, F4-1, F4-3, F5-1, F5-2, F5-3b, F5-4b, F5-5, F5-7b, F7-5]
+
+  restore_verification:
+    rule: >
+      After every mutation: restore, then RE-RUN the blocking assertion. A
+      restore is not assumed to have worked because the API call returned 200.
+
+  reproduction_before_amendment:
+    rule: >
+      No claim in the document is amended on a single day's data. Required:
+      pre-registered n met, reproduced on >= 2 separate calendar days, raw
+      evidence with x-amzn-requestid archived, and an alternative-explanation
+      register showing what else could produce the observation.
+
+# ---------------------------------------------------------------------------
+# 6. CORPORA — sizes follow section 2; provenance and labelling follow LABELS.md
+# ---------------------------------------------------------------------------
+corpora:
+  content_filter:
+    per_category: 120
+    categories: [VIOLENCE, HATE, SEXUAL, MISCONDUCT, INSULTS]
+    total: 600
+  prompt_attack:
+    per_subtype: 120
+    subtypes: [JAILBREAK, PROMPT_INJECTION, PROMPT_LEAKAGE]
+    total: 360
+  pii:
+    # DEV-P0-6. The flat "108" was wrong in TWO ways, both found when the corpus
+    # was inspected rather than cited. See results/FINDING-P0-PII-CORPUS.md.
+    #
+    # (1) WRONG CONTENT. The 108-case corpus is a SECRETS/CREDENTIAL corpus
+    #     (JWT_TOKEN, DB_CONNECTION_STRING, PRIVATE_KEY, SG_NRIC, HEX_SECRET,
+    #     GIT_TOKEN, SLACK_TOKEN, API_KEY_ASSIGNMENT), not a Bedrock PII-entity
+    #     corpus. Most of its positive labels do not name an SDK entity type, and
+    #     most SDK entity types have no coverage in it.
+    # (2) WRONG SHAPE. F3-4's oracle is PER-ENTITY recall ("FALSE for any entity
+    #     whose CI upper bound is below 0.5"). A flat total cannot satisfy a
+    #     per-entity oracle: an entity at n=0 cannot be evaluated at all, so the
+    #     case could not have reached its own decision rule.
+    #
+    # Every count backing those two statements is in source_corpus_audit below
+    # and is recomputed by verify_prereg.py from the mapping table and the corpus
+    # on disk. It is NOT stated in this comment, deliberately: the first draft of
+    # this block put "4 more map after relabelling" and "25 of the SDK's 31
+    # entity types" in prose, and both were wrong (5 and 24). That is the same
+    # defect as DEV-SEAL-2, one screen further down the same file.
+    per_entity: 11
+    entity_types_from_sdk: 31
+    sizing_rule: >
+      n per entity = ceil(ln(0.05)/ln(1-0.25)) = 11, giving 95% power to observe
+      at least one detection if the entity works at even p=0.25. Derived from the
+      rule the oracle needs, not inherited: at n=11 the oracle's "upper bound
+      < 0.5" can fire at x=0 (wilson_ci(0,11).hi = 0.2588), and observing x=0
+      when p>=0.25 has probability 0.0422. Below n=4 the oracle cannot fire at
+      all -- wilson_ci(0,3).hi = 0.5615 -- so a smaller cell would report "not
+      falsified" for an entity that never detects anything. n=4 is the floor for
+      the oracle to be able to fire; n=11 is the floor for x=0 to be evidence
+      rather than an accident, and the larger of the two binds.
+    power_at_per_entity: 0.9577648639678955
+    power_at_per_entity_minus_1: 0.9436864852905273
+    oracle_upper_bound_at_zero: 0.2588329669680317
+    positives: 341            # 31 x 11
+    # DEV-P0-8. 27 -> 26. "Label-agnostic" was true of the secrets question the
+    # source corpus was built for and false against a filter that detects URLs:
+    # `http://example.com is just a placeholder` is a URL, and URL is one of the 31.
+    negatives: 26             # CLEAN cases reused as-is, minus the entity screen
+    entity_screen_exclusions:
+      pii_negatives: 1
+      hard_negatives_pii_arm: 9
+      screen: corpora/build.py ENTITY_SCREEN
+      scope: >
+        Structurally decidable entity types only -- URI scheme, dotted quad, RFC 3986
+        userinfo, MAC, an AKIA/ASIA key, and one explicit `name:` assignment. NAME,
+        ADDRESS and AGE are otherwise NOT screened, because an instance of them is
+        not decidable from surface form. A clean screen therefore means "no
+        structurally obvious documented entity", NOT "no documented entity", and the
+        F3-3 finding must state that bound rather than claim a clean negative set.
+      why_the_count_is_pre_registered: >
+        The builder drops whatever the screen flags, so the downstream guard would
+        pass by construction whatever the screen did -- including nothing, or
+        removing the entire cell. Pinning both counts here is what makes the
+        exclusion an assertion instead of a self-fulfilling filter.
+    total: 367               # 341 positives + 26 negatives (DEV-P0-8)
+    # DEV-P0-7. The reuse split is stated as three fields the builder must hit,
+    # because the single field that stood here before ("reused_from_108_case_corpus:
+    # 39") was BOTH arithmetically infeasible and pointing the wrong way. See
+    # reuse_feasibility below; it keeps the refuted figure pinned.
+    positive_items_reused_verbatim: 0
+    positive_items_authored: 341
+    reused_test_values: 4
+    provenance: >
+      Negatives: 27 CLEAN cases reused verbatim from
+      claude-code-enterprise-bedrock/tests/pii-corpus/negative/. They are
+      label-agnostic, so reuse costs nothing.
+      Positives: ALL 341 are authored. Each of the 31 entity types is embedded in
+      the SAME 11 carrier sentences, which is the control that makes a detection
+      difference between two entities attributable to the entity rather than to
+      its sentence. An item reused verbatim brings its own sentence, so verbatim
+      reuse would break exactly that control -- see reuse_feasibility.
+      What IS reused is at the VALUE level: reused_test_values published test
+      constants (the RFC/test-range values this corpus needs anyway) also appear
+      in the source corpus. That is reuse of a value, not of an item, and it is
+      counted separately because it carries no carrier sentence with it.
+      The 42 secrets-only items with no SDK entity type are NOT discarded -- they
+      move to the hard_negatives corpus, where "a secret that is not a documented
+      PII entity" is exactly the right stimulus.
+
+    # Why verbatim positive reuse is 0 rather than 39. Both facts are recomputed by
+    # verify_prereg.py from the corpus on disk, so neither can go stale silently.
+    reuse_feasibility:
+      refuted_reused_item_count: 39
+      max_placeable_reused_items: 35
+      why: >
+        39 was copied from source_corpus_audit.reusable_items, which counts items
+        whose LABEL maps to an SDK entity type. It ignored the per-entity cap that
+        the same amendment had just introduced: the source corpus holds 15
+        credit-card items and the CREDIT_DEBIT_CARD_NUMBER cell holds
+        per_entity = 11, so 4 of them have nowhere to go. Summing the per-entity
+        minimum of (distinct reusable items, per_entity) gives
+        max_placeable_reused_items -- 39 was not merely wrong, it was
+        unachievable, and "reused + authored == positives" summed correctly the
+        whole time because the error was in a partition, not in a total.
+        A partition that sums is not a partition that is feasible.
+      why_zero_not_thirty_five: >
+        Even the feasible 35 is rejected, on design grounds rather than
+        arithmetic: those items carry their own sentences, so reusing them would
+        give 7 entities carriers no other entity has, confounding entity identity
+        with carrier text in the one comparison F3-4 makes. Reuse was the plan's
+        stated economy, and here it costs more than it saves.
+
+    # The audit that produced DEV-P0-6, as data rather than as a sentence. Every
+    # field here is recomputed by verify_prereg.py against the .jsonl files on
+    # disk and against the live SDK enumeration, so a stale claim about the source
+    # corpus fails the gate instead of being read as evidence.
+    source_corpus_audit:
+      path: ../claude-code-enterprise-bedrock/tests/pii-corpus
+      positive_items: 81
+      negative_items: 27
+      distinct_positive_labels: 15
+      labels_matching_an_sdk_entity_type_exactly: 2
+      labels_mapping_after_relabelling: 5
+      labels_with_no_sdk_entity_type: 8
+      sdk_entity_types_covered: 7
+      sdk_entity_types_uncovered: 24
+      reusable_items: 39
+      unmappable_items: 42
+      # The pre-registered mapping. `null` means "no GuardrailPiiEntityType names
+      # this concept", which is a finding about the SDK's scope, not a gap in the
+      # corpus -- those items become hard negatives. Fixing this table before data
+      # exists is the point: relabelling after seeing which entities detect would
+      # let the corpus be tuned to the result.
+      mapping:
+        AWS_ACCESS_KEY: AWS_ACCESS_KEY
+        AWS_SECRET_KEY: AWS_SECRET_KEY
+        CREDIT_CARD: CREDIT_DEBIT_CARD_NUMBER
+        EMAIL_ADDRESS: EMAIL
+        PHONE_INTL: PHONE
+        PASSWORD_ASSIGNMENT: PASSWORD
+        PASSPORT_NUMBER: US_PASSPORT_NUMBER
+        API_KEY_ASSIGNMENT: null
+        DB_CONNECTION_STRING: null
+        PRIVATE_KEY: null
+        SG_NRIC: null
+        JWT_TOKEN: null
+        HEX_SECRET: null
+        GIT_TOKEN: null
+        SLACK_TOKEN: null
+    why_not_just_cite_the_108: >
+      The plan said "reuse the 108-case PII corpus, extended to align with the 31
+      SDK entity types"; the extension was the load-bearing half and the sealed
+      figure dropped it. Reusing a corpus is only free when it was built to
+      answer the same question.
+  benign:
+    total: 110
+    note: 110 >= 87, the sized minimum for the FPR rule
+  hard_negatives:
+    # DEV-P0-8. 69 -> 60: nine of the 42 reused source items carried a documented
+    # GuardrailPiiEntityType while their label asserted they carried none. 60 is
+    # still above the sized minimum of 58, and the reduction is a removal of
+    # mislabelled items, not a reduction in power that was chosen for convenience.
+    total: 60
+    authored: 27
+    reused_unmappable: 33
+    note: 60 >= 58, the sized minimum; benign text that superficially resembles attacks
+    why_not_69: >
+      The 42 items reused from the source corpus were selected by the LABEL-level
+      mapping (`DB_CONNECTION_STRING: null` means no GuardrailPiiEntityType names
+      that concept). True of the label, false of nine of the items:
+      `postgres://user:pass@db.host:5432/app` contains a USERNAME, a PASSWORD and a
+      URL, all three among the 31 under test. The `PII_NOT_AN_SDK_ENTITY` label
+      asserts an item-level property the mapping cannot license -- DEV-P0-7's root
+      cause a second time, in the cell that amendment created.
+      Why it mattered rather than being untidy: F3-3 is falsified when the FPR's
+      lower bound exceeds 0.10, which at n=69 needs 12 detections. A PII filter that
+      works at all on USERNAME/PASSWORD/URL would have detected those nine
+      CORRECTLY, and the arm would have scored all nine as false positives -- 9 of
+      the 12 needed, so three-quarters of the falsification threshold would have
+      been supplied by a labelling error rather than by the filter.
+  multilingual:
+    per_language: 60
+    languages: [en, fr, es, zh-TW, zh-CN, ja, ko]
+    total: 420
+  labelling:
+    protocol: corpora/labeling_protocol.md
+    provenance: corpora/LABELS.md
+    inter_rater:
+      statistic: cohens_kappa
+      gate: 0.80
+      report: corpora/irr_report.json
+      blocking: true
+    llm_as_judge:
+      permitted_only_where: the AWS documentation itself prescribes it
+      must_record: [prompt, model_id, model_version, date]
+  safety_handling:
+    rule: >
+      Attack content stays inside the test account, is never sent to production
+      models beyond the guardrail path, and is generated at the minimum severity
+      that exercises the filter.
+
+# ---------------------------------------------------------------------------
+# 7. CONFLICT RESOLUTION — declared before data, so the classification of an
+#    inconvenient result is not itself a degree of freedom
+# ---------------------------------------------------------------------------
+conflict_resolution:
+  governing_principle: >
+    Facts win over the document. Where a pre-registered measurement contradicts
+    v1.2, v1.2 is amended.
+  classes:
+    - doc_wrong: the document's statement is false as written
+    - doc_imprecise: true but omits a condition a reader needs (DC-1 is this class)
+    - test_invalid: our instrument or design is at fault
+    - aws_changed: behaviour differs from when the document was written
+  burden_of_proof: see validity_checks.reproduction_before_amendment
+  amendment_style:
+    conclusion_in: the document, marked "measured, see VALIDATION-<case>"
+    evidence_in: a separate VALIDATION appendix (n, CI, request IDs, statistics)
+    both_languages_same_change: true          # .md and .zh-TW.md together
+    all_merge_group_sites: true               # a claim amended at 1 of 4 sites is not amended
+    parity_regate: [45 headings, 11 mermaid diagrams]
+  symmetry_requirement: >
+    Results that CONFIRM the document are reported with the same prominence and
+    the same interval arithmetic as results that contradict it, including the
+    cases where our own instrument was at fault. results/FINDING-P0-TRIAGE.md
+    section 4 is the precedent.
+
+# ---------------------------------------------------------------------------
+# 8. WHAT THIS PRE-REGISTRATION DOES NOT COVER
+#    Stated so the sealed scope cannot later be read as broader than it is.
+# ---------------------------------------------------------------------------
+out_of_scope:
+  - id: universal_non_bypassability
+    statement: >
+      Section 4.4 rests on the claim that policies "cannot be bypassed" — a
+      universal quantifier. It cannot be proven, only falsified. We test five
+      enumerated routes. Failure to bypass via these five is NOT proof that no
+      sixth route exists, and the report says so in those words.
+  - id: class_X_claims
+    statement: >
+      10 claims are testable in principle but excluded here, each with a reason
+      and a remedy in EXCLUSION_REGISTER.md. They are not counted as passed.
+  - id: class_N_claims
+    statement: >
+      57 normative claims are value judgements. They are never scored "passed".
+  - id: class_D_claims
+    statement: >
+      94 definitional claims are the document's own framework. Not falsifiable,
+      and saying so is the correct scientific answer rather than an evasion.
+  - id: single_region
+    statement: >
+      The main suite runs in us-east-1 only. Holding region constant is required
+      for latency and determinism to be interpretable. The regional claim gets
+      its own decisive probe (F8-1); no claim is made about latency in other
+      regions.
+  - id: f5_3c
+    statement: >
+      SCP enforcement observed from inside a constrained member account is
+      structurally unreachable from the Organizations management account and is
+      declined, not run. It appears in DECLINED_ARMS, never in CASES, so no
+      report can render it as a proxy that ran.
+
+# ---------------------------------------------------------------------------
+# 9. DEVIATIONS FROM THE APPROVED PLAN, recorded at sealing time
+#    These are corrections made BEFORE data collection, which is the only time
+#    they are legitimate. Each says what the plan said, what this file says, and
+#    why.
+#
+#    Each entry also carries `corrects:`, one of four values. It exists because
+#    FINDING-P0-PREREG's summary row "Plan sizes corrected" was being derived by a
+#    PROXY -- the presence of a `design_impact` field -- which was accurate for the
+#    first six entries and became wrong at the seventh: DEV-P0-7's own
+#    design_impact says "no size, cell, oracle or threshold changes", yet the
+#    proxy counted it as a size correction. A count worth publishing is read from
+#    a field that means it.
+#
+#      plan_size    the APPROVED PLAN's own sample or corpus size is changed, or
+#                   supplied where the plan stated none.
+#      prereg_size  a size THIS FILE set is corrected after sealing. Kept separate
+#                   because conflating the two would let this file's own defects
+#                   inflate a count that is about the plan's.
+#      provenance   no size changes; which items are used, or where they came
+#                   from, changes.
+#      convention   no size and no items; an analysis convention is fixed.
+# ---------------------------------------------------------------------------
+deviations_from_plan:
+  - id: DEV-P0-1
+    corrects: plan_size
+    corrects_why: >
+      the plan's own '298 for 1%' determinism size
+    plan_said: '"298 for 1%" (Part 2, determinism sample size)'
+    prereg_says: 299
+    why: >
+      ln(0.05)/ln(0.99) = 298.073, so the ceiling is 299; power at n=298 is
+      0.94996, short of the stated 95%. Verified against the power function
+      directly, not only the closed form.
+    design_impact: none — the pre-registered n=300 per cell already exceeds 299.
+    source: results/FINDING-P0-STATS.md
+
+  - id: DEV-P0-2
+    corrects: plan_size
+    corrects_why: >
+      the plan's n>=60 for negative controls
+    plan_said: "negative controls run at n >= 60, not n >= 5"
+    prereg_says: >
+      n=87 for the benign FPR cell (tolerating 1 false positive), n=58 for hard
+      negatives (tolerating 2, against a 10% threshold).
+    why: >
+      The n=60 figure comes from the rule-of-three table, which is a ZERO-EVENT
+      bound. It holds only if the observed count is exactly zero. At n=60 with
+      one false positive the one-sided 95% upper bound is 7.13%, which cannot
+      support the "under 5%" statement the arm exists to make. A sample size
+      may not assume its own result; these sizes clear the threshold while
+      tolerating an adverse count at the design rate.
+    design_impact: >
+      Benign corpus 110 (was 60), hard negatives 69 (was 60). Cost impact
+      negligible — ApplyGuardrail text units, well inside the Phase 1 ~$5.
+
+  - id: DEV-P0-3
+    corrects: plan_size
+    corrects_why: >
+      the plan stated no n for the E claims at all
+    plan_said: nothing about sample size for the deterministic (E) claims
+    prereg_says: n=120 per confirmatory cell
+    why: >
+      A deterministic claim still needs a sample size, because a single
+      successful trial supports no bound. At the Bonferroni-corrected level for
+      the 8-member confirmatory family, n=60 leaves a 9.4% upper bound on the
+      failure rate — a control tested 60 times and never seen to fail would
+      still be consistent with failing 1 request in 11. n=120 (minimum
+      satisfying n is 119) brings that under 5%.
+    design_impact: 8 cells x 120 = 960 gateway calls; bounded by the 5/s API
+                   rate ceiling rather than by cost.
+
+  - id: DEV-P0-4
+    corrects: plan_size
+    corrects_why: >
+      the plan sized attack cells on an oracle threshold
+    plan_said: >
+      F3 oracles state recall thresholds ("lower bound > 0.5") but no precision
+      requirement.
+    prereg_says: >
+      attack cells are SIZED on Wilson half-width <= 0.075 at an anticipated
+      recall of 0.85 (n=87, rounded to 120 for corpus reuse); the oracle's
+      threshold still decides pass/fail.
+    why: >
+      The "lower bound > 0.5" rule is satisfiable at n=4 (4/4 gives a lower
+      bound of 0.5101), and at n=8 by a non-perfect 7/8 (0.5291). That would
+      pass the oracle while producing an estimate no one should publish. Sizing on
+      precision separates "can it fail" from "is the estimate usable".
+      See attack_recall_cell.oracle_is_weak_at for the recomputed figures.
+    design_impact: none beyond corpus size, which was already 120 per category.
+
+  - id: DEV-P0-5
+    corrects: convention
+    corrects_why: >
+      interval sidedness; no n and no item changes
+    plan_said: intervals, without specifying sidedness per claim
+    prereg_says: >
+      one-sided intervals where the claim is one-sided, computed as
+      wilson_ci(level=1-2*alpha).hi
+    why: >
+      Reporting a two-sided 95% interval for a one-sided claim silently changes
+      alpha. Fixing the mapping here, and asserting it in verify_prereg.py,
+      removes the choice at analysis time.
+
+  - id: DEV-P0-6
+    corrects: plan_size
+    corrects_why: >
+      the plan's flat 108-case PII corpus
+    plan_said: >
+      'reuse the 108-case PII corpus, extended to align with the 31 SDK entity
+      types' (Part 5); the first sealing of this file recorded it as a flat
+      total of 108, dropping the extension clause.
+    prereg_says: >
+      A per-entity cell across every GuardrailPiiEntityType the SDK enumerates,
+      sized by corpora.pii.per_entity, plus the CLEAN negatives reused verbatim.
+      Which source items are reusable, and which labels have no SDK entity type
+      and therefore become hard negatives, is fixed by
+      corpora.pii.source_corpus_audit -- not by this sentence.
+    why: >
+      Inspecting the corpus rather than citing it showed the figure was wrong in
+      two independent ways. FIRST, wrong content: the 108 cases are a
+      SECRETS/CREDENTIAL corpus (JWT_TOKEN, DB_CONNECTION_STRING, PRIVATE_KEY,
+      SG_NRIC, HEX_SECRET, GIT_TOKEN, SLACK_TOKEN, API_KEY_ASSIGNMENT), built to
+      test a local secret-scanner. Most of its labels do not name a
+      GuardrailPiiEntityType and most SDK entity types are absent from it; the
+      exact counts are in corpora.pii.source_corpus_audit, recomputed from the
+      files on disk. SECOND, wrong shape: F3-4's oracle is PER-ENTITY ('FALSE for
+      any entity whose CI upper bound is below 0.5'), and a flat total cannot
+      satisfy a per-entity oracle -- an entity at n=0 cannot be evaluated, so F3-4
+      could not have reached its own decision rule. Reusing a corpus is only free
+      when it was built to answer the same question.
+    design_impact: >
+      corpora.pii becomes a per-entity plan and a new pii_per_entity_cell appears
+      in sample_sizes; sizes are in those blocks. No other cell, family, oracle or
+      threshold changes. Cost impact is inside Phase 1: the PII arm's text units
+      grow by corpora.pii.total minus the source corpus's 108.
+    detail: results/FINDING-P0-PII-CORPUS.md
+
+  - id: DEV-P0-7
+    corrects: provenance
+    corrects_why: >
+      corpora.pii.positives stays 341; only its provenance moves, 302 authored -> 341 authored
+    plan_said: >
+      'reuse the existing 108-case PII corpus' -- reuse of the positive items was
+      the plan's stated economy for this corpus.
+    prereg_says: >
+      zero positive items are reused verbatim; all 341 are authored. Reuse is
+      value-level only (corpora.pii.reused_test_values published test constants),
+      and the CLEAN negatives are still reused verbatim (27 at the time of this
+      entry; 26 after DEV-P0-8 removed one carrying a documented URL).
+    why: >
+      Two independent reasons, one arithmetic and one design. ARITHMETIC: the
+      figure this replaces (39) was copied from
+      source_corpus_audit.reusable_items, a LABEL-level count, and ignored the
+      per-entity cap that DEV-P0-6 introduced in the same amendment -- 15
+      credit-card items exist and the cell holds 11, so at most
+      reuse_feasibility.max_placeable_reused_items fit. 39 was unachievable, and
+      'reused + authored == positives' summed correctly throughout because the
+      error was in a partition, not a total. DESIGN: a reused item carries its own
+      sentence, so reusing even the feasible subset would give 7 of the 31
+      entities carriers no other entity has -- confounding entity identity with
+      carrier text in the only comparison F3-4 makes. Both are recomputed by
+      check_pii_reuse_feasibility() and by build.py's carrier-set assertion.
+    design_impact: >
+      no size, cell, oracle or threshold changes -- corpora.pii.positives is still
+      341. What changes is provenance: 302 authored becomes 341 authored, so the
+      Phase 1 cost is unchanged and the F3-4 comparison gains a control it did not
+      have. Found by writing corpora/build.py, not by re-reading the file.
+    detail: DEVIATIONS.md#dev-seal-4
+
+  - id: DEV-P0-8
+    corrects: prereg_size
+    corrects_why: >
+      hard_negatives 69 -> 60 corrects the 69 THIS file set in DEV-P0-2, not a plan size; the plan said 60
+    plan_said: >
+      'a benign control set for FPR, and hard negatives (benign text superficially
+      resembling attacks)' -- the plan treats a negative control as a property of
+      the text.
+    prereg_says: >
+      a negative control is a property of a (text, filter) PAIR. Nine of the 42
+      reused hard negatives and one of the 27 reused PII negatives carry a
+      documented GuardrailPiiEntityType, so they are not negatives with respect to
+      the PII filter they are scored against. hard_negatives drops 69 -> 60 and
+      corpora.pii.negatives 27 -> 26, with both exclusion counts pinned in
+      corpora.pii.entity_screen_exclusions.
+    why: >
+      Both cells were populated from source_corpus_audit.mapping, where
+      `DB_CONNECTION_STRING: null` means no GuardrailPiiEntityType names that
+      CONCEPT. That is true of the label and false of the items:
+      `postgres://user:pass@db.host:5432/app` contains a USERNAME, a PASSWORD and a
+      URL, all three among the 31 under test, and the PII_NOT_AN_SDK_ENTITY label
+      asserts an item-level property the label-level mapping cannot license. This is
+      DEV-P0-7's root cause exactly -- a label-level fact read as an item-level
+      property -- recurring inside the cell that amendment created.
+      It is not cosmetic. F3-3 is falsified when the hard-negative FPR's lower bound
+      exceeds 0.10, which at n=69 requires 12 detections
+      (wilson_ci(12,69).lo = 0.1024). A PII filter that works at all on
+      USERNAME/PASSWORD/URL detects those nine CORRECTLY and the arm scores them as
+      false positives: 9 of the 12, three-quarters of the falsification threshold,
+      supplied by a labelling error rather than by the filter's behaviour.
+    design_impact: >
+      hard_negatives 69 -> 60 (still above the sized minimum of 58) and
+      corpora.pii.negatives 27 -> 26; total corpus 1927 -> 1917. No family, oracle,
+      threshold or significance level changes, and F3-3's rule is untouched -- what
+      changes is which items it is computed over. hard_negative_cell now pins
+      falsifying_x_at_corpus_n so the threshold is stated next to the corpus it
+      applies to.
+    detail: DEVIATIONS.md#dev-seal-5

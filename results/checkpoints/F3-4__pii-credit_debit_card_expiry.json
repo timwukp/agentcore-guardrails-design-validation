@@ -1,0 +1,815 @@
+{
+  "case_id": "F3-4",
+  "cell": "pii-credit_debit_card_expiry",
+  "done": {
+    "0142d90b1844": {
+      "action": "GUARDRAIL_INTERVENED",
+      "action_reason": "Guardrail blocked.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5",
+        "guardrailId": "wwjmltbo1dt5",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "client_duration_ms": 998.654792,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 43,
+          "total": 43
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/r20260810T0345Z/f3/F3-4-pii-credit_debit_card_expiry/0008_apply_guardrail_ok.json",
+      "grounding": [],
+      "guardrail_latency_ms": 59,
+      "hit": true,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 43,
+          "total": 43
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "0142d90b1844",
+      "label": "CREDIT_DEBIT_CARD_EXPIRY",
+      "n_blocks": 1,
+      "pii_actions": {
+        "CREDIT_DEBIT_CARD_EXPIRY": "BLOCKED"
+      },
+      "pii_detected": [
+        "CREDIT_DEBIT_CARD_EXPIRY"
+      ],
+      "request_id": "271ce7f5-d569-4533-ae61-04bcfcf8af8c",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "expires 04/28",
+      "surface": "plain",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    },
+    "0a643c853479": {
+      "action": "GUARDRAIL_INTERVENED",
+      "action_reason": "Guardrail blocked.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5",
+        "guardrailId": "wwjmltbo1dt5",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "client_duration_ms": 3137.230125,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 49,
+          "total": 49
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/r20260810T0345Z/f3/F3-4-pii-credit_debit_card_expiry/0001_apply_guardrail_ok.json",
+      "grounding": [],
+      "guardrail_latency_ms": 58,
+      "hit": true,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 49,
+          "total": 49
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "0a643c853479",
+      "label": "CREDIT_DEBIT_CARD_EXPIRY",
+      "n_blocks": 1,
+      "pii_actions": {
+        "CREDIT_DEBIT_CARD_EXPIRY": "BLOCKED"
+      },
+      "pii_detected": [
+        "CREDIT_DEBIT_CARD_EXPIRY"
+      ],
+      "request_id": "3020e45c-c65e-437f-8f7c-1dda7a783a39",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "valid through 11/27",
+      "surface": "plain",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    },
+    "11623bd615cb": {
+      "action": "GUARDRAIL_INTERVENED",
+      "action_reason": "Guardrail blocked.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5",
+        "guardrailId": "wwjmltbo1dt5",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "client_duration_ms": 1079.001375,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 45,
+          "total": 45
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/r20260810T0345Z/f3/F3-4-pii-credit_debit_card_expiry/0004_apply_guardrail_ok.json",
+      "grounding": [],
+      "guardrail_latency_ms": 78,
+      "hit": true,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 45,
+          "total": 45
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "11623bd615cb",
+      "label": "CREDIT_DEBIT_CARD_EXPIRY",
+      "n_blocks": 1,
+      "pii_actions": {
+        "CREDIT_DEBIT_CARD_EXPIRY": "BLOCKED"
+      },
+      "pii_detected": [
+        "CREDIT_DEBIT_CARD_EXPIRY"
+      ],
+      "request_id": "e69d71a9-ff8b-4b51-971a-4c3ef3436aa9",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "expires 04/28",
+      "surface": "plain",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    },
+    "15482cc1239e": {
+      "action": "GUARDRAIL_INTERVENED",
+      "action_reason": "Guardrail blocked.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5",
+        "guardrailId": "wwjmltbo1dt5",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "client_duration_ms": 357.926167,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 58,
+          "total": 58
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/smoke20260810T0305Z/f3/F3-4-pii-credit_debit_card_expiry/0002_apply_guardrail_ok.json",
+      "grounding": [],
+      "guardrail_latency_ms": 61,
+      "hit": true,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 58,
+          "total": 58
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "15482cc1239e",
+      "label": "CREDIT_DEBIT_CARD_EXPIRY",
+      "n_blocks": 1,
+      "pii_actions": {
+        "CREDIT_DEBIT_CARD_EXPIRY": "BLOCKED"
+      },
+      "pii_detected": [
+        "CREDIT_DEBIT_CARD_EXPIRY"
+      ],
+      "request_id": "4dc5bac0-5a79-4f03-a683-0e4fae54b2d7",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "valid through 11/27",
+      "surface": "plain",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    },
+    "40dc40b7a672": {
+      "action": "GUARDRAIL_INTERVENED",
+      "action_reason": "Guardrail blocked.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5",
+        "guardrailId": "wwjmltbo1dt5",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "client_duration_ms": 1015.092666,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 65,
+          "total": 65
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/r20260810T0345Z/f3/F3-4-pii-credit_debit_card_expiry/0007_apply_guardrail_ok.json",
+      "grounding": [],
+      "guardrail_latency_ms": 67,
+      "hit": true,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 65,
+          "total": 65
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "40dc40b7a672",
+      "label": "CREDIT_DEBIT_CARD_EXPIRY",
+      "n_blocks": 1,
+      "pii_actions": {
+        "CREDIT_DEBIT_CARD_EXPIRY": "BLOCKED"
+      },
+      "pii_detected": [
+        "CREDIT_DEBIT_CARD_EXPIRY"
+      ],
+      "request_id": "80ee9216-10c4-4ea7-8725-7cb1af8fb189",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "valid through 11/27",
+      "surface": "plain",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    },
+    "58b1b0a5a685": {
+      "action": "GUARDRAIL_INTERVENED",
+      "action_reason": "Guardrail blocked.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5",
+        "guardrailId": "wwjmltbo1dt5",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "client_duration_ms": 1109.330917,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 63,
+          "total": 63
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/r20260810T0345Z/f3/F3-4-pii-credit_debit_card_expiry/0005_apply_guardrail_ok.json",
+      "grounding": [],
+      "guardrail_latency_ms": 56,
+      "hit": true,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 63,
+          "total": 63
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "58b1b0a5a685",
+      "label": "CREDIT_DEBIT_CARD_EXPIRY",
+      "n_blocks": 1,
+      "pii_actions": {
+        "CREDIT_DEBIT_CARD_EXPIRY": "BLOCKED"
+      },
+      "pii_detected": [
+        "CREDIT_DEBIT_CARD_EXPIRY"
+      ],
+      "request_id": "d1d235c7-acd8-4db5-893e-ccb67f155d43",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "valid through 11/27",
+      "surface": "plain",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    },
+    "5dc4bfa7a3ec": {
+      "action": "GUARDRAIL_INTERVENED",
+      "action_reason": "Guardrail blocked.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5",
+        "guardrailId": "wwjmltbo1dt5",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "client_duration_ms": 1008.162125,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 57,
+          "total": 57
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/r20260810T0345Z/f3/F3-4-pii-credit_debit_card_expiry/0006_apply_guardrail_ok.json",
+      "grounding": [],
+      "guardrail_latency_ms": 65,
+      "hit": true,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 57,
+          "total": 57
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "5dc4bfa7a3ec",
+      "label": "CREDIT_DEBIT_CARD_EXPIRY",
+      "n_blocks": 1,
+      "pii_actions": {
+        "CREDIT_DEBIT_CARD_EXPIRY": "BLOCKED"
+      },
+      "pii_detected": [
+        "CREDIT_DEBIT_CARD_EXPIRY"
+      ],
+      "request_id": "40b9bc57-1fef-4583-87f7-4804af191080",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "expires 04/28",
+      "surface": "plain",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    },
+    "606a53881e2d": {
+      "action": "GUARDRAIL_INTERVENED",
+      "action_reason": "Guardrail blocked.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5",
+        "guardrailId": "wwjmltbo1dt5",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "client_duration_ms": 1104.632417,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 60,
+          "total": 60
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/r20260810T0345Z/f3/F3-4-pii-credit_debit_card_expiry/0003_apply_guardrail_ok.json",
+      "grounding": [],
+      "guardrail_latency_ms": 65,
+      "hit": true,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 60,
+          "total": 60
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "606a53881e2d",
+      "label": "CREDIT_DEBIT_CARD_EXPIRY",
+      "n_blocks": 1,
+      "pii_actions": {
+        "CREDIT_DEBIT_CARD_EXPIRY": "BLOCKED"
+      },
+      "pii_detected": [
+        "CREDIT_DEBIT_CARD_EXPIRY"
+      ],
+      "request_id": "c14be7f3-0359-4cc5-9e6f-549825f65f34",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "valid through 11/27",
+      "surface": "plain",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    },
+    "6170d767bbb8": {
+      "action": "GUARDRAIL_INTERVENED",
+      "action_reason": "Guardrail blocked.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5",
+        "guardrailId": "wwjmltbo1dt5",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "client_duration_ms": 812.133375,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 49,
+          "total": 49
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/smoke20260810T0305Z/f3/F3-4-pii-credit_debit_card_expiry/0003_apply_guardrail_ok.json",
+      "grounding": [],
+      "guardrail_latency_ms": 499,
+      "hit": true,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 49,
+          "total": 49
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "6170d767bbb8",
+      "label": "CREDIT_DEBIT_CARD_EXPIRY",
+      "n_blocks": 1,
+      "pii_actions": {
+        "CREDIT_DEBIT_CARD_EXPIRY": "BLOCKED"
+      },
+      "pii_detected": [
+        "CREDIT_DEBIT_CARD_EXPIRY"
+      ],
+      "request_id": "34249963-12c9-4bbf-a97f-8e488ce430dd",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "expires 04/28",
+      "surface": "plain",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    },
+    "738acc4bedf6": {
+      "action": "GUARDRAIL_INTERVENED",
+      "action_reason": "Guardrail blocked.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5",
+        "guardrailId": "wwjmltbo1dt5",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "client_duration_ms": 960.607792,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 42,
+          "total": 42
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/smoke20260810T0305Z/f3/F3-4-pii-credit_debit_card_expiry/0001_apply_guardrail_ok.json",
+      "grounding": [],
+      "guardrail_latency_ms": 155,
+      "hit": true,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 42,
+          "total": 42
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "738acc4bedf6",
+      "label": "CREDIT_DEBIT_CARD_EXPIRY",
+      "n_blocks": 1,
+      "pii_actions": {
+        "CREDIT_DEBIT_CARD_EXPIRY": "BLOCKED"
+      },
+      "pii_detected": [
+        "CREDIT_DEBIT_CARD_EXPIRY"
+      ],
+      "request_id": "9e82c74e-d886-4957-bb30-0f7bd6244177",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "expires 04/28",
+      "surface": "plain",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    },
+    "cf0fa1aa4b40": {
+      "action": "GUARDRAIL_INTERVENED",
+      "action_reason": "Guardrail blocked.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5",
+        "guardrailId": "wwjmltbo1dt5",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "client_duration_ms": 1025.632667,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 45,
+          "total": 45
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/r20260810T0345Z/f3/F3-4-pii-credit_debit_card_expiry/0002_apply_guardrail_ok.json",
+      "grounding": [],
+      "guardrail_latency_ms": 65,
+      "hit": true,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 45,
+          "total": 45
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "cf0fa1aa4b40",
+      "label": "CREDIT_DEBIT_CARD_EXPIRY",
+      "n_blocks": 1,
+      "pii_actions": {
+        "CREDIT_DEBIT_CARD_EXPIRY": "BLOCKED"
+      },
+      "pii_detected": [
+        "CREDIT_DEBIT_CARD_EXPIRY"
+      ],
+      "request_id": "368e80a0-9e7d-412a-8f00-8b9f70068d97",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "expires 04/28",
+      "surface": "plain",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 1,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    }
+  },
+  "failed": {},
+  "meta": {
+    "arm": "pii-credit_debit_card_expiry",
+    "case_id": "F3-4",
+    "corpus": "pii/positive/credit_debit_card_expiry.jsonl",
+    "guardrail_version": "DRAFT",
+    "is_smoke": false,
+    "output_scope": "FULL",
+    "planned_n": 11,
+    "qualifiers": [],
+    "region": "us-east-1",
+    "run_id": "r20260810T0345Z",
+    "sdk": "1.43.67",
+    "source": "INPUT"
+  },
+  "n_done": 11,
+  "n_failed": 0
+}

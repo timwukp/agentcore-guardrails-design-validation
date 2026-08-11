@@ -1,0 +1,80 @@
+{
+  "adverse_union": {
+    "listed_misses": 0,
+    "n": 66,
+    "nearmiss_blocks": 0,
+    "total": 0,
+    "why_union": "the claim is 'exactly', which is a claim about both directions; a ceiling on one arm alone would understate the chances the filter had"
+  },
+  "billable_calls": 66,
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F3-6",
+    "clear_here": true
+  },
+  "by_label": {
+    "LISTED": {
+      "n": 9,
+      "x": 9
+    },
+    "LISTED_CASE": {
+      "n": 3,
+      "x": 3
+    },
+    "NEAR_MISS": {
+      "n": 54,
+      "x": 0
+    }
+  },
+  "case_folding_assumption": "LISTED_CASE items differ from a listed term only in case and are scored as EXPECTED TO BLOCK; a case-insensitive matcher is still matching the listed word. Reported as its own row so the assumption is visible and contestable",
+  "case_id": "F3-6",
+  "configured_words": [
+    "moonquake",
+    "zorbify",
+    "quaxlinate"
+  ],
+  "corpus_root": "corpora_deviation (unsealed; DEVIATIONS.md/DEV-P1-4)",
+  "instrument": "ApplyGuardrail (source=INPUT, outputScope=FULL), wordPolicy",
+  "is_smoke": false,
+  "kind": "ZERO_EVENTS",
+  "listed_misses_detail": [],
+  "mutations": 0,
+  "nearmiss_blocks_detail": [],
+  "no_power_claim": "planned_n(F3-6) is None, so n_met=True is vacuous. A zero-event oracle still carries an exact one-sided ceiling at this n, and one counterexample decides the case regardless of n",
+  "oracle_text": "TRUE if every listed term blocks and no unlisted near-miss does; FALSE on any miss or any near-miss block",
+  "planned_n": null,
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F3-6",
+    "evidence": {
+      "ceiling_method": "exact 1-alpha^(1/n)",
+      "ceiling_one_sided": 0.044375172618184244,
+      "interval": "0 [0, 0.055] (n=66, wilson, 95%)",
+      "n": 66,
+      "x": 0
+    },
+    "family": "exploratory_detection",
+    "kind": "ZERO_EVENTS",
+    "mutation_required": false,
+    "n_attempted": 66,
+    "n_met": true,
+    "n_usable": 66,
+    "notes": [],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [],
+    "verdict": "TRUE"
+  },
+  "run_id": "r20260810T0345Z",
+  "surfaces_probed": [
+    "NEAR_EDIT1",
+    "NEAR_PREFIX",
+    "NEAR_SPLIT",
+    "NEAR_SUFFIX",
+    "NEAR_TRUNCATED",
+    "listed",
+    "upper"
+  ],
+  "verdict": "TRUE"
+}

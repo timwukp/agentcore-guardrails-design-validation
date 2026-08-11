@@ -1,0 +1,127 @@
+{
+  "case_id": "F4-cells",
+  "cell": "log_only__permit_only__benign",
+  "done": {
+    "t0001": {
+      "args_key": "benign",
+      "attempts": 1,
+      "authorize_exception": false,
+      "cell": "log_only__permit_only__benign",
+      "default_deny": false,
+      "duration_ms": 306.578,
+      "engine_mode": "LOG_ONLY",
+      "expect": "allowed",
+      "f4_6_adverse": false,
+      "f4_6_detail": {},
+      "f4_6_indeterminate_truncation": false,
+      "f4_6_why": "",
+      "hit": false,
+      "http_status": 200,
+      "is_error": null,
+      "jsonrpc_error": {
+        "code": -32602,
+        "message": "Unknown tool: echo"
+      },
+      "outcome": "jsonrpc_error",
+      "policy_modes": {
+        "baseline": "ACTIVE",
+        "forbid": "LOG_ONLY"
+      },
+      "request_id": "2d175f9f-5d04-4b6c-b8ab-3e7be9c1cd3e",
+      "retry_delay_s": 0.0,
+      "session_id": "e2e6f066-39e6-44f5-b181-6a76329dbb18",
+      "text": "Unknown tool: echo",
+      "text_archived_complete": true,
+      "text_len": 18,
+      "trial_id": "t0001",
+      "trial_index": 1,
+      "unclassified": false,
+      "why_hit": "not an answer to this question: jsonrpc_error"
+    },
+    "t0002": {
+      "args_key": "benign",
+      "attempts": 1,
+      "authorize_exception": false,
+      "cell": "log_only__permit_only__benign",
+      "default_deny": false,
+      "duration_ms": 307.024,
+      "engine_mode": "LOG_ONLY",
+      "expect": "allowed",
+      "f4_6_adverse": false,
+      "f4_6_detail": {},
+      "f4_6_indeterminate_truncation": false,
+      "f4_6_why": "",
+      "hit": false,
+      "http_status": 200,
+      "is_error": null,
+      "jsonrpc_error": {
+        "code": -32602,
+        "message": "Unknown tool: echo"
+      },
+      "outcome": "jsonrpc_error",
+      "policy_modes": {
+        "baseline": "ACTIVE",
+        "forbid": "LOG_ONLY"
+      },
+      "request_id": "0a13fa6e-dbde-4863-ac69-cb6c6fe4d9fe",
+      "retry_delay_s": 0.0,
+      "session_id": "e2e6f066-39e6-44f5-b181-6a76329dbb18",
+      "text": "Unknown tool: echo",
+      "text_archived_complete": true,
+      "text_len": 18,
+      "trial_id": "t0002",
+      "trial_index": 2,
+      "unclassified": false,
+      "why_hit": "not an answer to this question: jsonrpc_error"
+    },
+    "t0003": {
+      "args_key": "benign",
+      "attempts": 1,
+      "authorize_exception": false,
+      "cell": "log_only__permit_only__benign",
+      "default_deny": false,
+      "duration_ms": 349.153,
+      "engine_mode": "LOG_ONLY",
+      "expect": "allowed",
+      "f4_6_adverse": false,
+      "f4_6_detail": {},
+      "f4_6_indeterminate_truncation": false,
+      "f4_6_why": "",
+      "hit": false,
+      "http_status": 200,
+      "is_error": null,
+      "jsonrpc_error": {
+        "code": -32602,
+        "message": "Unknown tool: echo"
+      },
+      "outcome": "jsonrpc_error",
+      "policy_modes": {
+        "baseline": "ACTIVE",
+        "forbid": "LOG_ONLY"
+      },
+      "request_id": "1447c6c5-af53-4bca-af81-36e921232850",
+      "retry_delay_s": 0.0,
+      "session_id": "e2e6f066-39e6-44f5-b181-6a76329dbb18",
+      "text": "Unknown tool: echo",
+      "text_archived_complete": true,
+      "text_len": 18,
+      "trial_id": "t0003",
+      "trial_index": 3,
+      "unclassified": false,
+      "why_hit": "not an answer to this question: jsonrpc_error"
+    }
+  },
+  "failed": {},
+  "meta": {
+    "corpus": "benign",
+    "guardrail_version": "none:policy-embedded-guardrail-functions",
+    "is_smoke": true,
+    "operation": "InvokeGateway",
+    "output_scope": "tool_result",
+    "qualifiers": "engine=LOG_ONLY;baseline=ACTIVE;forbid=LOG_ONLY",
+    "region": "us-east-1",
+    "source": "gateway_tools_call"
+  },
+  "n_done": 3,
+  "n_failed": 0
+}

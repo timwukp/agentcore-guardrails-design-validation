@@ -1,0 +1,232 @@
+{
+  "ambient_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "aws_calls": 0,
+  "billable_calls": 0,
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F1-4",
+    "clear_here": true
+  },
+  "case_id": "F1-4",
+  "client_side_enforcement": "botocore.validate.ParamValidator enforces required members, tagged-union arity and string/list MINIMUMS. It enforces no maximum and performs no enum membership check (direction 7: `sync`, `ASYNCHRONOUS` and `NOT_A_MODE` all pass). Every documented minimum and required field is therefore decidable offline; every documented maximum and value is not",
+  "direction_9_classification": {
+    "accounted": [
+      {
+        "all_values": [
+          "sync",
+          "async"
+        ],
+        "matched_values": [
+          "sync",
+          "async"
+        ],
+        "service": "bedrock-runtime",
+        "shape": "GuardrailStreamProcessingMode",
+        "token": "SYNC",
+        "why": "a LEGITIMATE hit and F1-12's own subject: the SYNC and ASYNC tokens match its two values `sync` and `async`. It is in this table because the table's job is to account for every hit, not to hold only the false ones — and it is the reason the F1-12 verdict below reads the ENUM directly instead of reading a hit count: the hit proves a stream-processing mode enum exists, and F1-12 asks whether its values are the document's SYNCHRONOUS / ASYNCHRONOUS, which they are not"
+      },
+      {
+        "all_values": [
+          "sync",
+          "async"
+        ],
+        "matched_values": [
+          "async"
+        ],
+        "service": "bedrock-runtime",
+        "shape": "GuardrailStreamProcessingMode",
+        "token": "ASYNC",
+        "why": "a LEGITIMATE hit and F1-12's own subject: the SYNC and ASYNC tokens match its two values `sync` and `async`. It is in this table because the table's job is to account for every hit, not to hold only the false ones — and it is the reason the F1-12 verdict below reads the ENUM directly instead of reading a hit count: the hit proves a stream-processing mode enum exists, and F1-12 asks whether its values are the document's SYNCHRONOUS / ASYNCHRONOUS, which they are not"
+      },
+      {
+        "all_values": [
+          "REQUEST",
+          "ACCOUNT_ENFORCED",
+          "ORGANIZATION_ENFORCED"
+        ],
+        "matched_values": [
+          "ACCOUNT_ENFORCED",
+          "ORGANIZATION_ENFORCED"
+        ],
+        "service": "bedrock-runtime",
+        "shape": "GuardrailOrigin",
+        "token": "ENFORCE",
+        "why": "where a guardrail came from. ACCOUNT_ENFORCED / ORGANIZATION_ENFORCED contain the token ENFORCE and describe account- and organization-level enforcement (the F5-9 surface), not an Automated Reasoning detect-vs-enforce mode"
+      },
+      {
+        "all_values": [
+          "CREATING",
+          "UPDATING",
+          "UPDATE_UNSUCCESSFUL",
+          "DELETING",
+          "READY",
+          "FAILED",
+          "SYNCHRONIZING",
+          "SYNCHRONIZE_UNSUCCESSFUL",
+          "CREATE_PENDING_AUTH",
+          "UPDATE_PENDING_AUTH",
+          "SYNCHRONIZE_PENDING_AUTH"
+        ],
+        "matched_values": [
+          "SYNCHRONIZING",
+          "SYNCHRONIZE_UNSUCCESSFUL",
+          "SYNCHRONIZE_PENDING_AUTH"
+        ],
+        "service": "bedrock-agentcore-control",
+        "shape": "TargetStatus",
+        "token": "SYNC",
+        "why": "a gateway-target lifecycle enum. SYNCHRONIZING / SYNCHRONIZE_UNSUCCESSFUL / SYNCHRONIZE_PENDING_AUTH contain the token SYNC and describe target synchronisation, not a guardrail stream-processing mode"
+      },
+      {
+        "all_values": [
+          "LOG_ONLY",
+          "ENFORCE"
+        ],
+        "matched_values": [
+          "ENFORCE"
+        ],
+        "service": "bedrock-agentcore-control",
+        "shape": "GatewayPolicyEngineMode",
+        "token": "ENFORCE",
+        "why": "a LEGITIMATE hit, and it is F1-5's own subject: ENFORCE is a policy-engine mode. It is listed here so the ENFORCE token's hit count is fully accounted for, not to excuse it"
+      }
+    ],
+    "classified_against": [
+      "GatewayPolicyEngineMode",
+      "GuardrailOrigin",
+      "GuardrailStreamProcessingMode",
+      "TargetStatus"
+    ],
+    "documented_tokens_present": [],
+    "n_accounted": 5,
+    "n_hits": 5,
+    "n_unclassified": 0,
+    "unclassified": [],
+    "why_classified_not_dropped": "two of the five hits are substring accidents on enums that mean something else (TargetStatus.SYNCHRONIZING contains SYNC; GuardrailOrigin.ACCOUNT_ENFORCED contains ENFORCE) and three are legitimate. Dropping the accidents silently would assert the classification instead of recording it; a hit on an unlisted shape therefore falls through to `unclassified` and forces INCONCLUSIVE with the shape named. Every hit is accounted for either way, which is what makes the zero-unclassified guard meaningful"
+  },
+  "examined": {
+    "n_enum_values": 1076,
+    "n_enums": 271,
+    "n_member_paths": 14774,
+    "n_operations": 350,
+    "n_services": 4,
+    "n_shape_names": 3432
+  },
+  "expiry": "a statement about a MODEL, dated by botocore 1.43.67; a later release adding a fourth arm belongs in AWS-BEHAVIOR-CHANGES.md",
+  "instrument": "lib/f1_surface.py, run as a subprocess under .venv-oracle: the botocore service models for bedrock, bedrock-runtime, bedrock-agentcore-control and bedrock-agentcore, read locally in ten directions. No operation is invoked",
+  "is_smoke": false,
+  "kind": "EXISTENCE",
+  "min_botocore_required": "1.43.32",
+  "mutations": 0,
+  "no_claim_row": "this case has NO row in claims/triage.csv, by design. claims/triage_rules.PLATFORM_CASES states why, verbatim: Prerequisite, not a claim. FINDING-F1-1 discovered that PolicyDefinition is a union with non-deprecated `cedar` AND `policy` arms. The document predates that surface and says nothing about it, so no claim maps here. But the harness must know which arm to send or every F1-F5 gateway test fails for an unrelated reason. Run in Phase 3 as a platform pre-flight.",
+  "oracle_text": "TRUE if exactly one arm is accepted per call; FALSE if both-at-once succeeds or if either single arm is rejected",
+  "parent_interpreter": "/Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python",
+  "parent_is_oracle_interpreter": true,
+  "pinned_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "planned_n": null,
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F1-4",
+    "evidence": {
+      "detail": {
+        "both_arms_rejected": true,
+        "control_finding_in_all_four_probes": true,
+        "definition_members": {
+          "cedar": "CedarPolicy",
+          "policy": "PolicyStatement",
+          "policyGeneration": "PolicyGenerationDetails"
+        },
+        "metadata_says_union": true,
+        "neither_arm_rejected": true,
+        "probes": {
+          "both_arms": {
+            "control_finding_present": true,
+            "definition_keys": [
+              "cedar",
+              "policy"
+            ],
+            "findings": [
+              "Invalid length for parameter policyEngineId, value: 1, valid min length: 12",
+              "Invalid number of parameters set for tagged union structure definition. Can only set one of the following keys: cedar, policyGeneration, policy."
+            ],
+            "n_findings": 2,
+            "union_finding": [
+              "Invalid number of parameters set for tagged union structure definition. Can only set one of the following keys: cedar, policyGeneration, policy."
+            ]
+          },
+          "cedar_only": {
+            "control_finding_present": true,
+            "definition_keys": [
+              "cedar"
+            ],
+            "findings": [
+              "Invalid length for parameter policyEngineId, value: 1, valid min length: 12"
+            ],
+            "n_findings": 1,
+            "union_finding": []
+          },
+          "neither_arm": {
+            "control_finding_present": true,
+            "definition_keys": [],
+            "findings": [
+              "Invalid length for parameter policyEngineId, value: 1, valid min length: 12",
+              "Must set one of the following keys for tagged unionstructure definition: cedar, policyGeneration, policy."
+            ],
+            "n_findings": 2,
+            "union_finding": [
+              "Must set one of the following keys for tagged unionstructure definition: cedar, policyGeneration, policy."
+            ]
+          },
+          "policy_only": {
+            "control_finding_present": true,
+            "definition_keys": [
+              "policy"
+            ],
+            "findings": [
+              "Invalid length for parameter policyEngineId, value: 1, valid min length: 12"
+            ],
+            "n_findings": 1,
+            "union_finding": []
+          }
+        },
+        "single_arms_accepted": true
+      },
+      "observed": true
+    },
+    "family": "descriptive_no_test",
+    "kind": "EXISTENCE",
+    "mutation_required": false,
+    "n_attempted": 0,
+    "n_met": true,
+    "n_usable": 0,
+    "notes": [],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [],
+    "verdict": "TRUE"
+  },
+  "run_id": "r20260810T180012Z",
+  "services_available": [
+    "bedrock",
+    "bedrock-agentcore",
+    "bedrock-agentcore-control",
+    "bedrock-runtime"
+  ],
+  "services_unavailable": {},
+  "sweep_interpreter": "/Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python",
+  "sweep_python": "3.12.12",
+  "verdict": "TRUE",
+  "verdict_reading": "the union is a THREE-arm tagged union — cedar, policyGeneration, policy — and botocore enforces both halves of 'exactly one': ['Invalid number of parameters set for tagged union structure definition. Can only set one of the following keys: cedar, policyGeneration, policy.'] and ['Must set one of the following keys for tagged unionstructure definition: cedar, policyGeneration, policy.']. Rejected at the SDK, before serialisation, so a both-arms request cannot be sent at all",
+  "verdict_rule": "TRUE iff all four probes carry the deliberate control finding (proving the validator ran at all), the both-arms probe is rejected, the neither-arm probe is rejected, and each single arm passes. The control is a policyEngineId of length 1 against a min of 12: without it, a probe that produced no finding would be indistinguishable from a validator that never executed",
+  "what_true_does_not_prove": "that the SERVICE accepts either single arm. Client-side, neither is rejected; the `cedar` arm is separately corroborated live — Phase 2 created grx_pol_baseline_<runid>_v2 through it — but nothing in this project has yet sent a `policy` arm to the service, and the oracle's FALSE branch includes 'either single arm is rejected'. That branch is untested for `policy`",
+  "why_no_aws_call": "boto3.client loads the service model from the installed package; no operation is invoked and no socket is opened",
+  "why_subprocess": "so the interpreter that loaded the model is a RECORDED ARGUMENT rather than whichever python launched this file: the content of these cases is which fields a specific botocore models, and system python3 and .venv-baseline both carry 1.42.79, under which enforcementMode and InvokeGuardrailChecks are absent — an absence that is a fact about pip (F1-1, DEV-P1-15). It is NOT because .venv-oracle cannot evaluate an oracle: that venv carries numpy 2.5.2 and scipy 1.18.0 and imports every lib/ module cleanly, so the rationale in f8_regional/07_absent_surface.py is stale prose and was re-derived rather than copied. `parent_is_oracle_interpreter` records whether the subprocess is a necessity or a redundancy on this run",
+  "why_this_matters_operationally": "F1-4 is a platform pre-flight, not a claim: every F1-F5 gateway test has to know which arm to send, and sending both would fail every one of them for a reason unrelated to what they measure"
+}

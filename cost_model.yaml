@@ -1,0 +1,540 @@
+# Machine-readable cost model. COST.md is GENERATED from this file by
+# estimate_cost.py — do not type figures into the report by hand.
+#
+# Why this file exists: the approved plan specifies an `estimate_cost.py` that "refuses
+# to run if the projection exceeds the pre-registered ceiling", but no ceiling was ever
+# written anywhere a program could read. The figure lived only in the plan's prose
+# ($55–95) and in my recollection of it. Per feedback_prose_is_not_verified a number in
+# a sentence is unverified, so the control the plan describes could not exist. It exists
+# now, and the ceiling below is the plan's own figure, hoisted.
+#
+# estimate_cost.py refuses to authorise a live phase while any price that phase depends
+# on carries `verified: false`. An unverified price is a guess, and a projection built
+# from guesses that reports "within ceiling" is the vacuous-check pattern applied to
+# money: it passes by construction. All nine priced lines were read from the live Pricing
+# API on 2026-08-09 and now carry `verified: true`; `--verify-prices` re-reads them and
+# exits non-zero on any drift, printing recorded-vs-live rather than silently editing
+# this file.
+
+meta:
+  version: 1
+  created: 2026-08-09
+  currency: USD
+  ceiling_usd: 95           # the approved plan's upper figure, now machine-readable
+  ceiling_source: >
+    ~/.claude/plans/melodic-hatching-seal.md, Part 7: "Cost disclosure: $55–95
+    projected (default path + 5c + 6b)". The upper end is the ceiling; the lower end is
+    not a target.
+  attribution: >
+    Actuals are read by resource tag Project=guardrails-doc-validation, never by
+    service. This account carries roughly $27k/mo of unrelated spend, so a
+    service-level filter would misattribute other systems' cost to this project.
+
+# ---------------------------------------------------------------------------
+# Unit prices. `verified: false` blocks live phases that depend on the price.
+#
+# Every non-zero price carries a `pricing_api` block naming the exact service code and
+# usagetype `estimate_cost.py --verify-prices` queries. Without it "verified" could only
+# mean "some number was fetched", and a lookup aimed at the wrong usagetype is worse
+# than no lookup because it stamps a guess as confirmed.
+#
+# All figures below were READ FROM THE LIVE PRICING API on 2026-08-09, us-east-1. Four
+# of my five initial guesses were wrong, one of them by 5x -- see the `was_guessed` notes.
+# ---------------------------------------------------------------------------
+prices:
+  guardrail_text_unit:
+    usd: 0.00015
+    unit: "1 text unit (<= 1000 characters) through ApplyGuardrail content filters"
+    source: "Pricing API, USE1-Guardrail-ContentPolicyUnitsConsumed: $0.15 per 1K text units"
+    pricing_api:
+      service_code: AmazonBedrock
+      usagetype: USE1-Guardrail-ContentPolicyUnitsConsumed
+    verified: true
+    was_guessed: >
+      I had written 0.00075 from memory of the pricing page -- FIVE TIMES the real
+      figure. It would have inflated Phase 6 from $1.25 to $6.24 in guardrail units and
+      the whole projection by roughly $13, i.e. a "cost disclosure" that misreported the
+      dominant line item by 5x while looking precise to five decimal places. This is
+      feedback_prose_is_not_verified about money: the number lived in a YAML string and
+      no check re-derived it.
+
+  guardrail_checks_content_text_unit:
+    usd: 0.00007
+    unit: "1 text unit through InvokeGuardrailChecks contentFilter"
+    source: "Pricing API, USE1-GuardrailChecks-ContentFilterCheckUnitsConsumed"
+    pricing_api:
+      service_code: AmazonBedrock
+      usagetype: USE1-GuardrailChecks-ContentFilterCheckUnitsConsumed
+    verified: true
+    finding: >
+      A SEPARATE AND CHEAPER BILLING FAMILY. `GuardrailChecks-*` usagetypes exist
+      alongside `Guardrail-*` and cost less than half as much ($0.00007 vs $0.00015).
+      This is direct billing-side evidence that InvokeGuardrailChecks and ApplyGuardrail
+      are distinct evaluation paths, not two front doors to one engine -- which is
+      exactly the distinction F5-6/DC-2 was designed to test behaviourally, and the one
+      §3.2 blurs. AWS meters them separately. Recorded as a free F10 observation.
+
+  guardrail_checks_prompt_attack_text_unit:
+    usd: 0.00008
+    unit: "1 text unit through InvokeGuardrailChecks promptAttack"
+    source: "Pricing API, USE1-GuardrailChecks-PromptAttackCheckUnitsConsumed"
+    pricing_api:
+      service_code: AmazonBedrock
+      usagetype: USE1-GuardrailChecks-PromptAttackCheckUnitsConsumed
+    verified: true
+
+  guardrail_pii_text_unit:
+    usd: 0.00010
+    unit: "1 text unit through ApplyGuardrail sensitive-information filters (paid tier)"
+    source: "Pricing API, USE1-Guardrail-SensitiveInformationPolicyPaidUnitsConsumed"
+    pricing_api:
+      service_code: AmazonBedrock
+      usagetype: USE1-Guardrail-SensitiveInformationPolicyPaidUnitsConsumed
+    verified: true
+    note: >
+      The only guess that was right. There is also a FREE tier usagetype
+      (SensitiveInformationPolicyFreeUnitsConsumed, $0), so the PII line is an upper
+      bound: if our 31 entity types fall in the free tier the actual will be lower.
+      Costing at the paid rate is the conservative direction.
+
+  lambda_invoke:
+    usd: 0.0000002
+    unit: "1 Lambda request — the deterministic echo target"
+    source: "Pricing API, AWSLambda usagetype Request: $0.0000002 per request"
+    pricing_api:
+      service_code: AWSLambda
+      usagetype: Request
+    verified: true
+
+  lambda_gb_second:
+    usd: 0.0000133334
+    unit: "1 GB-second of Lambda compute (cheapest tier)"
+    source: "Pricing API, AWSLambda Lambda-GB-Second, Tier-3"
+    pricing_api:
+      service_code: AWSLambda
+      usagetype: Lambda-GB-Second
+      tier_description: cheapest
+    verified: true
+    note: >
+      Three tiers are returned ($0.0000166667 / $0.000015 / $0.0000133334). We take the
+      cheapest because this account's existing ~$27k/mo of Lambda usage has long since
+      pushed it past the tier-1 volume boundary. The line is negligible either way
+      (128MB x 100ms x 20k invocations = 250 GB-s = $0.003), and it is now a line rather
+      than an unstated omission.
+
+  spans_ingest_gb:
+    usd: 0.50
+    unit: "1 GB of custom log data ingested (Standard log class) — the aws/spans path"
+    source: "Pricing API, AmazonCloudWatch DataProcessing-Bytes: $0.50 per GB"
+    pricing_api:
+      service_code: AmazonCloudWatch
+      usagetype: DataProcessing-Bytes
+    verified: true
+    was_guessed: >
+      The figure 0.50 was right but the usagetype I had assumed
+      ("USE1-Application-Signals-TransactionSearch-Bytes") RETURNS NO PRODUCTS. Spans
+      land in `aws/spans` as ingested log data (DataProcessing-Bytes), and the only
+      Transaction-Search-adjacent usagetype in us-east-1 is USE1-XRay-Spans-Indexed
+      under a different service. A price that is right for a reason I had wrong is not
+      verified -- it is a coincidence, and the next edit to the quantity would have had
+      no anchor.
+
+  logs_insights_gb_scanned:
+    usd: 0.005
+    unit: "1 GB scanned by a Logs Insights query"
+    source: "Pricing API, AmazonCloudWatch USE1-DataScanned-Bytes: $0.005 per GB"
+    pricing_api:
+      service_code: AmazonCloudWatch
+      usagetype: USE1-DataScanned-Bytes
+    verified: true
+
+  logs_storage_gb_month:
+    usd: 0.03
+    unit: "1 GB-month of log storage"
+    source: "Pricing API, AmazonCloudWatch USE1-TimedStorage-ByteHrs: $0.03 per GB-mo"
+    pricing_api:
+      service_code: AmazonCloudWatch
+      usagetype: USE1-TimedStorage-ByteHrs
+    verified: true
+    note: >
+      Absent from my first model entirely. Small (~4.2 GB of spans for one month =
+      $0.13) but it is a real charge that outlives the experiment, and Phase 8's +30d
+      regression means the logs are deliberately retained rather than swept at teardown.
+
+  control_plane_call:
+    usd: 0.0
+    unit: "1 control-plane API call (Create/Get/Update/List/Delete)"
+    source: >
+      AgentCore control-plane calls are not separately metered: no Create*/Get*/Update*/
+      List*/Delete* usagetype appears under AmazonBedrock or AmazonBedrockAgentCore in
+      the Pricing API. Asserted, not guessed -- and a zero has no lookup to make.
+    verified: true
+
+# ---------------------------------------------------------------------------
+# Phases. `days` is the number of distinct calendar days of observation the phase
+# needs, and it is DERIVED from `amends`, not chosen: see replication_rule below.
+# ---------------------------------------------------------------------------
+replication_rule:
+  binds: >
+    A phase needs observations on >= 2 separate calendar days if and only if a claim it
+    produces may AMEND the document under test. Sealed as
+    validity_checks.reproduction_before_amendment; enforced by
+    check_amendment_readiness.py.
+  confirm_only_is_exempt: >
+    A phase whose result can only CONFIRM the document does not amend it, so the rule
+    does not bind. If such a phase unexpectedly falsifies, it acquires the requirement
+    at that moment and its day-2 run is funded from `contingency_usd`, not from the
+    baseline. This keeps the projection honest in both directions: the baseline is not
+    padded for replications that the expected outcome does not require, and a surprise
+    does not silently blow the ceiling.
+  split_not_double: >
+    For a phase whose n counts REPEATED TRIALS of one condition (latency, determinism)
+    or EXCHANGEABLE CORPUS ITEMS (detection), the pre-registered n is DEALT ACROSS the
+    two days rather than run twice. The pooled estimator keeps the pre-registered n, so
+    the primary analysis is unchanged and the marginal cost of replication is zero;
+    what the split buys is a between-day comparison the single-day design could not
+    make at any n. Doubling would be the right answer only if the second day had to
+    re-estimate the quantity, and it does not — it has to test the quantity's
+    durability, which is a different and cheaper question.
+  day_effect_protocol: >
+    Pre-specified before data, so it is not a post-hoc knob. Test day 1 vs day 2
+    (Mann-Whitney U for latency, Fisher exact for proportions) at alpha = 0.01, the
+    same level as the pre-registered cold-start contamination check. p >= 0.01: pool
+    and report the pooled estimate. p < 0.01: do NOT pool; report per-day estimates and
+    amend the document with a RANGE plus an explicit "varies between observation days"
+    caveat. A day effect is a finding about the service, not a defect in the harness.
+  power_of_the_split: >
+    Stated as a limitation, not hidden: a between-day comparison at n/2 per day is a
+    SCREEN, not a powered test. At 2 x 500 latency trials it detects a shift in the
+    median of roughly 0.2 sigma; a 5% recall shift at 2 x 60 corpus items it will
+    usually miss. The split therefore excludes a GROSS transient (an outage, a
+    throttled window, a mid-deploy service state), which is what the rule exists for,
+    and does not license a claim that the two days are statistically indistinguishable.
+
+phases:
+  - id: "0"
+    name: "claim extraction, pre-registration, corpora, stats, F1-1 bisect, F5-7a"
+    live: false
+    days: 1
+    days_rationale: "offline; static inputs have no transient state to exclude"
+    items: []
+    projected_usd: 0.0
+    actual_usd: 0.0
+    status: complete
+
+  - id: "1"
+    name: "ApplyGuardrail / InvokeGuardrailChecks only: F3-1..9, F8-2..8, F2-5, F10-2"
+    live: true
+    days: 2
+    days_rationale: >
+      F3 and F5-6 are the DC-2 family, expected to amend §3.2 (prompt-attack tags).
+      Corpus items within a category are exchangeable, so the pre-registered corpus is
+      dealt across two days: recall is pooled at the full n and each day yields its own
+      arm for the day-effect screen. No extra calls.
+    amends: ["S3.2", "S7.1"]
+    items:
+      - price: guardrail_text_unit
+        qty: 4200
+        note: >
+          Corpus totals from corpora/MANIFEST.json: content_filter 5x120 = 600,
+          prompt_attack 3x120 = 360, benign 110, hard_negatives 60, multilingual
+          7x60 = 420, plus the 4-arm F5-6 design (4 x 120 = 480) and threshold sweeps
+          at 6 lattice points over the 600 content-filter items. Rounded up.
+      - price: guardrail_pii_text_unit
+        qty: 367
+        note: "PII corpus: 341 positives + 26 negatives"
+      - price: guardrail_checks_content_text_unit
+        qty: 1100
+        note: >
+          The InvokeGuardrailChecks half of the same corpora. F5-6/DC-2 needs both APIs
+          on the same inputs, and the Pricing API confirms they are metered separately,
+          so they must be costed separately.
+      - price: guardrail_checks_prompt_attack_text_unit
+        qty: 840
+        note: "prompt_attack 360 + hard_negatives 60 + benign 110 through promptAttack, x2 days-split arms"
+    projected_usd: null      # computed
+    actual_usd: 0.0
+    status: pending
+
+  - id: "2"
+    name: "build the testbed 01_iam -> 09_traces; end-to-end benign call; assert traces"
+    live: true
+    days: 1
+    days_rationale: >
+      Produces no claim about the document — it builds the instrument. Nothing here
+      can amend, so the rule does not bind.
+    items:
+      - price: control_plane_call
+        qty: 400
+      - price: lambda_invoke
+        qty: 200
+      - price: lambda_gb_second
+        qty: 2.5
+      - price: spans_ingest_gb
+        qty: 0.02
+      - price: logs_storage_gb_month
+        qty: 0.02
+    projected_usd: null
+    actual_usd: 0.0
+    status: pending
+
+  - id: "3"
+    name: "F1 config surface (incl. F1-3 permit trap) + F4 truth table"
+    live: true
+    days: 2
+    days_rationale: >
+      F1-3 amends §3.1 (the validationMode omission, DC-1) and F1-1's SDK floor amends
+      §4.1/§7.1. F5-7a is the precedent that an API-surface observation can change
+      under us: five dated snapshots said one thing and the live page now says another.
+      Control-plane calls are unmetered, so the second day is free.
+    amends: ["S3.1", "S4.1", "S7.1", "S7.2", "S8"]
+    items:
+      - price: control_plane_call
+        qty: 1200
+      - price: lambda_invoke
+        qty: 1440
+        note: >
+          STRICT UPPER BOUND on F4's gateway tool calls, counted by ARM rather than by
+          hypothesis. The sealed confirmatory_e_cell note says "8 cells x 120 = 960
+          calls"; that figure counts one ORACLE cell per hypothesis, which is the right
+          unit for a power calculation and the wrong unit for a cost line, because six of
+          the eight cells carry a mutation, a pairing or a control arm that also costs
+          calls. F4's arms: F4-1 120 (ENFORCE, no permit) + 120 mutation (baseline permit
+          added); F4-2 120 LOG_ONLY + 120 paired ENFORCE; F4-3 the full 2x2 at 4 x 120 =
+          480; F4-4 120; F4-5 120 (permit+forbid) + 120 permit-only control; F4-6 120
+          denials captured in full. 240+240+480+120+240+120 = 1440.
+
+          It is an UPPER bound and not an estimate because a policy-denied request never
+          reaches the target: the gateway answers it, so the Lambda is not invoked. On the
+          document's own predictions only the allowing arms invoke it — F4-1's mutation
+          (120), F4-2's LOG_ONLY (120), three of F4-3's four cells (360) and F4-5's control
+          (120) = 720, exactly half. Costing at 1440 prices the case where the document is
+          WRONG about every blocking arm, which is the conservative direction and the one
+          this project exists to test for. The previous 600 was neither bound nor estimate;
+          it under-counted the oracle cells alone by 120.
+      - price: lambda_gb_second
+        qty: 18.0
+        note: >
+          1440 invocations x 128 MB x 100 ms = 1440 x 0.0125 GB-s. Derived from the
+          invocation count above by the same arithmetic that produced the previous 7.5
+          from 600, so the two lines cannot drift apart silently.
+      - price: guardrail_text_unit
+        qty: 400
+    projected_usd: null
+    actual_usd: 0.0
+    status: pending
+
+  - id: "4"
+    name: "F2 determinism (4 arms) + gateway-side F3 + F3-10 + F7"
+    live: true
+    days: 2
+    days_rationale: >
+      F3-10 is expected to amend §7.1: whether a reader can reconstruct a confusion
+      matrix from LOG_ONLY telemetry alone is the experiment, and if they cannot, §7.1
+      prescribes an impossible workflow. F2's n=300 per arm is dealt as 2 x 150; the
+      pooled arm keeps n=300 and its 95% power against a 1% flip rate, and a cross-day
+      pair that disagrees falsifies "deterministic function of the score" just as an
+      intra-day pair would — arguably more strongly, since it also excludes a
+      within-session cache.
+    amends: ["S7.1", "S6.4"]
+    items:
+      - price: lambda_invoke
+        qty: 2400
+      - price: lambda_gb_second
+        qty: 30.0
+      - price: guardrail_text_unit
+        qty: 3600
+      - price: spans_ingest_gb
+        qty: 0.9
+      - price: logs_storage_gb_month
+        qty: 0.9
+      - price: logs_insights_gb_scanned
+        qty: 30
+    projected_usd: null
+    actual_usd: 0.0
+    status: pending
+
+  - id: "5"
+    name: "F5 red team + all mutations (watchdog active); F5-3a/3b"
+    live: true
+    days: 2
+    days_rationale: >
+      Most F5 cases can only CONFIRM §4.4 and are exempt. F5-4a and F5-4b are not:
+      their outcome is unknown by construction (does evaluation DENY or ALLOW when it
+      cannot run?), and §3.3 BP#4 currently records that AWS does not document this, so
+      ANY result amends. Those two cases are a handful of unmetered calls.
+    amends: ["S3.3"]
+    items:
+      - price: control_plane_call
+        qty: 800
+      - price: lambda_invoke
+        qty: 400
+      - price: lambda_gb_second
+        qty: 5.0
+      - price: guardrail_text_unit
+        qty: 300
+    projected_usd: null
+    actual_usd: 0.0
+    status: pending
+
+  - id: "5c"
+    name: "account-level enforcement, behind the unused-model hard gate"
+    live: true
+    days: 1
+    days_rationale: >
+      Confirm-only: it validates §4.4's non-bypassability. Deliberately NOT replicated
+      even though it is cheap. It is the highest-blast-radius action in the project —
+      an account-wide enforced guardrail configuration inside a <=5-minute window in an
+      account carrying ~$27k/mo of unrelated production spend — and a second exposure
+      buys a durability claim the document does not make. Where the rule does not bind,
+      the risk-minimising choice wins.
+    items:
+      - price: control_plane_call
+        qty: 40
+      - price: guardrail_text_unit
+        qty: 60
+    projected_usd: null
+    actual_usd: 0.0
+    status: pending
+
+  - id: "6"
+    name: "F6 latency n=1000 x 8 arm pairs, overnight, checkpoint + backoff"
+    live: true
+    days: 2
+    days_rationale: >
+      §6.1's ILLUSTRATIVE table is the headline amendment of the whole project, so the
+      rule binds hardest here. Dealt as 2 x 500 per arm across two nights: the pooled
+      p99 keeps n=1000 and its order-statistic CI, and pairs remain intra-day so the
+      A,B,A,B pairing and its variance advantage are untouched. The 20-call warm-up is
+      repeated per night per arm (+320 calls, immaterial). This is the phase where
+      doubling would have cost the most and where splitting therefore saves the most.
+    amends: ["S6.1", "S6.3", "S6.4", "S9", "AppendixB"]
+    items:
+      - price: lambda_invoke
+        qty: 16640
+      - price: lambda_gb_second
+        qty: 208.0
+        note: "128MB x 100ms x 16,640 = 208 GB-s"
+      - price: guardrail_text_unit
+        qty: 8320
+      - price: spans_ingest_gb
+        qty: 3.2
+      - price: logs_storage_gb_month
+        qty: 3.2
+        note: >
+          Retained deliberately: Phase 8's +30d regression re-reads this window, so the
+          spans are not swept at teardown and the storage charge is real.
+      - price: logs_insights_gb_scanned
+        qty: 120
+    projected_usd: null
+    actual_usd: 0.0
+    status: pending
+
+  - id: "6b"
+    name: "VPC-mode runtime + ECR Public egress mutation"
+    live: true
+    days: 1
+    days_rationale: >
+      Confirm-only as designed: the expected result is that removing the NAT route
+      fails the image pull and restoring it succeeds, which is what §4.5 says. Exempt
+      unless it falsifies, in which case the day-2 run is drawn from contingency.
+    items:
+      - price: control_plane_call
+        qty: 200
+      - price: lambda_invoke
+        qty: 50
+      - price: lambda_gb_second
+        qty: 0.6
+      - price: spans_ingest_gb
+        qty: 0.1
+    projected_usd: null
+    actual_usd: 0.0
+    status: pending
+
+  - id: "7"
+    name: "F8-1 nine-region probe, explicit region_name"
+    live: true
+    days: 2
+    days_rationale: >
+      Expected to amend §5.3/§8's regional guidance, and regional availability is
+      exactly the kind of claim AWS changes without announcement — the F5-7a lesson.
+      Cannot be split: each region contributes one existence observation, so there is
+      no n to deal. Genuinely doubled, from ~250 unmetered control-plane calls to ~500.
+    amends: ["S5.3", "S8"]
+    items:
+      - price: control_plane_call
+        qty: 500
+      - price: guardrail_text_unit
+        qty: 180
+    projected_usd: null
+    actual_usd: 0.0
+    status: pending
+
+  - id: "8"
+    name: "F3-11 regression re-runs at +7d and +30d"
+    live: true
+    days: 3
+    days_rationale: >
+      Already spans three calendar days by construction, and at +7d/+30d rather than
+      +1d. This is the strongest replication in the project and it was in the plan
+      before the rule was ever examined — Phase 8 satisfies the F3 family's
+      requirement on its own, which is why Phase 1's split is a screen rather than the
+      load-bearing evidence for §3.2.
+    amends: ["S3.2", "S7.1"]
+    items:
+      - price: guardrail_text_unit
+        qty: 3400
+      - price: guardrail_pii_text_unit
+        qty: 734
+      - price: guardrail_checks_content_text_unit
+        qty: 2200
+      - price: logs_insights_gb_scanned
+        qty: 40
+    projected_usd: null
+    actual_usd: 0.0
+    status: pending
+
+  - id: "9"
+    name: "analysis, figures, bilingual v1.3, NDA release-gate pass"
+    live: false
+    days: 1
+    days_rationale: "offline analysis of already-collected evidence"
+    items: []
+    projected_usd: 0.0
+    actual_usd: 0.0
+    status: pending
+
+  - id: "99"
+    name: "teardown + tag sweep asserting zero survivors"
+    live: true
+    days: 1
+    days_rationale: "destroys the instrument; produces no claim"
+    items:
+      - price: control_plane_call
+        qty: 300
+    projected_usd: 0.0
+    actual_usd: 0.0
+    status: pending
+
+# ---------------------------------------------------------------------------
+# Contingency: named, bounded, and attributable — not a slush figure.
+# ---------------------------------------------------------------------------
+contingency:
+  - id: "6b-replication"
+    usd: 5.0
+    trigger: "Phase 6b falsifies §4.5's egress requirement, acquiring the 2-day rule"
+  - id: "5c-replication"
+    usd: 1.0
+    trigger: >
+      Phase 5c falsifies §4.4 non-bypassability. Funded, but a second exposure
+      requires an explicit decision on blast radius, not just budget.
+  - id: "6-day-effect"
+    usd: 15.0
+    trigger: >
+      Phase 6's day-effect test rejects at alpha=0.01, so the two nights cannot be
+      pooled and a third night is needed to tell a trend from two-point noise.
+  - id: "retry-tail"
+    usd: 8.0
+    trigger: >
+      Throttling forces retries beyond the 3-attempt backoff, re-running trials. Sized
+      at roughly 20% of the metered phases.

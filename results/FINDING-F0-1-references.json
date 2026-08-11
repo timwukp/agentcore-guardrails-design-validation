@@ -1,0 +1,343 @@
+{
+  "case": "F0-1",
+  "claim": "§10's documentation references resolve and describe what they claim",
+  "oracle": "TRUE if every URL returns HTTP 200 and its page title shares a content word with the row title; FALSE for any non-200 or any page whose title is unrelated to the row's stated title",
+  "n_checked": 24,
+  "n_failed": 0,
+  "unreachable": 0,
+  "results": [
+    {
+      "claim_id": "C-s10-trow-001",
+      "row_title": "How Bedrock Guardrails Works",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-how.html",
+      "http_status": 200,
+      "page_title": "How Amazon Bedrock Guardrails works - Amazon Bedrock",
+      "title_overlap": [
+        "guardrail"
+      ],
+      "title_match": "yes",
+      "error": "",
+      "pass": true
+    },
+    {
+      "claim_id": "C-s10-trow-002",
+      "row_title": "Guardrails in AgentCore Policy",
+      "url": "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy-guardrails-in-policies.html",
+      "http_status": 200,
+      "page_title": "Guardrails in policies - Amazon Bedrock AgentCore",
+      "title_overlap": [
+        "guardrail",
+        "policy"
+      ],
+      "title_match": "yes",
+      "error": "",
+      "pass": true
+    },
+    {
+      "claim_id": "C-s10-trow-003",
+      "row_title": "Getting Started with Gateway Guardrails",
+      "url": "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy-guardrails-getting-started.html",
+      "http_status": 200,
+      "page_title": "Getting started with guardrails in the AgentCore CLI - Amazon Bedrock AgentCore",
+      "title_overlap": [
+        "gett",
+        "guardrail"
+      ],
+      "title_match": "yes",
+      "error": "",
+      "pass": true
+    },
+    {
+      "claim_id": "C-s10-trow-004",
+      "row_title": "Policy in AgentCore",
+      "url": "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy.html",
+      "http_status": 200,
+      "page_title": "Policy in Amazon Bedrock AgentCore: Control Agent Interactions - Amazon Bedrock AgentCore",
+      "title_overlap": [
+        "policy"
+      ],
+      "title_match": "yes",
+      "error": "",
+      "pass": true
+    },
+    {
+      "claim_id": "C-s10-trow-005",
+      "row_title": "Understanding Cedar Policies",
+      "url": "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy-understanding-cedar.html",
+      "http_status": 200,
+      "page_title": "Understanding Cedar policies - Amazon Bedrock AgentCore",
+      "title_overlap": [
+        "cedar",
+        "policy"
+      ],
+      "title_match": "yes",
+      "error": "",
+      "pass": true
+    },
+    {
+      "claim_id": "C-s10-trow-006",
+      "row_title": "Policy Conditions  when guardrails",
+      "url": "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy-conditions.html",
+      "http_status": 200,
+      "page_title": "Policy conditions - Amazon Bedrock AgentCore",
+      "title_overlap": [
+        "condition",
+        "policy"
+      ],
+      "title_match": "yes",
+      "error": "",
+      "pass": true
+    },
+    {
+      "claim_id": "C-s10-trow-007",
+      "row_title": "Testing Policies  LOG_ONLY workflow",
+      "url": "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy-test-a-policy.html",
+      "http_status": 200,
+      "page_title": "Test a policy in LOG_ONLY mode - Amazon Bedrock AgentCore",
+      "title_overlap": [
+        "log",
+        "only",
+        "policy",
+        "test"
+      ],
+      "title_match": "yes",
+      "error": "",
+      "pass": true
+    },
+    {
+      "claim_id": "C-s10-trow-008",
+      "row_title": "ApplyGuardrail API",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-use-independent-api.html",
+      "http_status": 200,
+      "page_title": "Use the ApplyGuardrail API in your application - Amazon Bedrock",
+      "title_overlap": [
+        "api",
+        "applyguardrail"
+      ],
+      "title_match": "yes",
+      "error": "",
+      "pass": true
+    },
+    {
+      "claim_id": "C-s10-trow-009",
+      "row_title": "Guardrails Streaming Modes",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-streaming.html",
+      "http_status": 200,
+      "page_title": "Configure streaming response behavior to filter content - Amazon Bedrock",
+      "title_overlap": [
+        "stream"
+      ],
+      "title_match": "yes",
+      "error": "",
+      "pass": true
+    },
+    {
+      "claim_id": "C-s10-trow-010",
+      "row_title": "Guardrails Tiers",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-tiers.html",
+      "http_status": 200,
+      "page_title": "Safeguard tiers for guardrails policies - Amazon Bedrock",
+      "title_overlap": [
+        "guardrail",
+        "tier"
+      ],
+      "title_match": "yes",
+      "error": "",
+      "pass": true
+    },
+    {
+      "claim_id": "C-s10-trow-011",
+      "row_title": "Guardrails Supported Languages",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-supported-languages.html",
+      "http_status": 200,
+      "page_title": "Languages supported by Amazon Bedrock Guardrails - Amazon Bedrock",
+      "title_overlap": [
+        "guardrail",
+        "languag",
+        "supported"
+      ],
+      "title_match": "yes",
+      "error": "",
+      "pass": true
+    },
+    {
+      "claim_id": "C-s10-trow-012",
+      "row_title": "Guardrails Input Tagging",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-tagging.html",
+      "http_status": 200,
+      "page_title": "Apply tags to user input to filter content - Amazon Bedrock",
+      "title_overlap": [
+        "input"
+      ],
+      "title_match": "yes",
+      "error": "",
+      "pass": true
+    },
+    {
+      "claim_id": "C-s10-trow-013",
+      "row_title": "AgentCore Observability",
+      "url": "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability.html",
+      "http_status": 200,
+      "page_title": "Observe your agent applications on Amazon Bedrock AgentCore Observability - Amazon Bedrock AgentCore",
+      "title_overlap": [
+        "observability"
+      ],
+      "title_match": "yes",
+      "error": "",
+      "pass": true
+    },
+    {
+      "claim_id": "C-s10-trow-014",
+      "row_title": "AgentCore Gateway Metrics",
+      "url": "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability-gateway-metrics.html",
+      "http_status": 200,
+      "page_title": "AgentCore generated gateway observability data - Amazon Bedrock AgentCore",
+      "title_overlap": [
+        "gateway"
+      ],
+      "title_match": "yes",
+      "error": "",
+      "pass": true
+    },
+    {
+      "claim_id": "C-s10-trow-015",
+      "row_title": "AgentCore Policy Metrics",
+      "url": "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability-policy-metrics.html",
+      "http_status": 200,
+      "page_title": "AgentCore generated Policy in AgentCore observability data - Amazon Bedrock AgentCore",
+      "title_overlap": [
+        "policy"
+      ],
+      "title_match": "yes",
+      "error": "",
+      "pass": true
+    },
+    {
+      "claim_id": "C-s10-trow-016",
+      "row_title": "Monitor Bedrock Guardrails with CloudWatch",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/monitoring-guardrails-cw-metrics.html",
+      "http_status": 200,
+      "page_title": "Monitor Amazon Bedrock Guardrails using CloudWatch metrics - Amazon Bedrock",
+      "title_overlap": [
+        "cloudwatch",
+        "guardrail",
+        "monitor"
+      ],
+      "title_match": "yes",
+      "error": "",
+      "pass": true
+    },
+    {
+      "claim_id": "C-s10-trow-017",
+      "row_title": "Monitor Bedrock Runtime Metrics",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/monitoring-runtime-metrics.html",
+      "http_status": 200,
+      "page_title": "Monitor bedrock-runtime inference using CloudWatch metrics - Amazon Bedrock",
+      "title_overlap": [
+        "metric",
+        "monitor",
+        "runtime"
+      ],
+      "title_match": "yes",
+      "error": "",
+      "pass": true
+    },
+    {
+      "claim_id": "C-s10-trow-018",
+      "row_title": "AgentCore Evaluations",
+      "url": "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/evaluations.html",
+      "http_status": 200,
+      "page_title": "Evaluate agent performance with Amazon Bedrock AgentCore Evaluations - Amazon Bedrock AgentCore",
+      "title_overlap": [
+        "evaluation"
+      ],
+      "title_match": "yes",
+      "error": "",
+      "pass": true
+    },
+    {
+      "claim_id": "C-s10-trow-019",
+      "row_title": "AgentCore Optimization",
+      "url": "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/optimization.html",
+      "http_status": 200,
+      "page_title": "AgentCore optimization: Improve agent quality loop with recommendations and A/B tests - Amazon Bedrock AgentCore",
+      "title_overlap": [
+        "optimization"
+      ],
+      "title_match": "yes",
+      "error": "",
+      "pass": true
+    },
+    {
+      "claim_id": "C-s10-trow-020",
+      "row_title": "AgentCore A/B Testing",
+      "url": "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/ab-testing.html",
+      "http_status": 200,
+      "page_title": "A/B testing - Amazon Bedrock AgentCore",
+      "title_overlap": [
+        "test"
+      ],
+      "title_match": "yes",
+      "error": "",
+      "pass": true
+    },
+    {
+      "claim_id": "C-s10-trow-021",
+      "row_title": "Well-Architected Agentic AI Lens",
+      "url": "https://docs.aws.amazon.com/wellarchitected/latest/agentic-ai-lens/agentic-ai-lens.html",
+      "http_status": 200,
+      "page_title": "Agentic AI Lens - AWS Well-Architected - Agentic AI Lens",
+      "title_overlap": [
+        "agentic",
+        "architected",
+        "len",
+        "well"
+      ],
+      "title_match": "yes",
+      "error": "",
+      "pass": true
+    },
+    {
+      "claim_id": "C-s10-trow-022",
+      "row_title": "Input Validation Best Practices",
+      "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/agentic-ai-security/best-practices-input-validation.html",
+      "http_status": 200,
+      "page_title": "4. Input validation and guardrails for agentic AI systems on AWS - AWS Prescriptive Guidance",
+      "title_overlap": [
+        "input",
+        "validation"
+      ],
+      "title_match": "yes",
+      "error": "",
+      "pass": true
+    },
+    {
+      "claim_id": "C-s10-trow-023",
+      "row_title": "AgentCore Memory Best Practices  Memory security; not guardrails-specific",
+      "url": "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/best-practices.html",
+      "http_status": 200,
+      "page_title": "Best practices - Amazon Bedrock AgentCore",
+      "title_overlap": [
+        "practic"
+      ],
+      "title_match": "yes",
+      "error": "",
+      "pass": true
+    },
+    {
+      "claim_id": "C-s10-trow-024",
+      "row_title": "Diagnose InvocationLatency with OTPS",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/monitoring-runtime-otps.html",
+      "http_status": 200,
+      "page_title": "Diagnose InvocationLatency increases using output tokens per second (OTPS) - Amazon Bedrock",
+      "title_overlap": [
+        "diagnose",
+        "invocationlatency",
+        "otp"
+      ],
+      "title_match": "yes",
+      "error": "",
+      "pass": true
+    }
+  ]
+}

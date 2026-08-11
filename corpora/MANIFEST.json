@@ -1,0 +1,398 @@
+{
+  "files": {
+    "benign/benign.jsonl": {
+      "items": 110,
+      "labels": [
+        "CLEAN"
+      ],
+      "sha256": "0ce0aaa07dcd607ea23f8d791169a3938a1a293af30191a1b5fe3b63cc1ecec2"
+    },
+    "content_filter/hate.jsonl": {
+      "items": 120,
+      "labels": [
+        "HATE"
+      ],
+      "sha256": "a938eb78c9cb4c4d7a544354e658c232efc080a214211bd73ac508c46e7e6dae"
+    },
+    "content_filter/insults.jsonl": {
+      "items": 120,
+      "labels": [
+        "INSULTS"
+      ],
+      "sha256": "ffeda3f4d5ac47184daff0b0e37ab0f02dfa9d19855c83ddeb98648b08efb988"
+    },
+    "content_filter/misconduct.jsonl": {
+      "items": 120,
+      "labels": [
+        "MISCONDUCT"
+      ],
+      "sha256": "8d98240da49903fee34132d6ea9c278f7f79dded9cd0413b4c8d5407e93def1f"
+    },
+    "content_filter/sexual.jsonl": {
+      "items": 120,
+      "labels": [
+        "SEXUAL"
+      ],
+      "sha256": "b2d3d71a3fc37f437cebb93dbae83210ce699c077ce3aaaee061414d6471b1bf"
+    },
+    "content_filter/violence.jsonl": {
+      "items": 120,
+      "labels": [
+        "VIOLENCE"
+      ],
+      "sha256": "ee329a6a93dd511521494cf3289e54a629d2be6c72e2e3379a776e35270f104a"
+    },
+    "hard_negatives/hard_negatives.jsonl": {
+      "items": 60,
+      "labels": [
+        "HARD_NEGATIVE"
+      ],
+      "sha256": "c09afb82bf75806643ba24d4d4843a7dcebc727d45b7ad612e3dff40bddc217b"
+    },
+    "multilingual/en.jsonl": {
+      "items": 60,
+      "labels": [
+        "CLEAN",
+        "HATE",
+        "INSULTS",
+        "JAILBREAK",
+        "MISCONDUCT",
+        "PROMPT_INJECTION",
+        "PROMPT_LEAKAGE",
+        "VIOLENCE"
+      ],
+      "sha256": "af0aa3864516bcaa24bbd1070c3a7d779d6d1ea10432497cf21ecfe81281785a"
+    },
+    "multilingual/es.jsonl": {
+      "items": 60,
+      "labels": [
+        "CLEAN",
+        "HATE",
+        "INSULTS",
+        "JAILBREAK",
+        "MISCONDUCT",
+        "PROMPT_INJECTION",
+        "PROMPT_LEAKAGE",
+        "VIOLENCE"
+      ],
+      "sha256": "1073d77701e56567dced28aeed9d6aa481925eab4d788989503ef71f25cbf499"
+    },
+    "multilingual/fr.jsonl": {
+      "items": 60,
+      "labels": [
+        "CLEAN",
+        "HATE",
+        "INSULTS",
+        "JAILBREAK",
+        "MISCONDUCT",
+        "PROMPT_INJECTION",
+        "PROMPT_LEAKAGE",
+        "VIOLENCE"
+      ],
+      "sha256": "cc901dd39caae30b06c778a47553b011154ceabe2e64f6facfd0c25810d7d60c"
+    },
+    "multilingual/ja.jsonl": {
+      "items": 60,
+      "labels": [
+        "CLEAN",
+        "HATE",
+        "INSULTS",
+        "JAILBREAK",
+        "MISCONDUCT",
+        "PROMPT_INJECTION",
+        "PROMPT_LEAKAGE",
+        "VIOLENCE"
+      ],
+      "sha256": "e5e8ea6a7f1df4f1d41f4b7f3d81e2aee3ba16fc42fcbb898c0f897b8a675a47"
+    },
+    "multilingual/ko.jsonl": {
+      "items": 60,
+      "labels": [
+        "CLEAN",
+        "HATE",
+        "INSULTS",
+        "JAILBREAK",
+        "MISCONDUCT",
+        "PROMPT_INJECTION",
+        "PROMPT_LEAKAGE",
+        "VIOLENCE"
+      ],
+      "sha256": "0e1ead16f3d24be78b3a8c99634567c6df54bf67f413d31d881339c341c47cf6"
+    },
+    "multilingual/zh-CN.jsonl": {
+      "items": 60,
+      "labels": [
+        "CLEAN",
+        "HATE",
+        "INSULTS",
+        "JAILBREAK",
+        "MISCONDUCT",
+        "PROMPT_INJECTION",
+        "PROMPT_LEAKAGE",
+        "VIOLENCE"
+      ],
+      "sha256": "e1165af1b39a0a293bc3b8d9be3ee57f7d8a6a847afb5a792c60a34d01d68910"
+    },
+    "multilingual/zh-TW.jsonl": {
+      "items": 60,
+      "labels": [
+        "CLEAN",
+        "HATE",
+        "INSULTS",
+        "JAILBREAK",
+        "MISCONDUCT",
+        "PROMPT_INJECTION",
+        "PROMPT_LEAKAGE",
+        "VIOLENCE"
+      ],
+      "sha256": "3abe61d684cfc54a424f2700afceaaacc80f4042d045b2259016996aa36695b1"
+    },
+    "pii/negative/clean.jsonl": {
+      "items": 26,
+      "labels": [
+        "CLEAN"
+      ],
+      "sha256": "ce48f9f0b2116a9f76f0bbac38df4a6a579e9341503dd0e834f324d31bc8cbd2"
+    },
+    "pii/positive/address.jsonl": {
+      "items": 11,
+      "labels": [
+        "ADDRESS"
+      ],
+      "sha256": "756c2bfbdb64150deef94a29ee7ead4c081c5acf8c72bdf5b5d4fa0a9a36120b"
+    },
+    "pii/positive/age.jsonl": {
+      "items": 11,
+      "labels": [
+        "AGE"
+      ],
+      "sha256": "d11f0954a8545daeb49c7a9e376fa55b654831fb7669ebbf850eebaa0cd2e0ec"
+    },
+    "pii/positive/aws_access_key.jsonl": {
+      "items": 11,
+      "labels": [
+        "AWS_ACCESS_KEY"
+      ],
+      "sha256": "8a5f9dbd314e05de0f940e34b08e28917fbd9f2021f29631b3fdfb8ad6d6f68a"
+    },
+    "pii/positive/aws_secret_key.jsonl": {
+      "items": 11,
+      "labels": [
+        "AWS_SECRET_KEY"
+      ],
+      "sha256": "c70bd5c2090842d438a724737066cfca16fe2dccefc83b73f0f349d27d9978c6"
+    },
+    "pii/positive/ca_health_number.jsonl": {
+      "items": 11,
+      "labels": [
+        "CA_HEALTH_NUMBER"
+      ],
+      "sha256": "785e32c5d7b865e5f127ddab7869d040e83ef83a53de498fbbbe28b23f329333"
+    },
+    "pii/positive/ca_social_insurance_number.jsonl": {
+      "items": 11,
+      "labels": [
+        "CA_SOCIAL_INSURANCE_NUMBER"
+      ],
+      "sha256": "f0fa0bfb063e5f4e6d560eaa59de9ff375497c40557e8038f44898f893c7a872"
+    },
+    "pii/positive/credit_debit_card_cvv.jsonl": {
+      "items": 11,
+      "labels": [
+        "CREDIT_DEBIT_CARD_CVV"
+      ],
+      "sha256": "06f94a08c87b0a7d9f639803a8810de4a0df791e3404244d59a3295c64a03c7c"
+    },
+    "pii/positive/credit_debit_card_expiry.jsonl": {
+      "items": 11,
+      "labels": [
+        "CREDIT_DEBIT_CARD_EXPIRY"
+      ],
+      "sha256": "f209d295ebe9b841c9dde2c5ba2c094eacbc4f54bf7f06c2297b2bb691073295"
+    },
+    "pii/positive/credit_debit_card_number.jsonl": {
+      "items": 11,
+      "labels": [
+        "CREDIT_DEBIT_CARD_NUMBER"
+      ],
+      "sha256": "363160151bb570b1be4fdfd6bda2c90fd06cbf8cb7f8563a7f3ee3c3186120fc"
+    },
+    "pii/positive/driver_id.jsonl": {
+      "items": 11,
+      "labels": [
+        "DRIVER_ID"
+      ],
+      "sha256": "96c54b12d60b8a148765359d2cc45d8c56f4d06fb7c72cd2d7226894cc5c2e31"
+    },
+    "pii/positive/email.jsonl": {
+      "items": 11,
+      "labels": [
+        "EMAIL"
+      ],
+      "sha256": "28855de6c3b6b6867df1351b0dbb98407c16982666e1e68f08b02c166a7286a6"
+    },
+    "pii/positive/international_bank_account_number.jsonl": {
+      "items": 11,
+      "labels": [
+        "INTERNATIONAL_BANK_ACCOUNT_NUMBER"
+      ],
+      "sha256": "bc48e28d67b0afe61f52367b6652fd8ed547710ef4760f31aa0148de6c8fa7a8"
+    },
+    "pii/positive/ip_address.jsonl": {
+      "items": 11,
+      "labels": [
+        "IP_ADDRESS"
+      ],
+      "sha256": "636fcb62ee78952615aad592890f1817a90cc8b3ee410cfe9ffa4f87461cf94a"
+    },
+    "pii/positive/license_plate.jsonl": {
+      "items": 11,
+      "labels": [
+        "LICENSE_PLATE"
+      ],
+      "sha256": "eb09dcd22a1b8e53dc25d618d77871db8ccd5a0929647b21b5f46b625225ee5b"
+    },
+    "pii/positive/mac_address.jsonl": {
+      "items": 11,
+      "labels": [
+        "MAC_ADDRESS"
+      ],
+      "sha256": "64672b4f4e6a5c7cc1f4d1b2036141a2932908ddef342a5f874ab97f81b3ebf6"
+    },
+    "pii/positive/name.jsonl": {
+      "items": 11,
+      "labels": [
+        "NAME"
+      ],
+      "sha256": "3717e1fa9641f3396a41506ee96584fc913318f6f7631f7ee0453915cd3320aa"
+    },
+    "pii/positive/password.jsonl": {
+      "items": 11,
+      "labels": [
+        "PASSWORD"
+      ],
+      "sha256": "a7a7359621871730617f793d7ce73debf75bca6196eecd1173ba6ec20827ba2c"
+    },
+    "pii/positive/phone.jsonl": {
+      "items": 11,
+      "labels": [
+        "PHONE"
+      ],
+      "sha256": "f2e285f00af3e5b7d98be5ae7057f5b8a4fde4455047dcfae35f01c65ee4dac8"
+    },
+    "pii/positive/pin.jsonl": {
+      "items": 11,
+      "labels": [
+        "PIN"
+      ],
+      "sha256": "19ae2017bb9ffd23b4d2c1ad63b9623ed6af79fd206733ff6e2ca3b6b908fecf"
+    },
+    "pii/positive/swift_code.jsonl": {
+      "items": 11,
+      "labels": [
+        "SWIFT_CODE"
+      ],
+      "sha256": "5293d316b6f50f956e5d6d828808bbf791ce4cd98dc6c7f768204e13d6247874"
+    },
+    "pii/positive/uk_national_health_service_number.jsonl": {
+      "items": 11,
+      "labels": [
+        "UK_NATIONAL_HEALTH_SERVICE_NUMBER"
+      ],
+      "sha256": "954caff2c93a94d1fbaef08de0334b66d5dd70d030e47ce80373ca199aa0011c"
+    },
+    "pii/positive/uk_national_insurance_number.jsonl": {
+      "items": 11,
+      "labels": [
+        "UK_NATIONAL_INSURANCE_NUMBER"
+      ],
+      "sha256": "01897c12ef3498595833f484001fb9e13e74d97bd57b72a3e221b407ced3366f"
+    },
+    "pii/positive/uk_unique_taxpayer_reference_number.jsonl": {
+      "items": 11,
+      "labels": [
+        "UK_UNIQUE_TAXPAYER_REFERENCE_NUMBER"
+      ],
+      "sha256": "338e5f2b9e6ea35a5dfddf827ab3065efc570639b9851883aaa4ff9fa97140b9"
+    },
+    "pii/positive/url.jsonl": {
+      "items": 11,
+      "labels": [
+        "URL"
+      ],
+      "sha256": "778a6312368339fed72265fe698dc832dcb0bd37b169a5f0d104203658cf56f3"
+    },
+    "pii/positive/us_bank_account_number.jsonl": {
+      "items": 11,
+      "labels": [
+        "US_BANK_ACCOUNT_NUMBER"
+      ],
+      "sha256": "ac5c5ecc6e2dfb22d7c96d702032aae3e175000fda5cfeffaf6bd2296e7d1c85"
+    },
+    "pii/positive/us_bank_routing_number.jsonl": {
+      "items": 11,
+      "labels": [
+        "US_BANK_ROUTING_NUMBER"
+      ],
+      "sha256": "fe9e73136e35bdf1a4e48c9a8b91c75fb1c72d368c5f0d28a8326fa95418328b"
+    },
+    "pii/positive/us_individual_tax_identification_number.jsonl": {
+      "items": 11,
+      "labels": [
+        "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER"
+      ],
+      "sha256": "eb36b9cf64c745c00e26c3f0967bcbc20904d0771197d8d39b2bbaef7e6ba39c"
+    },
+    "pii/positive/us_passport_number.jsonl": {
+      "items": 11,
+      "labels": [
+        "US_PASSPORT_NUMBER"
+      ],
+      "sha256": "c989ef6ada357a6df2fe76be0ae53f9520f49e6f320a8064e1316cdf28eedef8"
+    },
+    "pii/positive/us_social_security_number.jsonl": {
+      "items": 11,
+      "labels": [
+        "US_SOCIAL_SECURITY_NUMBER"
+      ],
+      "sha256": "ed0027a848bd9f9a882f204d64a7a34a041970b5c9fe6a09646ef915123b3b78"
+    },
+    "pii/positive/username.jsonl": {
+      "items": 11,
+      "labels": [
+        "USERNAME"
+      ],
+      "sha256": "76287c231217455ac38a7fe8db194d47739dc6d30962fc66e5ad8071b14a4816"
+    },
+    "pii/positive/vehicle_identification_number.jsonl": {
+      "items": 11,
+      "labels": [
+        "VEHICLE_IDENTIFICATION_NUMBER"
+      ],
+      "sha256": "895810fcaedb422b370f529bd6bdbbcdf609a08061a72ea7a3d8b20f3d7084f2"
+    },
+    "prompt_attack/jailbreak.jsonl": {
+      "items": 120,
+      "labels": [
+        "JAILBREAK"
+      ],
+      "sha256": "4f4653b55523721506025c2af2e206224aba74e185df71fc3078c19bdbf34916"
+    },
+    "prompt_attack/prompt_injection.jsonl": {
+      "items": 120,
+      "labels": [
+        "PROMPT_INJECTION"
+      ],
+      "sha256": "a1621858a959f43597238a58005661a47fcdf7e5fedca2a0817c2bfc1e128f3f"
+    },
+    "prompt_attack/prompt_leakage.jsonl": {
+      "items": 120,
+      "labels": [
+        "PROMPT_LEAKAGE"
+      ],
+      "sha256": "dd00508780e0ca13b1905e5e819cfc16809d4a7fd11826212a57f0e4c31240ad"
+    }
+  },
+  "prereg_sha256": "a2136a9d3dbb22888fc57bdf6c0002d5f0c33279d07bddd6a86f9006fa74cf1a",
+  "total_items": 1917
+}

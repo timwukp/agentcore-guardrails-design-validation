@@ -1,0 +1,144 @@
+{
+  "cf_categories": [
+    "VIOLENCE",
+    "HATE",
+    "SEXUAL",
+    "MISCONDUCT",
+    "INSULTS"
+  ],
+  "created_now": 0,
+  "expires_at": "2026-08-13T02:34:54+00:00",
+  "guardrails": {
+    "billing": {
+      "config_verified": true,
+      "created_now": false,
+      "guardrail_id": "s5vk53hdnahz",
+      "name": "grx-gr-billing-r20260810T011502Z",
+      "purpose": "content filters at MEDIUM with every action NONE \u2014 F10-2's text-unit length ladder (evaluation without intervention)",
+      "status": "READY (pre-existing)",
+      "version": "DRAFT"
+    },
+    "cf-high": {
+      "config_verified": true,
+      "created_now": false,
+      "guardrail_id": "49si3jhnu3ii",
+      "name": "grx-gr-cf-high-r20260810T011502Z",
+      "purpose": "content filters at inputStrength=HIGH (F3-1/2/3/9 lattice)",
+      "status": "READY (pre-existing)",
+      "version": "DRAFT"
+    },
+    "cf-low": {
+      "config_verified": true,
+      "created_now": false,
+      "guardrail_id": "b7qxhvtl4lb8",
+      "name": "grx-gr-cf-low-r20260810T011502Z",
+      "purpose": "content filters at inputStrength=LOW (F3-1/2/3/9 lattice)",
+      "status": "READY (pre-existing)",
+      "version": "DRAFT"
+    },
+    "cf-medium": {
+      "config_verified": true,
+      "created_now": false,
+      "guardrail_id": "pd6blbae0jty",
+      "name": "grx-gr-cf-medium-r20260810T011502Z",
+      "purpose": "content filters at inputStrength=MEDIUM (F3-1/2/3/9 lattice)",
+      "status": "READY (pre-existing)",
+      "version": "DRAFT"
+    },
+    "determinism": {
+      "config_verified": true,
+      "created_now": false,
+      "guardrail_id": "94kfqubwzkvx",
+      "name": "grx-gr-determinism-r20260810T011502Z",
+      "purpose": "fixed config for the n=300 repeated-input arm (F2-5)",
+      "status": "READY (pre-existing)",
+      "version": "DRAFT"
+    },
+    "grounding": {
+      "config_verified": true,
+      "created_now": false,
+      "guardrail_id": "j30orj6hdh1a",
+      "name": "grx-gr-grounding-r20260810T011502Z",
+      "purpose": "contextual grounding + relevance at 0.7 (F3-7)",
+      "status": "READY (pre-existing)",
+      "version": "DRAFT"
+    },
+    "pii": {
+      "config_verified": true,
+      "created_now": false,
+      "guardrail_id": "wwjmltbo1dt5",
+      "name": "grx-gr-pii-r20260810T011502Z",
+      "purpose": "all 31 PII entity types at BLOCK (F3-4)",
+      "status": "READY (pre-existing)",
+      "version": "DRAFT"
+    },
+    "tier-classic": {
+      "config_verified": true,
+      "created_now": false,
+      "guardrail_id": "dbva5orilksz",
+      "name": "grx-gr-tier-classic-r20260810T011502Z",
+      "purpose": "CLASSIC tier at HIGH with cross-Region inference held constant (F8-2/3/4 multilingual + prompt leakage)",
+      "status": "READY (pre-existing)",
+      "version": "DRAFT"
+    },
+    "tier-standard": {
+      "config_verified": true,
+      "created_now": false,
+      "guardrail_id": "rb91cjdlrv8b",
+      "name": "grx-gr-tier-standard-r20260810T011502Z",
+      "purpose": "STANDARD tier at HIGH with cross-Region inference held constant (F8-2/3/4 multilingual + prompt leakage)",
+      "status": "READY (pre-existing)",
+      "version": "DRAFT"
+    },
+    "topic": {
+      "config_verified": true,
+      "created_now": false,
+      "guardrail_id": "piydsa0vhz19",
+      "name": "grx-gr-topic-r20260810T011502Z",
+      "purpose": "denied topic (F3-5); also the F8-5 length-limit subject",
+      "status": "READY (pre-existing)",
+      "version": "DRAFT"
+    },
+    "words": {
+      "config_verified": true,
+      "created_now": false,
+      "guardrail_id": "bb8eo7hr35og",
+      "name": "grx-gr-words-r20260810T011502Z",
+      "purpose": "custom word list, exact-match claim (F3-6); F8-7 language scope",
+      "status": "READY (pre-existing)",
+      "version": "DRAFT"
+    },
+    "xregion": {
+      "config_verified": true,
+      "created_now": false,
+      "guardrail_id": "6fxd3inytsuu",
+      "name": "grx-gr-xregion-r20260810T011502Z",
+      "purpose": "STANDARD + crossRegionConfig us.guardrail.v1:0 (F8-6)",
+      "status": "READY (pre-existing)",
+      "version": "DRAFT"
+    }
+  },
+  "region": "us-east-1",
+  "run_id": "r20260810T011502Z",
+  "sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "strength_lattice": [
+    "LOW",
+    "MEDIUM",
+    "HIGH"
+  ],
+  "tags": {
+    "ExpiresAt": "2026-08-13T02:34:54+00:00",
+    "Owner": "harness",
+    "Project": "guardrails-doc-validation",
+    "RunId": "r20260810T011502Z"
+  },
+  "topic": "InvestmentAdvice",
+  "words": [
+    "moonquake",
+    "zorbify",
+    "quaxlinate"
+  ]
+}

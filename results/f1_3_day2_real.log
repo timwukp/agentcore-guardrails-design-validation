@@ -1,0 +1,29 @@
+F1-3 — the permit trap, run_id=r20260810T130945Z (adopted from the ledger), region=us-east-1
+
+creating fresh policy engine grx_f1_3_pe_r20260810T130945Z
+  engine grx_f1_3_pe_r20260810T130945Z-86_jn23cyn ACTIVE
+
+  arm 1/4  default     validationMode=(omitted)             baseline
+        HTTP 202 status='CREATING'  ->  settled CREATE_FAILED  reasons=2  [OVERLY PERMISSIVE]
+          - Overly Permissive: Policy Engine will allow every request for the specified principal (AgentCore::IamEntity), action (Any Future Tools) and resource (gateway/*) combination if the policy is added or updated
+          - Overly Permissive: Policy Engine will allow every request for the specified principal (AgentCore::OAuthUser), action (Any Future Tools) and resource (gateway/*) combination if the policy is added or updated
+  arm 2/4  failfind    validationMode=FAIL_ON_ANY_FINDINGS  baseline
+        HTTP 202 status='CREATING'  ->  settled CREATE_FAILED  reasons=2  [OVERLY PERMISSIVE]
+          - Overly Permissive: Policy Engine will allow every request for the specified principal (AgentCore::IamEntity), action (Any Future Tools) and resource (gateway/*) combination if the policy is added or updated
+          - Overly Permissive: Policy Engine will allow every request for the specified principal (AgentCore::OAuthUser), action (Any Future Tools) and resource (gateway/*) combination if the policy is added or updated
+  arm 3/4  ignorefind  validationMode=IGNORE_ALL_FINDINGS   baseline
+        HTTP 202 status='CREATING'  ->  settled ACTIVE  reasons=0
+  arm 4/4  narrow      validationMode=(omitted)             narrow
+        HTTP 202 status='CREATING'  ->  settled ACTIVE  reasons=0
+
+  verdict: TRUE   (EXISTENCE)
+  wrote results/phase1/F1-3.json
+
+teardown
+  deleted policy default
+  deleted policy failfind
+  deleted policy ignorefind
+  deleted policy narrow
+  engine delete attempt 1/5 failed (ConflictException); retrying
+  engine delete attempt 2/5 failed (ConflictException); retrying
+  deleted engine grx_f1_3_pe_r20260810T130945Z-86_jn23cyn

@@ -1,0 +1,107 @@
+{
+  "billable_calls": 2180,
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F3-9",
+    "clear_here": true
+  },
+  "case_id": "F3-9",
+  "instrument": "ApplyGuardrail's 4-setting `inputStrength` knob. NOT InvokeGuardrailChecks: that API returns `severityScore: double`, a CONTINUOUS score with no lattice, so a <=7-vertex ceiling cannot be a property of it. The ceiling is a property of the configurable strength enum, and F3-9 is therefore a test of ApplyGuardrail only — see DEVIATIONS.md/DEV-P1-5",
+  "is_smoke": false,
+  "kind": "ROC_LATTICE",
+  "lattice_note": "4 settings + 2 trivial endpoints = at most 6 reachable points, under the oracle's ceiling of 7. The oracle cannot fail on the count for a reason internal to the API, and that is reported rather than smoothed",
+  "mutations": 0,
+  "not_independent": "F3-1, F3-2 and F3-9 are computed from ONE set of arms; four verdicts over shared measurements are not four independent confirmations",
+  "oracle_text": "TRUE if the reachable operating points number <=7 and Youden's J is maximized at an interior threshold, so the document's recommended threshold is defensible; FALSE if J is maximized at tau=0 or tau=1 (the score carries no usable signal) or if more than 7 distinct points appear (the lattice claim F1-18 is wrong). Every point reported with PPV at pi in {.001,.01,.1}",
+  "planned_n": null,
+  "recommended_threshold": "MEDIUM",
+  "recommended_threshold_source": "the document under test, §7.3 and Appendix A",
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F3-9",
+    "evidence": {
+      "consequence": "more than 7 points falsifies F1-18's lattice claim; a J peak at tau=0 or tau=1 means the score carries no usable signal",
+      "max_reachable": 7,
+      "operating_points": 5,
+      "youden_j_interior": true
+    },
+    "family": "exploratory_detection",
+    "kind": "ROC_LATTICE",
+    "mutation_required": false,
+    "n_attempted": 2120,
+    "n_met": true,
+    "n_usable": 2120,
+    "notes": [],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [
+      7.0
+    ],
+    "verdict": "TRUE"
+  },
+  "roc": {
+    "argmax_is_interior": true,
+    "auc_caveat": "trapezoidal AUC over 3 measured point(s) is downward-biased and is a secondary descriptor only, per the pre-registration; the bias is larger here than the design anticipated because the NONE vertex is unbuildable",
+    "auc_trapezoid": 0.9753898067267632,
+    "distinct_measured_points": 3,
+    "endpoints_added": 2,
+    "lattice_size": 3,
+    "max_reachable_given_lattice": 5,
+    "operating_points_with_trivial_endpoints": 5,
+    "points": [
+      {
+        "fp": 0,
+        "fpr": 0.0,
+        "j": 0.7871621621621622,
+        "neg": 110,
+        "pos": 592,
+        "ppv_at_prevalence": {
+          "0.001": 1.0,
+          "0.01": 1.0,
+          "0.1": 1.0
+        },
+        "strength": "LOW",
+        "tp": 466,
+        "tpr": 0.7871621621621622
+      },
+      {
+        "fp": 1,
+        "fpr": 0.00909090909090909,
+        "j": 0.920909090909091,
+        "neg": 110,
+        "pos": 600,
+        "ppv_at_prevalence": {
+          "0.001": 0.09289022064832471,
+          "0.01": 0.5081967213114754,
+          "0.1": 0.9191374663072777
+        },
+        "strength": "MEDIUM",
+        "tp": 558,
+        "tpr": 0.93
+      },
+      {
+        "fp": 4,
+        "fpr": 0.03636363636363636,
+        "j": 0.9184858619641229,
+        "neg": 110,
+        "pos": 598,
+        "ppv_at_prevalence": {
+          "0.001": 0.02561145775312365,
+          "0.01": 0.20963360011748294,
+          "0.1": 0.7447413977092177
+        },
+        "strength": "HIGH",
+        "tp": 571,
+        "tpr": 0.9548494983277592
+      }
+    ],
+    "unreachable_strengths": {
+      "NONE": "CreateGuardrail rejects an all-NONE contentPolicyConfig with ValidationException 'At least one content filter strength must be set to not NONE.' — also when every filter is inputEnabled=False, so the constraint is on the strengths and not on whether the filters are armed (measured 2026-08-10)"
+    },
+    "youden_j_argmax": "MEDIUM",
+    "youden_j_max": 0.920909090909091
+  },
+  "run_id": "r20260810T0345Z",
+  "verdict": "TRUE"
+}
