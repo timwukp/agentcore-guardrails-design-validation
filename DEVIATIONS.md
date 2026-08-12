@@ -6789,8 +6789,20 @@ project checked neither against the other. What made both instances invisible is
 **the visible half was finished.** Nobody re-reads a completed finding document looking for what it
 did not do, and a family line reading `F5 3/12` is indistinguishable from honest remaining work.
 
-Two smaller consequences worth keeping:
+Three smaller consequences worth keeping:
 
+* **A guard that only catches overstatement lets understatement rot, and it rots at every site the
+  guard does not read.** `FINDING-P0-TRIAGE.md` cited `claims/tests/` at **169 tests** while the
+  collected count was **362**; the check on that number asserts `claimed <= actual`, which is right —
+  a suite that grows must not red a write-up — but it means a figure stale by 193 produced green runs
+  for as long as it existed. Correcting the header did not fix the document: the count appears
+  **twice**, in a header field and as a comment on the `pytest` line in §6, and the guard matched only
+  the header's phrasing, so §6 still read 169 after the "correction"
+  (`feedback_grep_the_claim_not_the_phrasing`). The check now scans every line mentioning
+  `claims/tests/`, requires all the counts it finds to agree **with each other** as well as with the
+  collected total — that arm fires in the direction the lower bound permits — and has a companion arm
+  that doctors one site in a copy of the document and requires the extractor to see two values.
+  Both sites now read 381.
 * **The second instance is the evidence the guard was worth writing.** Fixing F5-7a by hand and
   moving on would have left F0-1 exactly as it was, and nothing in the project was on a path to
   find it (`feedback_second_instance_bugs`).

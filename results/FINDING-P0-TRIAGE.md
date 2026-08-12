@@ -2,7 +2,7 @@
 
 **Phase** 0 (offline) · **Cost** $0 · **Date** 2026-08-09
 **Artifacts** `claims/triage.csv` (546 rows) · `EXCLUSION_REGISTER.md` (437 lines) ·
-`results/FINDING-F0-1-references.json` · `claims/tests/` (380 tests)
+`results/FINDING-F0-1-references.json` · `claims/tests/` (381 tests)
 
 <!-- provenance
 {
@@ -264,7 +264,7 @@ python3 claims/01_triage.py --check              # triage.csv reproduces from th
 python3 claims/check_coverage.py                 # 15 checks over 546 claims
 python3 claims/check_coverage.py --self-test     # 14 mutations + control arm
 python3 claims/03_exclusion_register.py --check  # register matches the triage
-python3 -m pytest claims/tests/ -q               # 169 tests
+python3 -m pytest claims/tests/ -q               # 381 tests
 python3 check_redaction.py                       # >=32 files, >=800KB, no identifiers
 python3 claims/02_check_references.py            # 24/24, live HTTP
 ```

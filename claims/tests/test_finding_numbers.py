@@ -285,8 +285,26 @@ def test_gate_and_selftest_counts(doc):
     _pin(doc, "14/14 mutations killed")
 
 
-def test_test_count_in_the_finding_is_not_below_reality(doc):
-    """The finding cites a test count; it may grow, but must not be overstated.
+def _cited_test_counts(doc: str) -> list[tuple[int, int]]:
+    """Every `(line number, count)` where the document states a size for `claims/tests/`.
+
+    Scans by line rather than matching one phrasing. The document states the number
+    twice in two different shapes — a header field and a comment on the pytest
+    command in §6 — and the first version of this guard only knew the header, so a
+    figure stale by 193 sat in §6 through every green run
+    (`feedback_grep_the_claim_not_the_phrasing`).
+    """
+    out: list[tuple[int, int]] = []
+    for i, line in enumerate(doc.splitlines(), 1):
+        if "claims/tests/" not in line:
+            continue
+        for m in re.finditer(r"(\d+) tests?\b", line):
+            out.append((i, int(m.group(1))))
+    return out
+
+
+def test_every_site_stating_the_test_count_agrees_with_the_collected_count(doc):
+    """The finding cites a test count in two places; both may grow, neither may overstate.
 
     Counts COLLECTED tests, not `def test_` lines. Those diverge as soon as
     anything is parametrised, and the number the finding quotes is the one
@@ -294,10 +312,13 @@ def test_test_count_in_the_finding_is_not_below_reality(doc):
     a truthful figure look overstated. No figure is quoted in this docstring on
     purpose: it would be a prose number, and this file is where the collected
     count is recomputed.
+
+    Two assertions, because "not overstated" alone let the §6 copy rot: the sites
+    must also agree with **each other**, which fires even in the direction the
+    lower-bound check permits.
     """
-    m = re.search(r"`claims/tests/` \((\d+) tests\)", doc)
-    assert m, "the finding no longer states a test count"
-    claimed = int(m.group(1))
+    sites = _cited_test_counts(doc)
+    assert sites, "the finding no longer states a test count"
     r = subprocess.run([sys.executable, "-m", "pytest", str(HERE), "-q",
                         "--collect-only", "-p", "no:cacheprovider"],
                        capture_output=True, text=True, cwd=str(ROOT))
@@ -305,8 +326,32 @@ def test_test_count_in_the_finding_is_not_below_reality(doc):
     assert got, f"could not read a collected count from pytest:\n{r.stdout[-500:]}"
     actual = int(got.group(1))
     assert actual > 0, "collecting zero tests must not read as agreement"
-    assert claimed <= actual, (
-        f"finding claims {claimed} tests, pytest collects {actual}")
+    for line, claimed in sites:
+        assert claimed <= actual, (
+            f"{FINDING.name}:{line} claims {claimed} tests, pytest collects {actual}")
+    distinct = {c for _, c in sites}
+    assert len(distinct) == 1, (
+        f"the document states {sorted(distinct)} for claims/tests/ at lines "
+        f"{[l for l, _ in sites]}; one of them is stale")
+
+
+def test_a_stale_second_site_is_caught(doc):
+    """The mutation that motivated the rewrite: the header updated, §6 left behind.
+
+    Run against a doctored copy, not the live file — the arm above reads the real
+    document, and a guard whose failure mode cannot be demonstrated is prose.
+    """
+    sites = _cited_test_counts(doc)
+    assert len(sites) >= 2, (
+        "the document now states the test count in fewer than two places, so this "
+        "arm no longer exercises disagreement between sites")
+    line, count = sites[-1]
+    lines = doc.splitlines()
+    lines[line - 1] = lines[line - 1].replace(f"{count} tests", "169 tests")
+    mutated = _cited_test_counts("\n".join(lines))
+    assert len({c for _, c in mutated}) == 2, (
+        "the mutation did not change what the extractor reads, so the disagreement "
+        "assertion above is not watching this site")
 
 
 def test_redaction_figures_in_the_finding_are_lower_bounds_and_hold(doc):
