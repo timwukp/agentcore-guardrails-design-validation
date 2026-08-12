@@ -92,12 +92,12 @@
       "created_at": "2026-08-10T13:46:34+00:00",
       "delete_op": "delete_delivery",
       "delete_params": {
-        "id": "7dp2bRRYXeT9ZtIf"
+        "id": "LAJ3GwGKzQCn6XsU"
       },
       "delete_priority": 22,
       "ids": {
         "delivery_destination_arn": "arn:aws:logs:us-east-1:<account>:delivery-destination:grx-shared-traces-dst-r20260810T130945Z",
-        "delivery_id": "7dp2bRRYXeT9ZtIf",
+        "delivery_id": "LAJ3GwGKzQCn6XsU",
         "delivery_source_name": "grx-main-traces-src-r20260810T130945Z",
         "f7_5_recreate": {
           "deliveryDestinationArn": "arn:aws:logs:us-east-1:<account>:delivery-destination:grx-shared-traces-dst-r20260810T130945Z",
@@ -107,8 +107,8 @@
       },
       "kind": "delivery",
       "logical": "main-traces",
-      "name": "7dp2bRRYXeT9ZtIf",
-      "notes": "F7-5's mutation target: delete_delivery turns tracing OFF for this gateway while leaving the gateway configuration byte-identical.",
+      "name": "LAJ3GwGKzQCn6XsU",
+      "notes": "F7-5's mutation target: delete_delivery turns tracing OFF for this gateway while leaving the gateway configuration byte-identical. Recreated by F7-5 after its mutation; the id changed from 7dp2bRRYXeT9ZtIf to LAJ3GwGKzQCn6XsU, and this entry was re-recorded so teardown deletes the live delivery rather than the deleted one.",
       "service": "logs"
     },
     {
@@ -562,5 +562,5 @@
     }
   ],
   "run_id": "r20260810T130945Z",
-  "written_at": "2026-08-11T09:56:06+00:00"
+  "written_at": "2026-08-12T00:03:39+00:00"
 }

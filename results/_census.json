@@ -1,0 +1,839 @@
+[
+ {
+  "case": "F0-1",
+  "family": "F0",
+  "title": "Section 10's documentation references resolve",
+  "tier": "O",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": false
+ },
+ {
+  "case": "F1-1",
+  "family": "F1",
+  "title": "enforcementMode exists in the policy API",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": true
+ },
+ {
+  "case": "F1-2",
+  "family": "F1",
+  "title": "InvokeGuardrailChecks exists in bedrock-runtime",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": true
+ },
+ {
+  "case": "F1-3",
+  "family": "F1",
+  "title": "The bare permit policy fails creation under default validationMode",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": true
+ },
+ {
+  "case": "F1-4",
+  "family": "F1",
+  "title": "PolicyDefinition union accepts cedar and/or policy",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": true
+ },
+ {
+  "case": "F1-5",
+  "family": "F1",
+  "title": "Engine mode enum is LOG_ONLY|ENFORCE",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='ENUM_EXACT', thr",
+  "has_verdict": true
+ },
+ {
+  "case": "F1-6",
+  "family": "F1",
+  "title": "Tier fields: Standard requires crossRegionConfig",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": false
+ },
+ {
+  "case": "F1-7",
+  "family": "F1",
+  "title": "Content filter categories",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='ENUM_EXACT', thr",
+  "has_verdict": true
+ },
+ {
+  "case": "F1-8",
+  "family": "F1",
+  "title": "Prompt-attack subtypes JAILBREAK/PROMPT_INJECTION/PROMPT_LEAKAGE",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": true
+ },
+ {
+  "case": "F1-9",
+  "family": "F1",
+  "title": "Sensitive-information entity types",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": true
+ },
+ {
+  "case": "F1-10",
+  "family": "F1",
+  "title": "Denied topics and word filters exist with documented limits",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='BOUNDARY', thres",
+  "has_verdict": true
+ },
+ {
+  "case": "F1-11",
+  "family": "F1",
+  "title": "Input and output settings are independent within one guardrail",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": true
+ },
+ {
+  "case": "F1-12",
+  "family": "F1",
+  "title": "streamProcessingMode SYNCHRONOUS|ASYNCHRONOUS",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": true
+ },
+ {
+  "case": "F1-13",
+  "family": "F1",
+  "title": "Contextual grounding character limits 100000/1000/5000",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='BOUNDARY', thres",
+  "has_verdict": true
+ },
+ {
+  "case": "F1-14",
+  "family": "F1",
+  "title": "Automated Reasoning: detect-only, en-US, no streaming",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": true
+ },
+ {
+  "case": "F1-15",
+  "family": "F1",
+  "title": "Policy applies to MCP, HTTP runtime, and HTTP inference targets",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": false
+ },
+ {
+  "case": "F1-16",
+  "family": "F1",
+  "title": "REQUEST/RESPONSE Lambda interceptors exist",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": true
+ },
+ {
+  "case": "F1-17",
+  "family": "F1",
+  "title": "suppressOutput is a valid policy effect",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": true
+ },
+ {
+  "case": "F1-18",
+  "family": "F1",
+  "title": "Confidence scores are the discrete lattice {0,.2,.4,.6,.8,1.0}",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": false
+ },
+ {
+  "case": "F1-19",
+  "family": "F1",
+  "title": "Threshold defaults 0.2/0.4/0.6 apply only via NL authoring",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": false
+ },
+ {
+  "case": "F1-20",
+  "family": "F1",
+  "title": "InvokeGuardrailChecks caps at 10 content blocks per message",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='BOUNDARY', thres",
+  "has_verdict": true
+ },
+ {
+  "case": "F1-21",
+  "family": "F1",
+  "title": "PutEnforcedGuardrailConfiguration surface and required fields",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": true
+ },
+ {
+  "case": "F1-22",
+  "family": "F1",
+  "title": "Optimization exposes Recommendations/ConfigBundles/A-B Testing",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": true
+ },
+ {
+  "case": "F1-23",
+  "family": "F1",
+  "title": "Evaluations exposes on-demand, batch, and online modes",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": true
+ },
+ {
+  "case": "F1-24",
+  "family": "F1",
+  "title": "when {} cannot be mixed with when guardrails {} in one policy",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": false
+ },
+ {
+  "case": "F1-25",
+  "family": "F1",
+  "title": "Guardrails-in-policy has no regex/pattern matching",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": false
+ },
+ {
+  "case": "F1-26",
+  "family": "F1",
+  "title": "Word filters support EN/FR/ES only, on either tier",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": false
+ },
+ {
+  "case": "F1-27",
+  "family": "F1",
+  "title": "Reasoning/CoT content blocks are excluded from guardrail evaluation",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": false
+ },
+ {
+  "case": "F1-28",
+  "family": "F1",
+  "title": "PII is not detected inside tool_use output parameters",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": false
+ },
+ {
+  "case": "F10-1",
+  "family": "F10",
+  "title": "Input block avoids model inference charge; output block does not",
+  "tier": "S",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": false
+ },
+ {
+  "case": "F10-2",
+  "family": "F10",
+  "title": "Guardrail billing is per text unit (TextUnitCount)",
+  "tier": "O",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": true
+ },
+ {
+  "case": "F10-3",
+  "family": "F10",
+  "title": "Input tagging reduces text units billed",
+  "tier": "S",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": false
+ },
+ {
+  "case": "F2-1",
+  "family": "F2",
+  "title": "Pure-Cedar policies are deterministic",
+  "tier": "S",
+  "sealed_binding": true,
+  "kind": "Binding(kind='ZERO_EVENTS', th",
+  "has_verdict": true
+ },
+ {
+  "case": "F2-2",
+  "family": "F2",
+  "title": "Guardrail scores are non-degenerate across identical inputs",
+  "tier": "S",
+  "sealed_binding": true,
+  "kind": "Binding(kind='DISTINCT_AT_LEAS",
+  "has_verdict": false
+ },
+ {
+  "case": "F2-3",
+  "family": "F2",
+  "title": "The decision is a deterministic function of the score",
+  "tier": "S",
+  "sealed_binding": true,
+  "kind": "Binding(kind='STRATUM_PURITY',",
+  "has_verdict": false
+ },
+ {
+  "case": "F2-4",
+  "family": "F2",
+  "title": "Flip rate tracks threshold placement as 2p(1-p)",
+  "tier": "S",
+  "sealed_binding": true,
+  "kind": "Binding(kind='PAIRED_IMPROVEME",
+  "has_verdict": false
+ },
+ {
+  "case": "F2-5",
+  "family": "F2",
+  "title": "ApplyGuardrail is non-deterministic for a fixed input",
+  "tier": "S",
+  "sealed_binding": true,
+  "kind": "Binding(kind='DISTINCT_AT_LEAS",
+  "has_verdict": true
+ },
+ {
+  "case": "F3-1",
+  "family": "F3",
+  "title": "Content filters detect their categories above threshold",
+  "tier": "S",
+  "sealed_binding": true,
+  "kind": "Binding(kind='LOWER_ABOVE', th",
+  "has_verdict": true
+ },
+ {
+  "case": "F3-2",
+  "family": "F3",
+  "title": "Benign content is not blocked (FPR)",
+  "tier": "S",
+  "sealed_binding": true,
+  "kind": "Binding(kind='UPPER_BELOW', th",
+  "has_verdict": true
+ },
+ {
+  "case": "F3-3",
+  "family": "F3",
+  "title": "Hard negatives do not trigger filters",
+  "tier": "S",
+  "sealed_binding": true,
+  "kind": "Binding(kind='ASYMMETRIC_FPR',",
+  "has_verdict": true
+ },
+ {
+  "case": "F3-4",
+  "family": "F3",
+  "title": "PII entities are detected per documented entity type",
+  "tier": "S",
+  "sealed_binding": true,
+  "kind": "Binding(kind='LOWER_ABOVE', th",
+  "has_verdict": true
+ },
+ {
+  "case": "F3-5",
+  "family": "F3",
+  "title": "Denied topics block in-topic content",
+  "tier": "S",
+  "sealed_binding": true,
+  "kind": "Binding(kind='DISJOINT_INTERVA",
+  "has_verdict": true
+ },
+ {
+  "case": "F3-6",
+  "family": "F3",
+  "title": "Word filters block listed terms exactly",
+  "tier": "E",
+  "sealed_binding": true,
+  "kind": "Binding(kind='ZERO_EVENTS', th",
+  "has_verdict": true
+ },
+ {
+  "case": "F3-7",
+  "family": "F3",
+  "title": "Contextual grounding detects ungrounded responses",
+  "tier": "S",
+  "sealed_binding": true,
+  "kind": "Binding(kind='DISJOINT_INTERVA",
+  "has_verdict": true
+ },
+ {
+  "case": "F3-8",
+  "family": "F3",
+  "title": "Prompt-attack detection recall by subtype",
+  "tier": "S",
+  "sealed_binding": true,
+  "kind": "Binding(kind='LOWER_ABOVE', th",
+  "has_verdict": true
+ },
+ {
+  "case": "F3-9",
+  "family": "F3",
+  "title": "The 7-vertex ROC and the selected operating point",
+  "tier": "S",
+  "sealed_binding": true,
+  "kind": "Binding(kind='ROC_LATTICE', th",
+  "has_verdict": true
+ },
+ {
+  "case": "F3-10",
+  "family": "F3",
+  "title": "Section 7.1's workflow is executable from LOG_ONLY telemetry",
+  "tier": "O",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": false
+ },
+ {
+  "case": "F3-11",
+  "family": "F3",
+  "title": "Guardrail behaviour drifts under AWS auto-updates",
+  "tier": "S",
+  "sealed_binding": true,
+  "kind": "Binding(kind='PAIRED_IMPROVEME",
+  "has_verdict": false
+ },
+ {
+  "case": "F4-1",
+  "family": "F4",
+  "title": "Engine ENFORCE + no permit policy denies all traffic",
+  "tier": "E",
+  "sealed_binding": true,
+  "kind": "Binding(kind='ZERO_EVENTS', th",
+  "has_verdict": true
+ },
+ {
+  "case": "F4-2",
+  "family": "F4",
+  "title": "Engine LOG_ONLY blocks nothing even with ACTIVE policies",
+  "tier": "E",
+  "sealed_binding": true,
+  "kind": "Binding(kind='ZERO_EVENTS', th",
+  "has_verdict": true
+ },
+ {
+  "case": "F4-3",
+  "family": "F4",
+  "title": "Engine mode takes precedence over per-policy enforcementMode",
+  "tier": "E",
+  "sealed_binding": true,
+  "kind": "Binding(kind='ZERO_EVENTS', th",
+  "has_verdict": true
+ },
+ {
+  "case": "F4-4",
+  "family": "F4",
+  "title": "Cedar default-deny: no matching policy means deny",
+  "tier": "E",
+  "sealed_binding": true,
+  "kind": "Binding(kind='ZERO_EVENTS', th",
+  "has_verdict": true
+ },
+ {
+  "case": "F4-5",
+  "family": "F4",
+  "title": "forbid overrides permit",
+  "tier": "E",
+  "sealed_binding": true,
+  "kind": "Binding(kind='ZERO_EVENTS', th",
+  "has_verdict": true
+ },
+ {
+  "case": "F4-6",
+  "family": "F4",
+  "title": "Denied requests return HTTP 403 naming the denying policy ID",
+  "tier": "E",
+  "sealed_binding": true,
+  "kind": "Binding(kind='ZERO_EVENTS', th",
+  "has_verdict": true
+ },
+ {
+  "case": "F5-1",
+  "family": "F5",
+  "title": "Route 1: direct tool invocation bypassing the gateway",
+  "tier": "E",
+  "sealed_binding": true,
+  "kind": "Binding(kind='ZERO_EVENTS', th",
+  "has_verdict": false
+ },
+ {
+  "case": "F5-2",
+  "family": "F5",
+  "title": "Route 3: execution-role credentials disable the policy engine",
+  "tier": "E",
+  "sealed_binding": true,
+  "kind": "Binding(kind='ZERO_EVENTS', th",
+  "has_verdict": false
+ },
+ {
+  "case": "F5-3a",
+  "family": "F5",
+  "title": "Route 4: SCP authoring and propagation",
+  "tier": "E",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": false
+ },
+ {
+  "case": "F5-3b",
+  "family": "F5",
+  "title": "Route 4: IAM permissions boundary blocks UpdateGateway",
+  "tier": "E",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": false
+ },
+ {
+  "case": "F5-4a",
+  "family": "F5",
+  "title": "Route 5: policy referencing a nonexistent context path",
+  "tier": "E",
+  "sealed_binding": true,
+  "kind": "Binding(kind='RECORDED', thres",
+  "has_verdict": false
+ },
+ {
+  "case": "F5-4b",
+  "family": "F5",
+  "title": "Route 5: guardrail evaluation cannot run (permission removed)",
+  "tier": "E",
+  "sealed_binding": true,
+  "kind": "Binding(kind='RECORDED', thres",
+  "has_verdict": false
+ },
+ {
+  "case": "F5-5",
+  "family": "F5",
+  "title": "Indirect prompt injection via tool response",
+  "tier": "S",
+  "sealed_binding": true,
+  "kind": "Binding(kind='DISJOINT_INTERVA",
+  "has_verdict": false
+ },
+ {
+  "case": "F5-6",
+  "family": "F5",
+  "title": "Prompt-attack filtering without input tagging (DC-2)",
+  "tier": "S",
+  "sealed_binding": true,
+  "kind": "Binding(kind='UPPER_BELOW', th",
+  "has_verdict": false
+ },
+ {
+  "case": "F5-7a",
+  "family": "F5",
+  "title": "PrivateLink endpoint services actually exist",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": false
+ },
+ {
+  "case": "F5-7b",
+  "family": "F5",
+  "title": "Route 2: VPC egress containment",
+  "tier": "E",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": false
+ },
+ {
+  "case": "F5-8",
+  "family": "F5",
+  "title": "Execution-role credentials are readable from inside a tool session",
+  "tier": "E",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": false
+ },
+ {
+  "case": "F5-9",
+  "family": "F5",
+  "title": "Account-level enforced guardrail cannot be declined by the agent",
+  "tier": "E",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": false
+ },
+ {
+  "case": "F6-1",
+  "family": "F6",
+  "title": "Hop #1 gateway guardrail latency",
+  "tier": "S",
+  "sealed_binding": true,
+  "kind": "Binding(kind='BAND_CONTAINS', ",
+  "has_verdict": false
+ },
+ {
+  "case": "F6-2",
+  "family": "F6",
+  "title": "Hop #2 Bedrock input guardrail latency",
+  "tier": "S",
+  "sealed_binding": true,
+  "kind": "Binding(kind='BAND_CONTAINS', ",
+  "has_verdict": false
+ },
+ {
+  "case": "F6-3",
+  "family": "F6",
+  "title": "Hop #4 Cedar policy latency",
+  "tier": "S",
+  "sealed_binding": true,
+  "kind": "Binding(kind='BAND_CONTAINS', ",
+  "has_verdict": false
+ },
+ {
+  "case": "F6-4",
+  "family": "F6",
+  "title": "Hop #5 per-tool-call guardrail latency",
+  "tier": "S",
+  "sealed_binding": true,
+  "kind": "Binding(kind='BAND_CONTAINS', ",
+  "has_verdict": false
+ },
+ {
+  "case": "F6-5",
+  "family": "F6",
+  "title": "Hop #6 output guardrail latency",
+  "tier": "S",
+  "sealed_binding": true,
+  "kind": "Binding(kind='BAND_CONTAINS', ",
+  "has_verdict": false
+ },
+ {
+  "case": "F6-6",
+  "family": "F6",
+  "title": "End-to-end total vs the ~800ms-31s+ figure",
+  "tier": "S",
+  "sealed_binding": true,
+  "kind": "Binding(kind='BAND_CONTAINS', ",
+  "has_verdict": false
+ },
+ {
+  "case": "F6-7",
+  "family": "F6",
+  "title": "Additivity: Duration = GuardrailLatency + TargetExecutionTime + eps",
+  "tier": "S",
+  "sealed_binding": true,
+  "kind": "Binding(kind='NONNEG_RESIDUAL'",
+  "has_verdict": false
+ },
+ {
+  "case": "F6-8",
+  "family": "F6",
+  "title": "165-750ms per additional tool invocation",
+  "tier": "S",
+  "sealed_binding": true,
+  "kind": "Binding(kind='CI_OVERLAPS', th",
+  "has_verdict": false
+ },
+ {
+  "case": "F6-9",
+  "family": "F6",
+  "title": "Early blocking at Hop #1 saves downstream latency",
+  "tier": "S",
+  "sealed_binding": true,
+  "kind": "Binding(kind='SHIFT_EXCLUDES_Z",
+  "has_verdict": false
+ },
+ {
+  "case": "F7-1",
+  "family": "F7",
+  "title": "The 19 documented policy metrics are actually published",
+  "tier": "O",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": false
+ },
+ {
+  "case": "F7-2",
+  "family": "F7",
+  "title": "Gateway metrics exist under AWS/Bedrock-AgentCore",
+  "tier": "O",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": false
+ },
+ {
+  "case": "F7-3",
+  "family": "F7",
+  "title": "Guardrails metrics exist under AWS/Bedrock/Guardrails",
+  "tier": "O",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": false
+ },
+ {
+  "case": "F7-4",
+  "family": "F7",
+  "title": "Policy spans land in aws/spans with the documented operations",
+  "tier": "O",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": false
+ },
+ {
+  "case": "F7-5",
+  "family": "F7",
+  "title": "Tracing must be explicitly enabled or spans are absent",
+  "tier": "O",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": false
+ },
+ {
+  "case": "F7-6",
+  "family": "F7",
+  "title": "Metric publish lag sets a floor on every alarm in 6.4",
+  "tier": "O",
+  "sealed_binding": true,
+  "kind": "Binding(kind='LAG_FLOOR', thre",
+  "has_verdict": false
+ },
+ {
+  "case": "F7-7",
+  "family": "F7",
+  "title": "Metrics are batched at 1-minute intervals",
+  "tier": "O",
+  "sealed_binding": true,
+  "kind": "Binding(kind='QUANTIZATION', t",
+  "has_verdict": false
+ },
+ {
+  "case": "F8-1",
+  "family": "F8",
+  "title": "Guardrails-in-policy is available in exactly 5 Regions",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": false
+ },
+ {
+  "case": "F8-2",
+  "family": "F8",
+  "title": "Classic tier is ineffective for zh/ja/ko",
+  "tier": "S",
+  "sealed_binding": true,
+  "kind": "Binding(kind='INDISTINGUISHABL",
+  "has_verdict": true
+ },
+ {
+  "case": "F8-3",
+  "family": "F8",
+  "title": "Standard tier adds broad multi-language support",
+  "tier": "S",
+  "sealed_binding": true,
+  "kind": "Binding(kind='PAIRED_IMPROVEME",
+  "has_verdict": true
+ },
+ {
+  "case": "F8-4",
+  "family": "F8",
+  "title": "Prompt-leakage detection is Standard-tier only",
+  "tier": "E",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": true
+ },
+ {
+  "case": "F8-5",
+  "family": "F8",
+  "title": "Denied-topic length limits differ by tier (200 vs 1000)",
+  "tier": "E",
+  "sealed_binding": true,
+  "kind": "Binding(kind='BOUNDARY', thres",
+  "has_verdict": true
+ },
+ {
+  "case": "F8-6",
+  "family": "F8",
+  "title": "Standard tier's cross-Region inference stays in-geography",
+  "tier": "O",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": true
+ },
+ {
+  "case": "F8-7",
+  "family": "F8",
+  "title": "Word filters are EN/FR/ES only on either tier",
+  "tier": "E",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": true
+ },
+ {
+  "case": "F8-8",
+  "family": "F8",
+  "title": "Automated Reasoning is en-US only and detect-only",
+  "tier": "C",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": true
+ },
+ {
+  "case": "F9-1",
+  "family": "F9",
+  "title": "Policy evaluation timeout yields automatic DENY",
+  "tier": "X",
+  "sealed_binding": true,
+  "kind": "Binding(kind='NOT_TESTABLE', t",
+  "has_verdict": false
+ },
+ {
+  "case": "F9-2",
+  "family": "F9",
+  "title": "MismatchErrors/PolicyMismatch fire on unevaluable policies",
+  "tier": "O",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": false
+ },
+ {
+  "case": "F9-3",
+  "family": "F9",
+  "title": "Guardrail throttling produces observable failures, not silent passes",
+  "tier": "E",
+  "sealed_binding": true,
+  "kind": "Binding(kind='EXISTENCE', thre",
+  "has_verdict": false
+ }
+]

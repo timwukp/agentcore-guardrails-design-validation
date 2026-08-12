@@ -3559,6 +3559,1572 @@ reachable for the first time on this plane.
 
 ---
 
+## DEV-P4-01 — four cases pre-registered a per-trial score harvest, and neither measured surface publishes one
+
+**Scope, stated first because an earlier draft of this entry overreached.** Three surfaces could
+carry a guardrail score. Two are measured and neither publishes one. The third — CloudWatch
+**metrics**, where §6.2 explicitly lists `ConfidenceScore / ConfidenceThreshold` under
+`AWS/Bedrock-AgentCore` — is **not yet measured**; it is exactly what **F7-1** tests. So this
+entry justifies the instrument change on the two surfaces a per-trial harvest could plausibly
+come from, and **F7-1 is the measurement that decides whether "no surface" is the right phrase
+at all**. Note in advance, so the result cannot be spun either way: a CloudWatch metric is a
+per-minute *aggregate*, so even a published `ConfidenceScore` metric would not restore the
+**per-trial** harvest F2-2/F2-3 and F1-18 were written around — it would change this entry's
+reach without changing the instrument change below.
+
+### What happened
+
+Four sealed cases name the same instrument in their methods:
+
+| Case | Sealed method, verbatim |
+|:--|:--|
+| F2-2 | "n=300 identical inputs, **harvest per-trial ConfidenceScore**, estimate pmf" |
+| F2-3 | "stratify F2-2 trials **by observed score**; `variance_decomposition()`" |
+| F2-4 | "mutation arm: tau **inside vs outside observed support**, n=300 each" |
+| F1-18 | "**harvest scores** from F2/F3 runs; set-membership test on the union" against the lattice `{0,.2,.4,.6,.8,1.0}` |
+
+Two independent measurements now say that score does not exist as an observable **on the response
+and telemetry surfaces**:
+
+1. **F2-5** (verdict FALSE, `results/phase1/F2-5.json`) measured the ApplyGuardrail response
+   surface: content filters expose `confidence` and `filterStrength` as **four-value enums**
+   (`NONE/LOW/MEDIUM/HIGH`). There is no numeric content-filter score on that API.
+2. **`f7_observability/00_span_shape_probe.py`** (2026-08-11, `results/span_shape_probe.json`)
+   read 60 real spans for our gateway from `aws/spans`, produced by the F4 truth-table run's
+   traffic through guardrail-bearing policies in ENFORCE. **58 distinct attribute paths, and
+   zero matches for `score`, `confidence`, `threshold`, or `guardrail`.** The approved plan's
+   predicted attribute prefix `aws.agentcore.policy.guardrails.<category>.scores` is **absent**.
+
+The span path is not a poor harvest surface; it is the *only* remaining candidate, because the
+policy path is where a guardrail-in-policy threshold is evaluated, and the span is the only
+per-request record of that evaluation. What it publishes is the **decision**
+(`aws.agentcore.policy.authorization_decision`, `authorization_reason`,
+`determining_policies[]`, `log_only_matched_policies[]`,
+`log_only_decision_flipping_policies[]`) — never the quantity the decision was computed from.
+
+### It corrects a provenance, not a size
+
+The machine-checked `corrects:` field belongs to `deviations_from_plan` inside the sealed
+`PREREGISTRATION.yaml`, and only the eight `DEV-P0-*` entries — the ones that corrected the plan
+*before* it was sealed — carry it. This entry is a Phase 4 entry in this file, so it is
+classified in prose and is deliberately **not** given a `corrects:` line: a field that looks
+machine-checked but is read by nothing is worse than no field, and `verify_prereg.py` would
+never see it.
+
+In that vocabulary it would be `provenance`. Nothing about a sample size is wrong. n=300 per `determinism_cell` is reachable and F2-1 just
+reached 630. What is wrong is the **provenance of an instrument**: the plan and the
+pre-registration both assumed a numeric score was observable, and neither had measured it. That
+assumption came from the document under test — which asserts the six-value lattice — and was
+carried into our own method sections without a check. This entry is the correction of that
+lineage, not of a number.
+
+### The instrument change, stated before the data
+
+F2-2/F2-3/F2-4 move from a **direct harvest** to a **threshold sweep**, which observes the same
+latent variable through the decision instead of reading it:
+
+* a guardrail-bearing policy whose condition carries a numeric `threshold` τ is the only knob
+  that admits a numeric value into the evaluation at all;
+* for a **fixed input** repeated n times at **fixed τ**, a mixed set of decisions proves the
+  latent score took ≥2 distinct values, *without ever observing one*. That satisfies F2-2's
+  `DISTINCT_AT_LEAST(2)` on the same logic its oracle already uses — one counterexample to
+  degeneracy suffices — and it is strictly conservative: a constant decision column is
+  consistent with either a constant score or a varying score that never crossed τ, so this
+  instrument can **only under-report** non-determinism.
+* F2-3's strata become τ-bands rather than score values. A band is coarser than a value, and
+  coarsening can only ever **hide** a mixed stratum, so a TRUE from this instrument is weaker
+  than the sealed TRUE and its record must say so in the verdict, not in a footnote.
+* F2-4 is the case this change *helps*: its oracle is already about τ placement, and a sweep is
+  a more direct test of "flip rate tracks τ" than inferring support from harvested values.
+
+**F1-18 cannot be rescued this way and is not being rescued.** Its claim is that observed
+scores lie on a six-value numeric lattice; a sweep observes no scores. The honest outcome is
+that the claim is **not measurable on either published surface**, which is itself a finding
+about the document — it asserts the precision of a quantity the service does not expose — and
+belongs in the v1.3 amendment pass rather than in a case file with a manufactured verdict.
+
+### What this changes about ordering, and why that is the expensive part
+
+The probe also settles a dependency the plan had backwards. Every one of these four cases was
+scheduled in Phase 4 *before* the F7 observability family, on the assumption that the score
+came from the response. It comes from telemetry or nowhere, so **F7 is upstream of F2-2/F2-3/
+F2-4 and of F3-10**, and F7-5 (tracing off → spans absent) is the mutation that makes any
+span-derived reading non-vacuous. The remaining Phase 4 order is therefore F7 first.
+
+Two other cases inherit evidence from the same 60 spans, and both are now cheaper than planned:
+
+* **F3-10** asks whether §7.1's per-request score↔label join is recoverable from telemetry. The
+  spans carry `aws.request.id` per row, so the *decision* is joinable per request — and carry no
+  score, so the *join §7.1 actually needs* has no left-hand side. That is F3-10's FALSE
+  direction, indicated but **not scored here**: it gets its own script, which must also attempt
+  the metrics-only reconstruction its sealed method names.
+* **F6** was planned around client-side timing. The spans publish `latency_ms`,
+  `overhead_latency_ms` and `execute_tool_latency_ms` **per request**, server-side — which
+  measures policy overhead without the client's own network variance in the number. Using them
+  is a second instrument change and will be registered separately once F6 is written; it is
+  noted here because it came from this probe, not from the F6 work.
+
+### Verification
+
+The probe is mutation-checked in the only way that matters for a negative result: it refuses to
+report `absent` when it cannot distinguish absence from silence. `traces_delivery_live` is
+checked **first**, and a down delivery yields `delivery_down`, not `no_score_field` — the
+distinction F7-5 exists to establish, borrowed so a missing precondition cannot be read as a
+measurement. It found 60 spans with the delivery live, so `no_score_field` is a reading of
+present-and-parsed telemetry, not of an empty query. Attribute matching runs over **flattened
+leaf paths** of every span unioned together, not one span's top-level keys, so a score nested
+inside a list or an attribute bag would still have been found; the full 58-path inventory is in
+`results/span_shape_probe.json` and can be re-checked against any future claim that a score is
+published somewhere in there.
+
+**Re-measured against a truncation confound (2026-08-11, later).** The probe read the most recent
+60 rows of a 120-minute window, and `query_spans` sorts `@timestamp desc` — so a claim of
+*absence* from it is a claim about a truncated tail, which is the shape that produced
+`feedback_abort_hides_coverage`. The scan was therefore repeated at three settings —
+**120 min × 60, 120 min × 500, and 48 h × 500** — and returned the same 58 leaf paths and
+**zero** score-ish paths at every one, widening the pattern to `score|confidence|threshold|
+severity|strength`. Separately, the `AgentCore.Policy.AuthorizeAction` span — the row that
+actually records the policy evaluation — was isolated and its **complete 42-path attribute
+inventory** enumerated: it carries the decision, the reason, the determining and log-only policy
+lists, the temporal flag, the target resource, the request id and the HTTP status, and **no
+score, confidence, threshold or strength attribute of any kind.** The negative result is
+therefore a property of the span schema, not of the sample size.
+
+**One claim made from this probe was wrong and is retracted here.** A prose note in `RECONNECT.md`
+and in the session log said the measured operations were `InvokeTool`/`InvokeGateway` and that
+`AuthorizeAction` spans did not exist. They do: 246 over 48 h, paired 1:1 with `InvokeTool`, and
+**27 of them were inside the probe's own original 60-row sample.** The sentence was written from
+the single sample span the probe serialises into `sample_span_leaves`, which happens to be an
+InvokeTool row; the probe tallies leaf **paths** and never tallied span `name`, so no assertion
+covered the claim — `feedback_prose_is_not_verified`, in a file whose whole purpose is to record
+where the plan was wrong. **The document is correct on the span name and F7-4 has no amendment
+material from it.** The retraction is recorded here rather than only at the two prose sites
+because the same probe run is this entry's second pillar, and a reader has to be able to see
+which of its readings survived re-measurement and which did not: the score absence survived at
+three settings, the span-name claim did not survive at one.
+
+**A byproduct that upgrades two later cases.** The request-id join was measured while checking
+the above: **242 of 250 span `attributes.aws.request.id` values (96.8%) match a client-observed
+`x-amzn-requestid` already recorded in an F4 or F2-1 checkpoint**, at zero additional cost
+because both sides were on disk. One request id carries two spans (InvokeTool + AuthorizeAction).
+That is the per-request join F7-4's sealed method calls for and the left-hand side F3-10 needs,
+and it gives **F7-5 a specific absent-arm marker** — not "no spans in some window", which a wrong
+window would satisfy, but "no span carries any of *these* request ids".
+
+---
+
+## DEV-P4-02 — the two-calendar-day replication rule is waived by the project owner
+
+### What happened
+
+On **2026-08-11** the project owner instructed: *"解除時間日曆硬限制，自由完成，分階段 update repo，我來負責
+review and merge"* — lift the calendar hard limit, finish freely, stage the repo updates, and the
+owner reviews and merges. That is an explicit, authorized relaxation of a rule this project wrote
+for itself, and it is recorded here because a protocol that can be relaxed silently is not a
+protocol.
+
+### What is actually waived, and what cannot be
+
+Two different things were both being described as "the calendar limit", and only one of them is a
+rule:
+
+1. **The ≥2-separate-calendar-days replication rule** (`PREREGISTRATION.yaml`, enforced by
+   `check_amendment_readiness.py`, `MIN_DAYS = 2`) is a **procedural** bar on amending the
+   document. It is the owner's to waive, and it is waived. Affected as of this entry: **F4-6**,
+   **F2-1**, **F5-7a**.
+2. **F3-11 is not a rule and cannot be waived.** Its sealed oracle asks whether configuration
+   still holds at **+7 days** and **+30 days**. There is no instrument that reads day 30 on day 0;
+   the constraint is the measurement, not a gate in front of it. What the waiver *does* license is
+   writing the script now, running its **day-0 baseline arm** now, and leaving the later arms as
+   one command against a stored baseline. Target dates stand: **2026-08-18** and **2026-09-10**.
+
+### How the waiver is implemented, and why the gate is left alone
+
+`check_amendment_readiness.py` is **not modified** and `MIN_DAYS` stays at 2. The gate keeps
+counting distinct UTC calendar days from evidence and keeps reporting a single-day finding as
+short of the sealed rule. A waiver implemented by editing the checker would delete the evidence
+that a waiver was ever needed, which is the same defect as a redaction scan that reads zero files
+and reports clean.
+
+Instead, a waived finding carries the waiver in its own front matter and in its text: the
+authorizing instruction, its date, and the single-day evidence run it rests on. When the v1.3
+amendment pass runs, each amended section states whether its evidence is single-day or replicated,
+so a reader of the *document* — not just of this repo — can see which corrections are one-day
+measurements. If a status in `AMENDMENT_STATUSES` is ever set on a single-day finding, the gate
+will go red; that is the intended behaviour, and the resolution is a new status recognised as a
+**named, listed exception** rather than a lower `MIN_DAYS`.
+
+### Direction of the bias
+
+This waiver moves risk **towards** the document under test being amended on thinner evidence than
+planned, i.e. it makes false amendments more likely and false non-amendments less likely. Stated
+plainly because deviations that favour the experimenter's own throughput are the ones most worth
+labelling. Nothing about a verdict changes: `evaluate()` never saw the calendar rule, so every
+TRUE/FALSE already recorded stands exactly as it did.
+
+---
+
+## DEV-P4-03 — eleven documented metrics are scored NOT_EXERCISED, because inducing them means abusing a shared service
+
+- **Date:** 2026-08-11
+- **Data existed:** **for these cases, no.** No CloudWatch metric reading for F7-1, F7-2 or
+  F7-3 had been taken when this entry was written; `f7_observability/03_metrics_existence.py`
+  was written with the exclusion list in it and this entry was committed **before its first
+  non-dry run**. Plenty of data exists elsewhere in the project, so the honest statement is
+  not "no data existed" but "no data on the question this deviation changes".
+- **Class:** analysis — it changes which observations a sealed oracle is scored on.
+
+### The sealed oracles, verbatim
+
+| Case | Sealed oracle |
+|:--|:--|
+| F7-1 | "Per metric: TRUE if datapoints appear for our dimensions after traffic that should produce them; FALSE if absent. A documented-but-absent metric is a document defect." |
+| F7-2 | "TRUE if Latency/Duration/Invocations/TargetExecutionTime/Throttles/SystemErrors/UserErrors all publish; **FALSE for any absentee**." |
+| F7-3 | "TRUE if the namespace (not `AWS/Bedrock`) carries the 7 documented metrics; FALSE if the namespace or names differ." |
+
+F7-1 already contains its own escape clause — "after traffic that should produce them" — so
+excluding a metric whose producing condition never occurred is *inside* its oracle, not a
+departure from it. **F7-2 does not.** It names seven metrics and says FALSE for any absentee.
+Three of the seven cannot be exercised without an act this project refuses, so scoring F7-2
+on the exercised subset is a genuine deviation and is recorded as one rather than quietly
+folded into the F7-1 reasoning.
+
+### What is excluded and why
+
+The script iterates **29 documented (namespace, metric) pairs** — 7 gateway + 15 policy in
+`AWS/Bedrock-AgentCore`, and 7 in `AWS/Bedrock/Guardrails`; 28 distinct names, because
+`Invocations` is documented in both namespaces and is a different metric in each. **Eleven of
+the 29 publish only when something goes wrong, and are therefore EXCLUDABLE, leaving 18
+unconditionally scored.** Both counts are derived from the script's own tables rather than
+transcribed, because a count written as prose is a count nothing checks. Per case the excludable
+split is: F7-1 **10 of 15** unconditional, F7-2 **4 of 7**, F7-3 **4 of 7**.
+
+**"Excludable", not "excluded" — the rule was corrected after the first read, and it is narrower
+than what this entry originally described.** The first implementation applied the exercise basis
+in *both* directions, so a metric with no exercise basis was dropped from the conjunction even
+when it had published datapoints. That threw away positive evidence about the document: the first
+run's payload recorded `MismatchErrors`, `TotalMismatchedPolicies` and `PolicyMismatch` as
+`NOT_EXERCISED` while their own rows said `published: true`. An exercise basis exists to stop *an
+absence* from being read as a document defect when the producing traffic never happened; it has
+nothing to say about a datapoint that exists. The rule is now:
+
+| Observation | Scored as |
+|:--|:--|
+| published | **TRUE**, whatever the exercise basis |
+| absent, basis exercised | **FALSE** — a document defect |
+| absent, basis not exercised | **NOT_EXERCISED** — excluded from the conjunction, listed in the payload |
+
+So the eleven are excluded *only if they turn out absent*. This narrows the deviation — fewer
+observations are set aside than this entry first claimed — and the direction of the bias is
+unchanged, because the correction can only move a metric from excluded to satisfied, never to
+absent.
+
+**And it turned out to matter for exactly the three metrics this entry was written about.** With
+the scope term fixed (DEV-P4-04), the measured reading over the 13-day project window is that
+`Throttles`, `SystemErrors` and `UserErrors` **each return 8 series and 123 datapoints for our
+own gateway** — the service publishes them as counters that report zero, so they exist on the
+metrics surface without any error ever having occurred. Under the original both-directions rule
+they would have been discarded as NOT_EXERCISED; under the corrected rule they are scored, and
+they satisfy F7-2's oracle. The refusal to manufacture 429s stands and is still the right call —
+but it turns out never to have been necessary for this case, and the entry is left in place
+rather than deleted so that the reasoning, and the fact that it was unnecessary, are both on the
+record.
+
+The eleven, under seven distinct rationales, listed in full — a deviation whose scope is
+summarised is a deviation that grows:
+
+| Namespace | Metric | Producing condition, and why it is not induced |
+|:--|:--|:--|
+| `AWS/Bedrock-AgentCore` | `Throttles` | Needs HTTP 429, i.e. driving a shared AWS service past its quota. **Refused**: that is a denial-of-service shaped action against a service other systems in this account use. |
+| `AWS/Bedrock-AgentCore` | `SystemErrors` | Needs a 5xx from the service. Cannot be induced from a client at all. |
+| `AWS/Bedrock-AgentCore` | `UserErrors` | Needs a 4xx — and **F4-6 measured that policy denials are HTTP 200** with JSON-RPC `-32002`, while a bare tool name is HTTP 200 with `-32602`. Neither client-side error this testbed produces is a 4xx. |
+| `AWS/Bedrock-AgentCore` | `SuppressOutputs` | Needs a policy with the suppress-output effect. No phase of this project created one. |
+| `AWS/Bedrock-AgentCore` | `LogOnlyEvalIncomplete` | Needs an evaluation that cannot complete — the missing-attribute condition F4 hit at policy **CREATE** time, not at request time. Reproducing it means deliberately shipping a broken policy, which would also perturb the axis F4 measures. |
+| `AWS/Bedrock-AgentCore` | `MismatchErrors`, `TotalMismatchedPolicies`, `PolicyMismatch` | Same condition as `LogOnlyEvalIncomplete`: a guardrail evaluation failing on missing attributes or type mismatches. |
+| `AWS/Bedrock/Guardrails` | `InvocationClientErrors`, `InvocationServerErrors`, `InvocationThrottles` | A client error against `ApplyGuardrail`, a 5xx, and a quota breach respectively — the same three objections as the gateway row. |
+
+The script asserts these counts at import time, so an edit to a metric table that changes
+them fails the unit tests instead of silently making this entry wrong.
+
+### Why the alternative was rejected rather than merely skipped
+
+The only way to satisfy F7-2 literally is to generate throttling and errors on purpose. For
+`Throttles` and `InvocationThrottles` that means deliberately exceeding a Bedrock quota in an
+account that runs other workloads — a denial-of-service against a shared dependency, which no
+oracle in this repo authorizes and which the project's own operating rules forbid. For
+`SystemErrors` and `InvocationServerErrors` there is no client-side lever at all; a "FALSE"
+scored on them would be a statement about the impossibility of the test, not about the
+document. That distinction — **untested is not refuted** — is the whole content of this entry.
+
+### How the deviation is implemented, so it cannot be mistaken for a finding
+
+- Every excluded metric appears in each case's payload under `excluded_not_exercised`, with
+  its reason, and the count is printed on stdout. Nothing is dropped silently, which is the
+  same rule as "a redaction scan that reads zero files must not report clean".
+- Each verdict carries `verdict_reading`, which states the verdict is about the *n* exercised
+  metrics of the *m* documented and **is not a statement about the excluded ones**.
+- The exercise bases themselves are counted **from this project's own evidence tree**, never
+  from CloudWatch: a metric reading used to justify its own exercise basis would be circular.
+  If a basis is empty, the dependent metrics become NOT_EXERCISED and the case goes
+  **INCONCLUSIVE, not FALSE**.
+- Two negative controls keep the sweep falsifiable, and both are the **document's own**
+  negative claims: `FirstByteLatency` must be absent from `AWS/Bedrock-AgentCore` (the doc says
+  outright it is not a valid name), and the seven guardrail metrics must be absent from
+  `AWS/Bedrock`. A control that "finds" its target means the matcher is too loose, and the
+  affected case yields INCONCLUSIVE rather than a verdict.
+
+### Direction of the bias
+
+**Towards TRUE, i.e. towards the document under test.** Removing candidate absentees from a
+conjunction can only make the conjunction easier to satisfy. Stated plainly because a
+deviation that makes the subject of the experiment look better is the one most worth
+labelling. The counterfactual is on the record: had F7-2 been scored literally, its three
+error metrics would almost certainly have read absent and it would have published **FALSE** —
+a FALSE that would have said more about our unwillingness to attack a shared service than
+about §6 of the document.
+
+---
+
+## DEV-P4-04 — three rounds of invalid readings in the F7 metric sweep: metrics reported absent that its own inventory listed as present (a 500-series cap, then a quoted SEARCH term), then a guard that withheld a verdict over a truncated presence
+
+### What happened
+
+At **2026-08-11T15:11:05Z** the first non-dry run of `f7_observability/03_metrics_existence.py`
+published:
+
+```
+F7-1: FALSE  scored 2/10  absent=['GuardrailLatency', 'ConfidenceScore', 'ConfidenceThreshold',
+      'DenyDecisions', 'LogOnlyMatches', 'DeterminingPolicies', 'NoDeterminingPolicies',
+      'TemporalLatency']  excluded=5
+F7-2: FALSE  scored 1/4   absent=['Latency', 'Duration', 'TargetExecutionTime']
+```
+
+**Both verdicts are retracted.** They are wrong, and the same run's own payload contains the
+proof. Every record carries a `name_in_namespace_inventory` field from a *separate* instrument
+(paginated `ListMetrics`), and for **eight of the eleven** names reported absent that field was
+`true`:
+
+| Case | Reported absent, yet in the inventory |
+|:--|:--|
+| F7-1 | `GuardrailLatency`, `DenyDecisions`, `LogOnlyMatches`, `DeterminingPolicies`, `NoDeterminingPolicies` |
+| F7-2 | `Latency`, `Duration`, `TargetExecutionTime` |
+
+A metric cannot both be absent from a namespace and be enumerated in that namespace's metric
+list. The script published a self-contradiction and its guards passed.
+
+### Root cause: a returned-series budget, spent by the first six expressions
+
+`GetMetricData` was called with **one `SEARCH` expression per documented metric — 22 in a single
+call**. Multiple expressions in one call share a cap on the number of time series the response
+may return. Summing `n_series` across the 22 expressions of the project-window read:
+
+```
+278  UserErrors
+154  Invocations
+ 46  AllowDecisions
+ 14  LogOnlyDecisionFlips
+  4  TotalMismatchedPolicies
+  4  PolicyMismatch
+  0  × 16 remaining expressions
+---
+500  total, exactly
+```
+
+**Exactly 500.** Six expressions consumed the entire budget and the other sixteen returned
+nothing. `Invocations` alone matched 154 series because this namespace also carries six
+pre-existing gateways and several `harness_*` runtimes; `UserErrors` matched 278. The absences
+were produced by our own call shape, and every one of them pointed at §6 of the document.
+
+### Why the message channel did not save us
+
+The project-window response did carry a diagnostic:
+
+```json
+{"Code": "PartialData",
+ "Value": "The expression may contain partial data as one or more metrics have StatusCode 'Paginated'"}
+```
+
+and the script **collected it into the payload as decoration** — a field a reader might notice —
+rather than failing the read. That alone is the familiar mistake of recording a warning instead
+of acting on it. But the second half is worse, and it is the reason the fix is not "check for
+messages":
+
+**the fresh-window read hit the same 500-series cap with an EMPTY `messages` list.** Its
+distribution was different — `Invocations` 454, `DenyDecisions` 30, `LogOnlyMatches` 14,
+`GuardrailLatency` 2, and 0 for the other eighteen — and it also summed to exactly 500. Two reads
+in one run, both silently truncated, disagreeing with each other about which metrics exist, and
+only one of them said so. Had the fix been "treat a `PartialData` message as fatal", the fresh
+read would still have been trusted.
+
+### The instrument change
+
+- **One metric per `GetMetricData` call.** 22 expressions sharing one budget is the defect; 22
+  calls each with one expression cannot starve each other.
+- **A `scope` term in every `SEARCH`**, restricting the match to our own resource — the gateway
+  id from the run ledger for `AWS/Bedrock-AgentCore`, and a guardrail identifier read from the
+  project's own recorded `apply_guardrail` params for `AWS/Bedrock/Guardrails`. This is not only
+  a cap workaround: F7-1's sealed oracle says *"datapoints appear **for our dimensions**"*, and
+  an unscoped sweep over six other teams' gateways was never the question the oracle asked. The
+  unscoped read is still issued, **recorded and never scored**, because it separates "the service
+  does not publish this for our resources" from "nobody in this account publishes it".
+- **A `trusted` flag per read**, computed from *three* channels, not one: every returned series'
+  `StatusCode` must be `Complete`, the top-level `Messages` list must be empty, **and** no
+  per-series `Messages` may be present. Any deviation marks the read untrusted.
+- **A new guard, `reads_are_complete`**, which turns an untrusted read into INCONCLUSIVE rather
+  than into a verdict. A read that cannot be trusted must not be allowed to publish either
+  direction.
+- **A refusal path.** If no scope term can be established, the script emits INCONCLUSIVE for all
+  three cases rather than falling back to the unscoped multi-metric sweep that caused this entry.
+
+### The second retraction: the scope term was quoted, and a quoted SEARCH term is an exact match
+
+The fix above was applied and the script re-run at **2026-08-11T22:31Z**. It published:
+
+```
+F7-1: FALSE  scored 7/10  absent=['ConfidenceScore','ConfidenceThreshold','TemporalLatency']
+F7-2: FALSE  scored 2/4   absent=['Duration','TargetExecutionTime']
+F7-3: FALSE  scored 0/4   absent=['Invocations','InvocationLatency','InvocationsIntervened','TextUnitCount']
+```
+
+**F7-2 and F7-3 from this run are also retracted.** F7-1's is not — see below, and the reason
+the two split is the whole point of the guard that came out of this.
+
+The scope term was rendered **quoted**: `SEARCH('Namespace="..." MetricName="Latency" "grx-gw-…"')`.
+A quoted term in a SEARCH expression is an **exact match against a whole dimension value**, not a
+token match inside one. Measured on the live namespace over the same 13-day window:
+
+| Metric | quoted scope | unquoted scope |
+|:--|--:|--:|
+| `Latency` | 2 series, 21 dp | 10 series, 144 dp |
+| `Duration` | **0 series, 0 dp** | 8 series, 123 dp |
+| `TargetExecutionTime` | **0 series, 0 dp** | 3 series, 51 dp |
+| `Throttles` | **0 series, 0 dp** | 8 series, 123 dp |
+| `SystemErrors` | **0 series, 0 dp** | 8 series, 123 dp |
+| `UserErrors` | **0 series, 0 dp** | 8 series, 123 dp |
+
+`Latency` carries a `TargetResource` dimension whose value *is* the bare gateway id, so the quoted
+form matched it. `Duration` has no such dimension — its only resource dimension is
+`Resource=arn:aws:bedrock-agentcore:<region>:<account>:gateway/<id>`, where the id is a substring
+and never the
+whole value. The guardrail namespace failed the same way and completely: its only resource
+dimension is `GuardrailArn`, so all four scored metrics read absent and F7-3 published 0/4 while
+its own inventory listed every one of them.
+
+Probed directly against the API rather than reasoned about, for one metric and window: bare token
+**1 series**, quoted token **0 series**, quoted full ARN **1 series**, unscoped **16 series**. The
+term is now unquoted, so it matches as a token and finds the id inside an ARN.
+
+### The guard that came out of it, and why F7-1 survived both rounds
+
+Two rounds of manufactured absences, two different mechanisms, one shared signature: **zero
+series for a metric the other instrument says is published for our own resource.** That is now a
+guard, `scope_matches_inventory`, and it turns on a distinction the script had been collapsing:
+
+| Reading | Means |
+|:--|:--|
+| **0 series** | the SEARCH matched no metric at all → a fact about our matcher |
+| **≥1 series, 0 datapoints** | the metric exists and reported nothing in the window → an absence |
+
+`ListMetrics` records the dimension *values* each metric publishes, so for every documented metric
+the script can now ask whether our own scope token appears among them. If it does and the scoped
+SEARCH returned zero series, the case goes INCONCLUSIVE instead of FALSE. Both retractions would
+have been caught by this, from data that was already sitting in the emitted payload.
+
+This is also why **F7-1's FALSE stands**: its three absentees — `ConfidenceScore`,
+`ConfidenceThreshold`, `TemporalLatency` — are `name_in_namespace_inventory: false`. They are not
+missing from a read; they are missing from the namespace's metric list entirely, on an instrument
+with no series cap and no quoting semantics. That reading has now survived a 500-series
+truncation, a quoting defect, and the guard built from both.
+
+A third defect was found while wiring the guard, and it is the plainest of the three:
+**`reads_are_complete` was declared in `GUARDS` and printed in the dry-run banner from the start,
+and the first two runs never evaluated it.** It appeared in `guard_names` in every payload. An
+advertised check that does not run reads exactly like a check that passed.
+
+### Round 3: the guard, once it finally ran, failed on a presence
+
+Run 3 — scope unquoted, one metric per call, the new guard wired — published F7-1 and F7-2 as
+**INCONCLUSIVE**, on `reads_are_complete`. The single failing read:
+
+| Metric | Window | n_series | n_datapoints | StatusCode | NextToken |
+|:--|:--|--:|--:|:--|:--|
+| `AllowDecisions` | project, 13 d | 40 | 200 | `Paginated` | none returned |
+
+Every other read in both namespaces came back `Complete`. So a metric with **200 datapoints** —
+that is, a metric whose publication was *established* — withheld the verdict for all nineteen
+policy metrics and all seven gateway metrics.
+
+That is the same collapse as the exercise basis, in the same script, one direction over:
+
+> A partial read can be **missing** datapoints it should have returned. It cannot **invent**
+> datapoints it did return.
+
+Truncation is therefore evidence against an absence and irrelevant to a presence. The guard now
+evaluates `untrusted_absences` — the set of metrics scored ABSENT whose read was untrusted — and
+is silent about untrusted presences, which are recorded per row as `read_trusted: false` with the
+CloudWatch message that made them so. Run 1's error and run 3's error are the two halves of one
+misconception: run 1 read a truncated absence as a document defect; run 3 refused to read an
+untruncatable presence at all.
+
+Note what this does **not** do: it does not weaken the absence rule. `AllowDecisions` published,
+so nothing in F7-1's or F7-2's absent list is affected by the change. Had `AllowDecisions` come
+back paginated **and empty**, the case would still be INCONCLUSIVE.
+
+### Class and direction of the bias
+
+- **Class:** measurement — the observation itself was invalid, not its interpretation.
+- **Data existed:** **yes, and it is what forced the change.** This is an after-the-fact
+  instrument correction, which is the kind most in need of labelling. It is recorded here rather
+  than quietly fixed, and the retracted verdicts are preserved verbatim in the evidence tree.
+- **Direction:** the defect biased **towards FALSE, i.e. against the document under test.** It
+  manufactured eleven document defects, eight of them refutable from the same run's other
+  instrument. The correction removes findings from our side of the ledger, not the document's.
+- **Direction, round 3:** the over-strict guard biased **towards INCONCLUSIVE**, i.e. towards
+  measuring nothing. It is listed separately because it is not the same bias: rounds 1–2 invented
+  document defects, round 3 suppressed a reading that had already been made. Both corrections were
+  made after seeing the data, and both are recorded here for that reason.
+
+### What actually survives from the first run
+
+The `ListMetrics` inventory, because it is a different instrument with a different limit:
+`ListMetrics` paginates cleanly (7 pages, 31 names for `AWS/Bedrock-AgentCore`) and is not
+subject to the `SEARCH` series budget. So these readings stand:
+
+- `ConfidenceScore`, `ConfidenceThreshold` and `TemporalLatency` are **absent from the
+  `AWS/Bedrock-AgentCore` inventory entirely** — not merely missing from a truncated read. This
+  is DEV-P4-01's third surface, and it is the reading that closes it.
+- The documented dimensions `Category` and `Filter` are not published in that namespace.
+- `AWS/Bedrock/Guardrails` carries 6 names, including an **undocumented `CheckInvocations`**.
+
+### The general lesson, stated so it outlives this case
+
+Two instruments in one payload disagreed, and nothing in the harness compared them. The
+contradiction was visible in the emitted JSON before any human read it. A guard that checks a
+read against *itself* — did it return, did it parse, did it warn — cannot catch a truncation that
+returns successfully with fewer rows. What caught it was one instrument's `true` sitting next to
+the other's `absent`. Where a case has two instruments, the check worth writing is the one that
+makes them contradict.
+
+---
+
+## DEV-P4-05 — F7-3's negative control tested a claim the document never made, and turned the case INCONCLUSIVE about our own matcher
+
+### What happened
+
+F7-3's sealed oracle is *"TRUE if the namespace (**not `AWS/Bedrock`**) carries the 7 documented
+metrics"*. To make "not `AWS/Bedrock`" falsifiable, the first run asserted that the seven
+documented guardrail metric **names** are absent from the `AWS/Bedrock` namespace. The control
+failed, and F7-3 published **INCONCLUSIVE**.
+
+The control was invalid. Four of those names — `Invocations`, `InvocationLatency`,
+`InvocationClientErrors`, `InvocationServerErrors` — are legitimate Bedrock **model-runtime**
+metric names, and the document under test *says so itself*: it describes `AWS/Bedrock` as the
+namespace that "holds model runtime metrics". So the control demanded the absence of something
+the document asserts is present. It could only ever fail, and its failure said nothing about the
+document — only that our matcher compared on the wrong field.
+
+The document's claim is about **which namespace guardrail telemetry lands in**. Metric names
+collide across namespaces routinely; what distinguishes a guardrail datapoint from a model
+datapoint is its **dimensions**.
+
+### The instrument change
+
+The control now asserts that **no metric in `AWS/Bedrock` carries a guardrail dimension** —
+`GuardrailArn`, `GuardrailId`, `GuardrailVersion` or `GuardrailName` — read from the dimension
+*values* returned by the paginated `ListMetrics` inventory. The name collision is still measured
+and reported, as `name_collision_recorded_not_scored`, because it is precisely why the document's
+warning is worth making. It is no longer scored.
+
+### Class and direction of the bias
+
+- **Class:** measurement — a negative control that could not pass on the document's own terms.
+- **Data existed:** **yes.** The control's failure is what exposed it, so this is an after-the-fact
+  correction and is labelled as one.
+- **Direction:** the defect biased towards **INCONCLUSIVE**, which is neither for nor against the
+  document — it suppressed a reading rather than inverting one. The correction lets F7-3 reach a
+  verdict; which verdict, the re-run decides.
+
+### The general lesson
+
+A negative control has to be a claim the subject actually makes. "Guardrail metrics are not in
+`AWS/Bedrock`" and "these seven strings do not appear in `AWS/Bedrock`" read alike in English and
+are different propositions, and the document itself contains the sentence that separates them.
+The control was derived from our paraphrase of the claim instead of from the claim.
+
+---
+
+## DEV-P4-06 — every F6 model arm runs on Nova Micro, because Claude is not invokable in this account
+
+### What was pre-registered, and what runs instead
+
+§1 of the document under test says guardrails are deployed "with backend models (e.g., Claude)",
+and §6.1's Hop #3 row cites `InvocationLatency (AWS/Bedrock namespace, model-specific)`. The F6
+family's model arms therefore intended to invoke a Claude model. They invoke
+`us.amazon.nova-micro-v1:0` instead.
+
+### Why
+
+`bedrock-runtime:Converse` against Claude 3.5 Haiku returns **`ResourceNotFoundException`** in
+this account. That is a model-access fact, not a throttle and not a transient error: no amount of
+retry or capacity racing reaches a model the account cannot invoke, and enabling model access is
+an account-level change to a shared AWS account that this project has no mandate to make.
+`f6_latency/03_composition.py` re-runs the Claude probe under `capture(...)` so the exception,
+its request id and the exact model id sit in F6-6's own evidence rather than in a session log.
+
+Nova Micro was chosen from the models this account CAN invoke because it is the cheapest, which
+keeps a 2,800-call arm under a dollar — and, as the bias note below records, because it is the
+choice least flattering to the document.
+
+### What it does and does not affect
+
+| Case | Hop | Does the substitution matter? |
+|:--|:--|:--|
+| F6-2 | #2, input guardrail | **Barely.** `guardrailProcessingLatency` is time spent in the guardrail service evaluating text. The model is not running during it. |
+| F6-5 | #6, output guardrail | **Barely**, with one caveat: output evaluation reads the model's OUTPUT, and output length is model-dependent. `output_chars` is recorded per trial so the payload can say whether the hop scales with length. |
+| F6-6 | #3, inference, and the §6.1 total | **Yes, decisively.** This is the row the document itself labels "model-specific". |
+| F6-1, F6-3, F6-4, F6-8, F6-9 | gateway hops | **No.** No model is invoked. |
+
+### Direction of the bias, and why any F6-6 failure is CONDITIONAL
+
+Nova Micro is at the fast end of what Bedrock offers; Claude 3.5 Haiku is slower and Sonnet
+slower again. §6.1's Hop #3 band (500 ms–30 s) and total (~800 ms–31 s+) are **floor** claims in
+the only direction that is testable — the sealed binding for F6-6 notes the trailing `+` makes the
+upper end unfalsifiable. A faster model can only push the measurement DOWN, i.e. **towards FALSE,
+against the document.** So the substitution cannot manufacture a TRUE for F6-6; if the floor holds
+on the fastest cheap model available, it holds more comfortably on the models the document names.
+
+The converse is the part that has to be labelled honestly. If F6-6 comes out FALSE-low, that
+failure is **conditional — representation-bound to the model** — not an absolute defect in §6.1,
+because §6.1's own row says "model-specific". The F6-6 record must carry that label, and the
+amendment it supports is "state the model the band was measured on", not "the band is wrong".
+
+### What would remove the deviation
+
+Model access for a Claude model in this account, then re-running `01_model_hops.py` and
+`03_composition.py` with `MODEL_ID` changed — no other change. The two scripts read the model id
+from one constant each, and record it in every payload, so a future reader can tell at a glance
+which model any published band belongs to.
+
+---
+
+## DEV-P4-07 — F6-1 (Hop #1) and F6-4 (Hop #5) are measured by ONE reading, because the service will not evaluate the policy shape that would separate them
+
+### What was pre-registered, and what runs instead
+
+§6.1 lists Hop #1 "Gateway Guardrail (Input)" and Hop #5 "Tool Guardrails (per call)" as two
+rows, both enforced by "AgentCore Gateway Policy", separated by *when* the evaluation happens:
+row 1 on the way in, row 5 once per tool call. F6-1 and F6-4 were pre-registered as two cases
+with two arms. `f6_latency/02_gateway_hops.py` runs **one** guardrail arm and publishes the same
+per-request series to both cases.
+
+### Why — a measured service constraint, not a testbed gap
+
+F4 measured this on 2026-08-11 (run `r20260810T130945Z`) while collecting its truth table. A
+guardrail statement whose action scope is left unconstrained is **accepted at create time** under
+`validationMode=IGNORE_ALL_FINDINGS` and reaches `ACTIVE`, and then denies **every** request at
+the gateway with:
+
+    Authorization denied: a guardrail policy could not be evaluated - missing an attribute.
+    Please retry.
+
+The guardrail's data path `context.input.text` does not exist on a request that is not a
+`tools/call` carrying a `text` argument, and an unevaluable guardrail **fails closed**. So the
+only guardrail policy this service will actually evaluate is one scoped to a specific tool
+action — which is exactly row 5's "Tool Guardrails (per call)". **There is no configuration of
+this service that produces row 1 as something distinct from row 5.**
+
+The telemetry half of the same fact is already in F7-1's inventory: `GuardrailLatency` publishes
+under `[OperationName=AuthorizeAction, TargetResource=<gateway id>]` and carries no dimension
+that would separate an input-side evaluation from a per-tool one, so even the document's own
+named instrument cannot tell the two rows apart after the fact.
+
+### Class and direction of the bias
+
+- **Class:** instrument — two pre-registered cells collapse to one because the second cell is
+  not constructible.
+- **Data existed:** **no** for the F6 arms; the constraint was measured by F4 before
+  `02_gateway_hops.py` was written, and is recorded in that script's docstring as a
+  pre-commitment rather than as an explanation after the fact.
+- **Direction: none, and this is the load-bearing part.** Both rows claim the **same band,
+  50–200 ms**. One measurement therefore decides both, and no attribution of the reading to one
+  hop or the other can move it across a boundary the two rows share. Had the rows claimed
+  different bands, the collapse would have made at least one case unmeasurable and
+  `02_gateway_hops.py` could not have run at all — that check is in the docstring, not left to a
+  reader.
+
+### What this costs the verdicts
+
+A TRUE or FALSE published for F6-1 is a statement about **an action-scoped gateway guardrail
+evaluation**, and not about an input-side hop distinct from it. Both records carry that sentence
+in `what_true_does_not_prove`, and both carry the `hop_conflation` block naming the measured
+error string above. The amendment this supports is "§6.1 rows 1 and 5 describe one enforcement
+point, not two" — which is a stronger statement about the document than either band verdict.
+
+### What would remove the deviation
+
+Nothing in this project. It would take a service change: an evaluable guardrail data path that
+exists outside a `tools/call` (so an input-side gateway guardrail can be configured at all), or
+a dimension on `GuardrailLatency` that distinguishes the two evaluation points.
+
+---
+
+## DEV-P4-08 — §6.1 row 5 names a `ToolName` dimension on `GuardrailLatency` that does not exist, so F6-4's pre-registered instrument is not the one it is measured on
+
+### What was pre-registered, and what runs instead
+
+F6-4's instrument, quoted from §6.1 row 5, is **"GuardrailLatency (ToolName dimension)"**. The
+case is measured on `AgentCore.Policy.AuthorizeAction.durationNano` (per request) with
+`GuardrailLatency` percentiles as a cross-instrument check — read at the dimension combination
+the service actually publishes, which does **not** include `ToolName`.
+
+### Why
+
+F7-1's paginated `ListMetrics` inventory records `GuardrailLatency` in
+`AWS/Bedrock-AgentCore` with exactly two dimensions at our gateway:
+`OperationName=[AuthorizeAction]` and `TargetResource=[<gateway id>]`. There is no `ToolName`.
+
+The control that makes this a fact about the metric rather than about our traffic is the
+**sibling**: `AllowDecisions`, same namespace, same `OperationName=AuthorizeAction`, published
+from the *same requests*, **does** carry `ToolName=[grxecho___delay, grxecho___echo,
+grxecho___fixed]`. So our traffic demonstrably exercises three distinct tool actions and the
+service demonstrably knows which tool each decision belongs to — it just does not attach that
+dimension to the latency metric. `02_gateway_hops.py` re-reads the dimension list live while an
+**action-scoped** guardrail policy is ACTIVE, which is the exact configuration in which a
+`ToolName` dimension would have to appear if it existed, and records the result in every F6-1
+and F6-4 payload under `tool_name_dimension_claim`.
+
+### Class and direction of the bias
+
+- **Class:** instrument. Also a **finding**: this is a falsifiable, instrument-level document
+  defect that is independent of the band verdict, and it is the kind a reader would act on —
+  someone following §6.1 row 5 would build a per-tool guardrail-latency alarm that cannot be
+  built.
+- **Data existed:** **no.** The absence was inventoried by F7-1 before the F6 gateway script was
+  written.
+- **Direction:** **against the document, on a point the band verdict does not reach.** A missing
+  dimension cannot make a latency band look better or worse; it removes the ability to scope the
+  measurement per tool at all. The substitute instrument (the per-request span) is *more*
+  favourable to the document than a per-tool CloudWatch read would have been, because it excludes
+  none of our traffic and is measured at the request rather than the minute.
+
+### What would remove the deviation
+
+A `ToolName` dimension on `GuardrailLatency`, or an amendment to §6.1 row 5 naming the dimensions
+the metric actually carries. The amendment text is the cheap fix and is what the finding
+recommends.
+
+---
+
+## DEV-P4-09 — a fourth round of the DEV-P4-04 defect: `04_publish_lag.py` timed a dimension combination that no series publishes, and a 600 s timeout would have been published as the service's publish lag
+
+### What happened
+
+`f7_observability/04_publish_lag.py` picks the metric and dimensions it will time from F7-1/2/3's
+recorded inventory. That inventory stores a **flattening** — `dimension_values`: dimension *name*
+→ every *value* ever seen under it. The first version of `_pick_metric_and_dimensions` built its
+query by taking one value per name that mentions our gateway id.
+
+`ListMetrics` does not publish dimension *names*. It publishes **combinations**: an ordered
+`Dimensions` list of name/value pairs, one per series. Our gateway id appears in a
+`TargetResource` value **and** in a `Resource` value, from two different combinations, so the
+flattening produced:
+
+    [{Resource: arn:aws:bedrock-agentcore:<region>:<account>:gateway/grx-gw-<id>},
+     {TargetResource: grx-gw-<id>}]
+
+a two-dimension set that **no series carries**. `GetMetricData` answers such a query with
+`StatusCode=Complete` and **zero values — not an error**. So trial 1 polled for its full 600 s
+timeout and logged `lag=TIMEOUT polls=55`. Left alone, all 30 trials would have timed out
+(~5.1 hours) and F7-6 would have published a **10-minute publish lag** as a property of
+CloudWatch.
+
+Caught by reading the first trial's log line, not by any assertion — which is itself the finding.
+
+### The instrument change
+
+Three parts, all in `04_publish_lag.py`:
+
+1. `_published_combinations` queries `ListMetrics` **live** and keeps whole published
+   combinations, never reassembling one from parts. Candidates are sorted **most specific
+   first**, so the tightest scoping that exists is preferred over a broad one.
+2. `_combination_carries_data` pre-flights each candidate with a 6-hour
+   `GetMetricStatistics` and rejects any that has no recent datapoints. A query that returns
+   nothing before the clock starts cannot be told from one whose datapoint has not arrived yet.
+3. If no candidate survives, the run **bails** with the reason, instead of timing out `n` times.
+   The bail message says so: *"would time out N times and the run would report the timeout as a
+   publish lag."*
+
+A second bug surfaced immediately after, during the `--n 2` smoke: the `distinct_minute_buckets`
+guard failed with both trials in bucket `1786465140`. `INTER_TRIAL_GAP_S = 5.0` was smaller than
+the measured ~11 s lag, and **the datapoint a request produces is stamped at the bucket
+containing `t_send`** — so two trials in one bucket share a datapoint, the second one's clock
+stops on the first one's publication, and its lag reads near zero. The gap is now a sleep to the
+**next bucket boundary** plus a margin. The guard was already honest; the fix is what makes it
+*satisfiable*.
+
+### Class and direction of the bias
+
+- **Class:** measurement — an invalid reading, caught before publication.
+- **Data existed:** **yes** for the first bug (one timed-out trial), which is how it was found.
+  No verdict was emitted from it.
+- **Direction:** the first bug biased **towards a large publish lag**, i.e. towards the document
+  (§6.4's alarm periods are easier to justify against a slow metric pipeline). The measured value
+  after the fix is **≈ 11.4 s**, far below any 60 s expectation. The second bug biased towards a
+  **near-zero** lag on every trial after the first — the opposite direction — which is why it had
+  to be fixed rather than tolerated.
+
+### The general lesson, stated as a rule
+
+A name-keyed union of dimension values **is not a published dimension set**. This is the fourth
+round of one shape: a CloudWatch read that returns *nothing* while reporting *success*, then gets
+interpreted as a fact about the service. `Paginated` truncation (round 1), a 500-series cap
+(round 2), a quoted `SEARCH` term (round 3), and now an unpublished combination — all of them
+"succeeded". The rule that would have caught every one: **before timing or scoring an empty
+CloudWatch read, prove the query can return something.** Rounds 1–3 needed a trust flag on the
+response; round 4 needed a pre-flight against a window where data must already exist.
+
+---
+
+## DEV-P4-10 — the account ID reached `results/` again, in a field no ARN pattern can see, and the gate's own account-ID excuse was waiving whole lines it had never read
+
+### What happened
+
+The redaction gate failed on two files with the live 12-digit account ID in plaintext:
+
+    results/phase1/F7-1.json:2938  [aws-account-id]  "ESDMCP-OAuth2-Provider-us-east-1-<account>-prod"
+    results/phase1/F7-2.json:2915  [aws-account-id]  "ESDMCP-OAuth2-Provider-us-east-1-<account>-prod"
+
+The value is a CloudWatch **dimension value** — `ProviderName` on
+`ResourceAccessTokenFetchSuccess` — naming another team's OAuth2 credential provider in the same
+account. `lib/redact.py` masks the account field **of ARNs**, and this is not an ARN. It is a
+resource *name*, and a resource name is free text chosen by whoever created the resource.
+
+DEV-P1-13 recorded the first version of this leak (82 files) and fixed it at the two writers into
+`results/`. That fix was correct and incomplete in a way the fix itself could not see: it
+anchored on ARN grammar, and F7's whole instrument is a **namespace-wide enumeration of a shared
+namespace**. The general form is: *any* resource name any other team chose can arrive in our
+results, and none of them has to look like an ARN.
+
+Two more defects were found while closing it, both in the gate:
+
+1. **The `aws-account-id` excuse read one token and waived the line.** It did
+   `re.search(r"\b\d{12}\b", line)` and reasoned about that single match, so a line carrying a
+   corpus fixture *and* a real account ID would have been excused by the fixture. This is
+   precisely the vacuous-excuse shape DEV-P2-01 records for the `arn` branch — sitting in the
+   branch immediately below it, and it survived that fix because only the ARN half was re-read.
+2. **Four false positives on latency figures.** `\b\d{12}\b` treats `.` as a word boundary, so
+   `"p99": 758.324053273605` — whose fractional part is exactly twelve digits — was reported as
+   an account ID in `F6-1/F6-3/F6-4/F6-9.json`. A number is not an identifier, and its own
+   delimiters say so.
+
+### The instrument change
+
+- `redact.register_account_id()` teaches the masker one account ID, which `mask_text` then masks
+  as a **bare token** as well as in ARN position. Narrow on purpose: the obvious widening — mask
+  every `\b\d{12}\b` — is the one `redact.py`'s docstring already refused, because a PII corpus
+  fixture whose entity type **is** a 12-digit number (`US_BANK_ACCOUNT_NUMBER`) comes back on
+  checkpoint rows, and masking it would destroy the record of which fixture was sent.
+- Registration is a **side effect of resolving the value**. `awsclients.account_id()` is now the
+  only place `get_caller_identity()["Account"]` is read; nineteen inline call sites were routed
+  through it. A mask that has to be told the value is a mask that can be forgotten, so
+  `lib/tests/test_account_id_choke_point.py` walks every `.py` file's AST and fails the suite if
+  a twentieth inline site appears. (AST, not grep: the choke point's own docstring quotes the
+  forbidden expression to explain the rule.)
+- The gate's account-ID branch now requires **every** 12-digit token on the line to be
+  excusable, and recognises the fractional part of a decimal number as a number.
+- The two affected result files were re-masked **through the fixed masker** rather than hand
+  edited, and verified structurally identical to the originals under the substitution — the
+  measurement is untouched; only the placeholder moved.
+
+### Class and direction of the bias
+
+- **Class:** provenance — a distribution-safety defect. No verdict, oracle, threshold or
+  measured value changed; `F7-1.json` and `F7-2.json` are byte-identical to their originals
+  except for the masked substring.
+- **Data existed:** **yes** — this was found by the gate on collected Phase-1 results, which is
+  the only place it could have been found.
+- **Direction:** none, on the document under test. The bias is on us: the failure mode is
+  publishing an account identifier, and it fails **open** (an unregistered ID is not masked),
+  which is why the gate stays the backstop rather than being replaced by the masker.
+
+### The general lesson, stated as a rule
+
+A redaction rule anchored on the **grammar of one identifier** cannot cover a field whose
+grammar is chosen by a stranger. Where our results enumerate a shared surface, the redactable
+value has to be masked by **identity** — this is the account, mask it wherever it appears as a
+token — and identity has to be registered at the one place it is learned, or the rule has no
+deploy path (feedback_no_deploy_path_no_component). Corollary, and the second time it has been
+written down here: an excuse that inspects **one** match on a line must not waive the **line**.
+
+---
+
+## DEV-P4-11 — F6's CloudWatch windows described the loop rather than the arm, and a `Period` CloudWatch rejects returned zero datapoints that read as zero traffic
+
+### What happened
+
+`f6_latency/02_gateway_hops.py` completed cleanly — 1000/1000 trials in both arms, 0 failures,
+spans joined 1000/1000 in each — and published **F6-1, F6-3, F6-4 and F6-9 as INCONCLUSIVE**, all
+four on the same guard:
+
+    "guardrail_ran_only_where_intended": {
+      "cedar_arm_datapoints": 2,
+      "guardrail_arm_datapoints": 0,
+      "test": "GuardrailLatency has datapoints in the guardrail arm's window and NONE in the
+               Cedar-only arm's"
+    }
+
+Exactly backwards: the arm with no guardrail had the datapoints and the arm with one had none.
+Two independent harness bugs, neither of them a fact about the service.
+
+1. **The window was the loop's, not the arm's.** Each arm recorded `t0 = time.time()` before its
+   trial loop and `t1 = time.time()` after it. The `cedar_only` arm resumed **every** trial from
+   its checkpoint, so the loop ran nothing and the recorded window was **5 milliseconds wide**
+   (`t0 = 1786468148.2112288`, `t1 = 1786468148.216634`). The read span was `t0-60 .. t1+120`,
+   which from a 5 ms window reaches ~92 s **into the guardrail arm** and harvested 2 of its
+   datapoints. A wall-clock window around a loop describes the loop; it coincides with the arm
+   only on a run that resumes nothing.
+2. **`Period` was not a multiple of 60.** The guardrail arm's own read asked for
+   `Period = int(t1 - t0) + 120 ≈ 1011`. CloudWatch requires a multiple of 60 above 60 s and
+   returns **no datapoints** otherwise — indistinguishable from a metric never published.
+
+A third defect was latent behind both and would have survived either fix on its own: the read's
+`+120 s` tail was a **publish-lag allowance applied to the wrong axis**. `GetMetricStatistics`
+buckets a datapoint by the metric's own timestamp — the request time — so lag governs when a
+datapoint becomes *readable*, not which bucket it lands in. With `POLICY_SETTLE_S = 20`, a 120 s
+tail on the Cedar arm's read covered 100 s of guardrail traffic **however accurate its window
+was**, so the guard's negative half was testing the read's tail rather than the arm.
+
+### The instrument change
+
+- `_arm_window()` derives each arm's window from **its own trials**, in decreasing order of
+  authority: the `AuthorizeAction` span timestamps (the *service's* clock, the one CloudWatch
+  buckets by, so no skew allowance is needed), then a new per-trial `t_send` stamp that survives
+  a resume on the checkpoint row, then **nothing** — in which case the arm has no window and its
+  cross-instrument read is reported `unavailable`. Deliberately no wall-clock fallback: a wrong
+  window is worse than a missing one, because it answers.
+- `plausible`: a window narrower than `n_real × INTER_CALL_S` is not this arm's, and says so.
+  This is the tripwire the 5 ms window walked past.
+- The read range is the window plus a 5 s skew allowance and **nothing more**; the Cedar arm's
+  read is additionally capped at the instant the probe policy landed, past which any datapoint
+  belongs to the other arm by construction. `Period` is `60 × ceil(range / 60)`.
+- The span join moved **inside** the probe's lifetime, because the windows are now derived from
+  the spans and the metric read needs both. It costs the probe a few extra minutes of existence
+  and no extra requests.
+- Two guard changes. New `arm_windows_recovered`, upstream of and separate from
+  `guardrail_ran_only_where_intended`, so a contaminated window is distinguishable from a
+  service that evaluated the guardrail in both arms — on 2026-08-12 they were not. And a Cedar
+  read that never happened now **fails** `guardrail_ran_only_where_intended` instead of
+  satisfying its negative half: a missing check is not a pass
+  (feedback_missing_check_is_not_pass).
+
+### Class and direction of the bias
+
+- **Class:** harness-defect — an invalid reading, caught before any verdict was believed.
+- **Data existed:** **yes.** 2000 trials and four published records existed, all four
+  INCONCLUSIVE. The re-analysis re-uses those trials; no new traffic was needed, because the
+  spans carry the window the harness had failed to record.
+- **Direction:** **none towards the document, and that is the point.** The guard withheld four
+  verdicts rather than publishing them, and the numbers it withheld all point **against** §6.1:
+  Cedar authz p50 = 55 ms against a 5–50 ms band, guardrail hop p50 = 401 ms and p99 = 779 ms
+  against a 50–200 ms band. Had the same bug failed *open* it would have published refutations
+  from a contaminated window — the DEV-P1-18 shape. It failed closed instead.
+
+### The general lesson, stated as a rule
+
+**A time window recorded around a loop is not a property of the data the loop collected.** Any
+resumable harness has two clocks — when the trials happened, and when this process happened to
+iterate over them — and a checkpoint makes them diverge silently, with no error and a full result
+set. The window has to be derived from the trials, which means every trial must carry its own
+timestamp, and where it cannot the answer is *unavailable* rather than a guess. Second rule,
+narrower and now twice-learned in this project: **before reading zero datapoints as zero traffic,
+prove the query was answerable** — `Period` not a multiple of 60 is the fifth member of the
+DEV-P4-04 family of CloudWatch reads that return nothing while reporting success.
+
+---
+
+## DEV-P4-12 — the evidence writer could not record an `InvokeModel` call at all
+
+**Class** `harness-defect` · **Date** 2026-08-12 · **Data existed** no · **Cost** 8 model calls (~$0.01)
+**design_impact** none on any published number; F5-6 could not have run before this was fixed.
+
+### What happened
+
+`f5_redteam/06_tagging_scope.py --probe` sends one call per arm to establish response shapes
+before the scored run spends 720. Both `InvokeModel` arms came back:
+
+    {"error": "TypeError: cannot pickle 'BufferedReader' instances"}
+
+`InvokeModel` returns its payload as a `StreamingBody` — a file object over the socket.
+`evidence.capture` copied the response into the record verbatim and `store.add` then tried to
+serialise it. So **the evidence tree could not record an `InvokeModel` call**, and the failure
+landed *after* the call had been billed and its request id received: the money was spent, the
+service had answered, and the record was lost.
+
+That made every case needing that transport unreachable, which is
+`feedback_no_deploy_path_no_component` in its plainest form — the transport was not a component
+of this harness, whatever the scripts said. It is also why the defect had gone unnoticed: every
+family shipped so far uses `ApplyGuardrail`, `Converse` or a control-plane API, none of which
+stream.
+
+### The fix, and the part of it that is not obvious
+
+`_drain_streams` reads the stream once, at the single point every record passes through, and
+puts the decoded text back where the payload was.
+
+Draining rather than copying is forced, not stylistic. A `StreamingBody` read is **destructive
+and one-shot**, so serialising a copy and leaving the original for the caller would hand the
+caller an empty string — silently. An empty body parses to `{}`, and for F5-6 `{}` means "no
+input assessment", which the tally counts as a **failed trial**. The harness would have recorded
+its own read as a service failure, for reasons entirely internal to `lib/evidence.py`.
+
+### Direction
+
+None towards the document. This is a defect in our instrument that withheld data rather than
+biasing it, and it was found by a probe that exists precisely to spend four calls before
+spending 720 (feedback_dry_run_before_expensive_run, feedback_verify_against_real_artifact).
+
+---
+
+## DEV-P4-13 — F5-6's seal says "the untagged arm", and the four-arm design has two of them
+
+**Class** `analysis` · **Date** 2026-08-12 · **Data existed** yes — n=1 per arm, from the probe
+**design_impact** one **interpretation** recorded; no threshold, correction or n is changed.
+
+### The ambiguity
+
+F5-6's binding is `UPPER_BELOW` on "the **untagged** arm's recall". The sealed oracle text
+enumerates four arms: *InvokeModel untagged / tagged / Converse without guardContent / Converse
+with guardContent on a different block*. Two of those four send no tag — arm A (`InvokeModel`,
+plain body) and arm C (`Converse`, one plain `text` block) — so "the untagged arm" has two
+referents, and the verdict differs by which one is read.
+
+### The reading, and when it was fixed
+
+**Arm A.** Textually: the seal's own enumeration is what supplies the arm names, and it calls
+arm A "untagged" while calling arm C "without guardContent". Only one arm in the sealed sentence
+carries the word the binding uses.
+
+The reading was committed as the constant `ORACLE_ARM = ARM_A` — with the comment that
+`_verdict_arm` is asserted against it so no later edit can move the verdict onto a different
+arm — **before** the probe ran, in the same write as the script. This entry is written after,
+and says so: what is pre-data is the choice, not the paragraph defending it.
+
+### Why the ambiguity turned out to matter
+
+The probe's four calls, one item per arm, no rate and no verdict:
+
+| arm | guarded / total chars | `PROMPT_ATTACK` |
+|:---|:---|:---|
+| A `invokemodel_untagged` | 65 / 65 | did **not** fire |
+| B `invokemodel_tagged` | 65 / 162 | fired |
+| C `converse_no_guardcontent` | 65 / 65 | **fired** |
+| D `converse_guardcontent_other` | 101 / 166 | did **not** fire |
+
+The two untagged arms disagree, on the same item, against the same guardrail at the same
+strength. If that survives n=120 it means §3.2's claim is **transport-dependent** — true of
+`InvokeModel` and false of `Converse` — and no single arm answers the question the document
+asks. It also supplies the missing explanation for DC-2's original n=5 observation (5/5 detected
+with no tagging): that observation was not on `InvokeModel`.
+
+### Consequence, pre-committed here
+
+1. The verdict is computed on **arm A**, per the reading above.
+2. Arm C's recall and interval are published **in the same record and the same sentence**, with
+   the disagreement stated, so no reader inherits my choice of referent without seeing the arm
+   it excluded. A verdict that depends on resolving an ambiguity must show the other resolution.
+3. If A and C disagree at n=120, the **finding** is the transport dependence, and it is reported
+   as such rather than as a confirmation or a refutation of §3.2. The verdict field will still
+   carry whatever the sealed oracle says about arm A, because that is what a verdict is for; the
+   sentence next to it will say the claim is not transport-independent in the first place.
+
+Arms B and D remain descriptive pairwise contrasts, BH-adjusted within `exploratory_detection`.
+
+### One guard was tightened after the probe, in the strict direction
+
+`tagging_was_honoured` originally required partial coverage on both tagged arms **and full
+coverage on arm A**. Seeing the probe's coverage column made the asymmetry obvious: arm C is
+untagged too, and an arm labelled untagged that in fact carried a marker would have been caught
+on A and waved through on C. The guard now iterates `UNTAGGED_ARMS = (ARM_A, ARM_C)`.
+
+Recorded because it is an edit to a pre-committed guard made with n=1 per arm already visible.
+It can only make the run harder to publish, never easier: it adds a condition to a conjunction
+that gates the verdict, so no configuration that previously failed can now pass. The mutation
+test covers the new direction (arm C partial ⇒ guard False) alongside the three it already had.
+
+---
+
+## DEV-P4-14 — F6-6/7/8 crashed in its analysis after all 1,600 turns were paid for, and its CloudWatch window would not have survived the re-run
+
+### What happened
+
+`f6_latency/03_composition.py` completed the whole arm — 1000 + 200 + 200 + 200 turns, 0 failures,
+liveness denied before and after, probe removed, 15/15 blocking checks pass — read its CloudWatch
+window successfully, and then **raised `ValueError: empty sample`** in `S.quantile`, publishing
+nothing. Two separate defects, one behind the other.
+
+**1. A guard on the wrong list.** The hop breakdown computed
+
+    "hop6_output_guardrail": S.quantile([r["converse"]["hop6_ms"] for r in base
+                                         if r["converse"].get("hop6_ms") is not None],
+                                        0.50) if base else None
+
+The `if base else None` asks "were there any baseline turns". The list actually being summarised
+is `base` **filtered** to the turns that reported that hop. Those differ exactly when a hop is
+absent from every trace — and hop 6 is: `hop6_ms` is `None` on a Converse response carrying no
+`outputAssessments`, and **0 of 1000** benign turns carried one. So the guard could never fire on
+the condition that mattered. Fixed by `_p50_or_none`, which guards the list it summarises. The
+empty case stays `None` rather than `0.0`: a hop that was never reported did not take zero
+milliseconds, and a `0.0` would be summed into a total as though it had.
+
+**2. The window would not have survived the resume — the DEV-P4-11 defect, in the one F6 script
+that never got its fix.** Hops 4 and 5 are read from CloudWatch over the window in which the turns
+were **sent**, and that window was wall-clock state in the crashed process (`windows["t0"]`,
+`windows["t1"]`), persisted nowhere. Re-running would have skipped all 1,600 checkpointed trials in
+seconds, timed a window containing no traffic, read **0 samples**, failed `gateway_hop_measured`
+and published **NOT_MEASURED for all three cases** — with 1,600 paid-for turns sitting on disk.
+This is precisely what DEV-P4-11 records for `02_gateway_hops.py`, whose remedy was to derive each
+arm's window from its own trials via a per-trial `t_send` stamp. `03_composition.py`'s rows carry
+no such stamp (verified: the checkpoint row keys are `attempts, calls, client_total_ms, converse,
+corpus_id, corpus_label, gateway_client_ms, n_calls, n_denied, outcome, retry_delay_s, text_len`),
+so the fix never reached it and the resume path was still the wall-clock one.
+
+### The instrument change
+
+- `WINDOWS_PATH` (`results/checkpoints/F6-6__cw_windows.json`) is a **window ledger**: every
+  process that sends turns appends its own `[t0, t1]` and a provenance entry. A process that sends
+  **nothing** appends nothing — `done_before` is counted from the checkpoints *before* the levels
+  run, so "did this process send" is measured, not assumed. An empty window would otherwise
+  contribute a CloudWatch query over idle time and dilute the p50 with whatever else was talking
+  to this gateway.
+- `_cw_p50` now takes a **list** of windows and queries each separately, combining sample-weighted.
+  Deliberately not merged into one span from earliest start to latest end: merging would sweep in
+  every other case's traffic in the gap between two runs and attribute its latency to F6's hop 4/5.
+- A corrupt or malformed ledger is **fatal**, and an analysis with no window on record raises
+  rather than reading `0.0` — for the reason `Checkpoint.load` gives about its own file.
+- `hop6_reporting` publishes the count beside the `null`: `n_turns`,
+  `n_turns_with_an_output_assessment_latency`, `n_turns_with_zero_output_assessments`. Without it,
+  `hop6_output_guardrail: null` reads as "we failed to measure it" instead of the finding it is.
+
+### The one window that predates the fix was RECONSTRUCTED, not re-sent
+
+`f6_latency/recover_cw_window.py` recovers it from the crashed run's **own archived requests**.
+`lib/evidence.capture` had already written the 11 `GetMetricStatistics` calls that run issued, and
+`_cw_p50` pads by exactly 60 s on each side, so the window is recovered by inverting that pad:
+
+    archived  StartTime 2026-08-11T18:06:54.089958Z  EndTime 2026-08-11T19:10:27.603538Z
+    recovered t0        2026-08-11T18:07:54.089958Z  t1      2026-08-11T19:09:27.603538Z   (61.6 min)
+
+The script refuses if the archived requests disagree on the span (the inversion would be
+ambiguous), refuses to overwrite an existing ledger, and marks its entry
+`recorded_by: "recover_cw_window.py (RECONSTRUCTED)"`. `03_composition.py` publishes that
+provenance inside all three cases' `guard_detail.gateway_hop_measured.sending_windows`, so a reader
+sees in the result itself that this window was reconstructed from request records rather than timed
+live.
+
+**The reconstruction is corroborated by the re-run.** Reading CloudWatch over the recovered window
+reproduced the crashed run's numbers to the digit — `Latency p50 = 503.4905594071247` (n=12032),
+`GuardrailLatency p50 = 386.4656532352717` (n=3002) — which is what "the same window" means
+operationally. The alternative to reconstructing was re-sending 1,600 turns to re-derive a number
+already archived, or discarding them.
+
+### Direction of the effect on the document under test
+
+Neither fix touches a verdict rule; both restore the ability to compute one. The published outcome:
+**F6-6 TRUE** (client p50 1482.8 ms, server p50 1187.0 ms, both above the 800 ms floor, no
+straddle), **F6-7 TRUE** (residual +265.3 ms, CI 258.8..273.0, so §6.1's table does not
+over-account), **F6-8 FALSE** (851.5 ms per additional tool call, CI 838.7..862.7, against the
+document's stated 165–750 ms). The hop-6 result is an amendment candidate in its own right: §6.1
+names hop 6 as a measurable row, and the runtime reported **no** output-assessment latency on any
+of 1,000 passing turns, so that row has no per-request instrument behind it.
+
+---
+
+## DEV-P4-15 — F5-1 crashed after every invocation was paid for, then published a clean 120-trial result as INCONCLUSIVE, then measured a window that no longer existed, then accepted a flap as convergence
+
+### What happened
+
+`f5_redteam/01_route1_direct_invoke.py` took five runs to publish. Four separate defects, each of
+which let the run get *further* than the last before failing, and each of which would have been
+invisible in the published record rather than loud.
+
+**1. `evaluate() takes 1 positional argument but 2 were given`** — raised at the analysis step,
+**after** all 160 invocations and both IAM mutations. `O.evaluate` takes the Observation alone: the
+case id travels inside it, so a record cannot be decided under one case's binding while carrying
+another's data. Passing `CASE` again is not a harmless duplicate. Guarded repo-wide, not locally:
+`lib/tests/test_oracle.py::test_every_evaluate_call_site_in_the_repo_passes_exactly_one_argument`
+walks every `*.py` under the root by AST and asserts `n_sites >= 15` first, so the sweep cannot pass
+by matching nothing.
+
+**2. A field silently demoted to data by a `**kwargs` sink.** The run then published
+
+    F5-1: adverse=0 / n_usable=120 -> verdict INCONCLUSIVE   ("the mutation was not recorded")
+
+with the inverted mutation sitting in the same payload, plainly visible. `mutation_inverted` had
+been passed as a keyword to `P.obs_zero_events(...)`, and the phase-1 builders sweep surplus
+keywords into `detail` — which the decision rule never reads. So the field kept its default, and for
+a case whose mutation is MANDATORY that downgrades a clean 120-trial TRUE. The value was present,
+published, and unread. Every other case in the suite sets it as an attribute after construction.
+
+Root-caused in `lib/phase1.py` rather than fixed at the call site: `_detail()` now compares each
+`**detail` key against `dataclasses.fields(O.Observation)` and raises with the correct spelling —
+
+    F5-1: mutation_inverted is an Observation field, not free-form detail. Passed as **detail the
+    value is stored where the decision rule never looks, so the field keeps its default and the
+    verdict is decided as if it were never measured. Set it as an attribute instead:
+    o = P.obs_...(...); o.mutation_inverted = <value>
+
+— and all nine builder sites route through it. Any future case that makes this mistake fails at
+construction instead of publishing a wrong verdict.
+
+**3. A wall-clock window that bracketed idle time across a resume** — the DEV-P4-11 class, in a
+different family. The span corroboration counted `AuthorizeAction` rows over the window in which
+the granted arm's invocations were sent. On a resume the granted arm is served from its checkpoint
+and sends **nothing**, so the window bracketed idle time and returned 0 spans. Read as "the invokes
+produced no span", that is manufactured corroboration for the document's non-bypassable claim.
+`_span_corroboration` now takes `n_invokes_in_window`, measured as
+`cps[ARM_GRANTED].n_done` before and after the window, and reports a distinct reading:
+
+    NO_INVOKES_IN_WINDOW — the granted arm sent nothing during this window, its trials were served
+    from the checkpoint of an earlier process, so the span count says nothing about whether a direct
+    invoke produces an AuthorizeAction span.
+
+Every run since has printed exactly that, which is the honest outcome for a resumed arm.
+
+**4. One confirming probe accepted as convergence.** `_wait_for_effect` polled until the wanted
+outcome appeared **once**. The revoke direction reported `denial re-asserted after 31.2s` on the
+probe sequence `executed x5 -> denied_by_iam`, and then **9 of the next 20** invocations executed:
+the arm whose entire purpose is to show the boundary came back instead recorded it being crossed.
+Now `PROP_CONFIRM_N = 3` **consecutive** confirmations — consecutive, not cumulative, because a
+cumulative counter is satisfied by an alternating sequence and an alternating fleet *is* the
+unconverged state, so it would end the wait on the very evidence that should extend it. The result
+publishes `seconds_to_first_confirmation`, `held_for_s`, `flapped_before_converging` and
+`n_wanted_outcomes_before_the_final_streak`, so the strength of the claim is legible instead of
+implied.
+
+That fix was not sufficient, and the insufficiency is the finding: **three consecutive denials do
+not establish convergence either.** See `results/FINDING-F5-1-REVOCATION.md` — 24 of 60 invocations
+sent after an observed denial still executed, 11 of 20 in the replicate with the strongest
+instrument. The revoke direction now carries its own bound, `PROP_MAX_REVOKE_S = 1800`, separate
+from the grant's `PROP_MAX_S = 300`: a grant that has not landed costs the run an arm, a revoke that
+has not landed is a hole in the boundary the testbed is meant to have restored, so its wait is a
+safety check and is not cost-bound by the confirmatory n. The default is `max_s=None` resolved
+inside the function, not `max_s=PROP_MAX_S` in the signature — an early-bound default would freeze
+300 s into the signature and the two tests that shorten `PROP_MAX_S` to keep pytest fast would poll
+for five real minutes while asserting nothing.
+
+### The guard that was split, and why that is not a weakened guard
+
+F5-1 shipped with `grant_was_removed_and_denial_reasserted`, requiring **both** the control-plane
+removal **and** zero executions among the 20 post-restore invocations. It was false in every run,
+which would make F5-1 permanently unpublishable while the boundary it actually tests is measured
+cleanly at n=120. Those are two different questions:
+
+- `grant_was_removed_from_the_role` — **required.** Reads the role's inline policy set back from
+  IAM and compares it to the shipped baseline. This is "was the testbed left as we found it", it is
+  definitive, and it is what the sealed `restore_verification` rule states. `delete_ok` alone says
+  the call returned, not that the role is clean; a failed read records `None`, which can never equal
+  the baseline (`feedback_guard_tool_exit_codes`).
+- `denial_was_reasserted_in_the_data_plane` — **required.** The deny must be observed again at all.
+- `strict_form_all_post_restore_invocations_denied` — **published, not required**, under
+  `data_plane_reconvergence`, with the counts, the probe sequence, the bound in force, and the
+  reason it is not required.
+
+The direction of the change matters. When the second guard *also* came back false — three
+consecutive denials not reached inside 300 s — the loosening move was available and was **not
+taken**: the bound was lengthened to 1800 s instead, and the guard then passed on its own terms.
+Using "the platform does not offer this guarantee" once to split a guard is a judgement; using it a
+second time on the next guard would be a habit.
+
+**Published outcome, all five guards true:** F5-1 **TRUE (ZERO_EVENTS)**, 0 of 120 direct
+invocations executed, Wilson 99% `[0, 0.05865]`, exact one-sided ceiling 0.0414 at α=0.00625,
+mandatory mutation inverted 20/20 with every one echoing our marker. The role was verified back to
+`['grx-runtime-exec-policy']` and the ledger's `f51_grant` entry to `None` after every run.
+
+### One more escape, added deliberately
+
+`usable_trials_met_the_preregistered_n` now passes on `n_usable >= PLANNED_N` **or**
+`n_executed > 0` in the closed arm. An n-floor bounds how tightly a CLOSED boundary can be
+described; it is not a floor on demonstrating the boundary is OPEN. A single closed-arm invocation
+that actually ran the tool is a bypass, and a bypass does not become unproven because the other 119
+attempts were unusable. Gating on n alone would publish NOT_MEASURED over a demonstrated bypass —
+the one direction of error this family exists to catch. `guards_detail_n.gate_satisfied_by` records
+which branch let it through. The test for this was itself **vacuous on first writing**: it split the
+source on the guard name and then on `",\n    }"`, reading past the closing brace into
+`guards_detail_n`, so it passed with the escape deleted. Bounded to the guards dict and
+re-mutation-checked (`feedback_vacuous_test_check`).
+
+### Two arms set aside, and one label that was wrong
+
+`restored_reassert` rows are served from disk on the next run, so an arm measured against an
+unsettled state can never be re-measured while its checkpoint stands.
+`f5_redteam/archive_flapped_restore_arm.py` moves it aside with its provenance and clears the
+checkpoint atomically; the evidence tree is untouched, so the archive is an index into records that
+stay where they were, not a copy that can drift from them. It refuses to move an arm with zero
+executions under any label — a clean arm satisfies the strict form and has nothing left to
+re-measure — and refuses to overwrite an existing archive.
+
+The second use of it was **wrong, and the correction is the point**. Replicate 2's rows were filed
+under `timed_out_revoke`, attributing them to the run whose revoke wait timed out at 308.8 s. That
+run re-sent nothing: its arm was already checkpointed. The rows came from the *previous* process,
+whose revoke wait converged legitimately at 248.5 s — so they are a **valid measurement** in which 4
+of 20 invocations executed after the arm's precondition was properly established. Filing a valid
+replicate as an instrument defect is the same class of error as the defects it was filing: a record
+whose label does not describe what produced it, and it would have cost a real observation, cited
+nowhere. `f5_redteam/fix_restore_arm_archive_labels.py` corrects it to `earlier_replicate`, carries
+a `label_correction` block naming the wrong label and how the truth was established from the two
+runs' logs, and asserts the trial rows are byte-identical before and after. The archiver now
+distinguishes two `kind`s, `defect` and `replicate`, because collapsing them is what allowed the
+mislabelling.
+
+### Direction of the effect on the document under test
+
+Defects 1, 2 and 4 all pushed **against** F5-1 publishing at all; defect 3 was the only one that
+pushed *for* the document, and it pushed by manufacturing corroboration — which is why it is the one
+whose fix prints a refusal on every run since. The verdict itself confirms §4.4's route-3 advice.
+The revocation window is a separate amendment candidate against the same section and is held at
+`OBSERVATIONS_COMPLETE` pending a second calendar day.
+
+### Test coverage added
+
+`f5_redteam/tests/test_route1_direct_invoke.py` 30 → **41** tests. Each of the four defects, the
+guard split, the n-gate escape, the per-direction bound, the late-bound default, and the strict form
+still being computed and published. Every one mutation-checked: the fix was reverted in a copy and
+the corresponding test observed to fail.
+
+---
+
+## DEV-P4-16 — the replication gate counted days across the whole run directory, so a single-day finding read as two days
+
+### What happened
+
+`check_amendment_readiness.py` enforces the sealed rule "an amendment requires observations on >= 2
+separate calendar days", deriving the days from `t_start_utc` across every evidence record — a
+deliberate design, so that a finding cannot *assert* it was replicated. The scan was scoped to the
+declared **run id** and nothing narrower.
+
+This project adopts **one run id for nearly everything** (`r20260810T130945Z`, taken from the
+ledger). So every finding that declares it inherits every day that **any** case ran on. Caught on
+`FINDING-F5-1-REVOCATION.md`, whose 354 records all fall on 2026-08-11:
+
+    before:  FINDING-F5-1-REVOCATION.md  OBSERVATIONS_COMPLETE  2 day(s) ['2026-08-10', '2026-08-11']
+    after:   FINDING-F5-1-REVOCATION.md  OBSERVATIONS_COMPLETE  1 day(s) ['2026-08-11']
+
+The second day came from F1-3's and F4's records. Promoting that finding to `READY_TO_AMEND` would
+have **passed the gate** on a single day's observation of the case under test — a replication check
+that cannot fail once the run spans two days.
+
+### The instrument change
+
+`observation_days` now takes the case ids and counts only records whose `case_id` matches, and a
+finding with `evidence_runs` must declare a non-empty `cases` list or the gate fails. `cases` is
+declared, not derived from the filename, because the two genuinely differ: `FINDING-F5-7A.md` rests
+on records whose `case_id` is `F5-7a`. A declared-but-matching-nothing `cases` is a failure with its
+own message, so a misspelling cannot read as "no replication data".
+
+Both already-published findings were re-checked against the stricter rule and **hold**: F1-3
+spans 2026-08-10 and 2026-08-11 on its own records, F5-7a spans 2026-08-09 and 2026-08-10 on its
+own records across the four run ids it declares. No status changed. That is the outcome to want —
+the gate was wrong in a way that had not yet been *used*, and the fix is retroactive rather than
+retrospective.
+
+### Mutation-checked three ways
+
+- status promoted to `READY_TO_AMEND` on one day → FAIL, naming the day count. **This is the case
+  that passed before the fix.**
+- `cases` key removed → FAIL, explaining why a run-wide count is not a replication.
+- `cases` misspelled `F5-1a` → FAIL twice, once for matching no record and once for deriving no day.
+
+### Direction of the effect on the document under test
+
+Strictly against amending: the gate now requires more evidence for the same promotion, and no
+existing amendment lost its footing. `MIN_DAYS` is still read from the sealed pre-registration text
+rather than restated here, so this change cannot drift the threshold.
+
+---
+
+## DEV-P4-17 — a `--dry-run` gate cannot reach an attribute error that lives below its own `return`, so the offline suite and the dry run both passed and the first live launch died
+
+### What happened
+
+`f5_redteam/04_policy_failure_modes.py` read `args.state` and `args.evidence_root`. Neither flag exists:
+`P.parser` defines `--dry-run`, `--n`, `--run-id` and `--region`, and nothing else. Both reads sat
+**below** the dry-run banner:
+
+    if args.dry_run:
+        return P.dry_run_banner(...)      # <- returns here
+    state = T.State.load(args.state)      # <- AttributeError, unreachable in a dry run
+
+So `--dry-run` printed a correct five-arm plan, the 1,438-test offline suite was green, and the
+**first live launch** — the one that costs money and creates policies on a shared engine — raised
+`AttributeError: 'Namespace' object has no attribute 'state'` at line 599.
+
+The near-miss is the point: it died *before* the first mutating call, so nothing was created in AWS
+and nothing had to be cleaned up. Two lines later in the file and it would have crashed with a
+`forbid` policy live on the engine that F6 and F2 share.
+
+This is a structural blindness, not a typo. **Every** case script in this project has the same
+shape — a dry-run banner that returns, then the live path — so `--dry-run` can never exercise an
+`args.<name>` read, and the defect is invisible to the one check the project runs before every
+expensive phase.
+
+### The instrument change
+
+`claims/tests/test_parser_attrs.py` (51 assertions) walks every phase-1 script's AST, collects every
+`args.<name>` reference, and compares it against the dests `P.parser` actually defines **read live
+from the parser**, plus any flag the script adds itself. Globs `f*/[0-9]*_*.py` and `infra/[0-9]*_*.py`,
+so a new case is covered the moment it is named by the convention.
+
+The sweep found **no other script affected**. That is a finding about the fleet, not a reason to skip
+the test: the check now runs on every commit, and the shape that hid this defect is unchanged.
+
+### Mutation-checked
+
+- `args.doesNotExist` planted into a copy of a real script → FAIL, naming the flag and the file.
+- `args.state` re-planted into a tmpdir copy of `04_policy_failure_modes.py` → FAIL. **This is the
+  case that passed before the fix.**
+- a script that adds its own `--foo` and reads `args.foo` → PASSES, so the check does not forbid
+  local flags.
+- the canary: `base_dests()` asserts `dry_run` and `n` are among the parser's dests, so a `P.parser`
+  that returned an empty parser could not make the whole sweep vacuous.
+
+One self-inflicted follow-on, worth recording because it is the same class: the first version of the
+test asserted `"args.state" not in src` over the raw source, and **failed on the explanatory comment
+I had just written above the fixed lines.** A comment about a read is not a read. The assertion now
+goes through the AST.
+
+### Direction of the effect on the document under test
+
+Neutral. No measurement changed; a crash was converted into a test. The script's behaviour after the
+fix is the behaviour its docstring and dry-run banner already described.
+
+---
+
+## DEV-P4-18 — the write guard charged 49 innocent tests for a concurrent live run's writes, because a tree diff observes change and not authorship
+
+### What happened
+
+The root `conftest.py` write guard has two channels: a `sys.addaudithook` that records in-process
+authorship, and a tree diff over `results/` and `evidence/` that catches writes made by
+**subprocesses**, which the audit hook cannot see. Its documented row 2 reads: *diff moved + the test
+spawned a child → FAIL, charged to that test.*
+
+While F5-4a's live run was in flight — rewriting `results/checkpoints/F5-4a__control_no_probe.json`
+after each of 100 trials — the full suite was run beside it:
+
+    1438 passed, 3 skipped, 49 errors in 637s
+
+All 49 errors read `MODIFIED results/checkpoints/F5-4a__control_no_probe.json`. **Every charged test
+was innocent.** They were charged for one property only: they spawn subprocesses, so row 2 applied.
+
+A guard that convicts on opportunity rather than evidence is worse than no guard: 49 red teardowns on
+a green suite teach the reader to disregard the guard's output, which is exactly when it will miss a
+real write.
+
+### The instrument change
+
+A third channel: the **process table**. The honest discriminator is *"is a script from THIS tree
+running in a process that is not a descendant of this pytest run?"* `_foreign_live_run()` reads
+`ps -eo pid=,ppid=,command=`, computes the parent-chain closure of this pytest pid, and reports repo
+scripts running outside it.
+
+Three properties matter more than the mechanism, and each has its own arm:
+
+- **It is not an amnesty.** When a foreign run is identified, the spawning tests are recorded
+  `UNCLEARED`, not cleared, with the sentence *"These tests are neither charged nor exonerated;
+  re-run with nothing live to settle them."* A child that really did write is indistinguishable from
+  the foreign run's writes while that run is in flight, and the summary says so.
+- **A dry run is not an excuse.** A `--dry-run` process makes no AWS call and writes nothing, so it
+  cannot explain a tree change. Excluded from the foreign set.
+- **Containment is checked after `resolve()`.** The first version wrote `(ROOT / script).exists()`,
+  and `ROOT / "/abs/path"` **discards ROOT** — so a live run in a *different checkout* satisfied it
+  and was credited to this tree. Now resolved and prefix-checked.
+
+A residual, stated rather than papered over: a *relative*-path launch from another checkout is
+indistinguishable, because the process table carries no cwd. That error can only move a charge to
+`UNCLEARED`; it can never manufacture a conviction.
+
+And the guard fails safe: any `ps` failure returns the empty set, i.e. falls back to charging the
+test. A guard that cannot make its observation must not treat absence of observation as exoneration.
+
+### Mutation-checked, four new arms and four new mutants
+
+Arms in `lib/tests/test_write_guard.py`:
+
+- a genuinely foreign live run (double-fork + `setsid` + `execv`, so the writer is reparented to
+  init) → the spawner's charge becomes `UNCLEARED`, and the output names the pid and the script.
+  **This is the case that produced the 49 errors.**
+- a foreign **`--dry-run`** → still convicted.
+- a live run in a sibling `other_checkout/` launched by absolute path → still convicted, and the
+  foreign script's name does not appear in the output.
+- the identical script `Popen`'d **by the test** (a descendant) → still convicted.
+
+Mutants in `lib/tests/test_write_guard_mutation.py`, each with a named killer: M12 foreign channel
+removed, M13 dry-run becomes an excuse, M14 descendants count as foreign, M15 scope is the machine
+rather than the tree. Harness green at **39 passed**.
+
+Two smaller fixes fell out. `cmd[:120]` was truncating to the macOS interpreter path
+(`/opt/homebrew/Cellar/python@3.12/.../MacOS/P`), cutting off the script that identifies the run —
+now sliced from the script token. And `pytest_terminal_summary`'s first sentence still read *"no test
+spawned a child that could have"* while an `UNCLEARED` block was printed below it; two statements
+about one session, and the wrong one was the reassuring one.
+
+### Direction of the effect on the document under test
+
+Neutral — no case measurement is touched. On the guard's own axis the change is **not** a
+relaxation: the false convictions became `UNCLEARED`, which still fails to exonerate, and three of
+the four new arms assert that a conviction *survives*.
+
+---
+
+## DEV-P4-19 — the refutation's own conjunction held on an empty dict, and its literal-scan tripped on its own comment
+
+### What happened
+
+Two defects in the instrument that supports FINDING-F5-4A's headline claim. Neither reached a
+published number: both were caught by the tests written alongside, before the finding was filed. They
+are recorded because in both cases the *first* version would have read as a pass.
+
+**1. `all()` over nothing is True.** `f5_redteam/04b_logonly_flip_read.py` refutes §7.1 by ANDing five
+conjuncts. The first version was:
+
+    all(v is True for k, v in contrast.items() if k != "n_per_arm")
+
+If `_contrast` ever lost a key — a renamed arm constant, a schema change in `results/phase1/F5-4a.json`,
+a `.get()` returning `{}` — the selection shrinks and the conjunction gets **easier**. On an empty
+dict it returns `True`: the strongest claim in the finding would have been supported by no conjuncts
+at all. Fixed by enumerating `CONJUNCTS` and requiring exact key-set equality, so a missing conjunct
+is a `False` and an unenumerated extra one is also a `False`.
+
+**2. A scan that failed on its own documentation.** `test_no_window_timestamp_is_hardcoded_in_the_script`
+asserts the probe window is derived from the recorded result rather than re-typed. Its first version
+scanned raw source and failed on the comment in `_window_from_recorded_result` that explains *why*
+hardcoding `22:46:33Z .. 23:04:03Z` would be wrong. Now it scans AST constants with docstrings
+excluded, and `test_that_literal_check_is_not_vacuous` asserts both halves: that the scan finds real
+literals, and that the forbidden substring **is** present in the raw file, inside a comment — so the
+distinction is pinned rather than assumed.
+
+This is the second instance of that exact mistake in this segment (see DEV-P4-17). Prose about code
+is not code; a check that cannot tell them apart fails on its own explanation, and the tempting fix
+is to delete the comment.
+
+### Mutation-checked
+
+- `_inference_holds({})` → must be `False`. **This is the case that passed before the fix.**
+- each of the five conjuncts planted `False` in turn → the whole conjunction breaks, and the arm
+  asserts the *named* conjunct went False, so a mutation that broke a different one still fails.
+- `test_every_conjunct_is_covered_by_a_breaker` → set equality between the conjuncts and the
+  breakers, so a sixth conjunct added later without a test fails immediately.
+- `n_per_arm` (the one non-boolean key) present → the conjunction still holds, so a count of 20 can
+  never be read as a `True`.
+
+### Direction of the effect on the document under test
+
+Against the finding, and deliberately: both fixes make the refutation of §7.1 **harder** to reach.
+The published value is unchanged — the read was re-run under the corrected conjunction and returned
+the same three readings and the same `s7_1_inference_is_refuted: true`.
+
+---
+
 ## Analysis-time deviations
 
 *(None yet — this section is populated during Phase 9. Each entry states the

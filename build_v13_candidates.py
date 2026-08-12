@@ -99,12 +99,21 @@ CANDIDATES = [
                     "in June 2026. The AWS getting-started page passes "
                     "`--validation-mode IGNORE_ALL_FINDINGS` on the same statement; the "
                     "document never mentions `validationMode` at all, and "
-                    "`PolicyValidationMode` defaults to `FAIL_ON_ANY_FINDINGS`.",
+                    "`PolicyValidationMode` defaults to `FAIL_ON_ANY_FINDINGS`. "
+                    "Separately measured (F5-4a, and it cuts the other way): "
+                    "`FAIL_ON_ANY_FINDINGS` is not a synchronous gate. All three "
+                    "deliberately broken policies F5-4a submitted under it returned HTTP "
+                    "202 with an empty `lint` array; one of them then settled "
+                    "`CREATE_FAILED` asynchronously and one reached `ACTIVE` and denied "
+                    "20/20. So the parameter can refuse a policy the document tells you to "
+                    "write, and accept one that blocks all traffic.",
         "proposed": "Add `validationMode` to the instruction and to the §8 checklist, "
                     "with the trade-off stated rather than buried: "
                     "`IGNORE_ALL_FINDINGS` is what makes the documented baseline policy "
                     "creatable, and it also silences the over-permissive warning that "
-                    "policy legitimately earns.",
+                    "policy legitimately earns. State that neither mode is an "
+                    "authoring-time gate — the call returns 202 either way and the "
+                    "verdict arrives in `status`, so a reader's CI must poll it.",
         "note": "The highest-value amendment in the project so far, and the only one "
                 "where the document as written cannot be followed to a working result. "
                 "Found before any experiment ran, by reading an engine somebody else "
@@ -426,6 +435,206 @@ CANDIDATES = [
                 "corpus. The pricing observation raises the prior that the document is "
                 "right about one API and wrong about the other, which is exactly what "
                 "F5-6 was pre-registered to test.",
+    },
+    {
+        "id": "V13-10",
+        "title": "§7.1's promotion gate — \"a sustained zero LogOnlyDecisionFlips means "
+                 "promotion will not block current traffic\" — passes a policy that denies "
+                 "100% of traffic the moment it is promoted",
+        "severity": BREAKS_READER,
+        "status": "MEASURED_READY",
+        "test_cases": [],
+        "merge_groups": [],
+        "claim_ids": ["C-s7-1-prose-006", "C-s7-1-mermaid-004",
+                      "C-agentcore-policy-metrics-trow-005"],
+        "claim_id_rationale":
+            "All three rows ARE reachable by an expander — 737 and 660 through F7-1, 739 "
+            "through F3-10 — and declaring either case would have derived them. Both are "
+            "declined deliberately: F7-1 reaches 17 rows (latency, confidence scores, "
+            "allow/deny counts, spans) and F3-10 reaches 10 (the four workflow steps and "
+            "five other diagram nodes), and this amendment touches none of them. The three "
+            "named rows are one claim stated three times — the prose sentence, the diagram "
+            "node that gates on it, and the table's \"Safe-promotion signal\" cell — and "
+            "each is quoted verbatim in FINDING-F5-4A §1 and §5. The triage never mapped "
+            "F5-4a here because F5-4a was pre-registered as a policy-failure-mode case, "
+            "not a metrics case; that the failure mode turned out to refute a metrics claim "
+            "is the finding.",
+        "evidence": "F5-4a (5 arms, n=20/arm) plus its supplementary CloudWatch read "
+                    "(results/phase1/F5-4a_logonly_read.json); F7-1 supplies the "
+                    "instrument-liveness control",
+        "finding": "FINDING-F5-4A.md",
+        "planned_cases": ["F5-4a"],
+        "doc_says": "Run the engine in LOG_ONLY, watch `LogOnlyDecisionFlips`, and promote "
+                    "to ENFORCE once it is sustained at zero: \"a sustained zero means "
+                    "promotion will not block current traffic\". §6.2 states the same thing "
+                    "as a \"Safe-promotion signal\".",
+        "observed": "A guardrail statement conditioned on a data path that does not exist "
+                    "(`context.input.doesNotExist`) reaches `ACTIVE` with an empty `lint` "
+                    "array and no error in its own status, and denies 20/20 requests. The "
+                    "byte-identical statement in LOG_ONLY allows 20/20 and produces "
+                    "`LogOnlyDecisionFlips = 0` and `LogOnlyMatches = 0`. The zero is not "
+                    "instrument absence: `list_metrics` names both metrics with 14 "
+                    "dimension combinations each, the 60-minute pre-window baseline is also "
+                    "0, and F7-1 measured the same two metrics publishing 4708 and 3372 on "
+                    "this same gateway for a WORKING LOG_ONLY policy. So the document's "
+                    "promotion gate reads GREEN on a policy whose promotion is a total "
+                    "outage.",
+        "proposed": "Say what the flip metric measures: differences between two policies "
+                    "that both evaluated. It is silent about a policy that never evaluates, "
+                    "and silence is its pass signal. Add a second, positive gate that a "
+                    "reader can actually check — `LogOnlyMatches > 0` on traffic the policy "
+                    "is supposed to match, i.e. prove the LOG_ONLY policy is being "
+                    "evaluated at all before reading its flip count as evidence of "
+                    "anything.",
+        "note": "The failure is structural, not a threshold: a zero-flip reading is "
+                "produced both by \"the policy agrees with production\" and by \"the policy "
+                "cannot run\", and §7.1 assigns one meaning to both. The document's own "
+                "recommended rollout is the path that hides the defect — FINDING-F5-4A §5 "
+                "walks it step by step.",
+    },
+    {
+        "id": "V13-11",
+        "title": "The `LogOnlyEvalIncomplete` alarm the document prescribes three times "
+                 "cannot fire: the metric has never been published in this account",
+        "severity": MISINFORMS,
+        "status": "MEASURED_READY",
+        "test_cases": [],
+        "merge_groups": [],
+        "claim_ids": ["C-s6-4-trow-006", "C-s8-checkitem-012",
+                      "C-agentcore-policy-metrics-trow-005"],
+        "claim_id_rationale":
+            "§6.4's alarm row (730) and §6.2's table cell (660) are reachable through F7-1 "
+            "and are named for the same reason as in V13-10 — F7-1's other 15 rows are "
+            "about different metrics. §8's checklist item (801) is reachable through F5-2 "
+            "and its merge group `M-update-gateway-risk`, but that group is about "
+            "`UpdateGateway` authorisation; the item happens to bundle three unrelated "
+            "alarms in one sentence, and only the `LogOnlyEvalIncomplete` clause is amended "
+            "here. Declaring the merge group would claim two sites this candidate says "
+            "nothing about.",
+        "evidence": "F5-4a's 900-second bounded poll plus the supplementary read "
+                    "(results/phase1/F5-4a_logonly_read.json), reading NEVER_PUBLISHED with "
+                    "0 dimension combinations; F7-1 independently recorded "
+                    "`name_in_namespace_inventory: false`",
+        "finding": "FINDING-F5-4A.md",
+        "planned_cases": ["F5-4a", "F7-1"],
+        "doc_says": "Alarm on `LogOnlyEvalIncomplete > 0` (§6.2 \"alarm on "
+                    "LogOnlyEvalIncomplete\"; §6.4 row \"Incomplete LOG_ONLY evaluation → "
+                    "calibration data is partial, extend the observation window\"; §8 "
+                    "checklist \"set up alarms for … plus LogOnlyEvalIncomplete\").",
+        "observed": "`list_metrics` returns 0 dimension combinations for "
+                    "`LogOnlyEvalIncomplete` under `AWS/Bedrock-AgentCore` in this account "
+                    "— including across the exact window in which a LOG_ONLY policy that "
+                    "could not evaluate served 20 requests, which is the condition the "
+                    "alarm is named for. The two sibling metrics in the same table row list "
+                    "14 combinations each in the same query. A CloudWatch alarm on a metric "
+                    "that never publishes sits in `INSUFFICIENT_DATA`, which is not an "
+                    "alarm state most readers page on.",
+        "proposed": "Either drop the metric from all three sites, or keep it and say what "
+                    "it costs to rely on: the alarm must be configured to treat missing "
+                    "data as breaching, or it is decoration. Pair it with the positive "
+                    "signal from V13-10 (`LogOnlyMatches > 0`), which does publish.",
+        "note": "This candidate is an argument from ABSENCE, so it was held for a second "
+                "calendar day: one day's `list_metrics` cannot distinguish \"never "
+                "published\" from \"the publishing pipeline was degraded that afternoon\". "
+                "Discharged on 2026-08-12 — a fresh `list_metrics` 77 minutes later, across "
+                "a UTC day boundary, returned 0 dimension combinations again while the two "
+                "sibling metrics returned 14 each. "
+                "It also discharges F7-1's own exclusion — F7-1 marked the metric "
+                "NOT_EXERCISED because reproducing it needed a deliberately broken policy, "
+                "and F5-4a then shipped exactly that.",
+    },
+    {
+        "id": "V13-12",
+        "title": "§3.1 and §4.1's fail-secure guarantee is measured true in ACTIVE and "
+                 "silently void in LOG_ONLY — the case §4.4 lists as bypass route #5 and "
+                 "then answers with advice instead of a signal",
+        "severity": MISINFORMS,
+        "status": "MEASURED_READY",
+        "test_cases": ["F5-4a"],
+        "merge_groups": [],
+        "claim_ids": [],
+        "claim_id_rationale": "",
+        "evidence": "F5-4a, 5 arms at n=20 with all 5 guards passing; the two broken arms "
+                    "fail by two different mechanisms",
+        "finding": "FINDING-F5-4A.md",
+        "planned_cases": ["F5-4a"],
+        "doc_says": "\"A policy that cannot be evaluated results in DENY\" (§3.1); "
+                    "\"fail-secure: unevaluable conditions result in DENY\" (§4.1). §4.4's "
+                    "route #5 says fail-secure defaults do the first half and you own the "
+                    "second: never run the engine in LOG_ONLY in production, and alarm on "
+                    "the `Mode`/`PolicyEnforcementMode` metric dimensions.",
+        "observed": "The DENY half is confirmed, and more strongly than stated: an "
+                    "unevaluable guardrail statement in ACTIVE denies 20/20, i.e. it is a "
+                    "total outage rather than a per-request timeout fallback, and it gets "
+                    "there with the policy reporting `ACTIVE` and `lint: []`. But \"cannot "
+                    "be evaluated\" covers two mechanisms the document treats as one, and "
+                    "they diverge: a missing guardrail data path compiles and reaches "
+                    "ACTIVE, while a plain Cedar condition on a missing attribute returns "
+                    "HTTP 202 and then settles `CREATE_FAILED` with an exact diagnostic "
+                    "(``did you mean `text`?``). Same author error, compile error in one "
+                    "clause type and silent total outage in the other. And route #5's own "
+                    "remedy does not hold: of the three mismatch metrics, only "
+                    "`MismatchErrors` carries `PolicyEnforcementMode` as a dimension, so "
+                    "the other two cannot be filtered by mode at all.",
+        "proposed": "State the guarantee per clause type and per mode. In ACTIVE, an "
+                    "unevaluable guardrail condition denies every request, not some. In "
+                    "LOG_ONLY it denies nothing and reports nothing. Say which failures are "
+                    "caught at CreatePolicy and which are not, and correct route #5's "
+                    "dimension advice to name the one metric that actually carries "
+                    "`PolicyEnforcementMode`.",
+        "note": "The three sites this expands to are the strongest claims in the document "
+                "that our own measurement CONFIRMS. The amendment sharpens them rather than "
+                "retracting them, and that is worth stating: a register that only collects "
+                "refutations reads as an indictment rather than a review.",
+    },
+    {
+        "id": "V13-13",
+        "title": "§6.2's mismatch-metric row inverts the consequence in ACTIVE, and its "
+                 "sums are over overlapping dimension combinations, so a dashboard total "
+                 "reads 6× the request count",
+        "severity": MISINFORMS,
+        "status": "MEASURED_READY",
+        "test_cases": [],
+        "merge_groups": [],
+        "claim_ids": ["C-agentcore-policy-metrics-trow-006"],
+        "claim_id_rationale":
+            "One row, one claim. It is reachable through F7-1, which reaches 16 other rows "
+            "about metrics this candidate does not touch; F7-1 read the row's metrics for "
+            "existence, F5-4a is what made them fire. Named rather than derived so the site "
+            "list is exactly the sentence being amended.",
+        "evidence": "F5-4a's metric poll: three of the four mismatch metrics fired for the "
+                    "first time in this account, with every datapoint group summing to "
+                    "exactly the arm's n",
+        "finding": "FINDING-F5-4A.md",
+        "planned_cases": ["F5-4a"],
+        "doc_says": "`MismatchErrors / TotalMismatchedPolicies / PolicyMismatch` are a "
+                    "\"fail-secure signal (pairs with bypass route #5): a policy that "
+                    "cannot evaluate is a policy that may not be protecting you — alarm on "
+                    "it\".",
+        "observed": "In ACTIVE the inversion is the risk: the policy protected 20/20 "
+                    "requests by denying all of them, so \"may not be protecting you\" "
+                    "describes an availability incident, not an exposure. In LOG_ONLY, "
+                    "where the exposure is real, the same three metrics stayed at zero. "
+                    "Second, the magnitudes are not request counts: over 20 requests, "
+                    "`MismatchErrors` summed to 120 (6 dimension combinations × 20), "
+                    "`TotalMismatchedPolicies` to 80 (4 combinations, 8 datapoints × 20) "
+                    "and `PolicyMismatch` to 40 (2 × 20). A reader who sums a metric across "
+                    "dimensions — the CloudWatch console default — sees 120 for 20 "
+                    "requests. And the multiplier is not stable: the combination count "
+                    "`list_metrics` returns for `MismatchErrors` went 8 → 16 over day 1 "
+                    "and 16 → 20 over day 2, and `PolicyMismatch` went 4 → 6 → 8, because "
+                    "every broken policy leaves its own `Policy`-dimensioned series "
+                    "behind. One broken policy per day widens the set a dashboard sums "
+                    "over.",
+        "proposed": "Split the row's consequence by mode: in ACTIVE this is a DENY-all "
+                    "availability signal, in LOG_ONLY it does not fire at all. Name the "
+                    "dimension set for each metric and warn that a cross-dimension sum "
+                    "multiplies the request count. Give the reader a statistic they can "
+                    "alarm on — `SampleCount` on one pinned dimension combination, not "
+                    "`Sum` across all of them.",
+        "note": "Two defects in one table cell, and the second is the kind that survives "
+                "review because both numbers look plausible: 120 is a fine-looking "
+                "MismatchErrors reading and it is 6× the truth.",
     },
 ]
 
