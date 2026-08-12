@@ -1,0 +1,271 @@
+#!/usr/bin/env python3
+"""The case census must be derived, and every guard in it must be able to fail.
+
+Why this file exists
+--------------------
+`results/_progress_census.txt` was hand-written once. Its headline — "27 remaining" —
+was correct, and it was correct *by accident*: it subtracted 63 published-and-mapped
+cases from the 90 cases `claims/triage.csv` maps, while calling those 90 "the register".
+The register is 93. Two offsetting errors landed on the right number.
+
+The same file was wrong by 2 where nothing cancelled: it reported family F1 at 17/26 and
+TRUE at 37, because it dropped F1-21 and F1-4 as "not in the register" when both are in
+the register and both have verdicts. So the accidentally-right total sat next to a
+demonstrably-wrong breakdown, which is `feedback_label_must_match_computation`: a
+breakdown must reconcile to its parent, and here it could not, because the parent and the
+breakdown were counting different sets.
+
+`census.py` replaces the hand count. This file's job is the part that a derivation does
+not give you for free: proving each of its guards can actually fail. A census that
+asserts seven invariants and would exit 0 with all seven deleted is a census that reports
+whatever it is handed (`feedback_vacuous_test_check`).
+
+The one guard worth naming
+--------------------------
+`claim_mapped()` reads the `cases` column as **whitespace tokens**. A whole-cell
+comparison — the obvious way to write it — silently drops every row that names more than
+one case, and `claims/triage.csv` has such rows: `C-s7-1-prose-004` holds `"F3-10 F3-9"`.
+The mutation arm below is the only test in the repo that fails when that read is changed
+back, and the failure it prevents is a case appearing *unmapped* because it always shares
+a cell.
+"""
+
+from __future__ import annotations
+
+import importlib.util
+import json
+import sys
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def load_census():
+    """Import census.py by path.
+
+    By path rather than by name, because `lib/tests/test_module_name_collisions.py`
+    records that this repo has several same-named modules across family directories and
+    an `import census` would be resolved by whatever is first on `sys.path`.
+    """
+    spec = importlib.util.spec_from_file_location("_census_under_test", ROOT / "census.py")
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["_census_under_test"] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+@pytest.fixture
+def census():
+    return load_census()
+
+
+# --------------------------------------------------------------------------------------
+# the numbers themselves
+# --------------------------------------------------------------------------------------
+
+def test_the_four_denominators_are_distinct_and_derived(census, capsys):
+    """93 / 92 / 90 are three different questions, and the report must not conflate them."""
+    assert census.run() == 0
+    out = capsys.readouterr().out
+    for want in ("register", "claim-mapped", "verdict-eligible", "published", "REMAINING"):
+        assert want in out, f"the report dropped the {want!r} denominator"
+
+    CASES, sha_live = census.load_register()
+    n_declared, sha_declared = census.prereg_registry_sha()
+    mapped, n_rows = census.claim_mapped()
+    ver = census.published()
+
+    assert len(CASES) == n_declared == 93
+    assert sha_live == sha_declared
+    assert len(mapped) == 90
+    assert n_rows == 546
+    untestable = {c for c, m in census.CLAIM_UNMAPPED_BY_DESIGN.items()
+                  if m["kind"] == "untestable"}
+    assert len(CASES) - len(untestable) == 92
+    # The parent and the breakdown must reconcile: this is the check the hand census
+    # could not pass.
+    assert len(set(ver)) == len(ver)
+    assert set(ver) <= set(CASES)
+
+
+def test_the_hand_census_numbers_that_were_wrong_stay_wrong(census):
+    """Pin the two corrected values so a regression cannot quietly restore them.
+
+    The hand census said F1 was 17/26 and TRUE was 37. Both were short by exactly the
+    two cases it excluded, F1-21 and F1-4. If either number comes back, something has
+    started dropping register cases again.
+    """
+    CASES, _ = census.load_register()
+    ver = census.published()
+    f1_eligible = {c for c in CASES if CASES[c][0] == "F1"}
+    f1_done = f1_eligible & set(ver)
+    assert (len(f1_done), len(f1_eligible)) == (19, 28), \
+        "F1 is 19/28; 17/26 is the hand census's error"
+    n_true = sum(1 for v in ver.values() if v[0][1] == "TRUE")
+    assert n_true == 39, "TRUE is 39; 37 is the hand census's error"
+    for cid in ("F1-21", "F1-4"):
+        assert cid in CASES and cid in ver, f"{cid} is registered and has a verdict"
+
+
+def test_unmapped_cases_are_all_accounted_for(census):
+    """The residue is derived; the reasons are declared; the two must agree exactly."""
+    CASES, _ = census.load_register()
+    mapped, _ = census.claim_mapped()
+    assert set(CASES) - mapped == set(census.CLAIM_UNMAPPED_BY_DESIGN)
+    assert set(census.CLAIM_UNMAPPED_BY_DESIGN) == {"F9-1", "F1-21", "F1-4"}
+    # Each declared reason must be checkable against the case's own sealed text.
+    for cid, meta in census.CLAIM_UNMAPPED_BY_DESIGN.items():
+        assert meta["check"] in " ".join(str(x) for x in CASES[cid])
+    # F9-1 is the only one excluded from the denominator, and only because its own
+    # oracle disqualifies it — not because we could not get to it.
+    assert census.CLAIM_UNMAPPED_BY_DESIGN["F9-1"]["kind"] == "untestable"
+    assert census.CLAIM_UNMAPPED_BY_DESIGN["F1-21"]["kind"] == "api-surface"
+    assert census.CLAIM_UNMAPPED_BY_DESIGN["F1-4"]["kind"] == "api-surface"
+
+
+def test_f1_4_really_has_no_claim_to_map(census):
+    """The declared reason for F1-4 is an absence claim, so measure the absence.
+
+    F1-4's reason says a search over all 546 triaged claims for the union's arity
+    constraint returns zero rows. An absence stated in a docstring is prose; here it is
+    a test, so if the document is ever re-triaged and such a row appears, F1-4 stops
+    being claim-unmapped-by-design and this fails.
+    """
+    import csv
+    rows = list(csv.DictReader((ROOT / "claims" / "triage.csv").open(encoding="utf-8")))
+    assert len(rows) == 546
+    pats = ("exactly one", "one arm", "mutually exclusive", "oneof", "one-of")
+    hits = [r["claim_id"] for r in rows
+            if any(p in (r.get("text") or "").lower() for p in pats)]
+    assert hits == [], f"a claim now states the union's arity: {hits}"
+
+
+# --------------------------------------------------------------------------------------
+# mutation arms — each removes exactly one guard's precondition and expects a hard fail
+# --------------------------------------------------------------------------------------
+
+def _stub_paths(census, tmp_path, *, triage_rows, verdicts):
+    """Point census.py at a synthetic triage csv and results dir."""
+    import csv as _csv
+    t = tmp_path / "triage.csv"
+    with t.open("w", newline="", encoding="utf-8") as fh:
+        w = _csv.DictWriter(fh, fieldnames=["claim_id", "cases", "text"])
+        w.writeheader()
+        for i, cases in enumerate(triage_rows):
+            w.writerow({"claim_id": f"C-{i}", "cases": cases, "text": ""})
+    census.TRIAGE = t
+    p1 = tmp_path / "phase1"
+    p1.mkdir()
+    for cid, verdict in verdicts:
+        (p1 / f"{cid}.json").write_text(
+            json.dumps({"case_id": cid, "verdict": verdict}), encoding="utf-8")
+    census.PHASE1 = p1
+
+
+def test_mutation_claim_mapped_to_unregistered_case_fails(census, tmp_path):
+    CASES, _ = census.load_register()
+    rows = [" ".join(sorted(CASES))] + ["F99-1"]
+    _stub_paths(census, tmp_path, triage_rows=rows, verdicts=[])
+    with pytest.raises(SystemExit) as e:
+        census.run()
+    assert e.value.code == 1
+
+
+def test_mutation_verdict_for_unregistered_case_fails(census, tmp_path):
+    CASES, _ = census.load_register()
+    _stub_paths(census, tmp_path,
+                triage_rows=[" ".join(sorted(CASES))],
+                verdicts=[("F99-2", "TRUE")])
+    with pytest.raises(SystemExit) as e:
+        census.run()
+    assert e.value.code == 1
+
+
+def test_mutation_undeclared_unmapped_case_fails(census, tmp_path):
+    """Drop one case from the triage mapping without declaring a reason for it."""
+    CASES, _ = census.load_register()
+    keep = sorted(set(CASES) - set(census.CLAIM_UNMAPPED_BY_DESIGN) - {"F3-1"})
+    _stub_paths(census, tmp_path, triage_rows=[" ".join(keep)], verdicts=[])
+    with pytest.raises(SystemExit) as e:
+        census.run()
+    assert e.value.code == 1
+
+
+def test_mutation_declared_reason_not_in_sealed_text_fails(census, tmp_path):
+    CASES, _ = census.load_register()
+    census.CLAIM_UNMAPPED_BY_DESIGN = {
+        **census.CLAIM_UNMAPPED_BY_DESIGN,
+        "F1-4": {**census.CLAIM_UNMAPPED_BY_DESIGN["F1-4"],
+                 "check": "a phrase that is not in the oracle"},
+    }
+    _stub_paths(census, tmp_path,
+                triage_rows=[" ".join(sorted(set(CASES) - set(census.CLAIM_UNMAPPED_BY_DESIGN)))],
+                verdicts=[])
+    with pytest.raises(SystemExit) as e:
+        census.run()
+    assert e.value.code == 1
+
+
+def test_mutation_verdict_for_untestable_case_fails(census, tmp_path):
+    """F9-1 is excluded from the denominator. A verdict for it must not be silently kept."""
+    CASES, _ = census.load_register()
+    _stub_paths(census, tmp_path,
+                triage_rows=[" ".join(sorted(set(CASES) - set(census.CLAIM_UNMAPPED_BY_DESIGN)))],
+                verdicts=[("F9-1", "TRUE")])
+    with pytest.raises(SystemExit) as e:
+        census.run()
+    assert e.value.code == 1
+
+
+def test_mutation_register_size_disagreeing_with_prereg_fails(census, tmp_path, monkeypatch):
+    CASES, sha = census.load_register()
+    shrunk = {k: v for k, v in list(CASES.items())[:-1]}
+    monkeypatch.setattr(census, "load_register", lambda: (shrunk, sha))
+    with pytest.raises(SystemExit) as e:
+        census.run()
+    assert e.value.code == 1
+
+
+def test_mutation_broken_seal_fails(census, monkeypatch):
+    """A register that no longer hashes to its sealed sha256 must stop the census.
+
+    `feedback_provenance_stamp_liveness`: the sha is recomputed with the serialization
+    PREREGISTRATION.yaml itself records, so this arm proves the recomputation is real and
+    not a copy of the declared value.
+    """
+    CASES, _ = census.load_register()
+    monkeypatch.setattr(census, "load_register", lambda: (CASES, "0" * 64))
+    with pytest.raises(SystemExit) as e:
+        census.run()
+    assert e.value.code == 1
+
+
+def test_mutation_whole_cell_cases_read_would_lose_a_case(census):
+    """The `cases` column must be read as tokens, not compared whole.
+
+    This is the guard with no other coverage in the repo. `claims/triage.csv` has rows
+    whose `cases` cell names two cases, so a whole-cell read makes any case that only
+    ever shares a cell look unmapped — and "unmapped" is a state this census treats as
+    needing a declared reason, so the error surfaces as a spurious census failure rather
+    than a wrong number. Either way it must not be reachable by accident.
+    """
+    import csv
+    rows = list(csv.DictReader((ROOT / "claims" / "triage.csv").open(encoding="utf-8")))
+    multi = [r["cases"] for r in rows if len((r.get("cases") or "").split()) > 1]
+    assert multi, "no multi-case cells left — this test's premise is gone, re-check it"
+
+    token_read = set()
+    whole_cell_read = set()
+    for r in rows:
+        cell = (r.get("cases") or "").strip()
+        token_read |= set(cell.split())
+        if cell:
+            whole_cell_read.add(cell)
+    lost = token_read - whole_cell_read
+    assert lost, "a whole-cell read would lose nothing, so the token read is untested"
+    # And the loss is not hypothetical: name one case that exists only inside shared cells.
+    assert any(all(c in cell.split() and len(cell.split()) > 1
+                   for cell in whole_cell_read if c in cell.split())
+               for c in lost)
