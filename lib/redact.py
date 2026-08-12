@@ -66,6 +66,59 @@ _ARN_ACCOUNT = re.compile(
 
 ACCOUNT_PLACEHOLDER = "<account>"
 
+# An ARN whose account field was CUT SHORT by a length-based slice upstream. Measured
+# 2026-08-12 in `results/phase1/F3-10.json`: a sample log message truncated to 400 characters
+# ended inside the account field of a `policyEngineArn`, leaving eleven of the live account's
+# twelve digits — invisible to `_ARN_ACCOUNT` because that pattern requires all twelve followed
+# by `:`. (Written without the offending string: quoting it here is what put two findings in
+# this module on the first attempt at documenting it, the same mistake `check_redaction.py`'s own
+# ALLOW comment records making. The literal is reconstructed from halves in
+# `lib/tests/test_redact.py`, where it is data rather than prose.)
+#
+# Shape-based and registry-free, like `_ARN_ACCOUNT` and for the same reason: it must protect an
+# account nobody registered. It is safe to be registry-free ONLY because of the anchoring — the
+# four ARN fields must precede it, and `(?![\d:])` means a complete account field (which always
+# has `:` after it) is left to `_ARN_ACCOUNT`. Nothing outside ARN position can match.
+_ARN_ACCOUNT_TRUNCATED = re.compile(
+    r"(arn:aws[a-z-]*:[a-z0-9-]*:[a-z0-9-]*:)(\d{1,12})(?![\d:])")
+
+# What replaces the resource field of an ARN that was cut off mid-identifier. The masker does not
+# only remove the digits, it RESTORES THE SIX-COLON SHAPE, because the redaction gate's ARN excuse
+# decomposes a line with `arn:aws[a-z-]*:[^:\s]*:[^:\s]*:([^:\s]*):` and therefore requires the
+# colon that terminates the account field. Without it the gate counts fewer decomposable ARNs than
+# it detected and fails CLOSED — correctly, since it cannot tell a masked truncation from a
+# truncated identifier — and a fully-masked artifact would need a waiver to ship. Restoring the
+# shape is the fix that keeps the gate strict: `check_redaction.py` still refuses any account
+# field that is not exactly `ACCOUNT_PLACEHOLDER`, and the marker says plainly that a resource id
+# was lost to the slice rather than pretending one was there.
+ARN_TRUNCATED_PLACEHOLDER = "<truncated>"
+
+# A field whose NAME says it holds an account ID, whose value was cut short the same way. The
+# same 400-character slice also produced `"account_id":"67720` — 5 of 12 digits, in no ARN. This
+# one IS registry-gated: unlike ARN position, a field called `account_id` could legitimately hold
+# a synthetic 12-digit value (the `US_BANK_ACCOUNT_NUMBER` corpus is the live example this
+# module's docstring already refuses to break), so only a prefix of an ID this process actually
+# resolved is masked.
+_ACCOUNT_FIELD = re.compile(
+    r"(\\?\"?(?:aws[._])?account[._]?id\\?\"?\s*[:=]\s*\\?\"?)(\d{1,12})(?!\d)",
+    re.IGNORECASE)
+
+# How many leading digits of a registered account ID count as a disclosure worth masking, when
+# the position itself already says the value IS an account ID — ARN field 5, or a field named
+# `account_id`. Four is short enough to catch the `"account_id":"67720` case measured on
+# 2026-08-12; a shorter floor would mask one- and two-digit tails that carry no identifying
+# information.
+_MIN_TRUNCATED_PREFIX = 4
+
+# The floor for the UNANCHORED rule — a prefix at the end of a string, in no particular field.
+# It has to be much higher, and the first draft of this module proved why: at 4 it masked the
+# string `"n":6772`, because that ends with the account's first four digits after a non-digit.
+# `mask()` walks every string leaf of every checkpoint row, so an over-match there silently
+# corrupts recorded data, which is worse than a partial disclosure of four digits. Eight of
+# twelve digits is still a real disclosure, and an unrelated standalone number ending in exactly
+# those eight is not a case worth trading data integrity for.
+_MIN_UNANCHORED_PREFIX = 8
+
 # The account IDs this process has been told about, masked as bare tokens as well as in ARN
 # position. See `register_account_id`.
 _KNOWN: set[str] = set()
@@ -114,11 +167,55 @@ def mask_text(s: str) -> str:
     Idempotent: the placeholder contains no digits, so a second pass finds nothing to
     replace. The bare-token pass is anchored on `\\b` at both ends, so a 12-digit account ID
     embedded in a longer digit run is left alone — such a run is not an account reference.
+
+    A TRUNCATED ACCOUNT ID IS STILL AN ACCOUNT ID
+    ---------------------------------------------
+    Measured 2026-08-12: `results/phase1/F3-10.json` shipped a `policyEngineArn` whose account
+    field held the live account ID with its last digit cut off, and beside it a field named
+    `account_id` holding the first five. Neither pass above could see either one: the ARN pattern
+    requires exactly 12 digits followed by `:`, and the bare-token pass requires all 12 with a
+    word boundary after them. (Both strings are reconstructed from halves in
+    `lib/tests/test_redact.py` and are deliberately not quoted here — see
+    `_ARN_ACCOUNT_TRUNCATED`.)
+
+    The cause was upstream and is fixed there too — `_app_logs` truncated each sample log
+    message to 400 characters BEFORE the mask ran, and the slice landed inside the account
+    field (`feedback_cut_counts_bytes`: a length-based slice knows nothing about what it is
+    cutting). But a masker that only works on untruncated input is a masker whose correctness
+    depends on every caller's slicing, so the tail case is handled here as well.
+
+    Three rules, each anchored on something other than the digits themselves, because a bare
+    "mask any short digit run" would corrupt corpus rows and timestamps:
+
+      * `_ARN_ACCOUNT_TRUNCATED` — ARN position, registry-free. Shape alone identifies it, and
+        the substitution also restores the colon the slice removed, so the result is a
+        well-formed masked ARN rather than a fragment the redaction gate must fail closed on
+        (see `ARN_TRUNCATED_PLACEHOLDER`).
+      * `_ACCOUNT_FIELD` — a field NAMED account id, registry-gated, since such a field can
+        legitimately hold a synthetic value.
+      * end of string, registry-gated — for the case where the whole string IS the truncated
+        tail. This one is what `mask()` needs, since that walk masks each string leaf
+        separately; a whole-file `mask_text` will usually be served by the two above instead.
+
+    All three require the digits not to be preceded by another digit (or, in the ARN and field
+    cases, to sit exactly where an account ID sits), so a longer number that merely happens to
+    start with the same digits cannot match.
     """
     out = _ARN_ACCOUNT.sub(rf"\g<1>{ACCOUNT_PLACEHOLDER}\g<3>", s)
+    out = _ARN_ACCOUNT_TRUNCATED.sub(
+        rf"\g<1>{ACCOUNT_PLACEHOLDER}:{ARN_TRUNCATED_PLACEHOLDER}", out)
     for aid in _KNOWN:
         if aid in out:
             out = re.sub(rf"\b{aid}\b", ACCOUNT_PLACEHOLDER, out)
+        out = _ACCOUNT_FIELD.sub(
+            lambda m: (m.group(1) + ACCOUNT_PLACEHOLDER) if aid.startswith(m.group(2))
+            else m.group(0), out)
+        # Longest prefix first: masking `6772` before `67720713284` would leave digits behind.
+        for k in range(len(aid) - 1, _MIN_UNANCHORED_PREFIX - 1, -1):
+            head = aid[:k]
+            if out.endswith(head) and not out[:-k][-1:].isdigit():
+                out = out[:-k] + ACCOUNT_PLACEHOLDER
+                break
     return out
 
 
