@@ -229,3 +229,172 @@ def test_emit_masks_results_but_not_the_evidence_copy(tmp_path, monkeypatch):
         "the evidence copy must keep the full ARN — it is the audit trail a reader takes "
         "to AWS Support (lib/evidence.py). Masking it here would be a silent loss of the "
         "property that makes this evidence rather than a transcript")
+
+
+# ================================================== the truncated identifier of 2026-08-12
+#
+# `results/phase1/F3-10.json` shipped the live account ID with its last digit cut off. F3-10's
+# log reader truncated each sample log message to 400 characters, and the slice landed inside
+# a `policyEngineArn` — leaving `...:us-east-1:` + 11 digits, which `_ARN_ACCOUNT` cannot see
+# (it requires 12 followed by `:`) and the bare-token pass cannot see either (it requires all
+# 12 with a word boundary). The same slice also left `"account_id":"` + 5 digits.
+#
+# The upstream fix is to mask before truncating, which f3_efficacy/08 now does. These arms are
+# for the masker: it must not depend on every caller's slicing being safe.
+
+_TRUNC_11 = ACCT[:11]
+_TRUNC_5 = ACCT[:5]
+
+
+@pytest.fixture()
+def registered():
+    """Two of the three truncation rules are registry-gated, so they need what
+    `awsclients.account_id()` provides at runtime: the ID, resolved once.
+
+    The registry is process-global and there is no unregister — deliberately, since a mask that
+    could be turned off is a mask a caller can turn off. So the set is saved and restored here
+    rather than left dirty for the arms above, which assert that a 12-digit value OUTSIDE an ARN
+    is never touched; those would start failing for the wrong reason if this leaked.
+    """
+    before = set(R._KNOWN)
+    R.register_account_id(ACCT)
+    try:
+        yield ACCT
+    finally:
+        R._KNOWN.clear()
+        R._KNOWN.update(before)
+
+
+def test_an_arn_truncated_inside_its_account_field_is_masked():
+    """The exact shipped string, rebuilt: this is the finding the gate raised, not a paraphrase."""
+    line = f'"policyEngineArn":"{_A}:aws:bedrock-agentcore:us-east-1:{_TRUNC_11}'
+    got = R.mask_text(line)
+    assert _TRUNC_11 not in got, got
+    assert got.endswith(f"{R.ACCOUNT_PLACEHOLDER}:{R.ARN_TRUNCATED_PLACEHOLDER}")
+
+
+def test_the_masked_truncated_arn_is_one_the_redaction_gate_can_decompose():
+    """Why the substitution restores the colon instead of just deleting the digits.
+
+    Asserted through `check_redaction.allowed()` itself rather than by re-implementing its ARN
+    excuse here (feedback_verify_against_real_artifact): the claim is "the published artifact
+    clears the gate", and a local copy of the excuse would only prove my copy agrees with itself.
+
+    Both directions are checked. The gate must EXCUSE the repaired form, and it must still FAIL
+    CLOSED on the fragment as it shipped — the mask is what changed, not the gate's strictness.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("grx_gate", ROOT / "check_redaction.py")
+    gate = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gate)
+
+    target = ROOT / "results" / "phase1" / "F3-10.json"
+    shipped = f'"policyEngineArn":\\"{_A}:aws:bedrock-agentcore:us-east-1:{_TRUNC_11}'
+    assert gate.allowed(target, "arn", shipped) is None, (
+        "a truncated ARN must stay a finding: the gate cannot tell a masked truncation from a "
+        "truncated identifier, and this is the fail-closed path its own comment records")
+
+    repaired = R.mask_text(shipped)
+    why = gate.allowed(target, "arn", repaired)
+    assert why is not None, f"the repaired form is still a finding: {repaired}"
+    assert "masked" in why
+
+    # And a real account id in the same position is not excused by the repair.
+    assert gate.allowed(target, "arn",
+                        f'{_A}:aws:bedrock-agentcore:us-east-1:{ACCT}:gateway/x') is None
+
+
+@pytest.mark.parametrize("k", list(range(1, 13)))
+def test_a_truncated_arn_account_field_is_masked_at_every_cut_point(k):
+    """A length-based slice can land on any digit, so every cut point has to be covered — a
+    rule that only handled the 11-digit case would be a rule fitted to one observation."""
+    got = R.mask_text(f'{_A}:aws:bedrock-agentcore:us-east-1:{ACCT[:k]}')
+    assert ACCT[:k] not in got, (k, got)
+
+
+def test_the_truncated_arn_rule_needs_no_registration():
+    """Shape-based, like `_ARN_ACCOUNT`. An unregistered account — the next member account, or
+    another team's — must be covered without anyone having resolved it first, because the
+    registry is fail-OPEN and this is the pass that has to hold when it is empty."""
+    unknown = "3141" + "59265358"
+    assert unknown not in R.known_account_ids()
+    got = R.mask_text(f'{_A}:aws:s3:us-east-1:{unknown[:9]}')
+    assert unknown[:9] not in got
+
+
+def test_a_field_named_account_id_with_a_truncated_value_is_masked(registered):
+    for line in (f'"account_id":"{_TRUNC_5}", "next": 1',
+                 f'\\"account_id\\":\\"{_TRUNC_5}',
+                 f'"attributes.aws.account.id": "{_TRUNC_5}"',
+                 f'account_id={_TRUNC_5}'):
+        got = R.mask_text(line)
+        assert _TRUNC_5 not in got, line
+
+
+def test_the_account_id_field_rule_is_registry_gated(registered):
+    """Unlike ARN position, a field called `account_id` can legitimately hold a synthetic
+    value. Masking on the field NAME alone would rewrite data that is not ours to hide."""
+    for value in ("9" * 12, "1234" + "56789012", "4321"):
+        line = f'"account_id":"{value}"'
+        assert R.mask_text(line) == line, line
+
+
+@pytest.mark.parametrize("payload", [
+    '"n":' + ACCT[:4],                      # a short bare number that starts like the account
+    '"text_len": ' + ACCT[:5],
+    '"bucket_s": 17865' + "04380",          # an epoch second
+    '"event_timestamp":17865' + "04336265",
+    '"sample_count": ' + ACCT[:7],
+])
+def test_a_short_prefix_with_no_anchor_is_left_alone(payload, registered):
+    """The floor for the UNANCHORED end-of-string rule is 8 digits, and this is why. The first
+    draft used 4 and masked `"n":6772` — `mask()` walks every string leaf of every checkpoint
+    row, so an over-match there corrupts recorded data, which is worse than disclosing four
+    digits (`feedback_vacuous_test_check` in reverse: a guard that fires too often is also a
+    guard that is not measuring what it claims)."""
+    assert R.mask_text(payload) == payload
+
+
+def test_a_long_prefix_at_the_end_of_a_string_is_masked(registered):
+    """What the unanchored rule is for: `mask()` masks each string leaf separately, so a leaf
+    that IS the truncated tail has no ARN and no field name beside it."""
+    for k in (8, 9, 10, 11):
+        got = R.mask_text(f"served by {ACCT[:k]}")
+        assert ACCT[:k] not in got, k
+        assert got == f"served by {R.ACCOUNT_PLACEHOLDER}"
+
+
+def test_a_prefix_preceded_by_a_digit_is_not_the_account_id(registered):
+    """`\\b`-style anchoring, kept for the tail rule: a longer digit run that happens to end
+    with the account's leading digits is a different number."""
+    line = "999" + ACCT[:9]
+    assert R.mask_text(line) == line
+
+
+def test_the_three_truncation_rules_are_idempotent(registered):
+    for line in (f'{_A}:aws:s3:us-east-1:{_TRUNC_11}',
+                 f'"account_id":"{_TRUNC_5}"',
+                 f"served by {ACCT[:9]}"):
+        once = R.mask_text(line)
+        assert R.mask_text(once) == once, line
+
+
+def test_masking_before_truncating_is_what_the_case_script_does():
+    """The root cause, pinned at the call site: a 400-character slice of an already-masked
+    message can only ever cut inside `<account>`, which has no digits to leak."""
+    src = (Path(__file__).resolve().parents[2]
+           / "f3_efficacy" / "08_score_label_join.py").read_text(encoding="utf-8")
+    assert "_redact.mask_text(msg)[:400]" in src
+    assert "samples.append(msg[:400])" not in src, "the unmasked slice is back"
+
+
+def test_the_published_f3_10_result_carries_no_partial_account_id():
+    """The artifact itself. The gate is the backstop, but the specific file this was measured
+    on is checked here too, so a regeneration that lost the fix fails the suite rather than
+    only the gate."""
+    p = Path(__file__).resolve().parents[2] / "results" / "phase1" / "F3-10.json"
+    if not p.is_file():                       # not yet run in a fresh clone
+        pytest.skip("F3-10 has no published result in this tree")
+    text = p.read_text(encoding="utf-8")
+    for k in range(4, 13):
+        assert ACCT[:k] not in text, f"{k} leading digits of the account id are published"

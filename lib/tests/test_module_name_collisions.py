@@ -149,6 +149,16 @@ UNRESOLVABLE = {
         "_load(stem, name) helper — the literal is at each call site, not at the loader",
     "f8_regional/tests/test_f8_helpers.py":
         "_load(stem, name) helper — same shape as the f3 one",
+    "f3_efficacy/tests/test_score_label_join.py":
+        "_load(stem, name) helper — the same shape as test_f3_helpers.py, adopted here when the "
+        "file grew a second subject (08b's parent module) and one literal per call site became "
+        "clearer than two hand-rolled loaders. Its OTHER loader call passes the literal "
+        "'infra_verify' and is resolved by the registration scan above",
+    "f3_efficacy/tests/test_log_surface_join.py":
+        "_load(stem, name) helper — same shape again. The names it registers are the ones the "
+        "08b subject itself uses, and 08b's own loader passes the module-level constant "
+        "PARENT_MODULE_NAME, which the registration scan above does resolve and does check for "
+        "collisions against lib/",
     "lib/tests/test_stats_mutation.py":
         "f'_mutant_{name}' — generated per mutant, and prefixed so it cannot collide",
     "lib/tests/test_f7_metric_tables.py":
@@ -169,6 +179,8 @@ UNRESOLVABLE = {
 UNRESOLVABLE_CALLS = {
     "f3_efficacy/tests/test_f3_helpers.py": 1,
     "f8_regional/tests/test_f8_helpers.py": 1,
+    "f3_efficacy/tests/test_score_label_join.py": 1,
+    "f3_efficacy/tests/test_log_surface_join.py": 1,
     "lib/tests/test_stats_mutation.py": 1,
     "lib/tests/test_f7_metric_tables.py": 2,      # one per mutation call site
     "infra/tests/conftest.py": 1,
