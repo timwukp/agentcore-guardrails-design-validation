@@ -417,6 +417,9 @@ def test_a_dead_span_channel_reads_as_instrument_unavailable_not_as_a_bypass():
     M.wait_for_span = lambda *a, **k: (False, 300.0, [])
 
     class _C:
+        def initialize(self):
+            return None
+
         def call_tool(self, *a, **k):
             return type("D", (), {"ran": True, "denied": False, "http_status": 200})()
 
@@ -454,6 +457,9 @@ def test_a_window_with_no_invokes_in_it_is_not_read_as_an_absent_span():
     M.wait_for_span = lambda *a, **k: (True, 1.0, [["x"]])   # a LIVE channel: the strong case
 
     class _C:
+        def initialize(self):
+            return None
+
         def call_tool(self, *a, **k):
             return type("D", (), {"ran": True, "denied": False, "http_status": 200})()
 
@@ -499,6 +505,9 @@ def test_the_control_call_happens_after_the_window_is_counted():
         return []
 
     class _C:
+        def initialize(self):
+            order.append("init")
+
         def call_tool(self, *a, **k):
             order.append("control")
             return type("D", (), {"ran": True, "denied": False, "http_status": 200})()
@@ -511,12 +520,72 @@ def test_the_control_call_happens_after_the_window_is_counted():
     assert order[0] == "count" and "control" in order, order
 
 
+def test_the_control_call_opens_an_mcp_session_before_it_calls_a_tool():
+    """The defect that made this leg unmeasurable on both live days.
+
+    This gateway carries `sessionConfiguration`, so a `tools/call` with no session id is
+    answered HTTP 400 — a transport refusal that has nothing to do with whether a direct
+    invoke produces a span. On 2026-08-12 the control therefore never ran and the leg read
+    INSTRUMENT_UNAVAILABLE; on 2026-08-11 the run short-circuited at NO_INVOKES_IN_WINDOW
+    before reaching the control, so the same defect produced a different string and no test
+    had ever exercised the sequence. Every other script in the project calls `initialize()`
+    first — a convention is not a check (DEV-P4-20).
+    """
+    order: list[str] = []
+
+    class _C:
+        def initialize(self):
+            order.append("init")
+
+        def call_tool(self, *a, **k):
+            order.append("control")
+            return type("D", (), {"ran": True, "denied": False, "http_status": 200})()
+
+    M.query_spans = lambda *a, **k: []
+    M.wait_for_span = lambda *a, **k: (True, 1.0, [["x"]])
+    out = M._span_corroboration(None, _C(), None, gateway_arn="arn:gw", action_id=ACTION,
+                                granted_window=(0.0, 1.0), n_invokes_in_window=20, run_id="r1")
+    assert order == ["init", "control"], (
+        f"the tool call must be preceded by initialize(), got {order}")
+    assert out["control_initialized"] is True
+    assert out["control_call"]["ran"] is True
+
+
+def test_a_session_that_cannot_be_opened_is_recorded_as_the_control_not_running():
+    """A refused `initialize()` must read as an unusable instrument, never as span absence."""
+    M.query_spans = lambda *a, **k: []
+    M.wait_for_span = lambda *a, **k: (False, 1.0, [])
+    called: list[str] = []
+
+    class _NoSession:
+        def initialize(self):
+            raise RuntimeError("McpTransportError: no MCP session id")
+
+        def call_tool(self, *a, **k):
+            called.append("control")
+            return type("D", (), {"ran": True, "denied": False, "http_status": 200})()
+
+    out = M._span_corroboration(None, _NoSession(), None, gateway_arn="arn:gw",
+                                action_id=ACTION, granted_window=(0.0, 1.0),
+                                n_invokes_in_window=20, run_id="r1")
+    assert called == [], "a tool call was attempted on a session that failed to open"
+    assert out["control_initialized"] is False
+    assert out["control_call"]["ran"] is False
+    assert "no MCP session id" in out["control_call"]["error"]
+    assert out["reading"] == "INSTRUMENT_UNAVAILABLE"
+    assert "absence_is_bounded_not_proven" not in out, (
+        "a bounded-absence claim was published from a control that never ran")
+
+
 def test_a_control_call_that_raises_does_not_abort_the_case():
     """The span half is corroboration; a transport error in it must not lose the 120 trials."""
     M.query_spans = lambda *a, **k: []
     M.wait_for_span = lambda *a, **k: (False, 1.0, [])
 
     class _Boom:
+        def initialize(self):
+            return None
+
         def call_tool(self, *a, **k):
             raise RuntimeError("transport")
 
@@ -524,6 +593,9 @@ def test_a_control_call_that_raises_does_not_abort_the_case():
                                 granted_window=(0.0, 1.0), n_invokes_in_window=20,
                                 run_id="r1")
     assert out["control_call"]["ran"] is False and "transport" in out["control_call"]["error"]
+    assert out["control_initialized"] is True, (
+        "the session opened and the TOOL CALL failed — collapsing that into 'not initialized' "
+        "would hide which half of the control broke")
     assert out["reading"] == "INSTRUMENT_UNAVAILABLE"
 
 

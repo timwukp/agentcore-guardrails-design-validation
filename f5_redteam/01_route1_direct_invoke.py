@@ -587,11 +587,22 @@ def _span_corroboration(logs, mcp_client, store, *, gateway_arn: str, action_id:
     control_marker = f"grx-{CASE.lower()}-{run_id}-span-control"
     t0 = time.monotonic()
     try:
+        # `initialize()` first, and inside the try so its failure is recorded rather than
+        # raised. This gateway carries `sessionConfiguration`, so a `tools/call` with no MCP
+        # session id is answered HTTP 400 for a reason that has nothing to do with any
+        # hypothesis here — which is exactly what happened on 2026-08-12 (the leg reported
+        # INSTRUMENT_UNAVAILABLE, correctly, from a control that never ran). On 2026-08-11 the
+        # same defect was invisible because the run short-circuited at NO_INVOKES_IN_WINDOW
+        # before reaching this line. Every other script in the project initialises; this one
+        # did not, and no offline test covered the sequence until now. See DEVIATIONS/DEV-P4-20.
+        mcp_client.initialize()
+        out["control_initialized"] = True
         dec = mcp_client.call_tool(action_id, {"text": control_marker})
         out["control_call"] = {"ran": bool(getattr(dec, "ran", False)),
                                "denied": bool(getattr(dec, "denied", False)),
                                "http_status": getattr(dec, "http_status", None)}
     except Exception as exc:                                    # noqa: BLE001
+        out.setdefault("control_initialized", False)
         out["control_call"] = {"ran": False, "error": f"{type(exc).__name__}: {exc}"}
 
     found, secs, _rows = wait_for_span(logs, gateway_arn, timeout_s=CONTROL_SPAN_TIMEOUT_S,

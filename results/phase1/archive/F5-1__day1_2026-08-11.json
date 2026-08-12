@@ -33,9 +33,9 @@
         "AccessDeniedException"
       ],
       "n_attempted": 20,
-      "n_denied": 12,
-      "n_echoed_marker": 8,
-      "n_executed": 8,
+      "n_denied": 9,
+      "n_echoed_marker": 11,
+      "n_executed": 11,
       "n_unusable": 0,
       "n_usable": 20
     }
@@ -51,14 +51,12 @@
     "amendment_candidate": "sections 4 and 5 treat revoking an IAM grant as an immediate remedy. Measured here: a direct invoke was still succeeding 220s after DeleteRolePolicy returned 200, and the post-restore sample still contained executions after three consecutive denials. An incident runbook that removes a permission and proceeds is relying on something this measurement does not support.",
     "confirmations_required": 3,
     "grant_direction_for_contrast": {
-      "flapped_before_converging": null,
-      "seconds_to_three_consecutive_executions": 300.6
+      "flapped_before_converging": false,
+      "seconds_to_three_consecutive_executions": 31.9
     },
     "n_post_restore_invocations": 20,
-    "n_that_still_executed": 8,
+    "n_that_still_executed": 11,
     "revoke_probe_outcomes": [
-      "executed",
-      "executed",
       "executed",
       "executed",
       "denied_by_iam",
@@ -66,8 +64,8 @@
       "denied_by_iam"
     ],
     "revoke_wait_bound_s": 1800,
-    "seconds_to_the_first_denial": 41.7,
-    "seconds_to_three_consecutive_denials": 62.8,
+    "seconds_to_the_first_denial": 20.8,
+    "seconds_to_three_consecutive_denials": 41.4,
     "strict_form_all_post_restore_invocations_denied": false,
     "what_is_still_required": "the control-plane guard `grant_was_removed_from_the_role`, which reads the role's inline policy set back from IAM and compares it to the shipped baseline, and `denial_was_reasserted_in_the_data_plane`, which requires the deny to be observed again at all",
     "why_this_is_reported_and_not_required": "the strict form asks IAM for a guarantee it does not offer on this timescale. Under a one-confirmation revoke wait 9 of 20 post-restore invocations executed; under three consecutive confirmations spanning 248.5s, 4 of 20 still did; on the next run three consecutive denials were not reached inside 300s at all, and yet an independent 12-probe check minutes later returned 12/12 denied. Raising the confirmation count postpones the same misreading rather than fixing it, because eventual consistency has no bound to wait for. Requiring it would make this case permanently unpublishable while the boundary it tests — whether the runtime role can reach the tool in its SHIPPED configuration — is measured cleanly at n=120."
@@ -109,54 +107,30 @@
     ],
     "propagation_grant": {
       "confirmations_required": 3,
-      "consecutive_confirmations": 0,
+      "consecutive_confirmations": 3,
+      "flapped_before_converging": false,
+      "held_for_s": 20.6,
       "max_wait_s": 300,
+      "n_wanted_outcomes_before_the_final_streak": 0,
       "outcomes_seen": [
         "denied_by_iam",
-        "denied_by_iam",
-        "denied_by_iam",
-        "denied_by_iam",
-        "denied_by_iam",
-        "denied_by_iam",
-        "denied_by_iam",
-        "denied_by_iam",
-        "denied_by_iam",
-        "denied_by_iam",
-        "denied_by_iam",
-        "denied_by_iam",
-        "denied_by_iam",
-        "denied_by_iam",
-        "denied_by_iam",
-        "denied_by_iam",
-        "denied_by_iam",
-        "denied_by_iam",
-        "denied_by_iam",
-        "denied_by_iam",
-        "denied_by_iam",
-        "denied_by_iam",
-        "denied_by_iam",
-        "denied_by_iam",
-        "denied_by_iam",
-        "denied_by_iam",
         "executed",
         "executed",
-        "denied_by_iam"
+        "executed"
       ],
-      "reached": false,
-      "seconds": 300.6,
-      "wanted": "executed",
-      "why_it_matters": "the arm below ran against an IAM state that was never confirmed to have settled within 300s: the wanted outcome was never seen on 3 consecutive probes, so its tally is about an unknown configuration"
+      "reached": true,
+      "seconds": 31.9,
+      "seconds_to_first_confirmation": 11.4,
+      "wanted": "executed"
     },
     "propagation_revoke": {
       "confirmations_required": 3,
       "consecutive_confirmations": 3,
       "flapped_before_converging": false,
-      "held_for_s": 21.1,
+      "held_for_s": 20.6,
       "max_wait_s": 1800,
       "n_wanted_outcomes_before_the_final_streak": 0,
       "outcomes_seen": [
-        "executed",
-        "executed",
         "executed",
         "executed",
         "denied_by_iam",
@@ -164,8 +138,8 @@
         "denied_by_iam"
       ],
       "reached": true,
-      "seconds": 62.8,
-      "seconds_to_first_confirmation": 41.7,
+      "seconds": 41.4,
+      "seconds_to_first_confirmation": 20.8,
       "wanted": "denied_by_iam"
     }
   },
@@ -198,30 +172,20 @@
   "region": "us-east-1",
   "run_id": "r20260810T130945Z",
   "span_corroboration": {
-    "control_call": {
-      "error": "McpTransportError: no MCP session id, and this gateway has sessionConfiguration set, so 'tools/call' would be answered with HTTP 400 for a reason unrelated to any hypothesis. Call initialize() first.",
-      "ran": false
-    },
-    "control_span": {
-      "elapsed_since_control_call_s": 303.1,
-      "seconds_to_first": 303.1,
-      "seen": false,
-      "timeout_s": 300
-    },
     "direct_invoke_window": {
       "in_window": 0,
       "log_group": "aws/spans",
       "rows_returned": 0,
       "span_name": "AgentCore.Policy.AuthorizeAction",
       "timestamps_unparseable_and_counted": 0,
-      "window_end_epoch": 1786498135.7,
-      "window_start_epoch": 1786498128.0
+      "window_end_epoch": 1786486469.1,
+      "window_start_epoch": 1786486469.1
     },
     "is_corroboration_only": true,
-    "n_invokes_in_window": 20,
-    "reading": "INSTRUMENT_UNAVAILABLE",
+    "n_invokes_in_window": 0,
+    "reading": "NO_INVOKES_IN_WINDOW",
     "why": "ZERO_EVENTS reads obs.adverse and n; the oracle's mention of a span is in the PLAN, not in the decision rule, so nothing here can move the verdict",
-    "why_reading": "no span appeared for a gateway call that this script made itself, so the span channel was not demonstrably delivering during this window. Absence of a span for the direct invokes is therefore evidence about the channel, not about the request path."
+    "why_reading": "the granted arm sent nothing during this window — its trials were served from the checkpoint of an earlier process — so the span count over the window says nothing about whether a direct invoke produces an AuthorizeAction span. Re-deriving this corroboration requires re-sending the granted arm, which the verdict does not need: the decision rule reads obs.adverse and n only."
   },
   "startup_interlock": {
     "inline_policies_at_start": [
