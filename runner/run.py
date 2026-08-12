@@ -19,6 +19,31 @@ survives a disconnect, which is exactly the property a batch loop's exit code do
 (feedback_batch_loop_exit_code: a loop's status is only its last iteration). `--jobs` reads those
 files rather than inferring completion from a process listing, so a job that died between two
 polls is still reported as finished-with-a-code and not as "no longer running".
+
+Why a detach is confirmed from the instance rather than from its own launch invocation
+-------------------------------------------------------------------------------------
+On 2026-08-12 this script printed `document process failed unexpectedly: ipc messaging received
+timeout signal` and, on the next line, `detached as 'suite-06'`. Both cannot be true of the same
+run, and the second one is the one a reader acts on. The launch invocation's status answers "did
+SSM deliver and return cleanly", which is not the question; the question is "is there a job".
+So the launch is followed by a second command that looks for `<label>.log` on the instance, and
+the message a caller reads is built from what that found — not from the launch's own exit code
+(`feedback_build_reported_success_built_nothing`).
+
+Why a disk precondition, and why scratch is pruned before a launch
+------------------------------------------------------------------
+The same day, the instance became unreachable entirely: `PingStatus: ConnectionLost`,
+`StatusDetails: Undeliverable`, `ResponseCode: -1`, EC2 status checks still `ok`. The console
+output named the cause — `OSError: [Errno 28] No space left on device` in cloud-init, three boots
+in a row with 20 KB free on a 20 GiB volume — and the reason it could not self-heal: growing the
+filesystem is `growpart`'s job, `growpart` runs from cloud-init, and cloud-init needs disk to
+start. What filled it was 17 GB of pytest basetemps under `/opt/grx/tmp` that no job removed:
+`suite-05` 10 GB and `suite-06` 6.2 GB. `suite-06` died of ENOSPC mid-run and left a 6371-byte
+log with zero `FAILED` lines, i.e. no result at all — a nine-minute suite spent to learn nothing.
+So a launch now (a) removes the scratch of jobs that have finished and are older than
+`PRUNE_DAYS`, (b) refuses to start when less than `MIN_FREE_MB` remains, and (c) has each job
+delete its own scratch when it exits zero. A job that fails keeps its scratch, because that is
+the one time the trees are worth reading; `PRUNE_DAYS` is what bounds it.
 """
 
 from __future__ import annotations
@@ -51,6 +76,23 @@ PY = f"{REPO}/.venv-oracle/bin/python -u"
 # retry. Here the precondition is "scratch space is on the 20 GiB volume".
 TMPDIR = "/opt/grx/tmp"
 PREAMBLE = [f"export TMPDIR={TMPDIR}", f"mkdir -p {TMPDIR}"]
+
+# One offline suite's measured high-water mark, plus a little. 26 test modules copy the evidence
+# tree into their `tmp_path`, and the measurements agree with each other: `suite-05` left 10 GB of
+# basetemps behind, and `suite-07` was at 9,882 MB while still running. So the floor is that number
+# rounded up, not a round guess — a floor BELOW what a suite consumes would admit exactly the
+# launch it exists to refuse, and refusing is far cheaper than the rescue a full root volume costs
+# (a stop, a volume detach, a helper instance, `growpart`, `xfs_growfs`, a reattach).
+MIN_FREE_MB = 12288
+# Long enough that yesterday's failure is still readable, short enough that two failures cannot
+# add up to a wedged instance before anyone looks.
+PRUNE_DAYS = 2
+# How long a job's log may go unwritten before `--jobs` stops calling it RUNNING. The offline suite
+# finishes in about sixteen minutes and prints as it goes; the longest single case measured is an
+# F4 cell at roughly nine. 45 minutes is therefore silence no live job of this project produces,
+# and erring long is deliberate: a false `LOST?` would send someone to relaunch a job that is
+# working, which is the more expensive mistake.
+STALE_MINUTES = 45
 
 
 def _client():
@@ -102,6 +144,125 @@ def _wait(ssm, cid: str, iid: str, poll: int = 5, limit: int = 720) -> int:
     raise SystemExit(f"still running after {poll * limit}s; use --detach for long work")
 
 
+def disk_guard_commands(tmpdir: str, logs: str, label: str,
+                        min_free_mb: int, prune_days: int) -> list[str]:
+    """Prune finished scratch, then refuse the launch if the volume is still too tight.
+
+    Prune first, THEN measure — so a launch that only needs yesterday's finished scratch removed
+    succeeds instead of refusing on a number it could have improved.
+
+    `<label>.rc` present is the first test for "finished". A directory whose job is still running
+    is never touched, however old it is, because `pytest --basetemp=DIR` deletes DIR at startup and
+    pruning a live run's scratch is the same corruption from the other end (measured at 05:33 UTC
+    on 2026-08-12 from a label collision).
+
+    There is a second test, because the first one alone reopens the hole it was written to close. A
+    job killed by an instance STOP never writes its `.rc` — `suite-06` is exactly that: a log, no
+    rc file, no process, and `--jobs` calling it RUNNING hours after the instance was rebooted
+    under it. Scratch in that state would be kept forever, which is unbounded growth again. So an
+    aged directory whose LOG has also not been touched for `prune_days` is treated as dead. The
+    suite it guards takes sixteen minutes; a log silent for two days is not a running job by any
+    reading, and the alternative is a volume that fills on somebody else's timetable.
+
+    Taken as a list of separate SSM commands rather than one string so the refusal is the
+    invocation's exit status (4), not a line of output a caller may not read. Built here, and not
+    inline in `main()`, so a test can generate it against a temporary directory and RUN it —
+    asserting on the text of a shell fragment proves only that the text was written.
+    """
+    return [
+        f"mkdir -p {tmpdir} {logs}",
+        f"for d in $(find {tmpdir} -mindepth 1 -maxdepth 1 -type d -mtime +{prune_days}); do "
+        f'b=$(basename "$d"); why=""; '
+        f"if [ -f {logs}/$b.rc ]; then "
+        f'why="job finished rc=$(cat {logs}/$b.rc)"; '
+        # An absent log counts as untouched, which is why the test is "not modified recently"
+        # rather than "modified long ago": `find` on a missing path prints nothing either way.
+        f'elif [ -z "$(find {logs}/$b.log -mtime -{prune_days} 2>/dev/null)" ]; then '
+        f'why="no .rc, and {logs}/$b.log has not been written for {prune_days} day(s) — '
+        f'the job died without recording an exit code (an instance stop does this)"; fi; '
+        f'if [ -n "$why" ]; then sz=$(du -sm "$d" | cut -f1); rm -rf "$d" && '
+        f'echo "pruned scratch $b: ${{sz}} MB, $why"; '
+        f'else echo "kept scratch $b: no .rc file and its log is still being written"; fi; done',
+        f"free=$(df -m --output=avail {tmpdir} | tail -1 | tr -d ' ')",
+        f'echo "free under {tmpdir}: ${{free}} MB (minimum {min_free_mb} MB)"',
+        f'if [ "$free" -lt {min_free_mb} ]; then '
+        f'echo "REFUSING to start {label}: ${{free}} MB free is below the {min_free_mb} MB a suite '
+        f"needs. A run that fills this volume does not merely fail — it takes cloud-init down with "
+        f"it and the instance stops answering SSM at all, which costs a stop, a volume detach, a "
+        f"helper instance and a growpart to undo (DEV-P4-31). Free space first: "
+        f'runner/run.py \\"du -sm {tmpdir}/*\\"."; exit 4; fi',
+    ]
+
+
+def jobs_commands(logs: str, stale_minutes: int) -> list[str]:
+    """One line per job: label, exit code, log size, last write.
+
+    Why a job with no `.rc` is not simply called RUNNING
+    ---------------------------------------------------
+    It was, and it was wrong. `suite-06` was reported as `RUNNING` with 84 lines for an hour after
+    the instance it was on had been stopped, its volume detached and grown, and the instance
+    started again — there was no process, and there never would be an rc file. "RUNNING" is an
+    inference from a missing file; the only local evidence about liveness is whether the log is
+    still being written. So a job whose log has been silent for `stale_minutes` is reported as
+    `LOST?`, with the question mark meaning exactly what it says: a genuinely quiet job (a long
+    single test, a `sleep`) would read the same way, and the way to settle it is `--tail`.
+    """
+    return [
+        f"mkdir -p {logs}",
+        f"for f in {logs}/*.log; do "
+        f'[ -e "$f" ] || continue; '
+        f'b=$(basename "$f" .log); '
+        f"rc=$(cat {logs}/$b.rc 2>/dev/null || echo RUNNING); "
+        f'if [ "$rc" = RUNNING ] && [ -n "$(find "$f" -mmin +{stale_minutes})" ]; '
+        f'then rc="LOST?"; fi; '
+        # `stat -c` is GNU and `date -r FILE +FMT` is the BSD spelling; taking whichever answers
+        # keeps this line readable on a laptop as well as on the instance, in one format.
+        f't=$(stat -c %y "$f" 2>/dev/null | cut -d. -f1); '
+        f'[ -n "$t" ] || t=$(date -r "$f" "+%Y-%m-%d %H:%M:%S"); '
+        f'printf "%-44s %-8s %8s lines  %s\\n" "$b" "$rc" "$(wc -l < "$f")" "$t"; done',
+        f'echo "(LOST? = no exit code recorded and no log write for {stale_minutes} min; '
+        f'confirm with --tail)"',
+    ]
+
+
+def detach_script(cmd: str, label: str, tmpdir: str, logs: str) -> str:
+    """The one-liner that starts a job, records its exit code, and cleans up after itself.
+
+    `setsid` detaches from the SSM agent's session, so the job is not killed when the invocation
+    ends. The rc file is written by the same subshell that runs the command, so it cannot be
+    written by a wrapper that exited for a different reason, and `rc=$?` is taken on the line
+    immediately after the command — before `du` or `df` can overwrite `$?`.
+
+    TMPDIR is per LABEL, overriding the shared PREAMBLE, and the job removes its own scratch when
+    it exits zero. A job that FAILS keeps its scratch, because that is the one time the `tmp_path`
+    trees are worth reading; `prune_days` in `disk_guard_commands` is what bounds the keeping. The
+    combination is what was missing when 17 GB of `suite-05` and `suite-06` basetemps filled the
+    root volume (this module's docstring).
+    """
+    scratch = f"{tmpdir}/{label}"
+    return (f"mkdir -p {logs} {scratch} && "
+            f"setsid nohup env TMPDIR={scratch} bash -c "
+            # A SUBSHELL, not a brace group. `{ exit 42 ; }` exits the wrapper itself, so the rc
+            # file is never written and `--jobs` reports the job as RUNNING forever — measured on
+            # the runner, not reasoned about. A subshell's `exit` ends only the subshell, which is
+            # what makes the claim above ("the rc file is written by the same subshell") true for
+            # any command and not just for external programs. It also contains a `cd`.
+            f"'( {cmd} ) > {logs}/{label}.log 2>&1; "
+            f"rc=$?; echo $rc > {logs}/{label}.rc; "
+            f"sz=$(du -sm {scratch} 2>/dev/null | cut -f1); "
+            # `df | tail -1` and no `tr`: this whole script is inside `bash -c '...'`, where a
+            # backslash is literal, so an escaped quote would reach `tr` as an argument to delete
+            # rather than as quoting. The leading whitespace in the number is cosmetic.
+            f'echo "--- scratch {scratch}: ${{sz}} MB; free after:'
+            f'$(df -m --output=avail {tmpdir} 2>/dev/null | tail -1) MB" '
+            f">> {logs}/{label}.log; "
+            f'if [ "$rc" = 0 ]; then rm -rf {scratch}; '
+            f'else echo "--- scratch kept for post-mortem (rc=$rc)" >> {logs}/{label}.log; fi'
+            f"' < /dev/null > /dev/null 2>&1 & "
+            f"sleep 2; echo started {label} with TMPDIR={scratch}; "
+            f"pgrep -fa {shlex.quote(cmd.split()[0])} | head -3")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("command", nargs="*", help="shell command to run in the repo root")
@@ -118,14 +279,7 @@ def main() -> int:
     ssm, iid = _client()
 
     if args.jobs:
-        return _wait(ssm, _send(ssm, iid, [
-            f"mkdir -p {LOGS}",
-            f"for f in {LOGS}/*.log; do [ -e \"$f\" ] || continue; "
-            f'b=$(basename "$f" .log); '
-            f'rc=$(cat {LOGS}/$b.rc 2>/dev/null || echo RUNNING); '
-            f'printf "%-44s %-8s %8s lines  %s\\n" "$b" "$rc" "$(wc -l < "$f")" '
-            f'"$(stat -c %y "$f" | cut -d. -f1)"; done',
-        ]), iid)
+        return _wait(ssm, _send(ssm, iid, jobs_commands(LOGS, STALE_MINUTES)), iid)
 
     if args.tail:
         return _wait(ssm, _send(ssm, iid, [
@@ -150,8 +304,8 @@ def main() -> int:
     # which is not what happened to either job. An empty log beside a failing exit code is a lie
     # about the run, and a lie that reads like a fast failure is worse than an error
     # (feedback_cryptic_error_is_missing_guard). --force is the escape hatch, and it says so.
+    q = shlex.quote(label)
     if not args.force:
-        q = shlex.quote(label)
         # Exits NON-ZERO when the label is taken, so the refusal is the command's status and not a
         # line of output the caller may or may not read.
         rc = _wait(ssm, _send(ssm, iid, [
@@ -162,28 +316,45 @@ def main() -> int:
             f"exit 3; fi; echo \"label {label} is free\""]), iid)
         if rc:
             return rc
-    # `setsid` detaches from the SSM agent's session, so the job is not killed when the invocation
-    # ends. The rc file is written by the same subshell that runs the command, so it cannot be
-    # written by a wrapper that exited for a different reason.
-    #
-    # TMPDIR is per LABEL, overriding the shared PREAMBLE. Two jobs sharing scratch is not a
-    # tidiness question: `pytest --basetemp=DIR` REMOVES DIR at startup, so a second suite run
-    # deleted the first one's `tmp_path` trees mid-flight and both runs became unreportable — one
-    # measured, at 05:33 UTC on 2026-08-12, from a label collision that should not have been
-    # possible either (see the --force guard above). A job's scratch is its own, and the job is what
-    # cleans it, so a per-label directory is both the isolation and the bound.
-    scratch = f"{TMPDIR}/{label}"
-    script = (f"mkdir -p {LOGS} {scratch} && "
-              f"setsid nohup env TMPDIR={scratch} bash -c "
-              f"'{{ {cmd} ; }} > {LOGS}/{label}.log 2>&1; "
-              f"echo $? > {LOGS}/{label}.rc' < /dev/null > /dev/null 2>&1 & "
-              f"sleep 2; echo started {label} with TMPDIR={scratch}; "
-              f"pgrep -fa {shlex.quote(cmd.split()[0])} | head -3")
-    rc = _wait(ssm, _send(ssm, iid, pre + [script]), iid)
+
+    rc = _wait(ssm, _send(ssm, iid,
+                          disk_guard_commands(TMPDIR, LOGS, label,
+                                              MIN_FREE_MB, PRUNE_DAYS)), iid)
+    if rc:
+        return rc
+
+    launch_rc = _wait(ssm, _send(ssm, iid, pre + [
+        detach_script(cmd, label, TMPDIR, LOGS)]), iid)
+
+    # Ground truth, asked of the instance. See the docstring: the launch invocation's own status
+    # answered a different question, and answering it out loud is how `detached as 'suite-06'` got
+    # printed under `document process failed unexpectedly`.
+    started = _wait(ssm, _send(ssm, iid, [
+        f"if [ -e {LOGS}/{q}.log ]; then "
+        f'echo "confirmed on the instance: {LOGS}/{label}.log exists '
+        f"(rc: $(cat {LOGS}/{q}.rc 2>/dev/null || echo RUNNING), "
+        f'$(wc -l < {LOGS}/{q}.log) lines)"; else '
+        f'echo "NOT STARTED: {LOGS}/{label}.log does not exist"; exit 5; fi']), iid)
+
+    if started:
+        print(f"\ndetach FAILED — nothing is running under {label!r}. The launch invocation exited "
+              f"{launch_rc} and the confirmation exited {started}; neither found a log on the "
+              f"instance. Re-run it, or check `runner/run.py --jobs`.", file=sys.stderr)
+        return started or 1
+    if launch_rc:
+        # Confirmed running, but the launch reported an error — say both and fail. Returning 0 here
+        # would make an SSM fault invisible to any caller that only checks the exit code, and the
+        # honest state is "it is running AND something went wrong".
+        print(f"\ndetached as {label!r} — CONFIRMED on the instance, but the launch invocation "
+              f"exited {launch_rc}, so something in the SSM path also failed. Read that error "
+              f"before trusting the run:\n"
+              f"  runner/run.py --tail {label}\n"
+              f"  runner/run.py --jobs", file=sys.stderr)
+        return launch_rc
     print(f"\ndetached as {label!r}. Follow with:\n"
           f"  runner/run.py --tail {label}\n"
           f"  runner/run.py --jobs")
-    return rc
+    return 0
 
 
 if __name__ == "__main__":

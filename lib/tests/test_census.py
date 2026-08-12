@@ -91,22 +91,61 @@ def test_the_four_denominators_are_distinct_and_derived(census, capsys):
 
 
 def test_the_hand_census_numbers_that_were_wrong_stay_wrong(census):
-    """Pin the two corrected values so a regression cannot quietly restore them.
+    """Pin the hand census's ERROR, and the cause of it — not a snapshot of the fix.
 
     The hand census said F1 was 17/26 and TRUE was 37. Both were short by exactly the
-    two cases it excluded, F1-21 and F1-4. If either number comes back, something has
-    started dropping register cases again.
+    two cases it excluded, F1-21 and F1-4, which are in the register and do have
+    verdicts. If either number comes back, something has started dropping register
+    cases again.
+
+    An earlier version of this test asserted `(len(f1_done), len(f1_eligible)) ==
+    (19, 28)` and `n_true == 39` — the corrected values as they stood the day it was
+    written. That is the wrong quantity to watch. Those two numerators move every time
+    a case gets a verdict, so the test failed on F1-18 landing, which is the project
+    working exactly as intended. A test that reds on progress teaches people to edit
+    the test, which is how the pinned value it exists to defend gets edited away.
+
+    So this watches three things that do NOT move with the verdict count:
+
+    * the denominator, reconciled THROUGH the cause: 26 is what F1's denominator
+      becomes when the two dropped cases are removed from it, so the corrected figure
+      is not asserted as a literal at all — it is derived from the hand figure plus
+      the named omission. Registering or dropping an F1 case breaks this, and the
+      register is sha-pinned, so that break would be a real one;
+    * that both dropped cases carry verdicts, which is the numerator's half of the
+      same cause;
+    * that the refuted pairs are not the live ones.
+
+    The floors are the only snapshot left, and they are one-sided on purpose: they
+    catch a case losing its verdict, which is the failure mode, while a case GAINING
+    one passes. Raise them when convenient; if one ever has to come DOWN, a verdict
+    was withdrawn and that belongs in DEVIATIONS.md with a reason.
     """
     CASES, _ = census.load_register()
     ver = census.published()
     f1_eligible = {c for c in CASES if CASES[c][0] == "F1"}
     f1_done = f1_eligible & set(ver)
-    assert (len(f1_done), len(f1_eligible)) == (19, 28), \
-        "F1 is 19/28; 17/26 is the hand census's error"
+    dropped = {"F1-21", "F1-4"}
+
+    assert dropped <= f1_eligible, \
+        f"{sorted(dropped - f1_eligible)} left F1's denominator — the hand census's exact error"
+    assert len(f1_eligible - dropped) == 26, (
+        f"F1's denominator is {len(f1_eligible)}; without the two cases the hand census "
+        f"dropped it is {len(f1_eligible - dropped)}, and the hand census said 26. That "
+        f"identity is the whole finding, so a change here is a register change, not a verdict.")
+    assert dropped <= f1_done, \
+        f"{sorted(dropped - f1_done)} has no verdict — the hand census's other half"
+
     n_true = sum(1 for v in ver.values() if v[0][1] == "TRUE")
-    assert n_true == 39, "TRUE is 39; 37 is the hand census's error"
-    for cid in ("F1-21", "F1-4"):
-        assert cid in CASES and cid in ver, f"{cid} is registered and has a verdict"
+    # DEAD BY CONSTRUCTION, and kept anyway. The identity above forces the denominator to
+    # 28, so `== 26` cannot be reached while that assert holds: the hand-census mutation
+    # arm fires two lines earlier, not here. It stays because the refuted pair should be
+    # greppable as a literal in the file that defends it, and a reader should be told which
+    # of these lines is load-bearing rather than left to assume all of them are.
+    assert (len(f1_done), len(f1_eligible)) != (17, 26), "17/26 is the hand census's error"
+    assert n_true != 37, "37 is the hand census's error"   # reachable: precedes the floor
+    assert len(f1_done) >= 20, f"F1 had 20 verdicts and now has {len(f1_done)}"
+    assert n_true >= 40, f"TRUE was 40 and is now {n_true}"
 
 
 def test_unmapped_cases_are_all_accounted_for(census):

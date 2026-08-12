@@ -82,10 +82,39 @@ MAPPING: dict[tuple[str, str], tuple[tuple[str, ...], str]] = {
         ("bedrock-agentcore:UpdateGateway",), "any"),
     ("bedrock-agentcore-control", "create_gateway_target"): (
         ("bedrock-agentcore:CreateGatewayTarget",), "any"),
-    ("bedrock-agentcore-control", "create_policy"): (("bedrock-agentcore:CreatePolicy",), "any"),
-    ("bedrock-agentcore-control", "get_policy"): (("bedrock-agentcore:GetPolicy",), "any"),
-    ("bedrock-agentcore-control", "update_policy"): (("bedrock-agentcore:UpdatePolicy",), "any"),
-    ("bedrock-agentcore-control", "delete_policy"): (("bedrock-agentcore:DeletePolicy",), "any"),
+    # The four policy calls each authorize TWO actions, and the second one is not derivable from
+    # the call name. Measured on 2026-08-12: the runner's derived role already held
+    # `bedrock-agentcore:CreatePolicy`, and `CreatePolicy` still failed —
+    #
+    #   AccessDeniedException: ... not authorized to perform:
+    #   bedrock-agentcore:ManageResourceScopedPolicy on resource: <the GATEWAY arn>
+    #   because no identity-based policy allows the bedrock-agentcore:ManageResourceScopedPolicy action
+    #
+    # — because a policy is scoped to the resource it guards, so the service authorizes against the
+    # GATEWAY as well as against the policy. This is a standing hole in the derivation's premise,
+    # worth stating where the premise lives: `measured_operations()` reads the *operation names*
+    # from the evidence tree, and an operation name cannot reveal an action the service checks
+    # under a different name. The evidence tree recorded `create_policy` succeeding for two weeks
+    # under admin credentials, where the extra check passed invisibly. Only a least-privilege
+    # caller could surface it, and the runner is the first one this project has had.
+    #
+    # `create_policy` is the one arm MEASURED to need it. The other three are inferred from the
+    # same mechanism rather than observed, and are marked so: they are cheap to include and the
+    # alternative is discovering each one at the cost of a failed multi-hundred-call run. If a
+    # future least-privilege failure names an action for a call NOT listed here, that is evidence
+    # about this comment, not about the API.
+    ("bedrock-agentcore-control", "create_policy"): (
+        ("bedrock-agentcore:CreatePolicy",
+         "bedrock-agentcore:ManageResourceScopedPolicy"), "any"),          # measured
+    ("bedrock-agentcore-control", "get_policy"): (
+        ("bedrock-agentcore:GetPolicy",
+         "bedrock-agentcore:ManageResourceScopedPolicy"), "any"),          # inferred
+    ("bedrock-agentcore-control", "update_policy"): (
+        ("bedrock-agentcore:UpdatePolicy",
+         "bedrock-agentcore:ManageResourceScopedPolicy"), "any"),          # inferred
+    ("bedrock-agentcore-control", "delete_policy"): (
+        ("bedrock-agentcore:DeletePolicy",
+         "bedrock-agentcore:ManageResourceScopedPolicy"), "any"),          # inferred
     ("bedrock-agentcore-control", "create_policy_engine"): (
         ("bedrock-agentcore:CreatePolicyEngine",), "any"),
     ("bedrock-agentcore-control", "delete_policy_engine"): (
@@ -152,6 +181,30 @@ RUNNER_EXTRAS: dict[str, str] = {
                                       "resource the arms create and delete most often",
     "bedrock-agentcore:GetPolicyEngine": "F1-3 reads the two abandoned engines as read-only "
                                          "evidence and must be able to confirm they still exist",
+    # ---------------------------------------------------------------------------------------
+    # Read actions the SERVICE performs on the caller's behalf while a policy settles, which no
+    # call in the evidence tree makes and therefore no derivation from operation names can find.
+    # Measured 2026-08-12, second failure in the same run: `CreatePolicy` returned 200 and the
+    # policy then settled `CREATE_FAILED` with
+    #   reasons=['Insufficient permissions to list targets on gateway with ID <gw>']
+    # The failure is ASYNCHRONOUS, so it does not arrive as an AccessDeniedException on the call
+    # — it arrives as a status on a resource that was created. A harness that only checked the
+    # CreatePolicy response would have carried on with a dead policy, which is why
+    # `_create_probe` waits for the settled status and refuses to continue without a live
+    # guardrail (`feedback_missing_check_is_not_pass`).
+    #
+    # Only `ListGatewayTargets` is named by a measured error. The other two are the rest of that
+    # read family on the same resources, included together because each one otherwise costs a
+    # failed multi-hundred-call run to discover, and all three are read-only. Marked so the
+    # distinction between measured and inferred survives.
+    "bedrock-agentcore:ListGatewayTargets": "the service lists a gateway's targets while a "
+                                            "resource-scoped policy settles; measured as the "
+                                            "CREATE_FAILED reason on 2026-08-12",
+    "bedrock-agentcore:GetGatewayTarget": "inferred companion of ListGatewayTargets — settlement "
+                                          "reads target detail, and a second async CREATE_FAILED "
+                                          "costs a whole run to observe",
+    "bedrock-agentcore:ListPolicyEngines": "inferred; the engine-to-gateway binding is resolved "
+                                           "during the same settlement",
     "bedrock:ListGuardrails": "confirms the three DRAFT guardrails are untouched before a run, "
                               "which is a precondition no arm may violate",
     "logs:DescribeDeliveries": "delivery teardown has to find the deliveries it created before "

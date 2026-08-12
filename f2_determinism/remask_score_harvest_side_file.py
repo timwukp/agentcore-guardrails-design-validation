@@ -43,6 +43,7 @@ sys.path.insert(0, str(ROOT / "lib"))
 
 import awsclients as A  # noqa: E402
 import redact  # noqa: E402
+import testbed as T  # noqa: E402
 
 TARGET = ROOT / "results" / "phase1" / "F2_score_harvest_shared.json"
 D12 = re.compile(r"(?<!\d)\d{12}(?!\d)")
@@ -72,7 +73,14 @@ def main(argv: list[str] | None = None) -> int:
     before = path.read_text(encoding="utf-8")
     obj_before = json.loads(before)
 
-    aid = A.account_id(A.ClientFactory())          # resolves AND registers with the masker
+    # The region comes from the ledger, not from the environment, for the same reason every
+    # other script in this repo reads it there: `A.factory` takes `region` positionally and
+    # write-once, and the only region whose STS answer is the right one is the region the
+    # harvest itself ran in. `A.account_id` is the one choke point that calls
+    # `redact.register_account_id`, which is what makes the bare 12-digit form visible to
+    # `mask_text` at all.
+    state = T.State.load()
+    aid = A.account_id(A.factory(state.region))    # resolves AND registers with the masker
     n_before = before.count(aid)
     if n_before == 0:
         print(f"NOT THE LEAK — {path.name} carries 0 occurrences of this account id. Either it "
@@ -101,7 +109,13 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     residual = sorted(set(D12.findall(after)))
-    print(f"{path.relative_to(ROOT)}")
+    # `--path` exists so this can be rehearsed on a copy outside the tree, so the label must
+    # not assume the file is under ROOT — `relative_to` raises rather than falling back.
+    try:
+        label = str(path.resolve().relative_to(ROOT))
+    except ValueError:
+        label = str(path)
+    print(label)
     print(f"  account id occurrences: {n_before} -> {n_after}")
     print(f"  rows by arm: {rows_before} (total {sum(rows_before.values())})")
     print(f"  bytes: {len(before)} -> {len(after)}")

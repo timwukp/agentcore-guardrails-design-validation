@@ -286,18 +286,48 @@ def _skip(rel: str, patterns: tuple[str, ...]) -> bool:
     return False
 
 
+def _run_on_instance(st: dict, script: str, *, timeout_s: int = 900) -> tuple[int, str, str]:
+    """Run one shell script on the live instance and return `(rc, stdout, stderr)`.
+
+    A separate helper rather than a fourth copy of the send/poll loop, and it returns the rc
+    instead of printing it: the callers here decide a *verdict* from it, and a helper that
+    swallowed the rc would make every verdict optimistic.
+    """
+    ssm = boto3.client("ssm", region_name=st["region"])
+    cid = ssm.send_command(
+        InstanceIds=[st["instance_id"]], DocumentName="AWS-RunShellScript",
+        TimeoutSeconds=600,
+        Parameters={"commands": [script],
+                    "executionTimeout": [str(timeout_s)]})["Command"]["CommandId"]
+    for _ in range(timeout_s // 5):
+        time.sleep(5)
+        try:
+            inv = ssm.get_command_invocation(CommandId=cid, InstanceId=st["instance_id"])
+        except ssm.exceptions.InvocationDoesNotExist:
+            # The invocation is not registered the instant `send_command` returns. Treated as
+            # "not yet" rather than as a failure -- and NOT as a success.
+            continue
+        if inv["Status"] in ("Pending", "InProgress", "Delayed"):
+            continue
+        rc = 0 if inv["Status"] == "Success" else (inv.get("ResponseCode") or 1)
+        return rc, inv["StandardOutputContent"] or "", inv["StandardErrorContent"] or ""
+    return 124, "", f"timed out after {timeout_s}s waiting for {cid}"
+
+
 def cmd_push(args) -> int:
     st = _state()
     tgz = ROOT / "runner" / ".state" / "grx-validation.tar.gz"
     tgz.parent.mkdir(parents=True, exist_ok=True)
     patterns = exclusions()
     n = 0
+    manifest: list[str] = []
     with tarfile.open(tgz, "w:gz") as tar:
         for path in sorted(ROOT.rglob("*")):
             rel = str(path.relative_to(ROOT))
             if _skip(rel, patterns) or not path.is_file():
                 continue
             tar.add(path, arcname=f"grx-validation/{rel}")
+            manifest.append(f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {rel}")
             n += 1
     # Both bounds. A tarball that read almost nothing extracts successfully and leaves the
     # instance with a repo that cannot run anything; one that read too much ships a 213 MB wheel
@@ -324,7 +354,53 @@ def cmd_push(args) -> int:
     if head["Metadata"].get("sha256") != digest or head["ContentLength"] != tgz.stat().st_size:
         raise SystemExit("uploaded object does not match what was packaged")
     print(f"pushed {n} files, {tgz.stat().st_size:,} bytes, sha256 {digest[:16]}")
-    print(f"on the instance: grx-refresh")
+
+    # ---------------------------------------------------------------- refresh, then VERIFY it
+    # This block exists because of a measured failure, not as belt-and-braces. Until now `push`
+    # uploaded the object and printed `on the instance: grx-refresh` as a HINT, leaving the
+    # refresh to the operator. On 2026-08-12 the hint was read as a report: the push said
+    # "pushed 526 files" and the instance kept the tree it already had, so a detached job ran
+    # against code from four hours earlier. It survived only by luck -- the file it needed was
+    # ABSENT, so python died with Errno 2 in the first second. Had the file merely been STALE the
+    # job would have run to completion and published results attributed to code that never ran
+    # them (`feedback_build_reported_success_built_nothing`, `feedback_no_deploy_path_no_component`).
+    #
+    # So the refresh is now part of `push`, and `push` does not report success until it has
+    # confirmed the extracted tree file-by-file. `sha256sum -c` is the confirmation: it fails on
+    # a content mismatch AND on a file the tarball carried that the tree does not have, which is
+    # exactly the two ways a half-refresh presents.
+    #
+    # What this proves and what it does not: every one of the `n` packaged files is present on the
+    # instance with the bytes packaged here. It does NOT prove the tree has nothing EXTRA -- `tar
+    # -xzf` overwrites and never deletes, so a file deleted locally survives on the instance until
+    # a rebootstrap. That residual is stated rather than implied by silence.
+    man = ROOT / "runner" / ".state" / "manifest.txt"
+    man.write_text("\n".join(manifest) + "\n", encoding="utf-8")
+    s3.put_object(Bucket=st["bucket"], Key="code/MANIFEST.txt", Body=man.read_bytes())
+    rc, out, err = _run_on_instance(st, f"""
+set -uo pipefail
+grx-refresh || {{ echo "grx-refresh FAILED with $?"; exit 9; }}
+aws s3 cp s3://{st['bucket']}/code/MANIFEST.txt /opt/grx/tmp/manifest.txt \
+    --region {st['region']} --quiet || exit 8
+cd /opt/grx/grx-validation || exit 7
+lines=$(wc -l < /opt/grx/tmp/manifest.txt)
+# A zero-line manifest would make `sha256sum -c` verify nothing and is an ERROR, not a pass
+# (feedback_zero_file_scan_is_error). The count is compared to what was packaged, so a manifest
+# that arrived truncated cannot read as clean either (feedback_two_numbers_two_claims).
+if [ "$lines" -ne {n} ]; then
+    echo "manifest has $lines line(s), but {n} file(s) were packaged"; exit 6
+fi
+sha256sum -c --quiet /opt/grx/tmp/manifest.txt || exit 5
+echo "VERIFIED $lines file(s) on the instance"
+""")
+    print((out or "").rstrip() or "(no output from the instance)")
+    if err.strip():
+        print("--- stderr from the instance", file=sys.stderr)
+        print(err.rstrip()[:4000], file=sys.stderr)
+    if rc != 0 or "VERIFIED" not in out:
+        print(f"\nPUSH NOT CONFIRMED (rc={rc}). The instance is NOT known to be running this "
+              f"tree; do not launch a job against it.", file=sys.stderr)
+        return rc or 1
     return 0
 
 

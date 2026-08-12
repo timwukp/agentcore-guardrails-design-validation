@@ -6358,8 +6358,24 @@ carries a `_mask_bare_account` for the same field on the same surface.
 `check_redaction.py` would have failed the push. It is a real backstop and it works. But it is
 a gate at the boundary, not an invariant at the write: it fires **after** the file exists, and
 only for files in a tree it is pointed at. The leaking file was written on the EC2 runner and
-staged to S3; it has never been through the laptop's gate, and it is still unmasked where it
-sits. Publication would have caught it. Nothing was going to catch it *there*.
+staged to S3; it had never been through the laptop's gate, and for most of a day it sat unmasked
+where it was written. Publication would have caught it. Nothing was going to catch it *there*.
+
+The repair has since run on the instance, which is the only copy that existed: `grep -c` on
+`results/phase1/F2_score_harvest_shared.json` went from **6** to **0**, six `<account>`
+placeholders are in their place, all 900 rows and the key shape are unchanged, and the file grew
+from 356,172 to 356,154 characters. One 12-digit token remains and is reported rather than
+masked: it is the **last group of the request id beginning `d1f46c07-7c73-4c40-8aa9-`**. That is
+the UUID false positive the redaction test suite already knows about, not an identifier, and the
+repair script prints such residuals instead of deciding about them.
+
+The digits themselves are deliberately not quoted here, and that is not squeamishness — the first
+draft of this paragraph did quote them, and **the gate failed on this file**, correctly: a bare
+run of twelve digits in a `.md` is indistinguishable from an account id to anything that reads
+bytes, including the gate whose job is to assume the worst. The alternative was a reviewed
+exception waiving a real digit run in the deviation log, which weakens the gate permanently to
+document a false positive once. Naming the id by its stable prefix keeps the claim checkable —
+`grep d1f46c07 results/phase1/F2_score_harvest_shared.json` finds it — and ships no digit run.
 
 ### What changed
 
@@ -6418,6 +6434,222 @@ without writing. The four verdict files beside it need nothing.
 | neither inventory has decayed | `test_every_waiver_still_points_at_a_real_unmasked_write`, `test_every_exclusion_still_points_at_a_real_unmasked_write` | an entry whose write was masked or moved ⇒ fails |
 | each entry says something | `test_every_waiver_states_a_reason_not_a_shrug`, `test_every_exclusion_states_a_reason_not_a_shrug` | caught one of my own entries at 39 characters |
 | the scan is not reading zero | `test_the_scan_reads_more_than_zero_files` | 92 files, 10 writer modules, four named probes that a widened `SKIP_DIRS` would drop |
+
+---
+
+## DEV-P4-31 — the runner stopped answering at all, and the cause was 17 GB of test scratch that no job ever removed
+
+**Case:** none directly. **Effect:** `suite-06` produced no result, and every case queued behind it
+waited about two and a half hours.
+
+### What was observed, in the order it was observed
+
+`runner/run.py --jobs` and `runner/sync.py status` both returned rc 1 with no output. SSM said
+`PingStatus: ConnectionLost` (last ping 14:30:59 UTC), and a `send-command` came back
+`StatusDetails: "Undeliverable"`, `ResponseCode: -1`. EC2's own status checks were `ok` — both of
+them, instance and system. Two reboots changed nothing.
+
+`Undeliverable` argued *against* a full disk, which was the first hypothesis: a disk-full instance
+usually still answers, badly. That was the wrong inference, and it cost a detour. What settled it
+was `aws ec2 get-console-output`, which is the only channel that does not depend on the agent:
+
+```
+[    6.113491] cloud-init[1480]: OSError: [Errno 28] No space left on device: '/var/lib/cloud/data/tmp6kxcgcva'
+[    6.719268] cloud-init[1571]: OSError: [Errno 28] No space left on device: '/var/lib/cloud/data/tmp0yvmubjc'
+[FAILED] Failed to start cloud-config.service - Apply the settings specified in cloud-config.
+[    7.336304] cloud-init[1622]: OSError: [Errno 28] No space left on device: '/var/lib/cloud/data/tmproe9z67r'
+```
+
+`cloud-config` and `cloud-final` both failed to start, on three consecutive boots, with **20 KB**
+free on a 20 GiB root volume. The SSM agent starts, finds no room to write, and never registers —
+which is what `Undeliverable` had been reporting all along, about the agent rather than about the
+network.
+
+### The deadlock, and why growing the volume was not enough on its own
+
+Growing the EBS volume to 40 GiB did not fix it. Enlarging the volume does not enlarge the
+partition or the filesystem; on AL2023 that is `growpart` plus `xfs_growfs`, run by **cloud-init**
+at boot — and cloud-init was the process dying for want of disk. The instance could not perform
+the repair that would have let it perform the repair.
+
+The way out was to take the filesystem to a machine that was not full: stop the instance, detach
+the root volume, attach it as a data volume to a one-shot helper (`i-015a9c4460c60f1a9`, since
+terminated), `growpart` + `xfs_growfs` there, delete the scratch, reattach at `/dev/xvda`, start.
+About $0.02 of helper time and 20 GiB more volume (+$1.60/month at gp3 list). The helper had to
+reuse the runner's own AMI (`ami-07a5b367e8dc8bd92`) because this account denies reads under the
+`/aws/` SSM parameter namespace, so `/aws/service/ami-al2023-latest/...` — the normal way to name
+a current AL2023 image — is not available here.
+
+Non-destructive on purpose: terminating and re-provisioning would have been quicker and would have
+destroyed `suite-01` through `suite-06`'s logs. Keeping them is how the next fact was found.
+
+### What actually filled it
+
+`/opt/grx/tmp` was **17 GB**: `suite-05` 10 GB and `suite-06` 6.2 GB of `pytest --basetemp` trees,
+because 26 test modules copy the evidence tree into their `tmp_path` and nothing ever deleted the
+result. `run.py` had already been given per-label scratch directories, for a different reason (a
+label collision at 05:33 UTC had one run's `--basetemp` deleting another's mid-flight), and the
+comment beside that change said "the job is what cleans it". No job cleaned it. A directory named
+per label is isolation; it is not a bound.
+
+`suite-06` is the cost. Its log is 6371 bytes with **zero** `FAILED` lines: it did not fail, it
+stopped, mid-run, on the same ENOSPC. A suite's worth of collection and about nine minutes bought
+no verdict on anything.
+
+### The reporting failures beside it
+
+`run.py --detach --label suite-06` printed, two lines apart:
+
+```
+document process failed unexpectedly: ipc messaging received timeout signal , check [ssm-document-worker]/...
+detached as 'suite-06'. Follow with: ...
+```
+
+Both cannot be true, and the second is the one a reader acts on. The launch invocation's status
+answers "did SSM deliver and return cleanly"; the question is "is there a job", and the old code
+answered the second with the first one's silence. Separately, `--jobs` reported `suite-06` as
+`RUNNING` with 84 lines for over an hour *after* the instance had been stopped, its volume
+detached, grown and reattached — there was no process, and no rc file was ever going to appear.
+`RUNNING` was an inference from a missing file presented as an observation.
+
+### What changed
+
+1. **A disk precondition before any detach.** `disk_guard_commands()` prunes, measures, and exits
+   **4** below the floor, so the refusal is the invocation's status rather than a line of output.
+   `MIN_FREE_MB` is 12,288 — one suite's *measured* footprint (10 GB left by `suite-05`, 9,882 MB
+   in flight during `suite-07`) rounded up. A floor below what a suite consumes would admit
+   precisely the launch it exists to refuse.
+2. **A scratch lifecycle.** A job removes its own scratch when it exits **0**; a job that fails
+   keeps it, because those trees are the only copy of what it was looking at. Aged scratch is then
+   pruned on the next launch — either because an `.rc` file says the job finished, or because the
+   job's **log** has also been silent for `PRUNE_DAYS`, which is what a killed job looks like.
+   Without that second rule, `suite-06`'s state — log, no rc, no process — would have been kept
+   forever, which is the same unbounded growth from a different direction.
+3. **Detachment is confirmed from the instance.** After the launch, a second command looks for
+   `<label>.log`; `detached as` is printed only if that found it, and a launch error under a
+   confirmed job prints both and still exits non-zero, because "it is running AND something went
+   wrong" is the honest state.
+4. **`--jobs` no longer guesses.** A job with no rc file whose log has not been written for
+   `STALE_MINUTES` (45 — longer than the whole suite, and much longer than the ~9-minute F4 cell
+   that is the longest single case measured) is reported `LOST?`, with a legend saying what the
+   question mark means and that `--tail` settles it. Run against the live instance immediately
+   after the change, `suite-06` reported `LOST?` and `suite-07` `RUNNING`.
+5. **The wrapper runs the command in a subshell, not a brace group.** `{ exit 42 ; }` exits the
+   wrapper itself, so the rc file is never written and the job reads as `RUNNING` forever. Found by
+   running the fragment on the runner — on a laptop the job cannot start at all, so the bug was
+   invisible there.
+
+### Guards
+
+| guard | assertion | mutation arm |
+|---|---|---|
+| aged finished scratch is reclaimed | `test_finished_scratch_older_than_the_window_is_removed` | `prune_days=99` ⇒ nothing may be removed (`test_the_prune_is_not_vacuous`) |
+| a live job's scratch is never touched | `test_a_running_jobs_scratch_is_never_pruned_however_old` | backdate the same job's log ⇒ it is reclaimed instead |
+| a killed job's scratch is still reclaimed | `test_scratch_whose_job_died_without_an_rc_file_is_reclaimed`, `test_scratch_with_no_log_at_all_is_reclaimed` | touch the log ⇒ kept |
+| the floor refuses, and admits | `test_a_launch_is_refused_when_the_floor_is_not_met` (exit 4, names DEV-P4-31), `test_a_launch_with_room_is_allowed_and_says_the_numbers` | both arms of the same comparison |
+| a refusal stops the launch | `test_the_disk_guards_refusal_stops_the_launch` | asserts **2** SSM invocations, not 4 |
+| a green job cleans up, a red one does not | `test_a_job_that_succeeds_removes_its_own_scratch`, `test_a_job_that_fails_keeps_its_scratch_and_says_so` | executed for real via `bash`, not read |
+| the recorded code is the command's | `test_the_recorded_exit_code_is_the_commands_and_not_the_cleanups` | `exit 42` — the case that distinguishes a subshell from a brace group |
+| `detached as` is never printed for a job that does not exist | `test_a_launch_error_is_not_reported_as_a_detach` | replays the measured `ipc messaging received timeout signal` |
+| an SSM fault under a live job is still reported | `test_a_confirmed_job_under_a_failed_launch_reports_both` | exit code must stay non-zero |
+| `RUNNING` is not asserted without evidence | `test_a_job_with_no_exit_code_and_a_silent_log_is_not_called_running`, `test_a_job_written_to_just_now_is_still_called_running`, `test_a_finished_job_reports_its_code_and_is_never_guessed_about` | an rc file outranks the heuristic |
+| the guards are called, not merely defined | `test_the_guards_are_wired_into_the_detach_path_and_not_merely_defined`, `test_a_taken_label_still_stops_before_the_disk_guard` | read off the recorded invocations, not the source |
+
+Five of these execute shell that only exists on Linux (`setsid` is util-linux; `df --output=avail`
+is GNU coreutils). They **skip** on the laptop with the reason stated, and run on the instance:
+`runner/tests/` is 55 passed there against 50 passed / 5 skipped locally. The `setsid` skip was
+discovered by the tests failing, not assumed — which is also how the brace-group bug surfaced.
+
+---
+
+## DEV-P4-32 — the write guard's third channel was blind to an 80-column terminal, so on Linux it convicted every innocent spawner it exists to acquit
+
+**When** 2026-08-12, on the EC2 runner. **Cost** $0 — offline. **Effect on the document under
+test** none: this is instrument-side, and it never ran on a live case.
+
+### What was observed
+
+`runner/tests/` went green on the instance, and seven suite failures remained. Six of them were
+the same fact reported six times: `lib/tests/test_write_guard.py::test_a_foreign_live_run_makes_-
+a_spawners_charge_unenforceable` failed, and `test_write_guard_mutation.py`'s **control** arm plus
+four of its mutants failed *because* that arm fails inside them. A control arm that fails is not a
+statement about any mutant, so the mutation numbers those four printed were not measurements of
+anything. All six passed on the laptop.
+
+### The cause
+
+`conftest._foreign_live_run` — the channel added in DEV-P4-18 to stop the guard convicting tests
+for a concurrent live run's writes — reads the process table with
+
+    ps -eo pid=,ppid=,command=
+
+`ps` truncates each row to the output width, and **procps-ng takes that width from `$COLUMNS`
+even when stdout is a pipe.** pytest exports `COLUMNS` for its own terminal reporting, and
+`pytester` fixes it at 80, so inside the arm the row for the orphaned writer came back as
+
+    '/opt/grx/grx-validation/.venv-oracle/bin/python f5_redteam/01_fo'
+
+That string still matches `_LIVE_GLOBS` — `f5_redteam/` is in it — and no longer ends in `.py`, so
+the very next test threw the row away. The channel then reported *no foreign run*, and the
+spawning test was convicted: the 49-error regression of DEV-P4-18, reproduced exactly, by an
+argument to `ps`.
+
+macOS's BSD `ps` ignores `COLUMNS` when stdout is not a tty — measured, 4,474 characters with and
+without it — which is the whole reason this was invisible on the laptop for two days.
+
+### Two things worth naming, because neither is about `ps`
+
+**The arm that "passed" next to it passed for the wrong reason.**
+`test_a_foreign_dry_run_is_not_an_excuse` asserts that a `--dry-run` neighbour does **not** excuse
+a spawner, i.e. it asserts a conviction. On Linux it got its conviction from the truncation
+instead of from the `--dry-run` check it was written to exercise, and was green throughout. This is
+`feedback_probe_must_reach_the_code` from the other side: a green arm whose expected outcome
+happens to coincide with the failure mode tells you nothing, and it sat one function away from the
+arm that was red.
+
+**The red arm could not say why it was red.** Its symptom is "a spawner was convicted", which is
+equally the symptom of a broken parent chain, a missed glob, a containment mismatch, and a dead
+orphan. Diagnosis took an instrumented copy of the guard — through the `GRX_CONFTEST` seam that
+`test_write_guard_mutation.py` already provides, so the real file was never touched — to establish
+which of the four it was. That is why the new arm below asserts the *cause* and not the outcome.
+
+### What changed
+
+1. **`ps -ww`.** Unlimited width, and accepted by both procps-ng and BSD `ps`. The reason is in
+   the function's docstring, including the truncated row verbatim, because `-ww` looks exactly
+   like a cosmetic flag and the next person to tidy the argv needs to know it is load-bearing.
+2. **A new arm that fails for one reason only** —
+   `test_the_process_table_read_survives_a_narrow_COLUMNS`. It orphan-launches a writer under a
+   `tmp_path` root, sets `COLUMNS=80` **explicitly** rather than inheriting whatever the caller's
+   pytest exported, and asks the real guard what it sees. It runs the guard in a **subprocess**:
+   `conftest.py` calls `sys.addaudithook` at import and an audit hook cannot be removed, so
+   importing it in-process would leave a second hook charging every later test in the session
+   twice.
+3. **The probe finds its row by PID, not by name.** The orphan writes its own pid into the
+   sentinel file it already had to write. Searching the table for the script name cannot work
+   here: the row that may have been cut is precisely the row that no longer contains the name.
+   The first version did search by name, and on the runner it found nothing, computed
+   `truncates=False`, and **skipped** — a guard reporting "not applicable" on the one machine
+   where it applies.
+4. **The skip is measured, not declared.** The arm skips only where this machine's `ps` returns
+   the orphan's row *untruncated* under `COLUMNS=80`, and the skip message states the character
+   count it actually got. `sys.platform` would have hard-coded today's BSD behaviour; a future
+   `ps` that starts truncating turns the skip back into a test on its own.
+
+### Guards, and the mutation that shows each can fail
+
+| the claim | what checks it | how it was shown to be able to fail |
+|---|---|---|
+| the channel sees a foreign run under a narrow terminal | `test_the_process_table_read_survives_a_narrow_COLUMNS` | `-ww` deleted from a copy of `conftest.py` (verified 0 occurrences) ⇒ **fails on the runner**, and takes the DEV-P4-18 arm down with it: 2 failed / 18 passed |
+| the fix restores the arm it broke | `test_a_foreign_live_run_makes_a_spawners_charge_unenforceable` | red before, green after, on the same machine and the same commit |
+| the control arm is a control again | `test_write_guard_mutation.py::test_control_arm_unmutated_guard_passes_every_arm` | it was failing; the four mutant verdicts it invalidated are now real |
+| the arm is not vacuous where it is skipped | the skip message quotes the measured row length (204 characters on the laptop, truncated on the runner) | the skip is decided by the measurement, so a platform change flips it |
+
+`lib/tests/test_write_guard.py` is **20 passed** on the runner and 19 passed / 1 skipped on the
+laptop; `test_write_guard_mutation.py` + `test_census.py` are 32 passed on the runner. The seventh
+failure was unrelated and is recorded in DEV-P4-31's neighbourhood: `test_census.py` was pinning a
+verdict-count snapshot that F1-18 legitimately moved, and now pins the refuted values and the
+structural identity behind them instead.
 
 ---
 
