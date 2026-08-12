@@ -17,6 +17,7 @@ observations, no p-values, no multiplicity correction (pre-registered).
 {
   "status": "READY_TO_AMEND",
   "evidence_runs": ["r20260809T094500Z", "r20260810T002001Z"],
+  "cases": ["F5-7a"],
   "was_blocked_on": "A replication of 07a_privatelink_enum.py on a calendar day after the one the day-1 evidence was collected on. Findings 4 and 5 amend the document on the strength of a web page's content, and the thing observed to have changed IS that content; one read cannot separate a durable change from a transient publication state or a CDN-cached variant, which §7's alternative-explanation register lists as NOT excluded. Findings 1, 2, 3 and 6 never depended on this. DISCHARGED 2026-08-10: 07a_compare_runs.py compared 75 fields across the two runs and found 0 disagreements (results/f5_7a_replication.json).",
   "amends": ["S4.5.3"]
 }
