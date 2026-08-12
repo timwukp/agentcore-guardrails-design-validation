@@ -6,6 +6,12 @@
 **Run ids:** `r20260809T094500Z` (day 1), `r20260810T002001Z` (day 2, canonical — see §7 "Two day-2 runs")
 **Raw evidence:** `evidence/r20260809T094500Z/f5/F5-7a/`, `evidence/r20260810T002001Z/f5/F5-7a/`
 **Replication verdict:** `results/f5_7a_replication.json` — **75 fields compared, 0 disagreements**
+**Sealed-oracle verdict:** `results/phase1/F5-7a.json` — **FALSE** (EXISTENCE), emitted by
+`f5_redteam/07a_verdict.py` from the two archived runs. That record is the sealed oracle's binary
+answer to "does the matrix match"; **this document is the finding**, and it carries the distinction
+the boolean cannot — see §6 finding 4, where AWS's own page agreed with §4.5.3 for at least three
+months before the claim expired. The record existed only from 2026-08-12: the case was complete and
+counted outstanding until then (DEV-P4-33).
 **Pre-registration seal in force:** `6eb1ba6e09d4…3923e8e4`
 **Cost: $0.** 32 `ec2:DescribeVpcEndpointServices` calls across the two days (not billed), 0 mutations, 0 resources created.
 **Document under test:** §4.5.3 (PrivateLink coverage matrix + caveats a/b), with a

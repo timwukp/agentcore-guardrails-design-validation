@@ -1,0 +1,77 @@
+{
+  "analysis_only": true,
+  "aws_calls": 0,
+  "billable_calls": 0,
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F0-1",
+    "clear_here": true
+  },
+  "case_id": "F0-1",
+  "failures": [],
+  "http_requests": 0,
+  "kind": "EXISTENCE",
+  "mutations": 0,
+  "observed_on": "2026-08-09",
+  "oracle_text": "TRUE if every §10 URL returns HTTP 200 AND its page title shares a content word with the row's stated title; FALSE for any non-200, or any page whose title is unrelated to what the row says lives there — a link that resolves to the wrong page is worse than a 404, because the reader believes they have been handed a source",
+  "planned_n": null,
+  "reads": [
+    "results/FINDING-F0-1-references.json",
+    "claims/triage.csv"
+  ],
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F0-1",
+    "evidence": {
+      "detail": {
+        "artifact": "results/FINDING-F0-1-references.json",
+        "failures": [],
+        "n_basis": "24 §10 reference rows, matching the 24 derived from claims/triage.csv rather than a count read out of the artifact",
+        "observed_on": "2026-08-09",
+        "pass_recomputed": "every row's pass/fail was re-derived from its recorded http_status and title_match and compared to the stored boolean; a disagreement is a refusal, not a verdict",
+        "rows_on_the_strong_branch": 24,
+        "rows_passed_on_http_200_alone": [],
+        "single_observation": "link liveness can change, so this is a verdict about 2026-08-09. A re-check belongs in a second dated file: overwriting the artifact would destroy the only observation of that date, which the document's '24/24' is pinned against",
+        "unreachable_policy": "an unreachable URL is a refusal rather than a FALSE, because in the producer it scores as a row failure and our network is not the document's defect"
+      },
+      "observed": true
+    },
+    "family": "descriptive_no_test",
+    "kind": "EXISTENCE",
+    "mutation_required": false,
+    "n_attempted": 24,
+    "n_met": true,
+    "n_usable": 24,
+    "notes": [],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [],
+    "verdict": "TRUE"
+  },
+  "rows_on_the_strong_branch": 24,
+  "rows_passed_on_http_200_alone": [],
+  "title_match_classification": {
+    "NO": {
+      "counts_as_pass": false,
+      "is_strong": true,
+      "why": "the page resolved and is about something else — the failure the oracle calls worse than a 404, because the reader believes they were handed a source"
+    },
+    "unverifiable (page has no title)": {
+      "counts_as_pass": true,
+      "is_strong": false,
+      "why": "the page served 200 with no <title> element, so the row's claim about what lives there cannot be checked. Scored on the HTTP 200 alone"
+    },
+    "unverifiable (title is all stopwords)": {
+      "counts_as_pass": true,
+      "is_strong": false,
+      "why": "the row title reduces to nothing under the stopword list, so there is no content word to match on. Scored on the HTTP 200 alone: weaker than a match, but it does not invent one"
+    },
+    "yes": {
+      "counts_as_pass": true,
+      "is_strong": true,
+      "why": "the page title shares at least one content word with the row's stated title, which is the whole of the oracle's second clause"
+    }
+  },
+  "verdict": "TRUE"
+}

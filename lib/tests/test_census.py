@@ -182,6 +182,108 @@ def test_f1_4_really_has_no_claim_to_map(census):
 
 
 # --------------------------------------------------------------------------------------
+# the reconciliation that nothing was doing (DEV-P4-33)
+# --------------------------------------------------------------------------------------
+
+def _cases_with_a_written_up_result(register: dict) -> dict[str, str]:
+    """Every case this project has published a finding artifact for → the artifact's name.
+
+    Derived from the filenames under `results/`, normalised against the register's own
+    spelling, because the register is the only authority on whether `F5-7A` is a case id.
+    The H1 line is deliberately NOT parsed: a title may name a neighbouring case for
+    contrast (`F2-5 beside F2-1`), and a guard that demanded a record for every case merely
+    *mentioned* would fire on a sentence rather than on a gap.
+    """
+    import re
+    by_lower = {c.lower(): c for c in register}
+    out: dict[str, str] = {}
+    for f in sorted((ROOT / "results").glob("FINDING-*")):
+        if f.suffix not in (".md", ".json"):
+            continue
+        m = re.match(r"(F\d+-\d+[A-Za-z]?)", f.stem[len("FINDING-"):])
+        if not m:
+            continue                            # FINDING-P0-* are process, not cases
+        cid = by_lower.get(m.group(1).lower())
+        if cid:
+            out.setdefault(cid, f.name)
+    return out
+
+
+def test_a_written_up_case_has_a_verdict_record(census):
+    """A finding document and a verdict record are different artifacts, and both are owed.
+
+    This is the check that did not exist, and its absence let two cases sit *complete and
+    counted outstanding* for days: F5-7a (measured 2026-08-09, replicated 08-10, published
+    as `FINDING-F5-7A.md`) and F0-1 (24/24 verified 08-09, artifact and document both
+    saying so). Neither had a file in `results/phase1/`, which is the index this census
+    counts, so family F5 read 3/12 and F0 read 0/1 next to write-ups saying the work was
+    done. See DEV-P4-33.
+
+    The failure mode is specific and worth naming: the *visible* half being complete is
+    exactly what hides the missing half. Nobody re-reads a finished finding document
+    looking for what it did not do.
+    """
+    CASES, _ = census.load_register()
+    written_up = _cases_with_a_written_up_result(CASES)
+    assert written_up, ("no finding artifact was matched to a register case, so this arm "
+                        "measured nothing — the filename derivation broke, not the repo")
+
+    published = set(census.published())
+    untestable = {c for c, m in census.CLAIM_UNMAPPED_BY_DESIGN.items()
+                  if m["kind"] == "untestable"}
+
+    missing = {c: art for c, art in written_up.items()
+               if c not in published and c not in untestable}
+    assert not missing, (
+        "these cases have a written-up result and no verdict record in results/phase1/, so "
+        "the census counts them outstanding while a finding says they are done: "
+        + ", ".join(f"{c} ({art})" for c, art in sorted(missing.items()))
+        + ". Emit the record — a case is not complete until it is in the index the analysis "
+          "phase reads.")
+
+
+def test_the_two_cases_that_taught_us_this_are_covered_by_it(census):
+    """Pin the instances, so the guard cannot be narrowed until it stops seeing them.
+
+    `test_a_written_up_case_has_a_verdict_record` passes both when the reconciliation works
+    and when the derivation quietly matches nothing. This names the two cases whose gap
+    motivated it and requires them to be *in scope* of the check, which is a different
+    claim from the check being green.
+    """
+    CASES, _ = census.load_register()
+    written_up = _cases_with_a_written_up_result(CASES)
+    for cid, art in (("F5-7a", "FINDING-F5-7A.md"),
+                     ("F0-1", "FINDING-F0-1-references.json")):
+        assert written_up.get(cid) == art, (
+            f"{cid} is no longer matched to {art}; the derivation that found the DEV-P4-33 "
+            f"gap has stopped covering the case that revealed it")
+        assert cid in set(census.published()), \
+            f"{cid} lost its verdict record — this is the DEV-P4-33 gap reopening"
+
+
+def test_the_reconciliation_fails_when_a_record_goes_missing(census, tmp_path):
+    """The mutation: hide one published record and require the guard to name that case.
+
+    Without this arm the check above is compatible with a `missing` dict that is empty
+    because nothing is ever compared.
+    """
+    CASES, _ = census.load_register()
+    written_up = _cases_with_a_written_up_result(CASES)
+    victim = next(c for c in sorted(written_up) if c in set(census.published()))
+
+    p1 = tmp_path / "phase1"
+    p1.mkdir()
+    for f in census.PHASE1.glob("*.json"):
+        if f.stem != victim:
+            (p1 / f.name).write_bytes(f.read_bytes())
+    census.PHASE1 = p1
+
+    assert victim not in set(census.published()), "the victim's record was not hidden"
+    with pytest.raises(AssertionError, match=victim):
+        test_a_written_up_case_has_a_verdict_record(census)
+
+
+# --------------------------------------------------------------------------------------
 # mutation arms — each removes exactly one guard's precondition and expects a hard fail
 # --------------------------------------------------------------------------------------
 

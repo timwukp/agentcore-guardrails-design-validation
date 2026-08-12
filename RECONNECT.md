@@ -1,8 +1,8 @@
-# Reconnect note — updated 2026-08-12
+# Reconnect note — updated 2026-08-13
 
 Read this first if the session dropped. It is the shortest path back to the live state.
 
-## ⇢ RESUME HERE (2026-08-12): **69 of 92 published; F5 is the whole remaining bulk**
+## ⇢ RESUME HERE (2026-08-13): **71 of 92 published; F5 is the whole remaining bulk**
 
 Do not read the case counts out of this file. Regenerate them:
 
@@ -12,22 +12,30 @@ Do not read the case counts out of this file. Regenerate them:
 
 Every number in that file is derived from `claims/triage_rules.py` + what is on disk under
 `results/phase1/`; nothing in it is remembered, which is why it is the artifact and this section is
-only a pointer. As of this writing it reads **69 published / 23 outstanding** of **92
-verdict-eligible** (93 registered minus F9-1, untestable by its own sealed oracle), and
-**TRUE 40 / FALSE 17 / INCONCLUSIVE 11 / RECORDED 1**.
+only a pointer. As of this writing it reads **71 published / 21 outstanding** of **92
+verdict-eligible** (93 registered minus F9-1, the one case untestable by its own sealed oracle), and
+**TRUE 41 / FALSE 18 / INCONCLUSIVE 11 / RECORDED 1**. `RECORDED` is a verdict value, not an
+exemption: that case (F5-4a) has a file like every other.
 
 | family | state |
 |:---|:---|
-| **F2, F3, F4, F6, F7** | **complete** — 5/5, 11/11, 6/6, 9/9, 7/7 |
+| **F0, F2, F3, F4, F6, F7** | **complete** — 1/1, 5/5, 11/11, 6/6, 9/9, 7/7 |
 | F1 | 20/28 — outstanding F1-6, F1-15, F1-19, F1-24…F1-28 |
-| **F5** | **3/12** — outstanding F5-2, F5-3a, F5-3b, F5-4b, F5-5, F5-7a, F5-7b, F5-8, F5-9 |
+| **F5** | **4/12** — outstanding F5-2, F5-3a, F5-3b, F5-4b, F5-5, F5-7b, F5-8, F5-9 |
 | F8 | 7/8 — F8-1 |
 | F9 | 0/2 — F9-2, F9-3 (F9-1 is untestable, not outstanding) |
 | F10 | 1/3 — F10-1, F10-3 |
-| F0 | 0/1 — F0-1 |
 
-**Do F5 next.** It is 9 of the 23 outstanding cases and the only family with a large block left; the
+**Do F5 next.** It is 8 of the 21 outstanding cases and the only family with a large block left; the
 rest are singletons.
+
+**F5-7a and F0-1 were not work — they were bookkeeping.** Both were measured, written up and
+guarded, and neither had a `results/phase1/` record, so the census counted them outstanding while
+their finding documents said they were done (DEV-P4-33). F0-1 was found by
+`test_a_written_up_case_has_a_verdict_record`, the guard written after F5-7a, on its first run. That
+guard now exists, so this specific way of being wrong is closed — but the general shape is worth
+carrying: **a family line reading `F5 4/12` is indistinguishable from honest remaining work.** If a
+case looks stuck, check whether it is actually finished before planning a run for it.
 
 ### Two things below this line are now WITHDRAWN — do not resume from them
 
@@ -44,7 +52,12 @@ rest are singletons.
 - **FINDING docs owed** for F1-18, F2-2, F2-3, F2-4 (one doc, DEV-P4-27's surface is the story);
   for §3.1's determinism contrast (F2-5 FALSE beside F2-1 TRUE — neither surface varied at all);
   and for F4-6's pre-registered refutation. Format reference: `results/FINDING-F3-10.md`.
-- **Day-2 replications owed**: F5-7a, F4-6, F2-1.
+- **Day-2 replications owed**: F4-6, F2-1. *(F5-7a's is done — `r20260810T002001Z`, 75 fields, 0
+  disagreements, `results/f5_7a_replication.json`; it was listed here in error.)*
+- **F0-1 rests on one dated observation** (2026-08-09) of a property that can change — link
+  liveness. A re-check must write a **second dated file**, not overwrite
+  `results/FINDING-F0-1-references.json`: that artifact is the only observation of that date and
+  `claims/tests/test_finding_numbers.py` pins the document's "24/24" against it.
 - `FINDING-F3-10.md` is `OBSERVATIONS_COMPLETE`, blocked on a UTC day after 2026-08-12.
   `V13-05` is `BLOCKED_ON_REPLICATION`. `F3-11` needs `--compare` on **2026-08-18** and
   **2026-09-10**.
@@ -68,9 +81,9 @@ branch so #12 updates in place. Do not open a new stack** — restacking is what
 
 `t3.small` in us-east-1, `runner/provision.py` → `runner/sync.py push` → `runner/run.py --detach`.
 It exists because five test arms need `setsid` / GNU `df --output=avail` and one needs a `ps` that
-truncates — all Linux-only. Full suite: **1,851 passed / 9 skipped** on the laptop,
-**1,857 passed / 3 skipped** on the runner. Every skip states its reason and three state a measured
-number. Two things stay on the laptop by design: **F6 latency** (one network position) and **every
+truncates — all Linux-only. The laptop suite skips those arms and the runner runs them, so the two
+pass counts differ by design and neither is quoted here — regenerate them. Every skip states its
+reason and three state a measured number. Two things stay on the laptop by design: **F6 latency** (one network position) and **every
 publication** (the instance holds no GitHub credential).
 
 Its disk is the hazard — see **DEV-P4-31**. One suite's `--basetemp` scratch is a measured 10.6 GB,
@@ -281,9 +294,16 @@ assertions) — neither file is a sealed bound artifact.
 - Approved plan: `/Users/tmwu/.claude/plans/melodic-hatching-seal.md`
 - Python: `.venv-oracle/bin/python` (botocore 1.43.67). `.venv-baseline` is 1.42.79 and is **data**, not a fallback.
 - Full gate: `./verify_phase0.sh` — ~6 min, 14 gates.
-- Full suite: `.venv-oracle/bin/python -m pytest -q --basetemp=<scratch>` → **1,851 passed / 9
-  skipped** on the laptop, **1,857 passed / 3 skipped** on the runner. Pass `--basetemp`; the default
-  location is what wedged the runner's disk (DEV-P4-31).
+- Full suite: `.venv-oracle/bin/python -m pytest -q --basetemp=<scratch>` → ~15 min. Pass
+  `--basetemp`; the default location is what wedged the runner's disk (DEV-P4-31). Regenerate the
+  pass count rather than trusting one written here.
+- **Do not edit the tree while the suite runs.** The write guard watches `results/` and charges a
+  concurrent modification to whichever test last spawned a subprocess, so an interactive edit
+  surfaces as `ERROR at teardown of test_mutant[...]` naming a file that test never touched. Seen
+  2026-08-13: editing `results/FINDING-P0-TRIAGE.md` mid-run errored
+  `test_write_guard_mutation.py::test_mutant[M3-no-abspath]`, which passes 20/20 when the tree is
+  quiescent. The guard is right — a write into the live results tree must not be excused — so the
+  fix is to finish editing first, not to loosen it.
 - Redaction gate: `.venv-oracle/bin/python check_redaction.py` — **>120 s**, last run rc=0 over 478
   files / 30,835,735 bytes. Read its exit code *directly*; piping it to `tail` reports `tail`'s rc.
   A run that reads **zero files is an error, not a pass.**

@@ -6653,6 +6653,154 @@ structural identity behind them instead.
 
 ---
 
+## DEV-P4-33 — two cases were measured, written up, and counted as outstanding, because a finding document and a verdict record are different artifacts and only one guard existed
+
+**When** F5-7a's gap discovered 2026-08-12; F0-1's on 2026-08-13, by the guard written for the
+first. Both on the laptop. **Cost** $0 — the fixes read archived artifacts and
+make no AWS call and no HTTP request. **Effect on the document under test** two verdicts enter the
+register: **F5-7a is FALSE** and **F0-1 is TRUE**, moving the published count from 69 to 71,
+FALSE from 17 to 18, and TRUE from 40 to 41. Families F0 and F5 both move; F0 is now complete.
+
+F5-7a is written up first below because it was found first. **F0-1 was found by the guard written
+to prevent a repeat of F5-7a**, before that guard was even committed — which is the more useful
+half of this entry and is why the closing section is about the reconciliation rather than about
+either case.
+
+### F5-7a: what was observed
+
+F5-7a was collected on 2026-08-09 (16 calls, 8 regions, 2 instruments), replicated on 2026-08-10
+(75 fields compared, 0 disagreements), and written up as `results/FINDING-F5-7A.md` at
+`READY_TO_AMEND`. It had **no file in `results/phase1/`**. That directory is the index `census.py`
+counts and the analysis phase reads, so from 2026-08-09 to 08-12 the case was simultaneously
+*complete* and *outstanding*, and the only place the discrepancy was visible was a family line
+reading `F5 3/12` next to a finding document that says the case is done.
+
+Nothing in this file documented that as a decision, which is how it was distinguished from a
+deliberate omission. There is exactly **one** category that legitimately has no phase-1 record —
+cases declared untestable by their own sealed oracle, which is F9-1 alone — and F5-7a is not in it.
+`RECORDED` is not a second category: it is a *verdict value* carried by a published record, so a
+`RECORDED` case has a file like any other.
+
+### F5-7a: the cause
+
+`07a_privatelink_enum.py` classifies each document claim in a vocabulary of its own —
+`CONFIRMED`, `DOC_IMPRECISE`, `AWS_BEHAVIOR_CHANGED`, `DOC_REFUTED_CHANGE_DATE_UNDETERMINED`,
+eleven tokens in all. That is the right vocabulary for a finding and it is **not** a vocabulary
+`lib/oracle.evaluate` knows, which takes one boolean. Every other case in this project produces the
+boolean in the same script that collects the data, so the gap between "measured" and "recorded"
+never existed anywhere else and no guard was watching it. The finding document was the deliverable,
+the finding document was written, and the missing half was invisible precisely because the visible
+half was complete.
+
+### F5-7a: what changed
+
+1. **`f5_redteam/07a_verdict.py`** — analysis-only, offline, $0. It reads the two archived runs and
+   emits the record through `lib/phase1.emit`. The map from eleven tokens to one boolean is written
+   as data (`CLASSIFICATION`), and every entry carries the reason it reads the way it does.
+2. **An unrecognised token is fatal, not defaulted.** Folding an unknown verdict into "no mismatch"
+   is what would make this vacuous: a producer that grew a new refutation branch would publish TRUE
+   and the record would look complete — the same failure as the one being fixed, one level down.
+3. **Both readings are computed and both are recorded.** The primary reading admits both
+   instruments; the strict reading additionally counts the document's imprecision as a mismatch.
+   Both give FALSE, so the verdict does not depend on which a reader prefers, and `readings_agree`
+   says so in the record rather than in prose.
+4. **`n` is counted from evidence records on disk** (16 + 16 = 32), excluding the three bookkeeping
+   files. A count read out of `analysis.json` would be the analysis vouching for how much evidence
+   backs it.
+
+### Why an instrument-A-only reading would have been vacuous
+
+The sealed oracle names `describe-vpc-endpoint-services` — instrument A. Read as *instrument A
+alone*, every A-borne claim is CONFIRMED and the verdict is TRUE. The case's **own control arm**
+refutes that reading: all three endpoint services exist in all three regions the document lists as
+*not* supporting guardrails-in-policy, so endpoint-service existence carries no information about
+feature availability. An instrument that cannot see the property the matrix asserts cannot confirm
+the matrix. Instrument B — AWS's own page, live and at dated Internet Archive snapshots — is what
+refutes the Optimization row the oracle names by name, and it is admitted for that reason.
+
+**FALSE here is not "the document was careless."** AWS's page said "Not yet supported" on five
+dated snapshots spanning 2026-04-12 to 2026-07-14, so §4.5.3 agreed with AWS's public documentation
+for at least three months and the claim **expired**. A binary oracle cannot carry that distinction,
+which is why the finding document remains the deliverable and the record points at it.
+
+### F5-7a: guards, and the mutation that shows each can fail
+
+| the claim | what checks it | how it was shown to be able to fail |
+|---|---|---|
+| the classification table covers every token the producer can emit | `test_the_table_covers_every_token_the_producer_can_emit` — the token set is extracted from `co_consts` of `classify` / `_evaluations_verdict` / `_optimization_verdict`, **not** typed into the test | renaming one table key ⇒ red. A list typed in the test would be a second copy of the thing under test |
+| an unknown token cannot become agreement | `test_an_unclassified_token_is_fatal` | replacing the `raise` with a default of `NOT_A_DOC_CLAIM` ⇒ red |
+| the verdict is FALSE *because of* the two refuted rows | `test_the_verdict_inverts_when_both_refutations_are_removed` | hard-coding `observed_matrix_matches = False` ⇒ red. Without this arm every other arm is compatible with a function that always returns FALSE |
+| silence is not agreement | `test_silence_is_not_agreement` | classifying `NOT_TESTED_BY_THIS_INSTRUMENT` as `MATCH` ⇒ red |
+| a conjunction over zero bearing claims is refused | `test_a_findings_table_with_no_bearing_claim_is_refused` | disabling the emptiness check ⇒ red |
+| `n` is counted on disk | `test_n_is_counted_on_disk_and_not_read_out_of_the_analysis`, `test_the_bookkeeping_files_are_not_counted_as_records` | returning a constant, and counting the bookkeeping files ⇒ red |
+| two days are required and must agree | `test_one_run_is_refused`, `test_the_two_days_must_agree_on_the_tokens_the_verdict_uses` | disabling either precondition ⇒ red |
+
+`f5_redteam/tests/test_07a_verdict.py` is **18 passed**, and **10 of 10** mutants above were
+killed. The fixtures are the real archived runs copied into `tmp_path` — a hand-built findings dict
+would only confirm this reader's own idea of the schema, and the schema is exactly what it depends
+on.
+
+### The second instance, found by the guard rather than by a person
+
+The general check was written next: every case with a finding artifact under `results/` either has a
+`results/phase1/` record or is declared untestable —
+`lib/tests/test_census.py::test_a_written_up_case_has_a_verdict_record`. It went red on its first
+run, and not on F5-7a.
+
+**F0-1** — "§10's documentation references resolve and describe what they claim" — was measured on
+2026-08-09: 24 rows, 24 HTTP 200s, 24 title matches, `results/FINDING-F0-1-references.json`, and
+`FINDING-P0-TRIAGE.md` stating "**Result: 24/24 verified.**" with
+`claims/tests/test_finding_numbers.py` pinning all three numbers against the document. It had no
+phase-1 record, so family F0 read **0/1** beside a guarded artifact saying it was done. Same class,
+different cause: `claims/02_check_references.py` is a phase-0 script whose docstring calls its own
+output "the evidence store" — true, and not the whole job.
+
+`claims/02_references_verdict.py` closes it, and it does **not** simply read the artifact's
+`pass` flags. Three properties of that producer make a trusting read unsafe, and each is now a
+refusal rather than a verdict:
+
+1. **`--limit` writes a truncated artifact that looks complete** — `n_checked` is the truncated
+   length and nothing distinguishes it from a full run. The denominator is therefore derived from
+   `claims/triage.csv`'s §10 rows (24), and a short artifact is refused. *Growing* §10 also reds it,
+   which is the direction a pinned `24` would have missed.
+2. **An unreachable URL scores as a row failure**, so one DNS hiccup among 24 would have published
+   **FALSE against §10 for our own network**. `unreachable > 0` is now a refusal. The producer
+   already exits 3 when *all* requests fail; this is the same discipline applied to a partial
+   failure, which is the case it did not cover.
+3. **`pass` is the artifact's own opinion.** Every row's pass/fail is re-derived from its recorded
+   `http_status` and `title_match` and compared to the stored boolean; a disagreement is fatal. The
+   mutation that shows this matters is a row with HTTP 404 still marked `pass: true` — a laundering
+   read publishes TRUE.
+
+The record also reports that **24 of 24 rows are on the strong branch**. The producer treats
+`unverifiable (title is all stopwords)` and `unverifiable (page has no title)` as passes, scoring
+those rows on the 200 alone; that is defensible but strictly weaker, and without the split "24/24"
+could come to mean 24 rows of which some were waved through. Which branches count as passes is read
+out of the producer's own `match in (...)` tuple by AST rather than restated, so the verdict cannot
+disagree with the instrument about what a pass is.
+
+`claims/tests/test_references_verdict.py` is **18 passed**, **13 of 13** mutants killed.
+
+### The lesson, which is not about either case
+
+A case can be complete, replicated, written up, guarded by its own tests, and counted outstanding.
+"Is there a finding document?" and "is there a verdict record?" are different questions, and this
+project checked neither against the other. What made both instances invisible is the same thing:
+**the visible half was finished.** Nobody re-reads a completed finding document looking for what it
+did not do, and a family line reading `F5 3/12` is indistinguishable from honest remaining work.
+
+Two smaller consequences worth keeping:
+
+* **The second instance is the evidence the guard was worth writing.** Fixing F5-7a by hand and
+  moving on would have left F0-1 exactly as it was, and nothing in the project was on a path to
+  find it (`feedback_second_instance_bugs`).
+* **An emitter that reads someone else's artifact needs refusals, not conversions.** Both new
+  scripts are ~40 lines of mapping and ~60 lines of "do not publish if". In both, the mapping was
+  the easy part and the refusals are what the mutation harness actually exercises: an unknown token
+  folded into agreement, a summary field trusted, a denominator taken from the thing being counted.
+
+---
+
 ## Analysis-time deviations
 
 *(None yet — this section is populated during Phase 9. Each entry states the

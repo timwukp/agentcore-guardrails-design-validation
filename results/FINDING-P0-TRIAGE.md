@@ -2,7 +2,7 @@
 
 **Phase** 0 (offline) · **Cost** $0 · **Date** 2026-08-09
 **Artifacts** `claims/triage.csv` (546 rows) · `EXCLUSION_REGISTER.md` (437 lines) ·
-`results/FINDING-F0-1-references.json` · `claims/tests/` (169 tests)
+`results/FINDING-F0-1-references.json` · `claims/tests/` (380 tests)
 
 <!-- provenance
 {
@@ -230,7 +230,18 @@ word with the row's stated title; FALSE for any non-200 or any page whose title 
 unrelated. **Cost** $0 (read-only HTTP to `docs.aws.amazon.com`).
 
 **Result: 24/24 verified.** Evidence with per-URL status, page title and token
-overlap in `results/FINDING-F0-1-references.json`.
+overlap in `results/FINDING-F0-1-references.json`. All 24 are on the **strong**
+branch — a real title overlap, not a pass on the HTTP 200 alone — which is what
+makes "24/24" mean 24 checked titles. **Sealed-oracle verdict:**
+`results/phase1/F0-1.json`, **TRUE**, emitted by `claims/02_references_verdict.py`
+from that artifact. The record existed only from 2026-08-13: F0-1 was complete,
+guarded, and counted outstanding at 0/1 until then, and was found by the
+reconciliation written after the same gap on F5-7a (DEV-P4-33).
+
+This is a verdict about **2026-08-09**, the artifact's observation date; link
+liveness can change. A re-check must write a second dated file rather than
+overwrite the artifact, which is the only observation of that date and the thing
+the three numbers above are pinned against.
 
 Two design notes worth keeping:
 
