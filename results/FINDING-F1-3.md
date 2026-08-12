@@ -15,6 +15,7 @@
 {
   "status": "READY_TO_AMEND",
   "evidence_runs": ["r20260810T130945Z"],
+  "cases": ["F1-3"],
   "was_blocked_on": "A replication of 03_permit_trap.py on a UTC calendar day after 2026-08-10. The conflict-resolution protocol requires >=2 separate days before the document is amended, and the first four runs all fell on 2026-08-10Z. What one day cannot exclude is a transient state of the service-side policy validator: the finding rests on a validator VERDICT (two Overly Permissive findings) and a validator is exactly the kind of component whose ruleset can change or be rolled out regionally between days. n was never the issue — the arms agreed perfectly four times over — the issue was that all four observations shared a single opportunity to have been wrong together. DISCHARGED 2026-08-11T00:08:18Z: a fifth run on the following UTC day reproduced all four arms bit for bit (request ids in §4), so the gate now derives ['2026-08-10', '2026-08-11'] from t_start_utc across the run directory.",
   "amends": ["S3.1", "S7.2", "S8"]
 }

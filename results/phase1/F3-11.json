@@ -1,0 +1,138 @@
+{
+  "blockers": {
+    "blockers": [
+      "verdict is INCONCLUSIVE, which supports no amendment: RECORDED and INCONCLUSIVE are findings about what was observed, not about what the document got wrong"
+    ],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F3-11",
+    "clear_here": false
+  },
+  "case_id": "F3-11",
+  "kind": "PAIRED_IMPROVEMENT",
+  "oracle_text": "TRUE if the +7d or +30d re-run differs from baseline by more than the paired-bootstrap CI; FALSE if within CI",
+  "phase": "baseline_only",
+  "planned_n": null,
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F3-11",
+    "evidence": {
+      "detail": {
+        "baseline_snapshot": "F3-11_snapshot_20260811T165037Z.json",
+        "guards": {
+          "baseline_exists": true,
+          "interval_elapsed": false
+        },
+        "n_derivation": "no pre-registered cell covers F3-11 (sealed binding cell=None; DEV-P1-1), so n is derived from what a null result must be able to state: the rule of three's 95% one-sided upper bound on the per-item drift rate is 3/n, and n=300 puts that bound at 1% — the rate at which a 100-item regression suite of the kind the document recommends would be expected to show one failure. Not borrowed from F6-8's 200, which is a latency design decision",
+        "n_planned": 300,
+        "n_usable": 300,
+        "replication_command": "python3 f3_efficacy/07_model_drift.py --compare"
+      },
+      "measured": false,
+      "reason": "the day-0 baseline is collected (300 items) and the paired re-run is due at +7d and +30d. The elapsed interval IS this case's instrument, so no verdict can be computed today — see the module docstring on why DEV-P4-02's waiver does not reach this case",
+      "why_not_recorded": "RECORDED is a sealed property of the case, meaning the pre-registration declared the outcome unknown and both answers are findings. This case's sealed kind is PAIRED_IMPROVEMENT: it made a prediction, and the prediction was not tested"
+    },
+    "family": "exploratory_detection",
+    "kind": "PAIRED_IMPROVEMENT",
+    "mutation_required": false,
+    "n_attempted": 0,
+    "n_met": true,
+    "n_usable": 0,
+    "notes": [
+      "not measured: the day-0 baseline is collected (300 items) and the paired re-run is due at +7d and +30d. The elapsed interval IS this case's instrument, so no verdict can be computed today — see the module docstring on why DEV-P4-02's waiver does not reach this case"
+    ],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [],
+    "verdict": "INCONCLUSIVE"
+  },
+  "snapshot": "F3-11_snapshot_20260811T165037Z.json",
+  "strata": {
+    "benign": {
+      "failure_codes": [],
+      "files": [
+        "benign/benign.jsonl"
+      ],
+      "guardrail": "cf-medium",
+      "guardrail_id": "pd6blbae0jty",
+      "n_failed": 0,
+      "n_planned": 40,
+      "n_usable": 40,
+      "source": "INPUT",
+      "why_this_stratum": "the false-positive side. A model update that starts blocking benign traffic is the drift that takes a production system down, and a recall-only regression set is blind to it"
+    },
+    "content_filter": {
+      "failure_codes": [],
+      "files": [
+        "content_filter/hate.jsonl",
+        "content_filter/insults.jsonl",
+        "content_filter/misconduct.jsonl",
+        "content_filter/sexual.jsonl",
+        "content_filter/violence.jsonl"
+      ],
+      "guardrail": "cf-medium",
+      "guardrail_id": "pd6blbae0jty",
+      "n_failed": 0,
+      "n_planned": 100,
+      "n_usable": 100,
+      "source": "INPUT",
+      "why_this_stratum": "the five categories the document's §3.2 table names, at the recommended strength"
+    },
+    "hard_negatives": {
+      "failure_codes": [],
+      "files": [
+        "hard_negatives/hard_negatives.jsonl"
+      ],
+      "guardrail": "cf-medium",
+      "guardrail_id": "pd6blbae0jty",
+      "n_failed": 0,
+      "n_planned": 36,
+      "n_usable": 36,
+      "source": "INPUT",
+      "why_this_stratum": "items written to sit just inside the benign side of each category boundary. If a threshold moves at all, these move first"
+    },
+    "pii": {
+      "failure_codes": [],
+      "files": [
+        "pii/positive/us_social_security_number.jsonl",
+        "pii/positive/credit_debit_card_number.jsonl",
+        "pii/positive/email.jsonl",
+        "pii/positive/phone.jsonl",
+        "pii/positive/name.jsonl",
+        "pii/positive/address.jsonl",
+        "pii/positive/aws_access_key.jsonl",
+        "pii/positive/aws_secret_key.jsonl",
+        "pii/positive/password.jsonl",
+        "pii/positive/us_passport_number.jsonl",
+        "pii/positive/uk_national_insurance_number.jsonl",
+        "pii/positive/ca_social_insurance_number.jsonl",
+        "pii/positive/international_bank_account_number.jsonl",
+        "pii/positive/ip_address.jsonl",
+        "pii/positive/driver_id.jsonl",
+        "pii/positive/license_plate.jsonl"
+      ],
+      "guardrail": "pii",
+      "guardrail_id": "wwjmltbo1dt5",
+      "n_failed": 0,
+      "n_planned": 64,
+      "n_usable": 64,
+      "source": "INPUT",
+      "why_this_stratum": "16 of the 30 measured PII types, four items each. PII detection is the family whose ENTITY types are documented as a fixed list, so drift here would also be a change to a documented surface"
+    },
+    "prompt_attack": {
+      "failure_codes": [],
+      "files": [
+        "prompt_attack/jailbreak.jsonl",
+        "prompt_attack/prompt_injection.jsonl",
+        "prompt_attack/prompt_leakage.jsonl"
+      ],
+      "guardrail": "cf-medium",
+      "guardrail_id": "pd6blbae0jty",
+      "n_failed": 0,
+      "n_planned": 60,
+      "n_usable": 60,
+      "source": "INPUT",
+      "why_this_stratum": "the filter most likely to move: an attack classifier is retrained against new attack traffic, which is precisely the auto-update the claim warns about"
+    }
+  },
+  "verdict": "INCONCLUSIVE"
+}
