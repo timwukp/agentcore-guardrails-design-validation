@@ -1,0 +1,1708 @@
+{
+  "absent_though_exercised": [],
+  "ambient_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F7-3",
+    "clear_here": true
+  },
+  "case_id": "F7-3",
+  "deviation": {
+    "bias_direction": "towards TRUE, i.e. towards the document under test. Stated because a deviation that makes the subject look better is the one most worth labelling",
+    "conflicts_with": "F7-2's sealed oracle, which names seven metrics and says 'FALSE for any absentee'",
+    "id": "DEV-P4-03",
+    "what": "metrics whose publishing condition is an error or a deliberately broken policy are scored NOT_EXERCISED and excluded from the verdict",
+    "why": "inducing Throttles means driving a shared AWS service past its quota, which is a denial-of-service shaped action; SystemErrors cannot be induced from a client at all; and UserErrors needs a 4xx that this testbed does not produce, because F4-6 measured denials as HTTP 200"
+  },
+  "dimensions": {
+    "documented": [
+      "Operation",
+      "GuardrailArn",
+      "GuardrailVersion",
+      "GuardrailContentSource",
+      "GuardrailPolicyType"
+    ],
+    "documented_but_not_published": [],
+    "note": "reported, NOT scored: the sealed oracles for this family are about metrics. A documented dimension the service does not publish is amendment material of the same kind as an absent metric",
+    "published_in_namespace": [
+      "CheckType",
+      "GuardrailArn",
+      "GuardrailContentSource",
+      "GuardrailPolicyType",
+      "GuardrailVersion",
+      "Operation"
+    ]
+  },
+  "documented_metric_count_note": "F7-1's case TITLE says 19 policy metrics; the sealed claim row in claims/triage.csv names 15 once the '/'-joined table cells are split into individual metrics (12 in the table plus the 3 the section's prose adds by hand: DeterminingPolicies, NoDeterminingPolicies, TemporalLatency). The sealed oracle is per-metric existence and deliberately does not compare counts, so this is recorded as amendment material rather than scored: the discrepancy is between the document's own table and our title, and 19 is not reachable from the table by any splitting rule we can state",
+  "excluded_not_exercised": [
+    {
+      "metric": "InvocationClientErrors",
+      "reason": "requires a client-side error against ApplyGuardrail. The project's calls were built to succeed, and manufacturing failures would change what the corpora measure"
+    },
+    {
+      "metric": "InvocationThrottles",
+      "reason": "requires exceeding the ApplyGuardrail quota — the same denial-of-service objection as the gateway's Throttles"
+    }
+  ],
+  "exercise_bases": {
+    "counted_from": "the project's own evidence tree (file names), not CloudWatch",
+    "counts": {
+      "apply_guardrail": 8692,
+      "invoke_guardrail_checks": 230,
+      "mcp_tools_call": 1684
+    },
+    "since": "2026-07-29T15:52:13+00:00"
+  },
+  "fresh_traffic": {
+    "error": "",
+    "n_real": 10,
+    "n_sent": 10,
+    "outcomes": [
+      "allowed"
+    ]
+  },
+  "fresh_window_read": {
+    "per_metric": {},
+    "skipped": "this script sends no ApplyGuardrail, so there is no fresh guardrail traffic to read; F7-3 rests on the project window",
+    "window": "fresh"
+  },
+  "guard_detail": {
+    "controls": {
+      "control_absent_name": {
+        "absent_as_documented": true,
+        "name": "FirstByteLatency",
+        "namespace": "AWS/Bedrock-AgentCore",
+        "reading": "the document says FirstByteLatency is not a valid gateway metric name. Its absence here is what makes every 'present' in this run meaningful: a matcher that finds it would find anything"
+      },
+      "control_wrong_namespace": {
+        "absent_as_documented": true,
+        "dimension_names_in_that_namespace": [
+          "ContextWindow",
+          "ModelId"
+        ],
+        "guardrail_dimensioned_metrics_found_there": [],
+        "n_names_in_that_namespace": 12,
+        "name_collision_recorded_not_scored": {
+          "documented_guardrail_names_also_present_in_AWS_Bedrock": [
+            "InvocationClientErrors",
+            "InvocationLatency",
+            "InvocationServerErrors",
+            "Invocations"
+          ],
+          "reading": "these names exist in AWS/Bedrock as MODEL RUNTIME metrics, which is what the document itself says that namespace holds. The collision is why the document's warning is worth making, and it is why the name-based version of this control was invalid — it tested a claim the document never made. See DEV-P4-05"
+        },
+        "namespace": "AWS/Bedrock",
+        "reading": "the document says the guardrail metrics live under AWS/Bedrock/Guardrails and NOT under AWS/Bedrock. A guardrail-dimensioned metric in AWS/Bedrock would refute that; a same-named model-runtime metric does not",
+        "test": "no metric in AWS/Bedrock carries a guardrail dimension (GuardrailArn, GuardrailId, GuardrailVersion, GuardrailName)"
+      }
+    },
+    "exercise_basis_nonempty": {
+      "basis_ok": {
+        "FRESH_GATEWAY": true,
+        "PROJECT_GUARDRAIL": true,
+        "PROJECT_POLICY": true
+      },
+      "n_documented": 7,
+      "n_scored": 5,
+      "why": "with no exercised metric, an absence would measure this project's test plan rather than the document"
+    },
+    "inventory_nonempty": {
+      "n_names": 6,
+      "n_pages": 1,
+      "namespace": "AWS/Bedrock/Guardrails"
+    },
+    "reads_are_complete": {
+      "every_read_trusted": true,
+      "fresh_trusted": null,
+      "messages": [],
+      "project_trusted": true,
+      "test": "no metric scored ABSENT may rest on a read CloudWatch reported as partial or paginated. Presence is not gated",
+      "untrusted_absences": [],
+      "untrusted_fresh_metrics": [],
+      "untrusted_metrics_any_direction": [],
+      "untrusted_project_metrics": [],
+      "why": "a read CloudWatch reports as partial or paginated may be MISSING datapoints it should have returned; it cannot INVENT datapoints it did return. So it undermines an absence and never a presence. The first run scored a truncated read as absence and published two retracted FALSE verdicts; run 3 then made the opposite error, refusing to score at all because one metric with 200 datapoints came back Paginated (DEV-P4-04)"
+    },
+    "scope_matches_inventory": {
+      "scope": [
+        "49si3jhnu3ii",
+        "pd6blbae0jty",
+        "b7qxhvtl4lb8",
+        "dbva5orilksz",
+        "wwjmltbo1dt5",
+        "rb91cjdlrv8b",
+        "94kfqubwzkvx",
+        "j30orj6hdh1a",
+        "piydsa0vhz19",
+        "bb8eo7hr35og",
+        "6fxd3inytsuu",
+        "s5vk53hdnahz"
+      ],
+      "test": "for every metric whose ListMetrics dimension VALUES contain our scope token, the scoped SEARCH must return at least one series",
+      "unmatched_metrics": [],
+      "why": "zero series and zero datapoints are different observations. Zero series against a metric the inventory says is published for our own resource means the search term did not match — a fact about our matcher. This is the cross-instrument check that both retractions in DEV-P4-04 needed, computed from data already in the payload"
+    }
+  },
+  "guard_names": [
+    "control_absent_name",
+    "control_wrong_namespace",
+    "exercise_basis_nonempty",
+    "inventory_nonempty",
+    "reads_are_complete",
+    "scope_matches_inventory"
+  ],
+  "guards": {
+    "control_absent_name": true,
+    "control_wrong_namespace": true,
+    "exercise_basis_nonempty": true,
+    "inventory_nonempty": true,
+    "reads_are_complete": true,
+    "scope_matches_inventory": true
+  },
+  "instrument": {
+    "datapoints": "GetMetricData with one SEARCH expression per documented metric",
+    "horizon_caveat": "both instruments surface only metrics that reported data in roughly the last two weeks, so every reading here is about the window and not about all time",
+    "inventory": "paginated ListMetrics per namespace",
+    "why_search": "a dimensioned Metric query must match Dimensions exactly, so a guessed dimension set produces an absence of our own making"
+  },
+  "inventory_dimension_values": {
+    "CheckInvocations": {
+      "CheckType": [
+        "ContentFilter",
+        "PromptAttack"
+      ],
+      "Operation": [
+        "InvokeGuardrailChecks"
+      ]
+    },
+    "InvocationLatency": {
+      "GuardrailArn": [
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/49si3jhnu3ii",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/6fxd3inytsuu",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/94kfqubwzkvx",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/b7qxhvtl4lb8",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/bb8eo7hr35og",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/dbva5orilksz",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/j30orj6hdh1a",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/pd6blbae0jty",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/piydsa0vhz19",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/rb91cjdlrv8b",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/s5vk53hdnahz",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5"
+      ],
+      "GuardrailContentSource": [
+        "Input",
+        "Output"
+      ],
+      "GuardrailVersion": [
+        "DRAFT"
+      ],
+      "Operation": [
+        "ApplyGuardrail",
+        "InvokeGuardrailChecks"
+      ]
+    },
+    "InvocationServerErrors": {
+      "GuardrailArn": [
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/pd6blbae0jty"
+      ],
+      "GuardrailContentSource": [
+        "Input"
+      ],
+      "GuardrailVersion": [
+        "DRAFT"
+      ],
+      "Operation": [
+        "ApplyGuardrail"
+      ]
+    },
+    "Invocations": {
+      "GuardrailArn": [
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/49si3jhnu3ii",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/6fxd3inytsuu",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/94kfqubwzkvx",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/b7qxhvtl4lb8",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/bb8eo7hr35og",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/dbva5orilksz",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/j30orj6hdh1a",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/pd6blbae0jty",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/piydsa0vhz19",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/rb91cjdlrv8b",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/s5vk53hdnahz",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5"
+      ],
+      "GuardrailContentSource": [
+        "Input",
+        "Output"
+      ],
+      "GuardrailVersion": [
+        "DRAFT"
+      ],
+      "Operation": [
+        "ApplyGuardrail",
+        "InvokeGuardrailChecks"
+      ]
+    },
+    "InvocationsIntervened": {
+      "GuardrailArn": [
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/49si3jhnu3ii",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/6fxd3inytsuu",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/94kfqubwzkvx",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/b7qxhvtl4lb8",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/bb8eo7hr35og",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/dbva5orilksz",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/j30orj6hdh1a",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/pd6blbae0jty",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/piydsa0vhz19",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/rb91cjdlrv8b",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/s5vk53hdnahz",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5"
+      ],
+      "GuardrailContentSource": [
+        "Input",
+        "Output"
+      ],
+      "GuardrailPolicyType": [
+        "ContentPolicy",
+        "ContextualGroundingPolicy",
+        "SensitiveInformationPolicy",
+        "TopicPolicy",
+        "WordPolicy"
+      ],
+      "GuardrailVersion": [
+        "DRAFT"
+      ],
+      "Operation": [
+        "ApplyGuardrail"
+      ]
+    },
+    "TextUnitCount": {
+      "GuardrailArn": [
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/49si3jhnu3ii",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/6fxd3inytsuu",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/94kfqubwzkvx",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/b7qxhvtl4lb8",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/bb8eo7hr35og",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/dbva5orilksz",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/j30orj6hdh1a",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/pd6blbae0jty",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/piydsa0vhz19",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/rb91cjdlrv8b",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/s5vk53hdnahz",
+        "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5"
+      ],
+      "GuardrailContentSource": [
+        "Input",
+        "Output"
+      ],
+      "GuardrailPolicyType": [
+        "ContentPolicy",
+        "ContextualGroundingPolicy",
+        "SensitiveInformationPolicy",
+        "TopicPolicy",
+        "WordPolicy"
+      ],
+      "GuardrailVersion": [
+        "DRAFT"
+      ],
+      "Operation": [
+        "ApplyGuardrail"
+      ]
+    }
+  },
+  "inventory_names": [
+    "CheckInvocations",
+    "InvocationLatency",
+    "InvocationServerErrors",
+    "Invocations",
+    "InvocationsIntervened",
+    "TextUnitCount"
+  ],
+  "is_smoke": false,
+  "kind": "EXISTENCE",
+  "metric_table_counts": {
+    "distinct_names": 28,
+    "documented_pairs": 29,
+    "excluded": 11,
+    "excluded_names": [
+      "Throttles",
+      "SystemErrors",
+      "UserErrors",
+      "SuppressOutputs",
+      "LogOnlyEvalIncomplete",
+      "MismatchErrors",
+      "TotalMismatchedPolicies",
+      "PolicyMismatch",
+      "InvocationClientErrors",
+      "InvocationServerErrors",
+      "InvocationThrottles"
+    ],
+    "per_case": {
+      "F7-1": {
+        "documented": 15,
+        "scored": 10
+      },
+      "F7-2": {
+        "documented": 7,
+        "scored": 4
+      },
+      "F7-3": {
+        "documented": 7,
+        "scored": 4
+      }
+    },
+    "scored": 18
+  },
+  "n_documented": 7,
+  "n_published": 5,
+  "n_scored": 5,
+  "namespace": "AWS/Bedrock/Guardrails",
+  "oracle_text": "TRUE if the namespace (not AWS/Bedrock) carries the 7 documented metrics; FALSE if the namespace or names differ",
+  "per_metric": [
+    {
+      "absence_rests_on_untrusted_read": false,
+      "basis_exercised": true,
+      "counted_in_conjunction": true,
+      "dimension_sets": [
+        [
+          "GuardrailArn",
+          "GuardrailVersion"
+        ],
+        [
+          "GuardrailContentSource",
+          "Operation"
+        ],
+        [
+          "Operation"
+        ]
+      ],
+      "exercise_basis": "PROJECT_GUARDRAIL",
+      "fresh_window": {
+        "has_datapoints": null,
+        "n_datapoints": null,
+        "n_series": null,
+        "sum": null
+      },
+      "inventory_dimensions_carrying_our_scope": [
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/49si3jhnu3ii",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/6fxd3inytsuu",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/94kfqubwzkvx",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/b7qxhvtl4lb8",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/bb8eo7hr35og",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/dbva5orilksz",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/j30orj6hdh1a",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/pd6blbae0jty",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/piydsa0vhz19",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/rb91cjdlrv8b",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/s5vk53hdnahz",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5"
+      ],
+      "metric": "Invocations",
+      "name_in_namespace_inventory": true,
+      "project_window": {
+        "has_datapoints": true,
+        "n_datapoints": 61,
+        "n_series": 12,
+        "sum": 5508.0
+      },
+      "published": true,
+      "read_trusted": true,
+      "scope_matched": true,
+      "why": "every ApplyGuardrail call",
+      "why_read_untrusted": ""
+    },
+    {
+      "absence_rests_on_untrusted_read": false,
+      "basis_exercised": true,
+      "counted_in_conjunction": true,
+      "dimension_sets": [
+        [
+          "GuardrailArn",
+          "GuardrailVersion"
+        ],
+        [
+          "GuardrailContentSource",
+          "Operation"
+        ],
+        [
+          "Operation"
+        ]
+      ],
+      "exercise_basis": "PROJECT_GUARDRAIL",
+      "fresh_window": {
+        "has_datapoints": null,
+        "n_datapoints": null,
+        "n_series": null,
+        "sum": null
+      },
+      "inventory_dimensions_carrying_our_scope": [
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/49si3jhnu3ii",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/6fxd3inytsuu",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/94kfqubwzkvx",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/b7qxhvtl4lb8",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/bb8eo7hr35og",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/dbva5orilksz",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/j30orj6hdh1a",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/pd6blbae0jty",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/piydsa0vhz19",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/rb91cjdlrv8b",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/s5vk53hdnahz",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5"
+      ],
+      "metric": "InvocationLatency",
+      "name_in_namespace_inventory": true,
+      "project_window": {
+        "has_datapoints": true,
+        "n_datapoints": 61,
+        "n_series": 12,
+        "sum": 794760.0
+      },
+      "published": true,
+      "read_trusted": true,
+      "scope_matched": true,
+      "why": "every ApplyGuardrail call",
+      "why_read_untrusted": ""
+    },
+    {
+      "absence_rests_on_untrusted_read": false,
+      "basis_exercised": true,
+      "counted_in_conjunction": true,
+      "dimension_sets": [
+        [
+          "GuardrailArn",
+          "GuardrailVersion"
+        ],
+        [
+          "GuardrailContentSource",
+          "GuardrailPolicyType",
+          "Operation"
+        ],
+        [
+          "GuardrailContentSource",
+          "Operation"
+        ],
+        [
+          "GuardrailPolicyType",
+          "Operation"
+        ],
+        [
+          "Operation"
+        ]
+      ],
+      "exercise_basis": "PROJECT_GUARDRAIL",
+      "fresh_window": {
+        "has_datapoints": null,
+        "n_datapoints": null,
+        "n_series": null,
+        "sum": null
+      },
+      "inventory_dimensions_carrying_our_scope": [
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/49si3jhnu3ii",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/6fxd3inytsuu",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/94kfqubwzkvx",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/b7qxhvtl4lb8",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/bb8eo7hr35og",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/dbva5orilksz",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/j30orj6hdh1a",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/pd6blbae0jty",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/piydsa0vhz19",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/rb91cjdlrv8b",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/s5vk53hdnahz",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5"
+      ],
+      "metric": "InvocationsIntervened",
+      "name_in_namespace_inventory": true,
+      "project_window": {
+        "has_datapoints": true,
+        "n_datapoints": 61,
+        "n_series": 12,
+        "sum": 3143.0
+      },
+      "published": true,
+      "read_trusted": true,
+      "scope_matched": true,
+      "why": "the F3 corpora are built to be intervened on",
+      "why_read_untrusted": ""
+    },
+    {
+      "absence_rests_on_untrusted_read": false,
+      "basis_exercised": true,
+      "counted_in_conjunction": true,
+      "dimension_sets": [
+        [
+          "GuardrailArn",
+          "GuardrailVersion"
+        ],
+        [
+          "GuardrailContentSource",
+          "GuardrailPolicyType",
+          "Operation"
+        ],
+        [
+          "GuardrailContentSource",
+          "Operation"
+        ],
+        [
+          "GuardrailPolicyType",
+          "Operation"
+        ],
+        [
+          "Operation"
+        ]
+      ],
+      "exercise_basis": "PROJECT_GUARDRAIL",
+      "fresh_window": {
+        "has_datapoints": null,
+        "n_datapoints": null,
+        "n_series": null,
+        "sum": null
+      },
+      "inventory_dimensions_carrying_our_scope": [
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/49si3jhnu3ii",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/6fxd3inytsuu",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/94kfqubwzkvx",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/b7qxhvtl4lb8",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/bb8eo7hr35og",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/dbva5orilksz",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/j30orj6hdh1a",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/pd6blbae0jty",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/piydsa0vhz19",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/rb91cjdlrv8b",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/s5vk53hdnahz",
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5"
+      ],
+      "metric": "TextUnitCount",
+      "name_in_namespace_inventory": true,
+      "project_window": {
+        "has_datapoints": true,
+        "n_datapoints": 61,
+        "n_series": 12,
+        "sum": 5405.0
+      },
+      "published": true,
+      "read_trusted": true,
+      "scope_matched": true,
+      "why": "billing is per text unit, so every call has one",
+      "why_read_untrusted": ""
+    },
+    {
+      "absence_rests_on_untrusted_read": false,
+      "basis_exercised": false,
+      "counted_in_conjunction": false,
+      "dimension_sets": [],
+      "exercise_basis": "NOT_EXERCISED",
+      "fresh_window": {
+        "has_datapoints": null,
+        "n_datapoints": null,
+        "n_series": null,
+        "sum": null
+      },
+      "inventory_dimensions_carrying_our_scope": [],
+      "metric": "InvocationClientErrors",
+      "name_in_namespace_inventory": false,
+      "project_window": {
+        "has_datapoints": false,
+        "n_datapoints": 0,
+        "n_series": 0,
+        "sum": null
+      },
+      "published": false,
+      "read_trusted": true,
+      "scope_matched": true,
+      "why": "requires a client-side error against ApplyGuardrail. The project's calls were built to succeed, and manufacturing failures would change what the corpora measure",
+      "why_read_untrusted": ""
+    },
+    {
+      "absence_rests_on_untrusted_read": false,
+      "basis_exercised": false,
+      "counted_in_conjunction": true,
+      "dimension_sets": [
+        [
+          "GuardrailArn",
+          "GuardrailVersion"
+        ],
+        [
+          "GuardrailContentSource",
+          "Operation"
+        ],
+        [
+          "Operation"
+        ]
+      ],
+      "exercise_basis": "NOT_EXERCISED",
+      "fresh_window": {
+        "has_datapoints": null,
+        "n_datapoints": null,
+        "n_series": null,
+        "sum": null
+      },
+      "inventory_dimensions_carrying_our_scope": [
+        "GuardrailArn=arn:aws:bedrock:us-east-1:<account>:guardrail/pd6blbae0jty"
+      ],
+      "metric": "InvocationServerErrors",
+      "name_in_namespace_inventory": true,
+      "project_window": {
+        "has_datapoints": true,
+        "n_datapoints": 1,
+        "n_series": 1,
+        "sum": 2.0
+      },
+      "published": true,
+      "read_trusted": true,
+      "scope_matched": true,
+      "why": "requires a 5xx from the ApplyGuardrail service, which no client-side action can cause; an absence here would measure the impossibility of the test, not the document",
+      "why_read_untrusted": ""
+    },
+    {
+      "absence_rests_on_untrusted_read": false,
+      "basis_exercised": false,
+      "counted_in_conjunction": false,
+      "dimension_sets": [],
+      "exercise_basis": "NOT_EXERCISED",
+      "fresh_window": {
+        "has_datapoints": null,
+        "n_datapoints": null,
+        "n_series": null,
+        "sum": null
+      },
+      "inventory_dimensions_carrying_our_scope": [],
+      "metric": "InvocationThrottles",
+      "name_in_namespace_inventory": false,
+      "project_window": {
+        "has_datapoints": false,
+        "n_datapoints": 0,
+        "n_series": 0,
+        "sum": null
+      },
+      "published": false,
+      "read_trusted": true,
+      "scope_matched": true,
+      "why": "requires exceeding the ApplyGuardrail quota — the same denial-of-service objection as the gateway's Throttles",
+      "why_read_untrusted": ""
+    }
+  ],
+  "planned_n": null,
+  "project_window_read": {
+    "all_reads_trusted": true,
+    "end": "2026-08-11T15:52:13+00:00",
+    "messages": [],
+    "namespace": "AWS/Bedrock/Guardrails",
+    "per_metric": {
+      "InvocationClientErrors": {
+        "expression": [
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationClientErrors\" 49si3jhnu3ii', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationClientErrors\" pd6blbae0jty', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationClientErrors\" b7qxhvtl4lb8', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationClientErrors\" dbva5orilksz', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationClientErrors\" wwjmltbo1dt5', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationClientErrors\" rb91cjdlrv8b', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationClientErrors\" 94kfqubwzkvx', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationClientErrors\" j30orj6hdh1a', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationClientErrors\" piydsa0vhz19', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationClientErrors\" bb8eo7hr35og', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationClientErrors\" 6fxd3inytsuu', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationClientErrors\" s5vk53hdnahz', 'Sum', 300)"
+        ],
+        "has_datapoints": false,
+        "messages": [],
+        "metric": "InvocationClientErrors",
+        "n_datapoints": 0,
+        "n_pages": 12,
+        "n_series": 0,
+        "n_series_labels": 0,
+        "n_terms": 12,
+        "per_term": {
+          "49si3jhnu3ii": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "6fxd3inytsuu": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "94kfqubwzkvx": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "b7qxhvtl4lb8": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "bb8eo7hr35og": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "dbva5orilksz": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "j30orj6hdh1a": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "pd6blbae0jty": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "piydsa0vhz19": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "rb91cjdlrv8b": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "s5vk53hdnahz": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "wwjmltbo1dt5": {
+            "n_datapoints": 0,
+            "n_series": 0
+          }
+        },
+        "scope": [
+          "49si3jhnu3ii",
+          "pd6blbae0jty",
+          "b7qxhvtl4lb8",
+          "dbva5orilksz",
+          "wwjmltbo1dt5",
+          "rb91cjdlrv8b",
+          "94kfqubwzkvx",
+          "j30orj6hdh1a",
+          "piydsa0vhz19",
+          "bb8eo7hr35og",
+          "6fxd3inytsuu",
+          "s5vk53hdnahz"
+        ],
+        "series_labels": [],
+        "status_codes": [],
+        "sum": null,
+        "trusted": true,
+        "why_union": "a metric counts as published if ANY of our resources published it, so series and datapoints are summed; trust is a conjunction, because one untrusted term makes the union's absence unreliable",
+        "why_untrusted": ""
+      },
+      "InvocationLatency": {
+        "expression": [
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationLatency\" 49si3jhnu3ii', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationLatency\" pd6blbae0jty', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationLatency\" b7qxhvtl4lb8', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationLatency\" dbva5orilksz', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationLatency\" wwjmltbo1dt5', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationLatency\" rb91cjdlrv8b', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationLatency\" 94kfqubwzkvx', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationLatency\" j30orj6hdh1a', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationLatency\" piydsa0vhz19', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationLatency\" bb8eo7hr35og', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationLatency\" 6fxd3inytsuu', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationLatency\" s5vk53hdnahz', 'Sum', 300)"
+        ],
+        "has_datapoints": true,
+        "messages": [],
+        "metric": "InvocationLatency",
+        "n_datapoints": 61,
+        "n_pages": 12,
+        "n_series": 12,
+        "n_series_labels": 12,
+        "n_terms": 12,
+        "per_term": {
+          "49si3jhnu3ii": {
+            "n_datapoints": 12,
+            "n_series": 1
+          },
+          "6fxd3inytsuu": {
+            "n_datapoints": 3,
+            "n_series": 1
+          },
+          "94kfqubwzkvx": {
+            "n_datapoints": 4,
+            "n_series": 1
+          },
+          "b7qxhvtl4lb8": {
+            "n_datapoints": 5,
+            "n_series": 1
+          },
+          "bb8eo7hr35og": {
+            "n_datapoints": 3,
+            "n_series": 1
+          },
+          "dbva5orilksz": {
+            "n_datapoints": 7,
+            "n_series": 1
+          },
+          "j30orj6hdh1a": {
+            "n_datapoints": 4,
+            "n_series": 1
+          },
+          "pd6blbae0jty": {
+            "n_datapoints": 7,
+            "n_series": 1
+          },
+          "piydsa0vhz19": {
+            "n_datapoints": 4,
+            "n_series": 1
+          },
+          "rb91cjdlrv8b": {
+            "n_datapoints": 6,
+            "n_series": 1
+          },
+          "s5vk53hdnahz": {
+            "n_datapoints": 2,
+            "n_series": 1
+          },
+          "wwjmltbo1dt5": {
+            "n_datapoints": 4,
+            "n_series": 1
+          }
+        },
+        "scope": [
+          "49si3jhnu3ii",
+          "pd6blbae0jty",
+          "b7qxhvtl4lb8",
+          "dbva5orilksz",
+          "wwjmltbo1dt5",
+          "rb91cjdlrv8b",
+          "94kfqubwzkvx",
+          "j30orj6hdh1a",
+          "piydsa0vhz19",
+          "bb8eo7hr35og",
+          "6fxd3inytsuu",
+          "s5vk53hdnahz"
+        ],
+        "series_labels": [
+          "InvocationLatency"
+        ],
+        "status_codes": [
+          "Complete"
+        ],
+        "sum": 794760.0,
+        "trusted": true,
+        "why_union": "a metric counts as published if ANY of our resources published it, so series and datapoints are summed; trust is a conjunction, because one untrusted term makes the union's absence unreliable",
+        "why_untrusted": ""
+      },
+      "InvocationServerErrors": {
+        "expression": [
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationServerErrors\" 49si3jhnu3ii', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationServerErrors\" pd6blbae0jty', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationServerErrors\" b7qxhvtl4lb8', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationServerErrors\" dbva5orilksz', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationServerErrors\" wwjmltbo1dt5', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationServerErrors\" rb91cjdlrv8b', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationServerErrors\" 94kfqubwzkvx', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationServerErrors\" j30orj6hdh1a', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationServerErrors\" piydsa0vhz19', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationServerErrors\" bb8eo7hr35og', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationServerErrors\" 6fxd3inytsuu', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationServerErrors\" s5vk53hdnahz', 'Sum', 300)"
+        ],
+        "has_datapoints": true,
+        "messages": [],
+        "metric": "InvocationServerErrors",
+        "n_datapoints": 1,
+        "n_pages": 12,
+        "n_series": 1,
+        "n_series_labels": 1,
+        "n_terms": 12,
+        "per_term": {
+          "49si3jhnu3ii": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "6fxd3inytsuu": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "94kfqubwzkvx": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "b7qxhvtl4lb8": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "bb8eo7hr35og": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "dbva5orilksz": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "j30orj6hdh1a": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "pd6blbae0jty": {
+            "n_datapoints": 1,
+            "n_series": 1
+          },
+          "piydsa0vhz19": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "rb91cjdlrv8b": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "s5vk53hdnahz": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "wwjmltbo1dt5": {
+            "n_datapoints": 0,
+            "n_series": 0
+          }
+        },
+        "scope": [
+          "49si3jhnu3ii",
+          "pd6blbae0jty",
+          "b7qxhvtl4lb8",
+          "dbva5orilksz",
+          "wwjmltbo1dt5",
+          "rb91cjdlrv8b",
+          "94kfqubwzkvx",
+          "j30orj6hdh1a",
+          "piydsa0vhz19",
+          "bb8eo7hr35og",
+          "6fxd3inytsuu",
+          "s5vk53hdnahz"
+        ],
+        "series_labels": [
+          "InvocationServerErrors"
+        ],
+        "status_codes": [
+          "Complete"
+        ],
+        "sum": 2.0,
+        "trusted": true,
+        "why_union": "a metric counts as published if ANY of our resources published it, so series and datapoints are summed; trust is a conjunction, because one untrusted term makes the union's absence unreliable",
+        "why_untrusted": ""
+      },
+      "InvocationThrottles": {
+        "expression": [
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationThrottles\" 49si3jhnu3ii', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationThrottles\" pd6blbae0jty', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationThrottles\" b7qxhvtl4lb8', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationThrottles\" dbva5orilksz', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationThrottles\" wwjmltbo1dt5', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationThrottles\" rb91cjdlrv8b', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationThrottles\" 94kfqubwzkvx', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationThrottles\" j30orj6hdh1a', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationThrottles\" piydsa0vhz19', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationThrottles\" bb8eo7hr35og', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationThrottles\" 6fxd3inytsuu', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationThrottles\" s5vk53hdnahz', 'Sum', 300)"
+        ],
+        "has_datapoints": false,
+        "messages": [],
+        "metric": "InvocationThrottles",
+        "n_datapoints": 0,
+        "n_pages": 12,
+        "n_series": 0,
+        "n_series_labels": 0,
+        "n_terms": 12,
+        "per_term": {
+          "49si3jhnu3ii": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "6fxd3inytsuu": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "94kfqubwzkvx": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "b7qxhvtl4lb8": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "bb8eo7hr35og": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "dbva5orilksz": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "j30orj6hdh1a": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "pd6blbae0jty": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "piydsa0vhz19": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "rb91cjdlrv8b": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "s5vk53hdnahz": {
+            "n_datapoints": 0,
+            "n_series": 0
+          },
+          "wwjmltbo1dt5": {
+            "n_datapoints": 0,
+            "n_series": 0
+          }
+        },
+        "scope": [
+          "49si3jhnu3ii",
+          "pd6blbae0jty",
+          "b7qxhvtl4lb8",
+          "dbva5orilksz",
+          "wwjmltbo1dt5",
+          "rb91cjdlrv8b",
+          "94kfqubwzkvx",
+          "j30orj6hdh1a",
+          "piydsa0vhz19",
+          "bb8eo7hr35og",
+          "6fxd3inytsuu",
+          "s5vk53hdnahz"
+        ],
+        "series_labels": [],
+        "status_codes": [],
+        "sum": null,
+        "trusted": true,
+        "why_union": "a metric counts as published if ANY of our resources published it, so series and datapoints are summed; trust is a conjunction, because one untrusted term makes the union's absence unreliable",
+        "why_untrusted": ""
+      },
+      "Invocations": {
+        "expression": [
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"Invocations\" 49si3jhnu3ii', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"Invocations\" pd6blbae0jty', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"Invocations\" b7qxhvtl4lb8', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"Invocations\" dbva5orilksz', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"Invocations\" wwjmltbo1dt5', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"Invocations\" rb91cjdlrv8b', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"Invocations\" 94kfqubwzkvx', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"Invocations\" j30orj6hdh1a', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"Invocations\" piydsa0vhz19', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"Invocations\" bb8eo7hr35og', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"Invocations\" 6fxd3inytsuu', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"Invocations\" s5vk53hdnahz', 'Sum', 300)"
+        ],
+        "has_datapoints": true,
+        "messages": [],
+        "metric": "Invocations",
+        "n_datapoints": 61,
+        "n_pages": 12,
+        "n_series": 12,
+        "n_series_labels": 12,
+        "n_terms": 12,
+        "per_term": {
+          "49si3jhnu3ii": {
+            "n_datapoints": 12,
+            "n_series": 1
+          },
+          "6fxd3inytsuu": {
+            "n_datapoints": 3,
+            "n_series": 1
+          },
+          "94kfqubwzkvx": {
+            "n_datapoints": 4,
+            "n_series": 1
+          },
+          "b7qxhvtl4lb8": {
+            "n_datapoints": 5,
+            "n_series": 1
+          },
+          "bb8eo7hr35og": {
+            "n_datapoints": 3,
+            "n_series": 1
+          },
+          "dbva5orilksz": {
+            "n_datapoints": 7,
+            "n_series": 1
+          },
+          "j30orj6hdh1a": {
+            "n_datapoints": 4,
+            "n_series": 1
+          },
+          "pd6blbae0jty": {
+            "n_datapoints": 7,
+            "n_series": 1
+          },
+          "piydsa0vhz19": {
+            "n_datapoints": 4,
+            "n_series": 1
+          },
+          "rb91cjdlrv8b": {
+            "n_datapoints": 6,
+            "n_series": 1
+          },
+          "s5vk53hdnahz": {
+            "n_datapoints": 2,
+            "n_series": 1
+          },
+          "wwjmltbo1dt5": {
+            "n_datapoints": 4,
+            "n_series": 1
+          }
+        },
+        "scope": [
+          "49si3jhnu3ii",
+          "pd6blbae0jty",
+          "b7qxhvtl4lb8",
+          "dbva5orilksz",
+          "wwjmltbo1dt5",
+          "rb91cjdlrv8b",
+          "94kfqubwzkvx",
+          "j30orj6hdh1a",
+          "piydsa0vhz19",
+          "bb8eo7hr35og",
+          "6fxd3inytsuu",
+          "s5vk53hdnahz"
+        ],
+        "series_labels": [
+          "Invocations"
+        ],
+        "status_codes": [
+          "Complete"
+        ],
+        "sum": 5508.0,
+        "trusted": true,
+        "why_union": "a metric counts as published if ANY of our resources published it, so series and datapoints are summed; trust is a conjunction, because one untrusted term makes the union's absence unreliable",
+        "why_untrusted": ""
+      },
+      "InvocationsIntervened": {
+        "expression": [
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationsIntervened\" 49si3jhnu3ii', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationsIntervened\" pd6blbae0jty', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationsIntervened\" b7qxhvtl4lb8', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationsIntervened\" dbva5orilksz', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationsIntervened\" wwjmltbo1dt5', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationsIntervened\" rb91cjdlrv8b', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationsIntervened\" 94kfqubwzkvx', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationsIntervened\" j30orj6hdh1a', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationsIntervened\" piydsa0vhz19', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationsIntervened\" bb8eo7hr35og', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationsIntervened\" 6fxd3inytsuu', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationsIntervened\" s5vk53hdnahz', 'Sum', 300)"
+        ],
+        "has_datapoints": true,
+        "messages": [],
+        "metric": "InvocationsIntervened",
+        "n_datapoints": 61,
+        "n_pages": 12,
+        "n_series": 12,
+        "n_series_labels": 12,
+        "n_terms": 12,
+        "per_term": {
+          "49si3jhnu3ii": {
+            "n_datapoints": 12,
+            "n_series": 1
+          },
+          "6fxd3inytsuu": {
+            "n_datapoints": 3,
+            "n_series": 1
+          },
+          "94kfqubwzkvx": {
+            "n_datapoints": 4,
+            "n_series": 1
+          },
+          "b7qxhvtl4lb8": {
+            "n_datapoints": 5,
+            "n_series": 1
+          },
+          "bb8eo7hr35og": {
+            "n_datapoints": 3,
+            "n_series": 1
+          },
+          "dbva5orilksz": {
+            "n_datapoints": 7,
+            "n_series": 1
+          },
+          "j30orj6hdh1a": {
+            "n_datapoints": 4,
+            "n_series": 1
+          },
+          "pd6blbae0jty": {
+            "n_datapoints": 7,
+            "n_series": 1
+          },
+          "piydsa0vhz19": {
+            "n_datapoints": 4,
+            "n_series": 1
+          },
+          "rb91cjdlrv8b": {
+            "n_datapoints": 6,
+            "n_series": 1
+          },
+          "s5vk53hdnahz": {
+            "n_datapoints": 2,
+            "n_series": 1
+          },
+          "wwjmltbo1dt5": {
+            "n_datapoints": 4,
+            "n_series": 1
+          }
+        },
+        "scope": [
+          "49si3jhnu3ii",
+          "pd6blbae0jty",
+          "b7qxhvtl4lb8",
+          "dbva5orilksz",
+          "wwjmltbo1dt5",
+          "rb91cjdlrv8b",
+          "94kfqubwzkvx",
+          "j30orj6hdh1a",
+          "piydsa0vhz19",
+          "bb8eo7hr35og",
+          "6fxd3inytsuu",
+          "s5vk53hdnahz"
+        ],
+        "series_labels": [
+          "InvocationsIntervened"
+        ],
+        "status_codes": [
+          "Complete"
+        ],
+        "sum": 3143.0,
+        "trusted": true,
+        "why_union": "a metric counts as published if ANY of our resources published it, so series and datapoints are summed; trust is a conjunction, because one untrusted term makes the union's absence unreliable",
+        "why_untrusted": ""
+      },
+      "TextUnitCount": {
+        "expression": [
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"TextUnitCount\" 49si3jhnu3ii', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"TextUnitCount\" pd6blbae0jty', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"TextUnitCount\" b7qxhvtl4lb8', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"TextUnitCount\" dbva5orilksz', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"TextUnitCount\" wwjmltbo1dt5', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"TextUnitCount\" rb91cjdlrv8b', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"TextUnitCount\" 94kfqubwzkvx', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"TextUnitCount\" j30orj6hdh1a', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"TextUnitCount\" piydsa0vhz19', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"TextUnitCount\" bb8eo7hr35og', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"TextUnitCount\" 6fxd3inytsuu', 'Sum', 300)",
+          "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"TextUnitCount\" s5vk53hdnahz', 'Sum', 300)"
+        ],
+        "has_datapoints": true,
+        "messages": [],
+        "metric": "TextUnitCount",
+        "n_datapoints": 61,
+        "n_pages": 12,
+        "n_series": 12,
+        "n_series_labels": 12,
+        "n_terms": 12,
+        "per_term": {
+          "49si3jhnu3ii": {
+            "n_datapoints": 12,
+            "n_series": 1
+          },
+          "6fxd3inytsuu": {
+            "n_datapoints": 3,
+            "n_series": 1
+          },
+          "94kfqubwzkvx": {
+            "n_datapoints": 4,
+            "n_series": 1
+          },
+          "b7qxhvtl4lb8": {
+            "n_datapoints": 5,
+            "n_series": 1
+          },
+          "bb8eo7hr35og": {
+            "n_datapoints": 3,
+            "n_series": 1
+          },
+          "dbva5orilksz": {
+            "n_datapoints": 7,
+            "n_series": 1
+          },
+          "j30orj6hdh1a": {
+            "n_datapoints": 4,
+            "n_series": 1
+          },
+          "pd6blbae0jty": {
+            "n_datapoints": 7,
+            "n_series": 1
+          },
+          "piydsa0vhz19": {
+            "n_datapoints": 4,
+            "n_series": 1
+          },
+          "rb91cjdlrv8b": {
+            "n_datapoints": 6,
+            "n_series": 1
+          },
+          "s5vk53hdnahz": {
+            "n_datapoints": 2,
+            "n_series": 1
+          },
+          "wwjmltbo1dt5": {
+            "n_datapoints": 4,
+            "n_series": 1
+          }
+        },
+        "scope": [
+          "49si3jhnu3ii",
+          "pd6blbae0jty",
+          "b7qxhvtl4lb8",
+          "dbva5orilksz",
+          "wwjmltbo1dt5",
+          "rb91cjdlrv8b",
+          "94kfqubwzkvx",
+          "j30orj6hdh1a",
+          "piydsa0vhz19",
+          "bb8eo7hr35og",
+          "6fxd3inytsuu",
+          "s5vk53hdnahz"
+        ],
+        "series_labels": [
+          "TextUnitCount"
+        ],
+        "status_codes": [
+          "Complete"
+        ],
+        "sum": 5405.0,
+        "trusted": true,
+        "why_union": "a metric counts as published if ANY of our resources published it, so series and datapoints are summed; trust is a conjunction, because one untrusted term makes the union's absence unreliable",
+        "why_untrusted": ""
+      }
+    },
+    "period_s": 300,
+    "reads_per_call": 1,
+    "scope": [
+      "49si3jhnu3ii",
+      "pd6blbae0jty",
+      "b7qxhvtl4lb8",
+      "dbva5orilksz",
+      "wwjmltbo1dt5",
+      "rb91cjdlrv8b",
+      "94kfqubwzkvx",
+      "j30orj6hdh1a",
+      "piydsa0vhz19",
+      "bb8eo7hr35og",
+      "6fxd3inytsuu",
+      "s5vk53hdnahz"
+    ],
+    "start": "2026-07-29T15:52:13+00:00",
+    "unscoped": {
+      "InvocationClientErrors": {
+        "expression": "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationClientErrors\"', 'Sum', 300)",
+        "has_datapoints": false,
+        "messages": [],
+        "metric": "InvocationClientErrors",
+        "n_datapoints": 0,
+        "n_pages": 1,
+        "n_series": 0,
+        "n_series_labels": 0,
+        "scope": "",
+        "series_labels": [],
+        "status_codes": [],
+        "sum": null,
+        "trusted": true,
+        "why_untrusted": ""
+      },
+      "InvocationLatency": {
+        "expression": "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationLatency\"', 'Sum', 300)",
+        "has_datapoints": true,
+        "messages": [],
+        "metric": "InvocationLatency",
+        "n_datapoints": 127,
+        "n_pages": 1,
+        "n_series": 16,
+        "n_series_labels": 16,
+        "scope": "",
+        "series_labels": [
+          "ApplyGuardrail",
+          "Input ApplyGuardrail",
+          "InvokeGuardrailChecks",
+          "Output ApplyGuardrail",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/49si3jhnu3ii DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/6fxd3inytsuu DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/94kfqubwzkvx DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/b7qxhvtl4lb8 DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/bb8eo7hr35og DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/dbva5orilksz DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/j30orj6hdh1a DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/pd6blbae0jty DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/piydsa0vhz19 DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/rb91cjdlrv8b DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/s5vk53hdnahz DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5 DRAFT"
+        ],
+        "status_codes": [
+          "Complete"
+        ],
+        "sum": 2517418.0,
+        "trusted": true,
+        "why_untrusted": ""
+      },
+      "InvocationServerErrors": {
+        "expression": "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationServerErrors\"', 'Sum', 300)",
+        "has_datapoints": true,
+        "messages": [],
+        "metric": "InvocationServerErrors",
+        "n_datapoints": 3,
+        "n_pages": 1,
+        "n_series": 3,
+        "n_series_labels": 3,
+        "scope": "",
+        "series_labels": [
+          "ApplyGuardrail",
+          "Input ApplyGuardrail",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/pd6blbae0jty DRAFT"
+        ],
+        "status_codes": [
+          "Complete"
+        ],
+        "sum": 6.0,
+        "trusted": true,
+        "why_untrusted": ""
+      },
+      "InvocationThrottles": {
+        "expression": "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationThrottles\"', 'Sum', 300)",
+        "has_datapoints": false,
+        "messages": [],
+        "metric": "InvocationThrottles",
+        "n_datapoints": 0,
+        "n_pages": 1,
+        "n_series": 0,
+        "n_series_labels": 0,
+        "scope": "",
+        "series_labels": [],
+        "status_codes": [],
+        "sum": null,
+        "trusted": true,
+        "why_untrusted": ""
+      },
+      "Invocations": {
+        "expression": "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"Invocations\"', 'Sum', 300)",
+        "has_datapoints": true,
+        "messages": [],
+        "metric": "Invocations",
+        "n_datapoints": 127,
+        "n_pages": 1,
+        "n_series": 16,
+        "n_series_labels": 16,
+        "scope": "",
+        "series_labels": [
+          "ApplyGuardrail",
+          "Input ApplyGuardrail",
+          "InvokeGuardrailChecks",
+          "Output ApplyGuardrail",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/49si3jhnu3ii DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/6fxd3inytsuu DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/94kfqubwzkvx DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/b7qxhvtl4lb8 DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/bb8eo7hr35og DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/dbva5orilksz DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/j30orj6hdh1a DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/pd6blbae0jty DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/piydsa0vhz19 DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/rb91cjdlrv8b DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/s5vk53hdnahz DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5 DRAFT"
+        ],
+        "status_codes": [
+          "Complete"
+        ],
+        "sum": 17000.0,
+        "trusted": true,
+        "why_untrusted": ""
+      },
+      "InvocationsIntervened": {
+        "expression": "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"InvocationsIntervened\"', 'Sum', 300)",
+        "has_datapoints": true,
+        "messages": [],
+        "metric": "InvocationsIntervened",
+        "n_datapoints": 203,
+        "n_pages": 1,
+        "n_series": 26,
+        "n_series_labels": 26,
+        "scope": "",
+        "series_labels": [
+          "ApplyGuardrail",
+          "ContentPolicy ApplyGuardrail",
+          "ContextualGroundingPolicy ApplyGuardrail",
+          "Input ApplyGuardrail",
+          "Input ContentPolicy ApplyGuardrail",
+          "Input SensitiveInformationPolicy ApplyGuardrail",
+          "Input TopicPolicy ApplyGuardrail",
+          "Input WordPolicy ApplyGuardrail",
+          "Output ApplyGuardrail",
+          "Output ContentPolicy ApplyGuardrail",
+          "Output ContextualGroundingPolicy ApplyGuardrail",
+          "SensitiveInformationPolicy ApplyGuardrail",
+          "TopicPolicy ApplyGuardrail",
+          "WordPolicy ApplyGuardrail",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/49si3jhnu3ii DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/6fxd3inytsuu DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/94kfqubwzkvx DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/b7qxhvtl4lb8 DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/bb8eo7hr35og DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/dbva5orilksz DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/j30orj6hdh1a DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/pd6blbae0jty DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/piydsa0vhz19 DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/rb91cjdlrv8b DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/s5vk53hdnahz DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5 DRAFT"
+        ],
+        "status_codes": [
+          "Complete"
+        ],
+        "sum": 15715.0,
+        "trusted": true,
+        "why_untrusted": ""
+      },
+      "TextUnitCount": {
+        "expression": "SEARCH('Namespace=\"AWS/Bedrock/Guardrails\" MetricName=\"TextUnitCount\"', 'Sum', 300)",
+        "has_datapoints": true,
+        "messages": [],
+        "metric": "TextUnitCount",
+        "n_datapoints": 203,
+        "n_pages": 1,
+        "n_series": 26,
+        "n_series_labels": 26,
+        "scope": "",
+        "series_labels": [
+          "ApplyGuardrail",
+          "ContentPolicy ApplyGuardrail",
+          "ContextualGroundingPolicy ApplyGuardrail",
+          "Input ApplyGuardrail",
+          "Input ContentPolicy ApplyGuardrail",
+          "Input SensitiveInformationPolicy ApplyGuardrail",
+          "Input TopicPolicy ApplyGuardrail",
+          "Input WordPolicy ApplyGuardrail",
+          "Output ApplyGuardrail",
+          "Output ContentPolicy ApplyGuardrail",
+          "Output ContextualGroundingPolicy ApplyGuardrail",
+          "SensitiveInformationPolicy ApplyGuardrail",
+          "TopicPolicy ApplyGuardrail",
+          "WordPolicy ApplyGuardrail",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/49si3jhnu3ii DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/6fxd3inytsuu DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/94kfqubwzkvx DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/b7qxhvtl4lb8 DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/bb8eo7hr35og DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/dbva5orilksz DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/j30orj6hdh1a DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/pd6blbae0jty DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/piydsa0vhz19 DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/rb91cjdlrv8b DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/s5vk53hdnahz DRAFT",
+          "arn:aws:bedrock:us-east-1:<account>:guardrail/wwjmltbo1dt5 DRAFT"
+        ],
+        "status_codes": [
+          "Complete"
+        ],
+        "sum": 27025.0,
+        "trusted": true,
+        "why_untrusted": ""
+      }
+    },
+    "untrusted_metrics": [],
+    "why_one_per_call": "22 SEARCH expressions in one call exhausted CloudWatch's series budget and produced two retracted FALSE verdicts; see _one_search",
+    "why_terms_are_separate_calls": "SEARCH terms are ANDed, so one expression cannot ask about two resources; the union is taken over one call per term",
+    "window": "project"
+  },
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F7-3",
+    "evidence": {
+      "detail": {
+        "absent": [],
+        "n_documented": 7,
+        "n_excluded": 2,
+        "n_published": 5,
+        "namespace": "AWS/Bedrock/Guardrails"
+      },
+      "observed": true
+    },
+    "family": "descriptive_no_test",
+    "kind": "EXISTENCE",
+    "mutation_required": false,
+    "n_attempted": 5,
+    "n_met": true,
+    "n_usable": 5,
+    "notes": [],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [
+      7.0
+    ],
+    "verdict": "TRUE"
+  },
+  "region": "us-east-1",
+  "run_id": "r20260810T130945Z",
+  "search_scope": {
+    "AWS/Bedrock-AgentCore": {
+      "confirmed_in_inventory": "checked below against inventory_dimension_values",
+      "scope": [
+        "grx-gw-r20260810t130945z-zpkfmpwo9n"
+      ],
+      "source": "the gateway id in the run ledger"
+    },
+    "AWS/Bedrock/Guardrails": {
+      "cap_applied": false,
+      "identifiers_seen": {
+        "49si3jhnu3ii": 2800,
+        "6fxd3inytsuu": 60,
+        "94kfqubwzkvx": 336,
+        "b7qxhvtl4lb8": 1360,
+        "bb8eo7hr35og": 129,
+        "dbva5orilksz": 771,
+        "j30orj6hdh1a": 246,
+        "pd6blbae0jty": 1519,
+        "piydsa0vhz19": 234,
+        "rb91cjdlrv8b": 572,
+        "s5vk53hdnahz": 27,
+        "wwjmltbo1dt5": 638
+      },
+      "n_files_matching": 8692,
+      "n_files_scanned": 8692,
+      "n_files_unparsable": 0,
+      "sample_cap": null,
+      "scope": [
+        "49si3jhnu3ii",
+        "pd6blbae0jty",
+        "b7qxhvtl4lb8",
+        "dbva5orilksz",
+        "wwjmltbo1dt5",
+        "rb91cjdlrv8b",
+        "94kfqubwzkvx",
+        "j30orj6hdh1a",
+        "piydsa0vhz19",
+        "bb8eo7hr35og",
+        "6fxd3inytsuu",
+        "s5vk53hdnahz"
+      ],
+      "why_from_evidence": "the metrics that should exist come from the project's own ApplyGuardrail traffic, most of it from earlier runs; scoping to the current run's guardrail would search for datapoints from traffic that never happened",
+      "why_no_cap": "every matching record is read. A capped scan would make the scope a sample of our own traffic while the payload described it as the scope, and a guardrail whose calls fell outside the sample would have produced a manufactured absence of the DEV-P4-04 kind"
+    },
+    "secondary_unscoped_read": "recorded, never scored: it separates 'the service does not publish this for our resources' from 'nobody in this account publishes it'",
+    "terms_are_unquoted": "a QUOTED SEARCH term is an exact match against a whole dimension value, so it misses an id that appears inside an ARN. Quoting is what made the second run report Duration, TargetExecutionTime and all four guardrail metrics absent while the inventory listed them; see DEV-P4-04",
+    "why": "one SEARCH per metric, each restricted to our own resource, because multiple SEARCH expressions in one GetMetricData call share a returned-series cap and silently return empty results past it"
+  },
+  "verdict": "TRUE",
+  "verdict_reading": "TRUE for the 5 of 7 documented metrics whose publishing condition this project's traffic actually creates. It is not a statement about the 2 excluded ones, which remain untested rather than confirmed",
+  "verdict_rule": "TRUE iff every EXERCISED documented metric has datapoints in the project or fresh window, with the guards holding. NOT_EXERCISED metrics are listed, not silently dropped (DEV-P4-03)",
+  "what_true_does_not_prove": "that the metrics are timely (F7-6), that their timestamps are on the documented grid (F7-7), that the documented dimensions all exist (reported above, not scored), or anything about the metrics excluded as NOT_EXERCISED",
+  "windows": {
+    "fresh": {
+      "period_s": 60,
+      "settle_s": 240,
+      "why_settle": "publish lag is not assumed here; F7-6 is the case that measures it"
+    },
+    "project": {
+      "days": 13,
+      "end": "2026-08-11T15:52:13+00:00",
+      "period_s": 300,
+      "start": "2026-07-29T15:52:13+00:00",
+      "why_13_days": "CloudWatch's ListMetrics/SEARCH horizon is about two weeks, so a longer window would silently become a two-week window while claiming more"
+    }
+  }
+}

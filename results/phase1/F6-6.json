@@ -1,0 +1,444 @@
+{
+  "action_id": "grxecho___echo",
+  "alpha": 0.05,
+  "ambient_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F6-6",
+    "clear_here": true
+  },
+  "case_id": "F6-6",
+  "cell": "latency_arm_p99",
+  "client_total": {
+    "ci_p50": "1483 [1474, 1491] (n=1000, order-statistic, 95%)",
+    "max": 2897.346,
+    "mean": 1522.008151,
+    "min": 1191.489,
+    "n": 1000,
+    "p50": 1482.811,
+    "p90": 1721.583,
+    "p99": 2107.2128999999995
+  },
+  "cloudwatch": {
+    "GuardrailLatency": {
+      "combinations_found": 1,
+      "metric": "GuardrailLatency",
+      "p50": 386.4656532352717,
+      "samples": 3002,
+      "series": [
+        {
+          "average": 405.47435043304466,
+          "dimensions": {
+            "OperationName": "AuthorizeAction",
+            "TargetResource": "grx-gw-r20260810t130945z-zpkfmpwo9n"
+          },
+          "maximum": 1617.0,
+          "minimum": 253.0,
+          "p50": 386.4656532352717,
+          "p90": 519.2304414709545,
+          "p99": 767.4123125473837,
+          "sample_count": 3002.0,
+          "window_start": "2026-08-11T18:06:54.089958+00:00"
+        }
+      ],
+      "windows_queried": [
+        {
+          "end": "2026-08-11T19:10:27.603538+00:00",
+          "period_s": 3840,
+          "start": "2026-08-11T18:06:54.089958+00:00"
+        }
+      ]
+    },
+    "Latency": {
+      "combinations_found": 10,
+      "metric": "Latency",
+      "p50": 503.4905594071247,
+      "samples": 12032,
+      "series": [
+        {
+          "average": 14.833333333333334,
+          "dimensions": {
+            "Method": "initialize",
+            "Operation": "InvokeGateway",
+            "Protocol": "MCP",
+            "Resource": "arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n"
+          },
+          "maximum": 22.0,
+          "minimum": 8.0,
+          "p50": 13.109994191499956,
+          "p90": 21.46389955865374,
+          "p99": 21.945792848569095,
+          "sample_count": 6.0,
+          "window_start": "2026-08-11T18:06:54.089958+00:00"
+        },
+        {
+          "average": 548.8207861425716,
+          "dimensions": {
+            "Method": "tools/call",
+            "Operation": "InvokeGateway",
+            "Protocol": "MCP",
+            "Resource": "arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n"
+          },
+          "maximum": 1784.0,
+          "minimum": 358.0,
+          "p50": 532.01582179404,
+          "p90": 677.8383559232384,
+          "p99": 919.7607333841515,
+          "sample_count": 3002.0,
+          "window_start": "2026-08-11T18:06:54.089958+00:00"
+        },
+        {
+          "average": 20.333333333333332,
+          "dimensions": {
+            "Method": "notifications/initialized",
+            "Operation": "InvokeGateway",
+            "Protocol": "MCP",
+            "Resource": "arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n"
+          },
+          "maximum": 24.0,
+          "minimum": 17.0,
+          "p50": 20.131196244377268,
+          "p90": 23.532044599361832,
+          "p99": 23.952788725097076,
+          "sample_count": 6.0,
+          "window_start": "2026-08-11T18:06:54.089958+00:00"
+        },
+        {
+          "average": 438.5666222518321,
+          "dimensions": {
+            "OperationName": "AuthorizeAction",
+            "TargetResource": "grx-gw-r20260810t130945z-zpkfmpwo9n"
+          },
+          "maximum": 1663.0,
+          "minimum": 282.0,
+          "p50": 420.2026385227705,
+          "p90": 556.8630923278569,
+          "p99": 789.6785316507171,
+          "sample_count": 3002.0,
+          "window_start": "2026-08-11T18:06:54.089958+00:00"
+        },
+        {
+          "average": 548.8207861425716,
+          "dimensions": {
+            "Method": "tools/call",
+            "Name": "grxecho___echo",
+            "Operation": "InvokeGateway",
+            "Protocol": "MCP",
+            "Resource": "arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n"
+          },
+          "maximum": 1784.0,
+          "minimum": 358.0,
+          "p50": 532.01582179404,
+          "p90": 677.8383559232384,
+          "p99": 919.7607333841515,
+          "sample_count": 3002.0,
+          "window_start": "2026-08-11T18:06:54.089958+00:00"
+        },
+        {
+          "average": 546.7057067020571,
+          "dimensions": {
+            "Operation": "InvokeGateway",
+            "Protocol": "MCP",
+            "Resource": "arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n"
+          },
+          "maximum": 1784.0,
+          "minimum": 8.0,
+          "p50": 531.5619272551879,
+          "p90": 677.4216782668833,
+          "p99": 919.234908382653,
+          "sample_count": 3014.0,
+          "window_start": "2026-08-11T18:06:54.089958+00:00"
+        }
+      ],
+      "windows_queried": [
+        {
+          "end": "2026-08-11T19:10:27.603538+00:00",
+          "period_s": 3840,
+          "start": "2026-08-11T18:06:54.089958+00:00"
+        }
+      ]
+    }
+  },
+  "floor_ms": 800.0,
+  "gateway_id": "grx-gw-r20260810t130945z-zpkfmpwo9n",
+  "guard_detail": {
+    "gateway_hop_measured": {
+      "combinations_found": 10,
+      "guardrail_p50": 386.4656532352717,
+      "guardrail_samples": 3002,
+      "min_samples": 100,
+      "n_sending_windows": 1,
+      "p50": 503.4905594071247,
+      "samples": 12032,
+      "sending_windows": [
+        {
+          "reconstructed_from": {
+            "archived_EndTime": "2026-08-11T19:10:27.603538+00:00",
+            "archived_StartTime": "2026-08-11T18:06:54.089958+00:00",
+            "arithmetic": "t0 = StartTime + 60s and t1 = EndTime - 60s, inverting the pad _cw_p50 applies to each side",
+            "evidence_dir": "f6_latency/F6-6_7_8",
+            "requests_read": [
+              "4621_get_metric_statistics_ok.json",
+              "4622_get_metric_statistics_ok.json",
+              "4623_get_metric_statistics_ok.json",
+              "4624_get_metric_statistics_ok.json",
+              "4625_get_metric_statistics_ok.json",
+              "4626_get_metric_statistics_ok.json",
+              "4627_get_metric_statistics_ok.json",
+              "4628_get_metric_statistics_ok.json",
+              "4629_get_metric_statistics_ok.json",
+              "4630_get_metric_statistics_ok.json",
+              "4632_get_metric_statistics_ok.json"
+            ],
+            "why": "the run that sent these 1,600 turns crashed in its analysis before the window was persisted; the window is recovered from that run's own archived CloudWatch requests rather than re-sending the arm"
+          },
+          "recorded_by": "recover_cw_window.py (RECONSTRUCTED)",
+          "t0_iso": "2026-08-11T18:07:54.089958+00:00",
+          "t1_iso": "2026-08-11T19:09:27.603538+00:00"
+        }
+      ],
+      "windows_queried": [
+        {
+          "end": "2026-08-11T19:10:27.603538+00:00",
+          "period_s": 3840,
+          "start": "2026-08-11T18:06:54.089958+00:00"
+        }
+      ]
+    },
+    "guardrail_live_before_and_after": [
+      {
+        "corpus_id": "b976bbfa6a66",
+        "denied": true,
+        "outcome": "policy_denied",
+        "request_id": "972328e2-6ff4-4017-8303-1f16bf40ce4c",
+        "when": "before"
+      },
+      {
+        "corpus_id": "b976bbfa6a66",
+        "denied": true,
+        "outcome": "policy_denied",
+        "request_id": "7d6ce1c4-efda-4851-ab5d-91d69782c57d",
+        "when": "after"
+      }
+    ],
+    "guardrail_ran_on_every_turn": {
+      "n_missing": 0,
+      "why": "hop 2 is only reported when the guardrail actually evaluated the input; a turn with no inputAssessment latency has no hop 2 and cannot enter a total"
+    },
+    "probe_policy_removed": {
+      "attempts": 1,
+      "deleted": true,
+      "errors": []
+    },
+    "testbed_intact_after_restore": {
+      "checks": [
+        {
+          "detail": "",
+          "name": "policy-engine/main present in ledger",
+          "ok": true
+        },
+        {
+          "detail": "grx_pe_r20260810T130945Z-t6hqadrspf status=ACTIVE",
+          "name": "policy-engine ACTIVE",
+          "ok": true
+        },
+        {
+          "detail": "",
+          "name": "policy/baseline present in ledger",
+          "ok": true
+        },
+        {
+          "detail": "status=ACTIVE enforcementMode=ACTIVE",
+          "name": "policy/baseline ACTIVE",
+          "ok": true
+        },
+        {
+          "detail": "verbatim from our §3.1",
+          "name": "policy/baseline statement unchanged",
+          "ok": true
+        },
+        {
+          "detail": "",
+          "name": "gateway/main present in ledger",
+          "ok": true
+        },
+        {
+          "detail": "grx-gw-r20260810t130945z-zpkfmpwo9n status=READY",
+          "name": "gateway/main READY",
+          "ok": true
+        },
+        {
+          "detail": "",
+          "name": "gateway/main url matches ledger",
+          "ok": true
+        },
+        {
+          "detail": "mode=ENFORCE arn=ours",
+          "name": "gateway/main -> our policy engine",
+          "ok": true
+        },
+        {
+          "detail": "",
+          "name": "gateway/nopolicy present in ledger",
+          "ok": true
+        },
+        {
+          "detail": "grx-gw-nopolicy-r20260810t130945z-x1gqmvenpz status=READY",
+          "name": "gateway/nopolicy READY",
+          "ok": true
+        },
+        {
+          "detail": "",
+          "name": "gateway/nopolicy url matches ledger",
+          "ok": true
+        },
+        {
+          "detail": "",
+          "name": "gateway/nopolicy has NO engine",
+          "ok": true
+        },
+        {
+          "detail": "shared prefix, tail == gatewayId",
+          "name": "workloadIdentityDetails is identity only (PAIR_IGNORE justification)",
+          "ok": true
+        },
+        {
+          "detail": "identical except policyEngineConfiguration",
+          "name": "F6 pairing still valid",
+          "ok": true
+        }
+      ],
+      "n_fail": 0,
+      "n_pass": 15,
+      "ok": true
+    },
+    "turns_completed": {
+      "1": {
+        "done": 1000,
+        "failed": 0,
+        "planned": 1000
+      },
+      "2": {
+        "done": 200,
+        "failed": 0,
+        "planned": 200
+      },
+      "3": {
+        "done": 200,
+        "failed": 0,
+        "planned": 200
+      },
+      "5": {
+        "done": 200,
+        "failed": 0,
+        "planned": 200
+      }
+    }
+  },
+  "guardrail_id": "pd6blbae0jty",
+  "guardrail_key": "cf-medium",
+  "guardrail_version": "DRAFT",
+  "guards": {
+    "gateway_hop_measured": true,
+    "guardrail_live_before_and_after": true,
+    "guardrail_ran_on_every_turn": true,
+    "probe_policy_removed": true,
+    "testbed_intact_after_restore": true,
+    "totals_agree_about_the_floor": true,
+    "turns_completed": true
+  },
+  "hop3_is_derived": "§6.1 row 3 names InvocationLatency in AWS/Bedrock, which publishes at 1-minute grain and cannot be read per request; so hop 3 is metrics.latencyMs minus hops 2 and 6 and is recorded as derived. F6-7's residual does NOT depend on the split: hops 2+3+6 enter the sum as metrics.latencyMs, which the service reports directly",
+  "hop_breakdown_p50": {
+    "converse_server_total": 297.0,
+    "hop2_input_guardrail": 214.0,
+    "hop3_model_derived": 83.0,
+    "hop6_output_guardrail": null,
+    "hop6_reporting": {
+      "n_turns": 1000,
+      "n_turns_with_an_output_assessment_latency": 0,
+      "n_turns_with_zero_output_assessments": 1000,
+      "why_it_matters": "hop 6 is one of the document's named hops. If the runtime never reports its latency for a passing response, the hop cannot be measured per turn at all and the §6.1 table's hop-6 row has no instrument behind it — which is an amendment candidate, not a missing measurement"
+    },
+    "hops45_gateway_conservative": 889.9562126423964,
+    "hops45_gateway_nested": 503.4905594071247
+  },
+  "is_smoke": false,
+  "kind": "BAND_CONTAINS",
+  "level": 1,
+  "max_tokens": 40,
+  "model_id": "us.amazon.nova-micro-v1:0",
+  "n_requested": 1000,
+  "oracle_text": "Measured end-to-end p50/p90/p99 + CI at n=1000. FALSE for the ~800ms-31s+ total if the measured band lies outside it",
+  "planned_n": 1000,
+  "planned_n_cell": 1000,
+  "policy_engine_id": "grx_pe_r20260810T130945Z-t6hqadrspf",
+  "prompt_len": 97,
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F6-6",
+    "evidence": {
+      "band": [
+        800.0,
+        31000.0
+      ],
+      "ci_p50": "1483 [1474, 1491] (n=1000, order-statistic, 95%)",
+      "n": 1000,
+      "note_open": "the document writes an open-ended upper bound, so no measured value can exceed it; only the floor is falsifiable",
+      "p50": 1482.811,
+      "p90": 1721.583,
+      "p99": 2107.2128999999995,
+      "upper_end_open": true
+    },
+    "family": "exploratory_latency",
+    "kind": "BAND_CONTAINS",
+    "mutation_required": false,
+    "n_attempted": 1600,
+    "n_met": true,
+    "n_usable": 1000,
+    "notes": [],
+    "p_value": null,
+    "planned_n": 1000,
+    "thresholds": [
+      800.0,
+      31000.0
+    ],
+    "verdict": "TRUE"
+  },
+  "region": "us-east-1",
+  "run_id": "r20260810T130945Z",
+  "server_total": {
+    "ci_p50": "1187 [1184, 1190] (n=1000, order-statistic, 95%)",
+    "max": 2220.956212642396,
+    "mean": 1223.1872126423964,
+    "min": 1083.9562126423964,
+    "n": 1000,
+    "p50": 1186.9562126423964,
+    "p90": 1332.9562126423964,
+    "p99": 1808.9962126423964
+  },
+  "straddle_rule": {
+    "rule": "if the client and server totals fall on opposite sides of the floor the verdict is INCONCLUSIVE: a verdict that depends on which instrument was picked is not a verdict",
+    "straddled": false
+  },
+  "turn_shape": {
+    "direction_of_bias": "a scripted turn omits the model round-trips a tool-using agent adds, and nova-micro is the fastest model available, so the total is biased DOWN — against the 800ms floor",
+    "hops_per_turn": {
+      "1": "not separable from hop 5 in this service — DEV-P4-07",
+      "2": "Converse guardrailConfig inputAssessment",
+      "3": "Converse metrics.latencyMs minus hops 2 and 6 (DERIVED)",
+      "4": "gateway Cedar authorization",
+      "5": "gateway guardrail evaluation, once per tool call",
+      "6": "Converse guardrailConfig outputAssessments, SUMMED"
+    },
+    "orchestration": "scripted, not model-directed",
+    "why_scripted": "no agent runtime exists in this testbed and the pre-existing harness_* runtimes are out of scope, so the turn is assembled by this script in the document's own hop order"
+  },
+  "upper_end_open": true,
+  "verdict": "TRUE",
+  "what_false_does_not_prove": "a FALSE means the 800ms floor is not met by the FASTEST path this account can build: the fastest model available (nova-micro, at the bottom of the document's own 500ms-30s hop 3 range) and a scripted turn with no model round-trip per tool result. It does not show the floor is wrong for a production agent; the amendment it supports is that the total is model-dependent and the floor should be stated as a function of hop 3, not as a constant",
+  "which_is_primary": "client_total — the only per-turn end-to-end reading available. The document's named instrument, a single end-to-end trace, does not exist for a client-orchestrated turn: Bedrock Runtime and the gateway emit into different traces and nothing joins them"
+}

@@ -1,0 +1,540 @@
+{
+  "ambient_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "arms": {
+    "off": {
+      "join_elapsed_s": 600.0,
+      "n_joined": 0,
+      "n_real_response": 10,
+      "n_request_ids": 10,
+      "n_sent": 10,
+      "outcomes": [
+        "allowed"
+      ],
+      "query_truncated_at_limit": false,
+      "span_names_seen": {}
+    },
+    "on-1": {
+      "join_elapsed_s": 50.13121354099894,
+      "n_joined": 5,
+      "n_real_response": 10,
+      "n_request_ids": 10,
+      "n_sent": 10,
+      "outcomes": [
+        "allowed"
+      ],
+      "query_truncated_at_limit": false,
+      "span_names_seen": {
+        "AgentCore.Gateway.InvokeTool": 5,
+        "AgentCore.Gateway.InvokeTool.grxecho___echo": 3,
+        "AgentCore.Policy.AuthorizeAction": 4
+      }
+    },
+    "on-2": {
+      "join_elapsed_s": 72.50622691699937,
+      "n_joined": 2,
+      "n_real_response": 10,
+      "n_request_ids": 10,
+      "n_sent": 10,
+      "outcomes": [
+        "allowed"
+      ],
+      "query_truncated_at_limit": false,
+      "span_names_seen": {
+        "AgentCore.Gateway.InvokeTool": 2
+      }
+    }
+  },
+  "arms_full": {
+    "off": {
+      "arm": "off",
+      "join": {
+        "elapsed_s": 600.0,
+        "joined": [],
+        "n_joined": 0,
+        "query": {
+          "ids_seen_not_wanted": [],
+          "n_parsed": 0,
+          "n_rows": 0,
+          "n_wanted": 10,
+          "span_names": {},
+          "truncated_at_limit": false
+        },
+        "timed_out": false
+      },
+      "n_real_response": 10,
+      "n_sent": 10,
+      "n_with_request_id": 10,
+      "outcomes": [
+        "allowed"
+      ],
+      "request_ids": [
+        "0769901f-2837-4fed-ba8b-9da38c6c9a3a",
+        "23956147-9395-4eef-8f07-c2531fa694a4",
+        "2579dca1-bdd3-4e77-8084-ae17d6eff6e2",
+        "37ab046a-70d5-4186-a7ad-8e2485ba0f03",
+        "3c69ff3b-bcc1-4600-840c-653d2801b8f5",
+        "5ba55262-3e9d-4d06-bee4-96c49fa6f561",
+        "6c2d0504-9d89-453f-852a-52dda566e880",
+        "95db866a-da8d-44b2-9c12-134b5a457160",
+        "b955ba06-f617-4570-bd74-bb76da1d3398",
+        "e2a87fa1-93c3-403c-bb03-69324a733ca8"
+      ],
+      "sent_epoch_end": 1786459629.824235,
+      "sent_epoch_start": 1786459623.797388,
+      "trials": [
+        {
+          "http_status": 200,
+          "i": 1,
+          "outcome": "allowed",
+          "request_id": "37ab046a-70d5-4186-a7ad-8e2485ba0f03"
+        },
+        {
+          "http_status": 200,
+          "i": 2,
+          "outcome": "allowed",
+          "request_id": "95db866a-da8d-44b2-9c12-134b5a457160"
+        },
+        {
+          "http_status": 200,
+          "i": 3,
+          "outcome": "allowed",
+          "request_id": "e2a87fa1-93c3-403c-bb03-69324a733ca8"
+        },
+        {
+          "http_status": 200,
+          "i": 4,
+          "outcome": "allowed",
+          "request_id": "0769901f-2837-4fed-ba8b-9da38c6c9a3a"
+        },
+        {
+          "http_status": 200,
+          "i": 5,
+          "outcome": "allowed",
+          "request_id": "23956147-9395-4eef-8f07-c2531fa694a4"
+        },
+        {
+          "http_status": 200,
+          "i": 6,
+          "outcome": "allowed",
+          "request_id": "3c69ff3b-bcc1-4600-840c-653d2801b8f5"
+        },
+        {
+          "http_status": 200,
+          "i": 7,
+          "outcome": "allowed",
+          "request_id": "6c2d0504-9d89-453f-852a-52dda566e880"
+        },
+        {
+          "http_status": 200,
+          "i": 8,
+          "outcome": "allowed",
+          "request_id": "2579dca1-bdd3-4e77-8084-ae17d6eff6e2"
+        },
+        {
+          "http_status": 200,
+          "i": 9,
+          "outcome": "allowed",
+          "request_id": "5ba55262-3e9d-4d06-bee4-96c49fa6f561"
+        },
+        {
+          "http_status": 200,
+          "i": 10,
+          "outcome": "allowed",
+          "request_id": "b955ba06-f617-4570-bd74-bb76da1d3398"
+        }
+      ]
+    },
+    "on-1": {
+      "arm": "on-1",
+      "join": {
+        "elapsed_s": 50.13121354099894,
+        "joined": [
+          "195610fb-8360-4bc6-ba25-c36e3ed7aedd",
+          "2c8df862-ce5e-44dc-8901-9d7a4152f0c0",
+          "39c30031-862e-4953-a30d-fbd6dc2f2531",
+          "5a8a9ea4-99ff-4f19-94fe-a58411602a11",
+          "6f8d34d8-a39f-4585-896b-2ee18dcd1e1a"
+        ],
+        "n_joined": 5,
+        "query": {
+          "ids_seen_not_wanted": [],
+          "n_parsed": 12,
+          "n_rows": 12,
+          "n_wanted": 10,
+          "span_names": {
+            "AgentCore.Gateway.InvokeTool": 5,
+            "AgentCore.Gateway.InvokeTool.grxecho___echo": 3,
+            "AgentCore.Policy.AuthorizeAction": 4
+          },
+          "truncated_at_limit": false
+        },
+        "timed_out": false
+      },
+      "n_real_response": 10,
+      "n_sent": 10,
+      "n_with_request_id": 10,
+      "outcomes": [
+        "allowed"
+      ],
+      "request_ids": [
+        "0b8b8f44-0df5-4f2d-8395-bc1220d540dd",
+        "195610fb-8360-4bc6-ba25-c36e3ed7aedd",
+        "2c8df862-ce5e-44dc-8901-9d7a4152f0c0",
+        "32594303-bf18-4688-b5db-56470102b7a3",
+        "39c30031-862e-4953-a30d-fbd6dc2f2531",
+        "5a8a9ea4-99ff-4f19-94fe-a58411602a11",
+        "623f0e91-9c08-4acf-b2e9-96a00cd327e5",
+        "6f8d34d8-a39f-4585-896b-2ee18dcd1e1a",
+        "9049d26f-a023-4187-a8ba-a4014b2ee7a1",
+        "c3d99266-ace9-4f28-ba74-4bcc71454d19"
+      ],
+      "sent_epoch_end": 1786459270.756593,
+      "sent_epoch_start": 1786459264.5155919,
+      "trials": [
+        {
+          "http_status": 200,
+          "i": 1,
+          "outcome": "allowed",
+          "request_id": "9049d26f-a023-4187-a8ba-a4014b2ee7a1"
+        },
+        {
+          "http_status": 200,
+          "i": 2,
+          "outcome": "allowed",
+          "request_id": "623f0e91-9c08-4acf-b2e9-96a00cd327e5"
+        },
+        {
+          "http_status": 200,
+          "i": 3,
+          "outcome": "allowed",
+          "request_id": "c3d99266-ace9-4f28-ba74-4bcc71454d19"
+        },
+        {
+          "http_status": 200,
+          "i": 4,
+          "outcome": "allowed",
+          "request_id": "6f8d34d8-a39f-4585-896b-2ee18dcd1e1a"
+        },
+        {
+          "http_status": 200,
+          "i": 5,
+          "outcome": "allowed",
+          "request_id": "195610fb-8360-4bc6-ba25-c36e3ed7aedd"
+        },
+        {
+          "http_status": 200,
+          "i": 6,
+          "outcome": "allowed",
+          "request_id": "2c8df862-ce5e-44dc-8901-9d7a4152f0c0"
+        },
+        {
+          "http_status": 200,
+          "i": 7,
+          "outcome": "allowed",
+          "request_id": "39c30031-862e-4953-a30d-fbd6dc2f2531"
+        },
+        {
+          "http_status": 200,
+          "i": 8,
+          "outcome": "allowed",
+          "request_id": "32594303-bf18-4688-b5db-56470102b7a3"
+        },
+        {
+          "http_status": 200,
+          "i": 9,
+          "outcome": "allowed",
+          "request_id": "5a8a9ea4-99ff-4f19-94fe-a58411602a11"
+        },
+        {
+          "http_status": 200,
+          "i": 10,
+          "outcome": "allowed",
+          "request_id": "0b8b8f44-0df5-4f2d-8395-bc1220d540dd"
+        }
+      ]
+    },
+    "on-2": {
+      "arm": "on-2",
+      "join": {
+        "elapsed_s": 72.50622691699937,
+        "joined": [
+          "b9c229ca-888c-42ac-9902-4ea96f4bb384",
+          "e074d838-127d-43c6-bb99-e4cb11b9643f"
+        ],
+        "n_joined": 2,
+        "query": {
+          "ids_seen_not_wanted": [],
+          "n_parsed": 2,
+          "n_rows": 2,
+          "n_wanted": 10,
+          "span_names": {
+            "AgentCore.Gateway.InvokeTool": 2
+          },
+          "truncated_at_limit": false
+        },
+        "timed_out": false
+      },
+      "n_real_response": 10,
+      "n_sent": 10,
+      "n_with_request_id": 10,
+      "outcomes": [
+        "allowed"
+      ],
+      "request_ids": [
+        "05a946a7-7698-4124-9228-ff905615c277",
+        "11a0f41c-efc0-4553-bc62-f0731332e484",
+        "32fe9e49-3c27-4fe2-b5e5-70766be218c8",
+        "6790bd22-f056-4ab3-8778-933123c6d634",
+        "831f8f8d-db75-4a7c-8ef6-3665649740aa",
+        "a731e5ad-fbf2-4353-94b8-6aff9f9eba01",
+        "af23350f-4597-4c4f-9950-081719c3ae32",
+        "b281b9f8-88f9-469e-8a87-9d9435bcc40d",
+        "b9c229ca-888c-42ac-9902-4ea96f4bb384",
+        "e074d838-127d-43c6-bb99-e4cb11b9643f"
+      ],
+      "sent_epoch_end": 1786460240.745158,
+      "sent_epoch_start": 1786460235.1182091,
+      "trials": [
+        {
+          "http_status": 200,
+          "i": 1,
+          "outcome": "allowed",
+          "request_id": "a731e5ad-fbf2-4353-94b8-6aff9f9eba01"
+        },
+        {
+          "http_status": 200,
+          "i": 2,
+          "outcome": "allowed",
+          "request_id": "11a0f41c-efc0-4553-bc62-f0731332e484"
+        },
+        {
+          "http_status": 200,
+          "i": 3,
+          "outcome": "allowed",
+          "request_id": "e074d838-127d-43c6-bb99-e4cb11b9643f"
+        },
+        {
+          "http_status": 200,
+          "i": 4,
+          "outcome": "allowed",
+          "request_id": "831f8f8d-db75-4a7c-8ef6-3665649740aa"
+        },
+        {
+          "http_status": 200,
+          "i": 5,
+          "outcome": "allowed",
+          "request_id": "6790bd22-f056-4ab3-8778-933123c6d634"
+        },
+        {
+          "http_status": 200,
+          "i": 6,
+          "outcome": "allowed",
+          "request_id": "b9c229ca-888c-42ac-9902-4ea96f4bb384"
+        },
+        {
+          "http_status": 200,
+          "i": 7,
+          "outcome": "allowed",
+          "request_id": "b281b9f8-88f9-469e-8a87-9d9435bcc40d"
+        },
+        {
+          "http_status": 200,
+          "i": 8,
+          "outcome": "allowed",
+          "request_id": "32fe9e49-3c27-4fe2-b5e5-70766be218c8"
+        },
+        {
+          "http_status": 200,
+          "i": 9,
+          "outcome": "allowed",
+          "request_id": "05a946a7-7698-4124-9228-ff905615c277"
+        },
+        {
+          "http_status": 200,
+          "i": 10,
+          "outcome": "allowed",
+          "request_id": "af23350f-4597-4c4f-9950-081719c3ae32"
+        }
+      ]
+    }
+  },
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F7-5",
+    "clear_here": true
+  },
+  "case_id": "F7-5",
+  "ceiling_reading": "with 0 of 10 OFF-arm request ids appearing as spans, the one-sided 95% ceiling on the per-request span-leak rate is 0.258866. This bounds LEAKAGE while tracing is off; it is not a claim about how completely spans appear while it is on, which is what the two ON arms establish qualitatively and F7-4 measures",
+  "expiry": "this is a statement about how a vended delivery behaves on this service today. If AgentCore ever gains a gateway-level tracing field, the mutation changes shape and this script must be re-derived, not merely re-run",
+  "gateway_id": "grx-gw-r20260810t130945z-zpkfmpwo9n",
+  "guard_detail": {
+    "arms_disjoint": {
+      "overlaps": {},
+      "sizes": {
+        "off": 10,
+        "on-1": 10,
+        "on-2": 10
+      }
+    },
+    "delivery_deleted": {
+      "delivery_id": "7dp2bRRYXeT9ZtIf",
+      "live_after_delete": false
+    },
+    "delivery_restored": {
+      "live_after_restore": true,
+      "restore": {
+        "attempted": true,
+        "delivery_id": "LAJ3GwGKzQCn6XsU",
+        "delivery_id_before": "7dp2bRRYXeT9ZtIf",
+        "error": "",
+        "ledger_updated": true,
+        "ok": true,
+        "path": "ledger_f7_5_recreate",
+        "replayed_params": {
+          "deliveryDestinationArn": "arn:aws:logs:us-east-1:<account>:delivery-destination:grx-shared-traces-dst-r20260810T130945Z",
+          "deliverySourceName": "grx-main-traces-src-r20260810T130945Z"
+        }
+      }
+    },
+    "gateway_config_unchanged": {
+      "sha256_after": "57a9bb7fd66abd99f9bcaeb4c096dd749c99c2297495b5af4f983e0c69a7206a",
+      "sha256_before": "57a9bb7fd66abd99f9bcaeb4c096dd749c99c2297495b5af4f983e0c69a7206a"
+    },
+    "off_calls_reached_gateway": {
+      "n_real_response": 10,
+      "n_sent": 10,
+      "n_with_request_id": 10,
+      "outcomes": [
+        "allowed"
+      ],
+      "why": "if the OFF calls had not reached a policy evaluation, 'no spans' would be true because there was no request, and would read as evidence about tracing"
+    },
+    "on1_joins": {
+      "n_ids": 10,
+      "n_joined": 5,
+      "timed_out": false
+    },
+    "on2_joins": {
+      "n_ids": 10,
+      "n_joined": 2,
+      "timed_out": false
+    }
+  },
+  "guard_names": [
+    "on1_joins",
+    "off_calls_reached_gateway",
+    "delivery_deleted",
+    "delivery_restored",
+    "on2_joins",
+    "arms_disjoint",
+    "gateway_config_unchanged"
+  ],
+  "guards": {
+    "arms_disjoint": true,
+    "delivery_deleted": true,
+    "delivery_restored": true,
+    "gateway_config_unchanged": true,
+    "off_calls_reached_gateway": true,
+    "on1_joins": true,
+    "on2_joins": true
+  },
+  "is_smoke": false,
+  "join_query": {
+    "log_group": "aws/spans",
+    "lookback_minutes": 180,
+    "row_limit": 500,
+    "why_500": "query_spans sorts @timestamp desc, so a small cap makes an absence claim a claim about a truncated tail"
+  },
+  "kind": "EXISTENCE",
+  "mutated_object": {
+    "delivery_id_in_ledger": "7dp2bRRYXeT9ZtIf",
+    "delivery_id_live": "7dp2bRRYXeT9ZtIf",
+    "destination_name": "grx-shared-traces-dst-r20260810T130945Z",
+    "kind": "cloudwatch-logs delivery",
+    "log_type": "TRACES",
+    "source_name": "grx-main-traces-src-r20260810T130945Z",
+    "why": "gateway tracing is a vended delivery, not a gateway field, so deleting the delivery turns tracing off while leaving the gateway config byte-identical"
+  },
+  "mutation_reading": "`mutation_inverted` is set to the OFF arm's absence, so a mutation that failed to invert forces FALSE through `evaluate`'s mandatory-mutation branch as well as through `observed_bool`. The redundancy is deliberate: F7-5 is the case whose entire content is that the control is load-bearing, and it should be impossible to publish a TRUE here from a mutation that did nothing",
+  "n_per_arm": 10,
+  "off_wait_s": 600.0,
+  "oracle_text": "TRUE if spans are absent with tracing off and present with it on; FALSE if spans appear either way. This is the mutation that removes 'did we enable it' as a confound for every other O-claim",
+  "planned_n": null,
+  "planned_n_per_arm": 10,
+  "preconditions": {
+    "gateway_config_sha256_before": "57a9bb7fd66abd99f9bcaeb4c096dd749c99c2297495b5af4f983e0c69a7206a",
+    "traces_delivery_live_at_start": true,
+    "transaction_search": {
+      "Destination": "CloudWatchLogs",
+      "Status": "ACTIVE"
+    }
+  },
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F7-5",
+    "evidence": {
+      "detail": {
+        "delete_settle_s": 300,
+        "n_joined_off": 0,
+        "n_joined_on1": 5,
+        "n_joined_on2": 2,
+        "off_arm_absent": true,
+        "off_wait_s": 600.0,
+        "on_arms_present": true,
+        "span_absence_ceiling_one_sided": 0.2588655508930522,
+        "span_lag_on1_s": 50.13121354099894
+      },
+      "observed": true
+    },
+    "family": "descriptive_no_test",
+    "kind": "EXISTENCE",
+    "mutation_inverted": true,
+    "mutation_required": true,
+    "n_attempted": 10,
+    "n_met": true,
+    "n_usable": 10,
+    "notes": [],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [],
+    "verdict": "TRUE"
+  },
+  "region": "us-east-1",
+  "restore": {
+    "attempted": true,
+    "delivery_id": "LAJ3GwGKzQCn6XsU",
+    "delivery_id_before": "7dp2bRRYXeT9ZtIf",
+    "error": "",
+    "ledger_updated": true,
+    "ok": true,
+    "path": "ledger_f7_5_recreate",
+    "replayed_params": {
+      "deliveryDestinationArn": "arn:aws:logs:us-east-1:<account>:delivery-destination:grx-shared-traces-dst-r20260810T130945Z",
+      "deliverySourceName": "grx-main-traces-src-r20260810T130945Z"
+    }
+  },
+  "run_id": "r20260810T130945Z",
+  "span_absence_ceiling_one_sided": 0.2588655508930522,
+  "tool_name": "grxecho___echo",
+  "untouched": {
+    "delivery_sources_and_destination": "only the delivery joining them is deleted",
+    "nopolicy_delivery": "F6's paired baseline — desynchronising the pair would damage a case this one has no business touching",
+    "policy_and_engine_modes": "neither axis is touched. F4 measured that a denial is HTTP 200 + JSON-RPC -32002 and the probe found DENY rows carrying the same span pair as ALLOW, so this case is mode-agnostic by construction",
+    "transaction_search": "asserted ACTIVE, never enabled (account-wide setting)"
+  },
+  "verdict": "TRUE",
+  "verdict_reading": "TRUE here means: with the vended TRACES delivery deleted, requests that demonstrably reached the gateway and received real policy decisions produced no span carrying their request ids, and the same traffic did produce such spans both before the delete and after the restore. It does NOT mean spans are complete while tracing is on — the ON arms establish presence, not coverage; F7-4 measures what those spans contain",
+  "verdict_rule": "TRUE iff BOTH ON arms joined at least one of their own request ids to a span AND the OFF arm joined none of its own. Any guard failure yields INCONCLUSIVE rather than a verdict",
+  "waits": {
+    "delete_settle_s": 300,
+    "lag_multiple": 4.0,
+    "off_wait_floor_s": 600,
+    "on_wait_timeout_s": 420,
+    "single_attempt": "the OFF arm is attempted once; a retry-if-spans-appear rule would make the stopping rule the result"
+  },
+  "what_this_unblocks": "every other span-derived reading in the project. F7-4, F3-10, the τ-sweep that replaces F2-2/F2-3/F2-4 and F6's server-side latency all read aws/spans, and each would produce identical-looking output from a misconfigured delivery or a wrong window. This case is the shared precondition they were all resting on unverified, which is why DEV-P4-01 moved F7 upstream of them"
+}
