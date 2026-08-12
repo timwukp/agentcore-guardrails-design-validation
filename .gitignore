@@ -4,6 +4,13 @@
 # is results/ plus the Markdown deliverables, which the redaction gate scans.
 evidence/
 
+# The EC2 runner's local bookkeeping: the instance, subnet, security-group and VPC ids it
+# provisioned, the code tarball it uploads, and output pulled back from S3 for review. Three of
+# those id shapes are redaction targets (check_redaction.py's `vpc-or-subnet-id` pattern), and a
+# file that needs a waiver on every run is a file that trains a reader to waive things. The
+# runner's SOURCE is tracked; only its resolved ids are not.
+runner/.state/
+
 # Environments and caches
 .venv/
 .venv-*/

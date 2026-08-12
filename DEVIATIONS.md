@@ -5190,6 +5190,607 @@ so the leg failing costs the document a supporting observation, not the project 
 
 ---
 
+## DEV-P4-21 — F3-10's dry run described the golden set instead of building it, so a two-parameter typo survived to the live run
+
+### What happened
+
+`f3_efficacy/08_score_label_join.py` built its 30 HATE + 30 benign golden set with
+
+```python
+return R.load_corpus(path, n=n, seed=CORPUS_SEED)
+```
+
+`arms.load_corpus` takes **`limit=`** and has no `seed` parameter at all — deliberately, and the
+loader's own docstring says why: it returns the file in file order so that a `--n` subset is a
+*stated* one, identical between a dry run and the real run. Nine other callers pass `limit=`. This
+one passed two parameters that do not exist, so the first call raised
+`TypeError: load_corpus() got an unexpected keyword argument 'n'`.
+
+**What made it reach a live run.** `--dry-run` returned 0 while printing `total calls: 60`, because
+`_dry_run` *described* the golden set in a banner string and never called `_golden_set`. The live
+run then failed at line 839 — after opening four boto3 clients, reading the gateway, and running
+F4's `UpdateGateway` shape preflight. Nothing was mutated (the failure is above the `try` that
+creates the probe policy and switches the engine mode) and the gateway was verified still in
+`ENFORCE`, so the cost of the defect was one aborted process and no spend. That is luck about
+statement order, not a property of the design: the same typo two lines later would have died with
+the engine in `LOG_ONLY`.
+
+This is `feedback_dry_run_before_expensive_run` on the project's own harness. A dry run that does
+not execute the code path it stands in for confirms only its own prose.
+
+### The fix
+
+1. `_corpus` calls `R.load_corpus(rel, limit=n)` and the corpus constants are **loader-relative
+   strings** (`"content_filter/hate.jsonl"`), matching every other caller. An absolute `Path`
+   happens to survive `CORPORA / rel`, which is precisely why the wrong convention was invisible.
+2. `CORPUS_SEED = 20260809` is deleted. It was recorded in the checkpoint metadata as `corpus_seed`
+   — a number describing a shuffle that does not happen (`feedback_label_must_match_computation`).
+   The metadata now carries `corpus_selection`, which states the actual rule.
+3. `_dry_run` **builds** the set and prints what it built: item count, positive/negative split,
+   distinct corpus ids, and the labels present. Still offline — the corpora are local sealed files.
+4. New offline suite `f3_efficacy/tests/test_score_label_join.py`, 10 tests, run against the **real**
+   loader and the **real** sealed corpora rather than a corpus double, because a double would have
+   accepted `n=`/`seed=` as happily as the prose did
+   (`feedback_verify_against_real_artifact`). One arm reads `inspect.signature(R.load_corpus)`, so
+   a future rename of `limit` fails there instead of at the next live call.
+
+### Mutation-checked
+
+Restoring both halves of the defect — the `n=`/`seed=` call and the prose-only dry run — gives
+**8 failed, 2 passed**; the fix restored gives **10 passed**. The two arms that still pass under the
+mutation are the two that do not touch the loader (the path-convention arm and the source scan for
+`corpus_seed`), which is the right blast radius. The mutation was applied by rewriting the file and
+restored from a `cp` copy, never `git checkout` (an API-pushed tree is ahead of `git HEAD`).
+
+### Direction of the effect on the document under test
+
+None. The defect was in the harness and aborted before any measurement; F3-10's verdict is produced
+entirely by the run that followed the fix, and the golden set that ran is the one the tests pin
+(60 items, 30/30, alternating, ids distinct).
+
+**Amended 2026-08-12.** The sentence above was written before the traffic was examined. The run
+that followed the fix sent a golden set of the right shape to a tool name the gateway does not
+know, so its verdict is withdrawn — see **DEV-P4-22**. What still holds of this entry is its own
+scope: the loader defect was real, was fixed, and did not touch a measurement. What does not hold
+is the implication that the next run's verdict was therefore sound.
+
+---
+
+## DEV-P4-22 — F3-10 published a TRUE over a window in which the policy engine never ran: the bare tool name, and three guards that could not fail
+
+### What happened
+
+`f3_efficacy/08_score_label_join.py` sent its 60 golden-set requests as
+
+```python
+d = client.call_tool(TOOL, {"text": item["text"]})      # TOOL == "echo"
+```
+
+`lib/mcp.McpClient.call_tool`'s own docstring says what `name` is:
+
+> `name` is the MCP tool name, i.e. `<TargetName>___<ToolName>`. The same string
+> `lib/cedar.action_id()` builds and `infra/echo_handler.py` splits, which is why neither this
+> module nor its callers construct it by concatenation.
+
+The script had already resolved that string — `action_id = "grxecho___echo"`, read from the
+target's own `cedar_action_ids` — and used it to build the probe policy's Cedar statement. It
+never passed it to the wire. Every other caller in the repo passes the qualified name
+(`f6_latency/03`, `f5_redteam/01`, `f5_redteam/04`, `infra/08`, `f4_modes/01`,
+`f2_determinism/02`, `f7_observability/01`–`04`).
+
+The gateway answered all 60 calls with a JSON-RPC error. From its own `APPLICATION_LOGS` for the
+run window `2026-08-12T02:27:10.996Z .. 02:27:32.135Z`: **60 × `isError=True`,
+`"Unknown tool: echo"`, `severityText: ERROR`**. That is a rejection at MCP dispatch, one layer
+*above* the policy engine — so the request was never evaluated, could not be blocked, and could
+not be scored. The published `traffic.outcomes` reads `{"jsonrpc_error": 60}` and
+`n_usable: 60` in the same file.
+
+**Why no guard caught it.** Three of them looked healthy on an empty window:
+
+| guard | what it asked | why 60 protocol errors satisfied it |
+|---|---|---|
+| `golden_set_landed` | `len(rows) == n and cp.n_failed == 0` | a JSON-RPC error is a *completed* trial, not a failed one |
+| `nothing_blocked_in_log_only` | `n_blocked == 0` | nothing can be blocked if nothing is evaluated |
+| — (`n_usable`) | `len(rows)` | counted responses received, not requests evaluated |
+
+A guard that cannot fail is not a guard (`feedback_vacuous_test_check`).
+
+**Two further defects in the verdict itself**, independent of the tool name and each sufficient on
+its own to make the TRUE unsupported:
+
+* **Half (a) read a metric NAME out of an index, not a VALUE out of the window.**
+  `score_metric_exists` was derived from `ListMetrics`, which indexes roughly two weeks of
+  account-wide publishing. `ConfidenceScore` was listed because *earlier* cases' traffic (F5-4a,
+  F6) had published it. All 24 listed score series had `n_datapoints: 0` in this window. A name
+  in an index is not a number a reader can read.
+* **Half (b) measured the wrong series.** `any_series_per_request` named 12 series and every one
+  of them was `Latency`/`Invocations`/`Duration`/`Throttles`/`UserErrors`/`SystemErrors` on
+  `Method: initialize` or `Method: notifications/initialized` — the MCP handshake, called once
+  each. Their `SampleCount == 1` was a fact about a one-off protocol call, not about
+  request-level granularity, and none of them was a score series. The 60 `tools/call` series all
+  showed `max_sample_count_in_mixed_bucket: 60.0`. The verdict conjoined the existence of a score
+  with the granularity of six other metrics, which is not a join
+  (`feedback_label_must_match_computation`).
+
+**What the window does prove.** The harvest path itself was sound: `Invocations` on
+`Method: tools/call`, same window, same code path, returned one datapoint with `SampleCount = 60`.
+The 60 requests reached the gateway and were counted. Only the dispatch failed. That CONTROL read
+is what distinguishes "the instrument was broken" from "the service published nothing".
+
+### The fix
+
+1. **The qualified name goes over the wire.** `_run_arm` takes `tool_name` as an argument and
+   passes it to `_call`; `TOOL` keeps only its real job as the suffix of the Cedar action id, and
+   carries a comment saying so.
+2. **A `tools/list` PREFLIGHT** (`_preflight_tool_name`) asserts the gateway advertises the exact
+   string about to be sent, and **raises before anything is created or flipped** — the check that
+   would have cost this run nothing and saved all of it. It is documented as a NAME check only:
+   AWS treats listing as a meta action, so visibility is not authorization.
+3. **`EVALUATED_OUTCOMES = ("allowed", "policy_denied")`.** Each row carries `evaluated` and, when
+   false, the `error_text` that diagnoses it — the 2026-08-12 rows recorded `jsonrpc_error` and
+   nothing else, so explaining 60 identical failures took a separate Logs query against a 7-day
+   retention. `n_usable` is now the evaluated count, and both counts are published because they
+   are equal on a healthy run and differ by exactly this failure mode.
+4. **Two new guards**: `tool_name_advertised` and `golden_set_was_evaluated` (every scored arm
+   needs `n_evaluated == n_rows > 0`). `nothing_blocked_in_log_only` is conjoined with a positive
+   evaluated count. The two insufficient guards are kept, not deleted — they were not wrong.
+5. **Half (a) is split into two readings, published separately.** `score_metric_name_exists` (the
+   index reading, kept because it is real information about the namespace) and
+   `_score_datapoints(...)["readable"]`, which requires a score series to hold a datapoint in a
+   bucket **one of our own requests fell in**. Only the second can move the verdict.
+6. **Half (b) is scoped to score series and to our buckets.** `datapoints_in_our_buckets`,
+   `is_a_score_series`, `per_request_score_series` and `identity_recoverable_for_a_score` are all
+   published; a handshake that happened before the arm can no longer answer a question about the
+   arm.
+7. **Three arms replace the single LOG_ONLY window**, because one arm could not tell *"the service
+   publishes no score"* from *"the guardrail never ran"*:
+
+   | arm | engine | traffic | scored |
+   |---|---|---|---|
+   | `active_golden_set` | ENFORCE | 60, as fast as accepted | yes |
+   | `active_one_per_minute` | ENFORCE | 2, 70 s apart | no — by construction |
+   | `log_only_golden_set` | LOG_ONLY | 60, as fast as accepted | yes |
+
+   The ENFORCE arms run first because ENFORCE is the testbed's steady state, which keeps the
+   mutation count at one flip plus one restore. The spaced arm is excluded from the verdict on
+   purpose: it exists to **measure** half (b)'s "conditional on request rate" escape hatch rather
+   than argue it. Each arm checkpoints under its own cell, so nothing resumes into another arm's
+   rows.
+8. **Each arm waits for a fresh minute bucket** (`_isolate_bucket`: to the next boundary plus a
+   5 s skew margin), and the property is then **guarded from the rows** (`arms_own_their_buckets`,
+   via `_arms_own_their_buckets`) rather than trusted from the sleep.
+
+   This is a defect of the repair's own design, caught before it ran rather than after. The arms
+   execute back to back: `active_golden_set` finishes its 60 fast calls and `active_one_per_minute`
+   sends its first request immediately, so the two would have shared a minute bucket — and
+   `our_buckets` would then name both arms' traffic. The arm whose entire purpose is one request
+   per bucket would have read a datapoint aggregating 61 requests and refuted its own premise.
+   `SETTLE_DWELL_S` (15 s, F4's mode dwell) is shorter than a period, so the flip between arms
+   provides no separation either. The same wait also separates the first arm from the MCP
+   handshake and the `tools/list` preflight — the calls that produced the 12 bogus "per-request"
+   series in the first place.
+
+   The guard deliberately does not read `_isolate_bucket`'s return value: a guard computed from
+   the helper it is checking asserts the harness's intention, which is the shape of every defect
+   in this entry.
+9. **The dry run's wall-clock projection is derived, not written.** `_wall_clock_estimate` sums
+   the same constants the script sleeps on (~478 s at n=60). Its first draft said "2 gaps" for the
+   2-item spaced arm; a k-item spaced arm sleeps k−1 times
+   (`feedback_span_vs_points_offbyone`), and a pinned test now holds that.
+
+### Mutation-checked
+
+`f3_efficacy/tests/test_score_label_join.py` grew from 16 arms to **46**, all offline, $0. Each of
+the four defects was **restored in the file and the suite re-run**, then the file restored from a
+`cp` copy (never `git checkout` — an API-pushed tree is ahead of `git HEAD`,
+`feedback_stale_git_head_checkout`):
+
+| restored defect | result |
+|---|---|
+| `_call(client, TOOL, it)` — the bare name | **2 failed**, 35 deselected |
+| `EVALUATED_OUTCOMES` widened to every completed outcome | **3 failed**, 2 passed (`allowed`/`policy_denied` still hold) |
+| score half reads `n_datapoints > 0` instead of our buckets | **1 failed**, 36 deselected |
+| single-request computed over the whole read range | **1 failed**, 36 deselected |
+
+Restored tree: **46 passed**. The preflight arm asserts on `M.TOOL` itself rather than a
+paraphrase, so it reproduces the exact string that was sent.
+
+The bucket-isolation guard (fix 8) is checked by calling the real `_arms_own_their_buckets` on a
+disjoint and an overlapping bucket set rather than by reproducing its logic in the test, and by a
+source arm asserting the guard does not read the helper it distrusts. `_isolate_bucket`'s
+arithmetic is parametrised over the boundary values that would break it — including a `now`
+exactly on a boundary, where a naive `sleep(PERIOD_S)` lands back in the bucket it was trying
+to leave.
+
+### The rows
+
+`results/checkpoints/F3-10__log_only_golden_set.json` is archived as
+`…__unknown_tool_2026-08-12_archive.json` with an `archive_note` carrying the outcome census, the
+log evidence and the CONTROL read. It is kept rather than deleted because it *is* the evidence for
+this entry. The earlier archive `…__aborted_restore_2026-08-12_archive.json` (DEV-P4-21) was
+amended: its 60 rows are `jsonrpc_error` too, so **120 invokes across the two runs were spent
+without a single policy evaluation**, and a note recording only the restore crash would have left
+a reader thinking those rows measured something.
+
+The audit's own evidence was written to a separate case directory
+(`EvidenceStore(RUN, "f3", "F3-10_audit_2026-08-12")`) on purpose: `check_amendment_readiness.py`
+derives its "≥ 2 separate calendar days" replication count from evidence-record timestamps, so
+writing a 2026-08-12 record into `f3/F3-10/` would have inflated a replication count the traffic
+never earned.
+
+### Direction of the effect on the document under test
+
+**The withdrawn verdict FAVOURED the document.** F3-10's published TRUE said the §7.1 calibration
+loop is executable as written; it rested on a window containing no policy evaluations, so the
+document was credited with a capability that had not been measured. The re-run may reach either
+verdict.
+
+One measurement from the audit points the other way and is a genuine finding about the service,
+not about the harness. Read by `get_metric_statistics` over the full day — bypassing the
+`ListMetrics` index — `AWS/Bedrock-AgentCore` publishes **`ConfidenceScore` with real numeric
+values**: 21 datapoints over 2026-08-11..12, `Average` 0.77–0.84, `Minimum` 0.4–0.6, `Maximum`
+0.8–1.0, `SampleCount` 11–34, alongside `ConfidenceThreshold` (21 datapoints, all `0.0`). That
+**refutes the absolute reading of DEV-P4-01** ("no surface publishes a numeric guardrail score")
+and bears on F1-18's "not measurable" framing. What survives is the conditional reading, which is
+the one F3-10 is about: a published score is a one-minute aggregate, so attributing it to the
+labelled request that produced it depends on the request rate — and sparse-traffic datapoints with
+`SampleCount == 1` do exist on the score series (2026-08-11T18:07 sc=1, 19:09 sc=1, 19:17 sc=2),
+which is what the spaced arm now measures (`feedback_constraints_are_choices`: label the failure
+conditional and name the condition).
+
+A correction to the reasoning in this entry's own first draft, for the record: the namespace's
+`PolicyEnforcementMode` dimension (`{ACTIVE: 40, LOG_ONLY: 8}`) is a **policy** attribute — the
+probe policy was `ACTIVE` — and not the engine mode, which is the separate `Mode` dimension
+(`{ENFORCE: 40, LOG_ONLY: 16}`). So the score's absence in the F3-10 window is fully explained by
+the tool-name defect, and whether an engine in LOG_ONLY publishes a score at all is a question
+that has to be **measured**. That is why the ENFORCE arm exists rather than an argument.
+
+---
+
+## DEV-P4-23 — F3-10's claim group was a hand-typed nine, three instruments derive ten, and the published JSON still says nine
+
+### What happened
+
+Two instrument defects in `f3_efficacy/08_score_label_join.py`, both about the same question — how
+much of the document does this case answer for — and neither about the measurement itself.
+
+**Defect 1: the claim group was a literal.** The script published
+`sealed_units_in_this_claim_group` as a nine-element tuple typed into the source. The register says
+**ten**. The missing unit is `C-s7-1-prose-004`, which is §7.1 step 3's own sentence:
+
+> "Label results and use the confidence scores in the logs to build a confusion matrix"
+
+— i.e. the single unit the case most directly exists to answer for. It was omitted because its
+`cases` cell in `claims/triage.csv` reads `"F3-10 F3-9"`, and the selection compared the **whole
+cell** against `"F3-10"`. Every other row of the group carries `F3-10` alone, so the bug hit exactly
+one row, and it hit the one that mattered most.
+
+Membership is now by **whitespace token**, which is how `claims/check_coverage.py` reads the same
+column — so the two readings of one file cannot disagree. `_sealed_units()` lives in the parent
+module and `08b_log_surface_join.py` imports it by name rather than restating it.
+
+**Three independent derivations agree on ten**, which is what makes this a defect in one file rather
+than an open question: `claims/triage.csv` read by token; `V13_CANDIDATES.md`'s *generated* site
+table for `V13-05`, which expands the case through the coverage checker and lists all ten; and
+`FINDING-F5-4A.md` §11's separate count. Only the hand-typed tuple said nine. **A number three
+instruments derive is not a number a human should be typing** — a list in a payload is a claim
+nothing checks (`feedback_prose_is_not_verified`), and how many units a case touches decides how
+much of the document a v1.3 amendment has to reach.
+
+**Defect 2: the census was type-blind.** The score census counted any numeric field whose name
+matched, without asking whether the value was a score at all. This is the same shape as DEV-P4-22's
+half (b) — conjoining the existence of one thing with a property measured on another — and it is
+recorded here rather than folded into that entry because the fix is in a different function and a
+reader tracing either one should not have to read both.
+
+### The residue, stated rather than quietly cleaned
+
+**`results/phase1/F3-10.json` still carries the stale nine-item list.** Re-running `08` costs 122
+live requests and two policy-mode flips, and the list does not enter any verdict — it is provenance.
+So the correct record is: the published artifact is known-wrong in one field, the field is named
+here, and `results/phase1/F3-10_log_surface_join.json` was regenerated and carries `"n": 10`. The
+next full re-run of `08` closes it. Overwriting the JSON by hand would give it a value no run
+produced, which is worse than a known-stale one.
+
+### Mutation-checked
+
+`f3_efficacy/tests/test_score_label_join.py` restores the whole-cell comparison, asserts the group
+comes back as nine and names `C-s7-1-prose-004` as the unit lost, then restores the file with `cp`
+(never `git checkout -- file`, per `feedback_stale_git_head_checkout`: this repository's working tree
+runs ahead of `git HEAD`). Without that arm the token-splitting guard would pass on a file where
+nothing had changed.
+
+### The rows
+
+| row | before | after | derived by |
+|---|---|---|---|
+| `sealed_units_in_this_claim_group` (08b) | 9, hand-typed | **10**, by token | `claims/triage.csv` |
+| `V13-05` sites to amend | — | **10** | `build_v13_candidates.py`, generated |
+| `FINDING-F5-4A` §11 count | 10 | 10 | independent, unchanged |
+| `results/phase1/F3-10.json` | 9 | **9 (known stale)** | closed by the next `08` run |
+
+---
+
+## DEV-P4-24 — truncation defeated the mask: an ARN cut mid-string carried its account id past the gate
+
+### What happened
+
+`lib/redact.py` masked an account id by matching the **whole** ARN and replacing the account field.
+A truncated ARN — one cut off before its resource segment, which is what happens whenever an ARN is
+abbreviated for a table cell, a log line or an error message — matched no rule, so the mask did not
+fire and the twelve digits went through unaltered. The pattern was anchored on a shape the value no
+longer had.
+
+The general lesson is the one `check_redaction.py`'s docstring already states in a different form:
+**a shape-based rule sees only the shape it was written for.** Redaction that depends on the value
+being *complete* is redaction that fails precisely when a value has been abbreviated — and
+abbreviating is the normal thing to do to an ARN.
+
+### The fix
+
+Three anchored rules in `lib/redact.py` (roughly lines 70–222), each anchored on a part of the ARN
+that survives truncation rather than on the ARN as a whole, plus shape restoration: a truncated ARN
+is masked **and** marked, with `ARN_TRUNCATED_PLACEHOLDER = "<truncated>"`, so a reader can tell
+"this was cut short" from "this ARN ends here". A mask that silently produced a well-formed-looking
+short ARN would hide the fact that something was removed.
+
+### Mutation-checked
+
+`lib/tests/test_redact.py` restores the single-whole-ARN rule and asserts that a truncated ARN then
+comes back carrying its account id. Restored with `cp`.
+
+---
+
+## DEV-P4-25 — the runner reintroduced two account-id leaks: one a standing guard caught, one no guard could see
+
+### What happened
+
+`runner/` was written in a single session and put two account-id leaks into the tree. They are
+recorded together because the pair is the point: the project's guards caught exactly one of them,
+and the reason the other got through is a property of the gate that is worth writing down.
+
+**Leak 1 — an inline account-id resolution, caught by a test that was already in the tree.**
+`runner/provision.py` used a bare `boto3.Session` and resolved the account id with an inline
+`sts.get_caller_identity()["Account"]`. `lib/tests/test_account_id_choke_point.py` failed with
+
+```
+1 inline account-ID resolution(s) outside lib/awsclients.py: {'runner/provision.py': [265]}
+```
+
+That bypass matters because `lib/awsclients.account_id()` is the **one** place the value may be
+resolved: it registers the id with `redact.register_account_id`, which is how the masker finds the
+bare twelve digits **outside** ARN position. And `provision.py` puts the account id into every
+resource ARN of the IAM policy it writes and PRINTS a plan under `--dry-run`. So an unregistered
+account id in this file is exactly the leak that function exists to prevent.
+
+Worth recording rather than quietly fixing: the choke point's own docstring says *"ten inline call
+sites are ten places to forget"*, the test was already green in the tree, and this file forgot
+anyway — written in the same week, by someone who had read it. **The guard is what turned a new
+module's leak into a red test instead of a finding in a published artifact.** Fixed by routing
+through `A.factory(REGION)` / `A.account_id(fc)`; `27 passed`.
+
+**Leak 2 — the bucket name was account-equivalent, and the reason given for it was false.**
+`provision.py` derived the runner's S3 bucket name from `sha256(account_id).hexdigest()[:16]`, with a
+docstring asserting that the digest "is not reversible to the twelve digits". Bucket names live in a
+**global** namespace, so the stated goal was right: the name leaks wherever it is written and
+redaction cannot reach it afterwards.
+
+The argument was wrong, and wrong by a wide margin. There are only 10^12 twelve-digit account ids,
+which is a keyspace a laptop walks. Measured, not argued — with the exact expression the code used,
+CPython 3.12.12:
+
+| resource | rate | time to exhaust 10^12 |
+|---|---|---|
+| one core (measured) | **2,874,794 candidates/sec** | **4.0 days** |
+| eight cores (derived) | ~23 M/sec | **~12 hours** |
+| one consumer GPU (published hashcat SHA-256 rate, 10 GH/s) | 10^10/sec | **~100 seconds** |
+
+And a hit is unambiguous: for a given 64-bit digest the expected number of *other* twelve-digit
+preimages is 10^12/2^64 = **5.4e-8**. So the recovered candidate is the account id itself, not one
+of many. **A truncated fast digest over a small keyspace is an encoding, not a hash.**
+
+(A birthday-collision count across all pairs of account ids — 27,105 — answers a different question
+and must not be used here. My own first framing of this reached for it and called the suffix a
+"unique fingerprint"; per `feedback_two_numbers_two_claims`, per-digest preimage count and
+all-pairs collision count are two claims and they move independently.)
+
+**Why no gate saw leak 2.** The real bucket name had already reached line 22 of
+`session-logs/2026-08-12-ec2-runner-and-f3-10-claim-group.md`, which is a **pushable** file, and
+`check_redaction.py` exited 0 on it. The `s3-uri` pattern is `\bs3://[a-z0-9][a-z0-9.-]{2,}` — it
+fires on the **scheme**. A bare bucket name in a table cell has no scheme, so it matched nothing.
+**The gate cannot see what has no shape it recognises**, and an account-equivalent value therefore
+sat in a distributable artifact undetected. This is the same failure class as DEV-P4-24, one layer
+out: there, a value was invisible because it had been truncated; here, because it had been written
+without its prefix.
+
+### The fix
+
+1. **The derivation is gone.** `bucket_name()` is deleted. `provision.py` generates
+   `secrets.token_hex(8)` — `secrets`, not `random`, because a name a reader can regenerate from a
+   seed is a name that carries information again — and `find_bucket()`'s docstring carries the
+   measurement above verbatim, so the retired claim cannot be re-derived from a comment that still
+   sounds plausible.
+2. **Idempotence by discovery, not by re-derivation.** The next run finds the same bucket by
+   **prefix ∧ own-account ∧ tags**. The own-account half is what makes a prefix safe in a global
+   namespace: `list_buckets` only ever returns the caller's own buckets. Verified live — a second
+   `provision.py` run reported `reusing  s3://grx-validation-runner-<suffix>` and the account still
+   held exactly the buckets it should.
+3. **Tagged in the call immediately after `create_bucket`.** An untagged bucket is invisible to the
+   next run, which would then create a second one beside it — silently, since both match the prefix.
+   This is not hypothetical: the *old*, pre-fix bucket has no tags, and the new `find_bucket()`
+   correctly refused to adopt it (`get_bucket_tagging` → `NoSuchTagSet` → `continue`), which is how
+   the migration was able to create the replacement without ambiguity.
+4. **"Cannot tell whether it is ours" never resolves to "yes".** `NoSuchTagSet`, `AccessDenied`,
+   `PermanentRedirect` and `NoSuchBucket` all `continue`. Any other `ClientError` re-raises, so an
+   unknown failure stops the script instead of being read as a negative.
+5. **The leaked line is scrubbed** and now says where the real name lives (the gitignored
+   `runner/.state/runner.json`) and that it is deliberately not written down.
+6. **`runner/README.md` corrected.** It documented the false claim — "the name is a SHA-256 prefix
+   of the account id" — as a *reason*, which is the most durable way to make a wrong idea survive.
+   It now describes the random suffix and carries the measurement.
+7. **The live bucket was migrated**, not just the code: new tagged random-named bucket, role
+   re-scoped by `put_role_policy` (which `provision.py` writes every run), the three `code/` objects
+   re-pushed rather than server-side-copied — they are regenerable and each push verifies its own
+   `head_object` — the instance's `$BUCKET` updated via `sync.py rebootstrap`, and the old bucket
+   deleted. Nothing under `out/` existed on the old bucket, so nothing pulled-back was stranded.
+
+### Mutation-checked
+
+`lib/tests/test_redaction_gate_skips.py` exists because fixing this required adding `.state` to
+`check_redaction.py`'s `SKIP_DIRS`, and a skip is the strongest waiver in the gate — an `ALLOW`
+entry excuses one pattern on one line; a skip blinds the gate to a whole subtree. Two arms, both
+mutation-checked: delete `runner/.state/` from `.gitignore` → 2 failed; add a `*` rule so the
+matcher answers yes to everything → 2 failed; `cp` restore → 4 passed.
+
+### A mistake made twice, while fixing this
+
+The two remaining gate findings were ARN matches in `runner/iam_policy.py` and
+`runner/provision.py`. They first went in as narrow `ALLOW` anchors — which **put two fresh findings
+in the gate's own source**, because the anchors and their written reasons had to spell the ARNs out.
+That is precisely what the `ALLOW` comment block warns about, in the file where it is written. Backed
+out and replaced with two new kinds in the **derived** ARN excuse, since both are properties of ARN
+grammar rather than facts about two files: an **empty** account field (S3's ARN grammar has no
+account segment, because bucket names are globally unique) and the literal **`aws`** (an AWS-managed
+policy ARN, byte-identical in every account). Both are exact-equality tests, so neither widens the
+gate over a real twelve-digit id. Final: **460 files scanned, `GATE-RC=0`, read directly and not
+through a pipe.**
+
+### The rows
+
+| leak | in | found by | class |
+|---|---|---|---|
+| inline `get_caller_identity` | `runner/provision.py` | `test_account_id_choke_point.py`, already in the tree | caught before publication |
+| bucket name = `sha256(account_id)[:16]` | `runner/provision.py`, `runner/README.md`, a session log | read by hand; **no gate could fire** — no `s3://` scheme | reached a pushable file |
+
+---
+
+## DEV-P4-26 — the runner was not running as the role this project derived: an account-wide association replaced it hourly
+
+### What happened
+
+`runner/sync.py rebootstrap` failed with
+
+```
+fatal error: An error occurred (403) when calling the HeadObject operation: Forbidden
+code: no tarball yet — run 'runner/sync.py push' from the laptop, then 'grx-refresh' here
+```
+
+on a bucket whose live inline role policy, read back from IAM, said exactly what it should:
+
+```
+grx-derived: names NEW bucket=True  names OLD bucket=False
+  s3 statement actions: ['s3:GetObject', 's3:PutObject', 's3:ListBucket', 's3:GetBucketLocation']
+  s3 resources: ['arn:aws:s3:::<NEW>', 'arn:aws:s3:::<NEW>/*']
+```
+
+The policy was right and the request was still denied, which means the caller was not that role.
+Asked from the instance itself:
+
+```
+arn:aws:sts::<account>:assumed-role/AmazonSSMRoleForInstancesQuickSetup/i-0f90ac6377bba523b
+... is not authorized to perform: s3:ListBucket ... because no identity-based policy allows it
+```
+
+**The instance was not running as `grx-runner-ec2`.** CloudTrail named the mechanism rather than
+leaving it to inference — `Disassociate` immediately followed by `Associate`, from
+`ssm.amazonaws.com`, at one-hour intervals:
+
+| time (UTC, 2026-08-12) | event | actor | profile attached |
+|---|---|---|---|
+| 05:01:11 | Disassociate → Associate | `Automation-68520f5e…`, `ssm.amazonaws.com` | `AmazonSSMRoleForInstancesQuickSetup` |
+| 06:01:38 | Disassociate → Associate | `Automation-c87fcbd2…` | same |
+| 07:01:39 | Disassociate → Associate | `Automation-17cdd00e…` | same |
+
+and the schedule is an SSM State Manager association in this account:
+
+```
+AWS-AttachIAMToInstance  SystemAssociationForManagingInstances  rate(1 hour)  [{'Key': 'InstanceIds', 'Values': ['*']}]
+```
+
+`InstanceIds: ['*']` — every instance in the Region, and it **replaces unconditionally**; it does
+not skip an instance that already has a profile. The four instances in the Region all carried it.
+So the derived role survived from `provision.py` until the next `:01`, at most one hour, and then
+stopped being the identity the runner ran as. The instance launched at 04:15 and the first clobber
+was at 05:01, which is why `suite-01`/`suite-02` downloaded from S3 without trouble and everything
+afterwards did not need to — the code was already on disk, so nothing failed until a `rebootstrap`
+asked for S3 again two hours later.
+
+### Why this is worse than a privilege excess
+
+The replacing role carries `AmazonSSMFullAccess`, `AmazonSSMManagedInstanceCore`, and an inline
+policy from an unrelated project. That inline policy grants, among other things:
+
+```
+Allow ['bedrock-agentcore-control:*', 'bedrock-agentcore:*'] on ['*']
+```
+
+Those are **the resources under test** — the six READY gateways, the three DRAFT guardrails, the two
+abandoned policy engines that are read-only evidence for F1-3, the `nopolicy` gateway that is F6's
+paired baseline. The runner is a measurement instrument; for most of every hour it had full control
+of the thing it was measuring. The project's "never touch" list was being enforced by discipline
+alone, with IAM contributing nothing. That is a threat to the integrity of the measurements, not
+merely to least privilege, and it is the second time this account has produced the
+cross-system-contamination signal another project's name appearing in this one's configuration
+(`feedback_verify_before_act`, `feedback_llmops_is_contamination`).
+
+It is also, precisely, `feedback_cryptic_error_is_missing_guard`: a `403` that looked like a bucket
+problem was an identity problem, and the guard that was missing is the one that reads the identity.
+And it is the mirror image of `feedback_no_deploy_path_no_component` — not a config nothing deploys,
+but a config that deploys and is then overwritten. `runner/README.md` documented a derived,
+`grx-*`-scoped policy that was, for most of its life, attached to a profile nothing used.
+
+### The fix
+
+1. **`provision.ensure_instance_profile(ec2, iid)`** reads the live association, and repairs it —
+   `replace_iam_instance_profile_association` when one is live, `associate_iam_instance_profile` when
+   there is none (the ~1-second window between the association's two calls). It returns a message
+   when it repaired and `None` when it did not, so the repair is **printed, not silent**: how often
+   the clobber wins is the number that decides whether the transport should stop depending on the
+   instance role at all.
+2. **Wired into all three laptop paths**, because each is a moment when the identity is assumed:
+   `provision.py` on the instance-reuse branch, `sync.py._state()` (every transfer), and
+   `run.py._client()` — *including* `--tail`. Checking on the polling path is not overkill: a
+   detached suite run outlives the one-hour interval and `aws s3 sync`s its results at the end with
+   whatever identity it has by then, so a `--tail` that repairs while it polls is what gets a long
+   run's output uploaded at all.
+3. **`live` is filtered on association STATE**, not on mere presence. A `disassociated` entry naming
+   the right profile would otherwise read as healthy while the instance had no role at all.
+
+### What was deliberately NOT done
+
+The association was not modified, disabled or re-scoped. It targets every instance in the account
+and three other projects' instances depend on it — one of them a `m5.2xlarge` running since
+2025-09-22 — and the neighbouring associations are named `…-DO-NOT-DELETE`. Re-scoping an
+account-wide setting that other systems rely on is the same class as the account-wide Transaction
+Search setting this project **asserts and never enables**, so it is recorded here and raised with
+whoever owns the account rather than changed unilaterally. **Consequence to state plainly: the repair
+is a mitigation, not a fix.** Between two laptop commands the instance can still be re-clobbered,
+and any AWS call the instance makes on its own initiative in that window runs with the broader role.
+The durable fix is to stop the instance needing S3 permissions at all — presigned GET/PUT URLs minted
+by the laptop, which carry the laptop's authority — and that is open work, not done here.
+
+### Mutation-checked
+
+`runner/tests/test_runner_profile_guard.py`, six arms against a stub that records which mutating API
+it received, because `replace_…` and `associate_…` have different preconditions and calling the wrong
+one fails with an error naming neither: correct profile → no call at all (a too-eager guard would
+churn the association on every `--tail` poll); foreign profile → `replace` with the live association
+id; no association → `associate`; `disassociated` naming the right profile → treated as missing, not
+healthy; `associating` → treated as live; and a wiring arm asserting all three laptop entry points
+call the guard, since a guard nothing calls is not a guard.
+
+### The rows
+
+| | before | after |
+|---|---|---|
+| identity the runner ran as | `AmazonSSMRoleForInstancesQuickSetup` for most of every hour | `grx-runner-ec2`, re-asserted on every laptop command |
+| AgentCore permissions held | `bedrock-agentcore:*` on `*` | none |
+| S3 permissions held | `s3:*` on another project's bucket only — hence the `403` | `Get`/`Put`/`List` on the runner bucket only |
+| how a clobber becomes visible | it did not | printed repair line, on every command |
+| the association itself | `rate(1 hour)`, `InstanceIds: ['*']` | **unchanged, by decision** — account-owned |
+
+---
+
 ## Analysis-time deviations
 
 *(None yet — this section is populated during Phase 9. Each entry states the
