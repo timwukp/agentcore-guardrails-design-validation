@@ -3561,6 +3561,14 @@ reachable for the first time on this plane.
 
 ## DEV-P4-01 — four cases pre-registered a per-trial score harvest, and neither measured surface publishes one
 
+> **Superseded in part by DEV-P4-27 (2026-08-12).** This entry surveyed three surfaces and there are
+> four: the gateway's **application logs** publish the score per request, as a JSON string, at
+> `body.policy.guardrailFindings.<policyId>.contentFilter[].score`. F3-10 harvested 61 values from it.
+> The instrument change below is therefore **withdrawn as the primary instrument** for F2-2/F2-3/F2-4,
+> and F1-18 is measurable by its sealed method. The entry is kept as written — including the sentences
+> DEV-P4-27 retracts — because a corrections file that edits its own errors out of existence cannot be
+> audited. Read the two together.
+
 **Scope, stated first because an earlier draft of this entry overreached.** Three surfaces could
 carry a guardrail score. Two are measured and neither publishes one. The third — CloudWatch
 **metrics**, where §6.2 explicitly lists `ConfidenceScore / ConfidenceThreshold` under
@@ -3623,6 +3631,11 @@ lineage, not of a number.
 F2-2/F2-3/F2-4 move from a **direct harvest** to a **threshold sweep**, which observes the same
 latent variable through the decision instead of reading it:
 
+> **Withdrawn as the primary instrument by DEV-P4-27.** The direct harvest is available on the
+> application-log surface. The sweep is retained only as a fallback, and the conservatism admitted
+> below — a constant decision column cannot distinguish a constant score from a varying one that
+> never crossed τ — is the reason it is now second choice.
+
 * a guardrail-bearing policy whose condition carries a numeric `threshold` τ is the only knob
   that admits a numeric value into the evaluation at all;
 * for a **fixed input** repeated n times at **fixed τ**, a mixed set of decisions proves the
@@ -3642,6 +3655,12 @@ scores lie on a six-value numeric lattice; a sweep observes no scores. The hones
 that the claim is **not measurable on either published surface**, which is itself a finding
 about the document — it asserts the precision of a quantity the service does not expose — and
 belongs in the v1.3 amendment pass rather than in a case file with a manufactured verdict.
+
+> **Retracted by DEV-P4-27.** "Not measurable on either published surface" was true of the two
+> surfaces surveyed and false as the exhaustive claim it reads as. F1-18 is measurable by its sealed
+> method on the application-log surface; 61 values are already harvested, 4 distinct, all on the
+> lattice, censored below the configured threshold. The finding-about-the-document in this paragraph
+> is withdrawn: the service does expose the quantity.
 
 ### What this changes about ordering, and why that is the expensive part
 
@@ -5788,6 +5807,124 @@ call the guard, since a guard nothing calls is not a guard.
 | S3 permissions held | `s3:*` on another project's bucket only — hence the `403` | `Get`/`Put`/`List` on the runner bucket only |
 | how a clobber becomes visible | it did not | printed repair line, on every command |
 | the association itself | `rate(1 hour)`, `InstanceIds: ['*']` | **unchanged, by decision** — account-owned |
+
+---
+
+## DEV-P4-27 — DEV-P4-01's absolute form is retired: a third surface publishes the per-trial score, so F1-18 is measurable as sealed and F2-2/F2-3/F2-4 do not need the τ-sweep
+
+### What this retires, stated before anything else
+
+**DEV-P4-01 said the per-trial guardrail score does not exist as an observable. That is wrong, and
+the correction is in the direction that costs this project work rather than saving it.** Its own
+scope paragraph named three candidate surfaces — the ApplyGuardrail response (measured, enums only),
+`aws/spans` (measured, 58 leaf paths, zero score-ish), and CloudWatch metrics (then unmeasured) —
+and its instrument change was justified on the first two. There is a **fourth** surface it never
+named: the gateway's own **application logs**. F3-10 read it, and the score is there, per request:
+
+```
+body.policy.guardrailFindings.<policyId>.contentFilter[].score  ==  "0.8000"
+```
+
+61 values harvested over 122 requests in a 283-second window
+(`results/phase1/F3-10_log_surface_join.json`, 579 events parsed, 0 unparsed, 7 of 7 guards).
+
+The three sentences that are now wrong, and are retracted here:
+
+| where | what it said | what is measured |
+|:--|:--|:--|
+| DEV-P4-01 title | "**neither measured surface** publishes one" | true as written, and it surveyed the wrong set of surfaces — the qualifier reads as exhaustive and was |
+| DEV-P4-01, F1-18 paragraph | F1-18's claim is "**not measurable on either published surface**" and belongs in the amendment pass "rather than in a case file with a manufactured verdict" | measurable on the log surface by F1-18's **sealed** method, with 61 values already harvested |
+| DEV-P4-01, instrument change | F2-2/F2-3/F2-4 "move from a **direct harvest** to a **threshold sweep**" | the direct harvest is available; the sweep was a workaround for a surface gap that does not exist |
+
+### Why the metrics reading did not catch this and the log reading did
+
+The two are not the same observation. F7-1 established that `ConfidenceScore` **publishes**;
+DEV-P4-01 correctly noted in advance that a per-minute aggregate cannot restore a **per-trial**
+harvest, and F3-10 measured exactly that — at golden-set rate the 1-minute bucket mixes requests and
+the join is destroyed, and at one request per minute it comes back. So the metric surface confirms
+the *quantity* exists while refusing to hand over the *per-trial* values. The log surface hands over
+both. The identity of the two is not assumed: over the same buckets, per-arm logged score sums equal
+the `ConfidenceScore` metric sums **exactly** — 24.6/24.6, 0.8/0.8, 24.2/24.2, `all_agree: true` —
+so the logged number is the same latent quantity §6.2 names, not a second score that happens to
+share a word.
+
+The reason the fourth surface was missing from the survey is worth naming, because it is the
+generalisable part: the three surveyed surfaces were the three the *plan* had predicted a score would
+live in. Application logs were not on the list because nothing in the document points at them —
+§6.2 sends a calibrating reader to metrics (that is V13-05's amendment) and §7.1 says "logged" without
+saying where. A search over the surfaces a document names is not a search over the surfaces a service
+has. `feedback_probe_must_reach_the_code` in its other direction: the probe reached its targets, and
+the target set was the defect.
+
+### What F1-18 now has, and what it still lacks
+
+F1-18's sealed method is *"harvest scores from F2/F3 runs; set-membership test on the union"* against
+the lattice `{0, .2, .4, .6, .8, 1.0}`. F3-10 is an F3 run, so no instrument change is needed at all.
+The union of every score observed across its three arms:
+
+| value | count | on the lattice? |
+|:--|--:|:--|
+| `0.4000` | 1 | yes |
+| `0.6000` | 3 | yes |
+| `0.8000` | 48 | yes |
+| `1.0000` | 9 | yes |
+| — | **61** | **4 distinct values, 0 off-lattice** |
+
+That is the TRUE direction, and it is **not** a verdict, for four reasons that have to travel with
+the number:
+
+1. **Censoring, not coverage.** 61 of 122 requests published no `score` field at all, and all 61
+   that did were positives — a request below the policy's configured threshold of 0.2 publishes
+   nothing. So the two low lattice points (`0`, `0.2`) are *unobserved*, which is consistent with
+   censoring at τ and equally consistent with their not existing. A set-membership test over a
+   censored union can only ever come back clean: censoring removes candidate counterexamples.
+2. **One category, one policy, one filter type.** All 61 values come from one `contentFilter[]`
+   entry of one policy on one gateway. The lattice claim is about the service.
+3. **One calendar day**, 283 seconds — the same block that holds V13-05.
+4. **The comparison is not free.** The value is a **string** with four fixed decimals, so a
+   membership test has to parse before comparing, and `0.2`/`0.4`/`0.6`/`0.8` are not exactly
+   representable in binary — the test must use `Fraction`/`Decimal` or an explicit tolerance, or it
+   will report an off-lattice value that is a float artefact. An earlier pass of this project would
+   have written `score in {0, .2, .4, .6, .8, 1.0}` and believed the result.
+
+So F1-18 moves from *unmeasurable* to *pre-registered and partly harvested*, and it is scheduled with
+F2-2 rather than published from F3-10's leftovers, because F2-2's n=300 at a deliberately low τ is
+what turns 4 observed values into a real membership test.
+
+### What changes in the plan
+
+* **F1-18** — no longer amendment-only material. Runs as sealed, harvesting from the log surface.
+* **F2-2** (`DISTINCT_AT_LEAST(2)` over n=300 identical inputs) — runs as sealed. The τ-sweep is
+  withdrawn as the primary instrument and kept only as a fallback if a low-τ policy turns out to
+  suppress publication for a reason we have not measured. The sweep was *strictly conservative*
+  (a constant decision column cannot distinguish a constant score from a varying one that never
+  crossed τ); the direct harvest has no such weakness, so this is a strengthening.
+* **F2-3** (stratify by observed score) — real score strata, not the coarsened τ-bands DEV-P4-01
+  conceded would "only ever hide a mixed stratum". The verdict no longer has to carry that caveat.
+* **F2-4** (τ inside vs outside the observed support) — the support is now known rather than
+  inferred: `[0.4, 1.0]` observed, censored below 0.2. τ placements can be chosen against measured
+  values.
+* **Ordering** — DEV-P4-01 put F7 upstream of F2-2/F2-3/F2-4 because the score was believed to come
+  from telemetry or nowhere. F7 has run, so nothing is blocked either way; but the dependency as
+  stated is no longer the reason. The reason is now that the harvest needs a **guardrail-bearing
+  policy with a numeric threshold**, which is a policy-creation dependency, not an observability one.
+
+### Direction of the bias
+
+Against this project and in the document's favour on one point, against it on another. In its favour:
+the score §6.2 promises does exist per request, so DEV-P4-01's implied criticism ("it asserts the
+precision of a quantity the service does not expose") is withdrawn — the service exposes it. Against
+it: the surface the document sends a calibrating reader to is the one that cannot deliver it, which
+is V13-05, and the censoring at τ is a property no section mentions.
+
+### Mutation-checked
+
+Nothing new is asserted here that is not already guarded in F3-10's supplementary read: the score key
+path is discovered by pattern rather than hardcoded (`score_key_path_found` fails if no path matches),
+`log_surface.score_key_paths_are_strings` records the string typing as data rather than prose, and
+`logs_reconcile_with_metrics` is the guard that makes the identity claim above falsifiable — it
+compares two instruments against each other and fails on any per-arm disagreement, which is the check
+`feedback_verify_against_real_artifact` and DEV-P4-04's closing lesson both argue for.
 
 ---
 

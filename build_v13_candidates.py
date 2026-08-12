@@ -270,31 +270,93 @@ CANDIDATES = [
     },
     {
         "id": "V13-05",
-        "title": "§7.1 prescribes building the confusion matrix from LOG_ONLY telemetry; "
-                 "whether that reconstruction is possible is untested",
+        "title": "§7.1's confusion matrix is buildable, but not from the surface §6.2 "
+                 "points at, and only in one direction — the score is a JSON string in the "
+                 "application logs, and a closed window can raise a threshold but not lower it",
         "severity": MISINFORMS,
-        "status": "AWAITING_EXPERIMENT",
+        "status": "BLOCKED_ON_REPLICATION",
         "test_cases": ["F3-10"],
         "merge_groups": [],
-        "claim_ids": [],
-        "claim_id_rationale": "",
-        "evidence": "none-yet",
-        "finding": None,
+        "claim_ids": ["C-agentcore-policy-metrics-trow-002"],
+        "claim_id_rationale":
+            "§6.2 line 657 — `ConfidenceScore / ConfidenceThreshold`, *\"Observed score vs. "
+            "configured threshold per evaluation\"*, use *\"Threshold calibration (Section "
+            "7.1)\"* — is the row that sends a calibrating reader to the metrics surface, and "
+            "it is the row this case refutes. No expander reaches it: the triage assigns it "
+            "to F7-1, which read the metric for existence, not to F3-10, which measured what "
+            "a calibrating reader can do with it. Declaring F7-1 here would pull in 16 other "
+            "metric rows this amendment says nothing about. The row cannot be left standing "
+            "either — amending §7.1 step 3 to point at the logs while §6.2 still promises "
+            "*per evaluation* would leave the two halves of the document disagreeing, which "
+            "is the one failure mode this register exists to prevent.",
+        "evidence": "F3-10: 3 arms, 1,491 evidence records all carrying `request_id`, 11 of "
+                    "11 guards passing, plus the supplementary log-surface read `08b` "
+                    "(results/phase1/F3-10_log_surface_join.json, 579 log events, 0 unparsed, "
+                    "7 of 7 guards). The two surfaces reconcile exactly: per-arm logged score "
+                    "sums vs `ConfidenceScore` metric sums over the same buckets are 24.6 vs "
+                    "24.6, 0.8 vs 0.8, 24.2 vs 24.2, `all_agree: true`",
+        "finding": "FINDING-F3-10.md",
         "planned_cases": ["F3-10", "F3-9"],
         "doc_says": "Run a golden set through a LOG_ONLY engine, then label results and "
                     "use the confidence scores in the logs to build a confusion matrix "
-                    "comparing precision and recall across candidate thresholds.",
-        "observed": "Not yet measured. F3-10 attempts the reconstruction twice: using "
-                    "only CloudWatch metrics, then only `aws/spans`. Whether per-request "
-                    "score-to-label linkage survives 1-minute metric aggregation is the "
-                    "experiment, not an assumption of it. If it does not, a reader "
-                    "following §7.1 cannot compute precision at all.",
-        "proposed": "Name the instrument the reconstruction actually requires (spans, not "
-                    "metrics) or, if neither suffices, replace the prescription with one "
-                    "that can be carried out.",
+                    "comparing precision and recall across candidate thresholds. §6.2 line "
+                    "657 names `ConfidenceScore / ConfidenceThreshold` as *per evaluation* "
+                    "and sends the calibrating reader there.",
+        "observed": "Verdict FALSE on the sealed surface, and the fuller answer is the "
+                    "amendment. From **CloudWatch metrics alone** the score is present but "
+                    "the per-request identity is not: 1-minute aggregation destroys the join "
+                    "at any usable rate, and the spaced arm proves it is the rate and not the "
+                    "instrument — at one request per minute the join comes back. From the "
+                    "**application logs** the join is total: 122 label rows, 122 matched, 0 "
+                    "unmatched, 0 duplicate `request_id`s, and the matrix computes (tp 30, tn "
+                    "30, fp 0, fn 0 at the configured threshold, in all three arms). So the "
+                    "workflow is executable on the surface its own sentence names and not on "
+                    "the one §6.2 line 657 points at. Two further properties a reader needs "
+                    "and the document does not state. (1) The score is a **JSON string** with "
+                    "four fixed decimals — `body.policy.guardrailFindings.<policyId>."
+                    "contentFilter[].score == \"0.8000\"` — so `jq 'select(.score > 0.5)'` "
+                    "silently does the wrong thing. (2) **61 of 122 requests published no "
+                    "score at all**, and all 61 that did were positives: a request below the "
+                    "configured threshold of 0.2 produces no `score` field. So a closed window "
+                    "supports raising a threshold (17 of the 20 candidates offered) and not "
+                    "lowering it (3 of 20 unanswerable), and the asymmetry is invisible to a "
+                    "reader following step 3 as written.",
+        "proposed": "Three additions to §7.1 step 3, and one correction to §6.2 line 657. "
+                    "Step 3: name the surface (the application logs, at "
+                    "`body.policy.guardrailFindings.<policyId>.contentFilter[].score`, not "
+                    "metrics at production rates); name the type (a JSON string with four "
+                    "fixed decimals, which needs a cast before any comparison); and name the "
+                    "direction — calibrate from the most permissive threshold you are willing "
+                    "to run, because requests below the configured threshold publish no score "
+                    "and a closed window cannot answer a lower candidate. §6.2 line 657: keep "
+                    "the row, and state that these metrics are aggregated at a 60-second "
+                    "period with configuration-scoped dimensions only, so they support trend "
+                    "and alarm use but cannot be joined to a labelled request unless traffic "
+                    "is under one evaluation per minute — and point calibration at the logs.",
         "note": "The only candidate where the document's *workflow* is under test rather "
                 "than a statement of fact. A prescription that cannot be executed is a "
-                "defect even when every fact around it is true.",
+                "defect even when every fact around it is true — and here it turns out to be "
+                "executable, which makes this an amendment about where a reader is *sent* "
+                "rather than about whether the method works.\n\n"
+                "**This candidate's own earlier proposal was measured wrong, and the wrong "
+                "version is kept here rather than silently overwritten.** It read: *\"Name the "
+                "instrument the reconstruction actually requires (**spans, not metrics**) or, "
+                "if neither suffices, replace the prescription with one that can be carried "
+                "out.\"* Spans carry no score. DEV-P4-01 read 60 spans over 58 attribute paths "
+                "with zero score matches, and this case's own span read records "
+                "`spans.scored: false` for 16 spans that match the score pattern by *name*. "
+                "The instrument is neither of the two the parenthetical names. It was written "
+                "when spans were the obvious answer, and it is the same class of defect it was "
+                "written to catch — a surface asserted rather than read "
+                "(`feedback_prose_is_not_verified`).\n\n"
+                "Blocked, not ready: all 1,491 records fall on 2026-08-12Z. Three of the "
+                "readings above are claims about what a telemetry pipeline did in a "
+                "283-second window — that the metric sums matched the logs *exactly*, that no "
+                "score series held one request per datapoint, and that 61 requests published "
+                "*nothing*. Exactness and absence on one day cannot be separated from a "
+                "pipeline that was unusually clean, or degraded, that afternoon. n does not "
+                "help: the identity half is refuted by any single mixed bucket and the "
+                "log-side join is total at 122/122. The replicate costs under $0.03.",
     },
     {
         "id": "V13-06",
@@ -490,7 +552,16 @@ CANDIDATES = [
                 "produced both by \"the policy agrees with production\" and by \"the policy "
                 "cannot run\", and §7.1 assigns one meaning to both. The document's own "
                 "recommended rollout is the path that hides the defect — FINDING-F5-4A §5 "
-                "walks it step by step.",
+                "walks it step by step.\n\n"
+                "F3-10 supplies a second, cheaper form of the positive gate proposed here, "
+                "and the two amendments should land together because they are consecutive "
+                "steps of the same §7.1 workflow. `LogOnlyMatches > 0` proves the policy "
+                "evaluated; the application-log record proves it per request, since F3-10 "
+                "joined 122 of 122 labelled requests to a logged evaluation with 0 unmatched "
+                "(V13-05). A reader who has the log join does not need to trust a metric to "
+                "know the shadow policy ran. Both are stated because the metric is the "
+                "cheaper thing to alarm on and the log is the thing that can be audited "
+                "after the fact.",
     },
     {
         "id": "V13-11",
@@ -585,7 +656,15 @@ CANDIDATES = [
         "note": "The three sites this expands to are the strongest claims in the document "
                 "that our own measurement CONFIRMS. The amendment sharpens them rather than "
                 "retracting them, and that is worth stating: a register that only collects "
-                "refutations reads as an indictment rather than a review.",
+                "refutations reads as an indictment rather than a review.\n\n"
+                "\"In LOG_ONLY it denies nothing and reports nothing\" is scoped to the "
+                "surface this case measured — the mismatch metrics, which stayed at zero "
+                "across the LOG_ONLY arm. It is not a statement about the application logs, "
+                "where F3-10 measured the opposite: 30 of 30 shadow evaluations wrote "
+                "`decision: DENY` / `effect: FORBID` / `isError: true` / `severityText: "
+                "ERROR`. V13-15 carries that separately rather than editing this sentence, "
+                "because both readings are true of their own instrument and merging them "
+                "would make one of them read as refuted.",
     },
     {
         "id": "V13-13",
@@ -708,6 +787,75 @@ CANDIDATES = [
                 "for revoke/incident/remediate/rotate returns one unrelated X-class row. "
                 "That string is unverified prose in a justification field "
                 "(`feedback_prose_is_not_verified`); the register does not inherit it.",
+    },
+    {
+        "id": "V13-15",
+        "title": "§7.1 tells the reader LOG_ONLY blocks nothing, and on the metric surface "
+                 "that is true — but every shadow evaluation writes itself into the "
+                 "application logs as `decision: DENY`, `effect: FORBID`, `isError: true`, "
+                 "`severityText: ERROR`",
+        "severity": MISINFORMS,
+        "status": "MEASURED_READY",
+        "test_cases": [],
+        "merge_groups": [],
+        "claim_ids": ["C-s7-1-prose-001", "C-s7-1-mermaid-001"],
+        "claim_id_rationale":
+            "Both rows are reachable through F3-10 and declaring it would derive all ten of "
+            "its §7.1 rows, eight of which this amendment does not touch — the same reason "
+            "V13-10 names rather than derives. The two named rows are the two places the "
+            "document promises the reader that a LOG_ONLY window is quiet: the prose header "
+            "*\"Threshold tuning workflow (LOG_ONLY → ENFORCE)\"* and the diagram node "
+            "*\"Engine = LOG_ONLY (nothing blocked, scores logged)\"*. It is the parenthetical "
+            "in the diagram node that is refuted, and the prose header is named with it "
+            "because the promise is what the whole step-list is premised on.",
+        "evidence": "F3-10's supplementary log-surface read `08b` "
+                    "(results/phase1/F3-10_log_surface_join.json): 579 log events parsed, 0 "
+                    "unparsed, 7 of 7 guards passing, 30 shadow denials and 31 real denials "
+                    "distinguished by arm rather than by anything in the record",
+        "finding": "FINDING-F3-10.md",
+        "planned_cases": ["F3-10"],
+        "doc_says": "The LOG_ONLY leg of the tuning workflow: \"Engine = LOG_ONLY (nothing "
+                    "blocked, scores logged)\", i.e. run the golden set through a shadow "
+                    "engine, collect scores, and block nothing while you do it.",
+        "observed": "Nothing was blocked — and the logs say otherwise, in the words an "
+                    "operator greps for. All 30 shadow evaluations in the LOG_ONLY arm wrote "
+                    "`decision: DENY` and `effect: FORBID` with `isError: true` and "
+                    "`severityText: ERROR`, and the 31 real denials in the ENFORCE arm wrote "
+                    "the same four fields with the same values. The one field that names a "
+                    "mode does not separate them: `policyMode` reads `ENFORCE` in both, "
+                    "because it is the *policy's* configured mode and not the engine's. In "
+                    "this experiment the two are told apart by which arm the `request_id` "
+                    "belongs to — knowledge that exists in the harness and not in the record. "
+                    "So a reader who follows §7.1 for a calibration window gets, on the "
+                    "surface the same amendment (V13-05) is about to send them to, 30 "
+                    "ERROR-level denial records for traffic that was served normally.",
+        "proposed": "Amend the diagram node and the workflow preamble to say what \"nothing "
+                    "blocked\" is scoped to: no request is denied, and the shadow evaluation "
+                    "is still recorded as a denial at ERROR level in the application logs. "
+                    "Tell the reader to expect their error-rate and denial dashboards to move "
+                    "during a LOG_ONLY window, and to scope any log-based alerting by arm or "
+                    "by policy id rather than by `decision`, `effect`, `isError` or severity — "
+                    "none of which distinguish a shadow denial from a real one. If a "
+                    "distinguishing field is expected to exist, name it; this measurement "
+                    "found none.",
+        "note": "Filed beside V13-12 and deliberately not under it. V13-12's amendment says "
+                "that in LOG_ONLY an unevaluable policy \"denies nothing and reports "
+                "nothing\", and that remains exactly right about the surface V13-12 measured "
+                "— the mismatch metrics, which stayed at zero. This candidate is about a "
+                "different surface reporting the opposite way: the application logs report "
+                "loudly, in the vocabulary of a real block. Folding the two together would "
+                "make one of the two statements read as wrong when both are measured true of "
+                "their own instrument, which is the distinction the whole register turns on.\n\n"
+                "Severity is MISINFORMS and not BREAKS_READER, and the line is worth stating: "
+                "the misleading record cannot cause an exposure, only a wrong conclusion — a "
+                "rollback of a harmless policy, or a page for an incident that did not happen. "
+                "V13-10 earns BREAKS_READER because its gate passes a policy whose promotion "
+                "is a total outage.\n\n"
+                "MEASURED_READY on one calendar day where V13-05 is blocked on a replicate, "
+                "and the asymmetry is the point: V13-05's blocked readings are claims of "
+                "exactness and of absence, which a clean or degraded pipeline can manufacture. "
+                "This one is a claim of presence — four named fields, 30 of 30 records, 0 "
+                "unparsed — and a second day cannot make a field that was there not have been.",
     },
 ]
 
