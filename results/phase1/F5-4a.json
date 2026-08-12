@@ -1,0 +1,1278 @@
+{
+  "action_id": "grxecho___echo",
+  "ambient_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "arms": {
+    "cedar_missing_attr": {
+      "arm": "cedar_missing_attr",
+      "decision": "ALLOW",
+      "n_allowed": 20,
+      "n_denied": 0,
+      "n_reached_gateway": 20,
+      "n_usable": 20,
+      "unanimous": true
+    },
+    "control_no_probe": {
+      "arm": "control_no_probe",
+      "decision": "ALLOW",
+      "n_allowed": 20,
+      "n_denied": 0,
+      "n_reached_gateway": 20,
+      "n_usable": 20,
+      "unanimous": true
+    },
+    "guardrail_missing_logonly": {
+      "arm": "guardrail_missing_logonly",
+      "decision": "ALLOW",
+      "n_allowed": 20,
+      "n_denied": 0,
+      "n_reached_gateway": 20,
+      "n_usable": 20,
+      "unanimous": true
+    },
+    "guardrail_missing_path": {
+      "arm": "guardrail_missing_path",
+      "decision": "DENY",
+      "n_allowed": 0,
+      "n_denied": 20,
+      "n_reached_gateway": 20,
+      "n_usable": 20,
+      "unanimous": true
+    },
+    "guardrail_valid_path": {
+      "arm": "guardrail_valid_path",
+      "decision": "DENY",
+      "n_allowed": 0,
+      "n_denied": 20,
+      "n_reached_gateway": 20,
+      "n_usable": 20,
+      "unanimous": true
+    }
+  },
+  "blockers": {
+    "blockers": [
+      "verdict is RECORDED, which supports no amendment: RECORDED and INCONCLUSIVE are findings about what was observed, not about what the document got wrong"
+    ],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F5-4a",
+    "clear_here": false
+  },
+  "case_id": "F5-4a",
+  "deletions": {
+    "cedar_missing_attr": {
+      "attempts": 1,
+      "deleted": true,
+      "errors": []
+    },
+    "guardrail_missing_logonly": {
+      "attempts": 1,
+      "deleted": true,
+      "errors": []
+    },
+    "guardrail_missing_path": {
+      "attempts": 1,
+      "deleted": true,
+      "errors": []
+    },
+    "guardrail_valid_path": {
+      "attempts": 1,
+      "deleted": true,
+      "errors": []
+    }
+  },
+  "findings_per_unknown_arm": {
+    "cedar_missing_attr": "CREATE_FAILED",
+    "guardrail_missing_path": "FAIL_CLOSED"
+  },
+  "gateway_id": "grx-gw-r20260810t130945z-zpkfmpwo9n",
+  "guards": {
+    "control_arm_was_allowed": true,
+    "engine_was_quiet_at_start": true,
+    "every_arm_reached_the_gateway": true,
+    "probe_was_deleted": true,
+    "valid_path_arm_was_denied": true
+  },
+  "guards_failed": [],
+  "interlock": {
+    "checked": "state.json policy resources other than `baseline`",
+    "policies_on_engine_at_start": [
+      "baseline"
+    ]
+  },
+  "is_smoke": false,
+  "kind": "RECORDED",
+  "mismatch_metrics": {
+    "absence_is_bounded_not_proven": "a metric absent at the bound may publish later; this is an upper bound on patience, not a proof of non-publication",
+    "bound_s": 900,
+    "per_metric": {
+      "LogOnlyEvalIncomplete": {
+        "after": {
+          "datapoints": [],
+          "dimension_combinations_listed": 0,
+          "metric": "LogOnlyEvalIncomplete",
+          "n_datapoints": 0,
+          "sum": 0.0,
+          "window": {
+            "end": "2026-08-12 00:19:10.878695+00:00",
+            "start": "2026-08-12 00:00:48.141719+00:00"
+          }
+        },
+        "before": {
+          "datapoints": [],
+          "dimension_combinations_listed": 0,
+          "metric": "LogOnlyEvalIncomplete",
+          "n_datapoints": 0,
+          "sum": 0.0,
+          "window": {
+            "end": "2026-08-12 00:00:48.141719+00:00",
+            "start": "2026-08-11 23:00:48.141719+00:00"
+          }
+        },
+        "verdict": "absent"
+      },
+      "MismatchErrors": {
+        "after": {
+          "datapoints": [
+            {
+              "dimensions": [
+                {
+                  "Name": "OperationName",
+                  "Value": "AuthorizeAction"
+                },
+                {
+                  "Name": "PolicyEngine",
+                  "Value": "grx_pe_r20260810T130945Z-t6hqadrspf"
+                },
+                {
+                  "Name": "PolicyEnforcementMode",
+                  "Value": "ACTIVE"
+                }
+              ],
+              "sample_count": 20.0,
+              "sum": 20.0,
+              "timestamp": "2026-08-12 07:02:00+07:00"
+            },
+            {
+              "dimensions": [
+                {
+                  "Name": "TargetResource",
+                  "Value": "grx-gw-r20260810t130945z-zpkfmpwo9n"
+                },
+                {
+                  "Name": "OperationName",
+                  "Value": "AuthorizeAction"
+                },
+                {
+                  "Name": "PolicyEngine",
+                  "Value": "grx_pe_r20260810T130945Z-t6hqadrspf"
+                },
+                {
+                  "Name": "PolicyEnforcementMode",
+                  "Value": "ACTIVE"
+                }
+              ],
+              "sample_count": 20.0,
+              "sum": 20.0,
+              "timestamp": "2026-08-12 07:02:00+07:00"
+            },
+            {
+              "dimensions": [
+                {
+                  "Name": "OperationName",
+                  "Value": "AuthorizeAction"
+                },
+                {
+                  "Name": "PolicyEnforcementMode",
+                  "Value": "ACTIVE"
+                }
+              ],
+              "sample_count": 20.0,
+              "sum": 20.0,
+              "timestamp": "2026-08-12 07:02:00+07:00"
+            },
+            {
+              "dimensions": [
+                {
+                  "Name": "TargetResource",
+                  "Value": "grx-gw-r20260810t130945z-zpkfmpwo9n"
+                },
+                {
+                  "Name": "OperationName",
+                  "Value": "AuthorizeAction"
+                },
+                {
+                  "Name": "PolicyEnforcementMode",
+                  "Value": "ACTIVE"
+                }
+              ],
+              "sample_count": 20.0,
+              "sum": 20.0,
+              "timestamp": "2026-08-12 07:02:00+07:00"
+            },
+            {
+              "dimensions": [
+                {
+                  "Name": "Policy",
+                  "Value": "grx_f54a_misss_r20260810T130945Z-a_dsxxojwv"
+                },
+                {
+                  "Name": "TargetResource",
+                  "Value": "grx-gw-r20260810t130945z-zpkfmpwo9n"
+                },
+                {
+                  "Name": "OperationName",
+                  "Value": "AuthorizeAction"
+                },
+                {
+                  "Name": "PolicyEngine",
+                  "Value": "grx_pe_r20260810T130945Z-t6hqadrspf"
+                },
+                {
+                  "Name": "PolicyEnforcementMode",
+                  "Value": "ACTIVE"
+                }
+              ],
+              "sample_count": 20.0,
+              "sum": 20.0,
+              "timestamp": "2026-08-12 07:02:00+07:00"
+            },
+            {
+              "dimensions": [
+                {
+                  "Name": "Policy",
+                  "Value": "grx_f54a_misss_r20260810T130945Z-a_dsxxojwv"
+                },
+                {
+                  "Name": "TargetResource",
+                  "Value": "grx-gw-r20260810t130945z-zpkfmpwo9n"
+                },
+                {
+                  "Name": "OperationName",
+                  "Value": "AuthorizeAction"
+                },
+                {
+                  "Name": "PolicyEnforcementMode",
+                  "Value": "ACTIVE"
+                }
+              ],
+              "sample_count": 20.0,
+              "sum": 20.0,
+              "timestamp": "2026-08-12 07:02:00+07:00"
+            }
+          ],
+          "dimension_combinations_listed": 20,
+          "metric": "MismatchErrors",
+          "n_datapoints": 6,
+          "sum": 120.0,
+          "window": {
+            "end": "2026-08-12 00:03:39.552454+00:00",
+            "start": "2026-08-12 00:00:48.141719+00:00"
+          }
+        },
+        "before": {
+          "datapoints": [],
+          "dimension_combinations_listed": 16,
+          "metric": "MismatchErrors",
+          "n_datapoints": 0,
+          "sum": 0.0,
+          "window": {
+            "end": "2026-08-12 00:00:48.141719+00:00",
+            "start": "2026-08-11 23:00:48.141719+00:00"
+          }
+        },
+        "verdict": "exercised"
+      },
+      "PolicyMismatch": {
+        "after": {
+          "datapoints": [
+            {
+              "dimensions": [
+                {
+                  "Name": "Policy",
+                  "Value": "grx_f54a_misss_r20260810T130945Z-a_dsxxojwv"
+                },
+                {
+                  "Name": "TargetResource",
+                  "Value": "grx-gw-r20260810t130945z-zpkfmpwo9n"
+                },
+                {
+                  "Name": "OperationName",
+                  "Value": "AuthorizeAction"
+                }
+              ],
+              "sample_count": 20.0,
+              "sum": 20.0,
+              "timestamp": "2026-08-12 07:02:00+07:00"
+            },
+            {
+              "dimensions": [
+                {
+                  "Name": "Policy",
+                  "Value": "grx_f54a_misss_r20260810T130945Z-a_dsxxojwv"
+                },
+                {
+                  "Name": "TargetResource",
+                  "Value": "grx-gw-r20260810t130945z-zpkfmpwo9n"
+                },
+                {
+                  "Name": "OperationName",
+                  "Value": "AuthorizeAction"
+                },
+                {
+                  "Name": "PolicyEngine",
+                  "Value": "grx_pe_r20260810T130945Z-t6hqadrspf"
+                }
+              ],
+              "sample_count": 20.0,
+              "sum": 20.0,
+              "timestamp": "2026-08-12 07:02:00+07:00"
+            }
+          ],
+          "dimension_combinations_listed": 8,
+          "metric": "PolicyMismatch",
+          "n_datapoints": 2,
+          "sum": 40.0,
+          "window": {
+            "end": "2026-08-12 00:03:39.552454+00:00",
+            "start": "2026-08-12 00:00:48.141719+00:00"
+          }
+        },
+        "before": {
+          "datapoints": [],
+          "dimension_combinations_listed": 6,
+          "metric": "PolicyMismatch",
+          "n_datapoints": 0,
+          "sum": 0.0,
+          "window": {
+            "end": "2026-08-12 00:00:48.141719+00:00",
+            "start": "2026-08-11 23:00:48.141719+00:00"
+          }
+        },
+        "verdict": "exercised"
+      },
+      "TotalMismatchedPolicies": {
+        "after": {
+          "datapoints": [
+            {
+              "dimensions": [
+                {
+                  "Name": "TargetResource",
+                  "Value": "grx-gw-r20260810t130945z-zpkfmpwo9n"
+                },
+                {
+                  "Name": "OperationName",
+                  "Value": "AuthorizeAction"
+                },
+                {
+                  "Name": "PolicyEngine",
+                  "Value": "grx_pe_r20260810T130945Z-t6hqadrspf"
+                }
+              ],
+              "sample_count": 36.0,
+              "sum": 20.0,
+              "timestamp": "2026-08-12 07:02:00+07:00"
+            },
+            {
+              "dimensions": [
+                {
+                  "Name": "TargetResource",
+                  "Value": "grx-gw-r20260810t130945z-zpkfmpwo9n"
+                },
+                {
+                  "Name": "OperationName",
+                  "Value": "AuthorizeAction"
+                },
+                {
+                  "Name": "PolicyEngine",
+                  "Value": "grx_pe_r20260810T130945Z-t6hqadrspf"
+                }
+              ],
+              "sample_count": 40.0,
+              "sum": 0.0,
+              "timestamp": "2026-08-12 07:01:00+07:00"
+            },
+            {
+              "dimensions": [
+                {
+                  "Name": "TargetResource",
+                  "Value": "grx-gw-r20260810t130945z-zpkfmpwo9n"
+                },
+                {
+                  "Name": "OperationName",
+                  "Value": "AuthorizeAction"
+                }
+              ],
+              "sample_count": 36.0,
+              "sum": 20.0,
+              "timestamp": "2026-08-12 07:02:00+07:00"
+            },
+            {
+              "dimensions": [
+                {
+                  "Name": "TargetResource",
+                  "Value": "grx-gw-r20260810t130945z-zpkfmpwo9n"
+                },
+                {
+                  "Name": "OperationName",
+                  "Value": "AuthorizeAction"
+                }
+              ],
+              "sample_count": 40.0,
+              "sum": 0.0,
+              "timestamp": "2026-08-12 07:01:00+07:00"
+            },
+            {
+              "dimensions": [
+                {
+                  "Name": "OperationName",
+                  "Value": "AuthorizeAction"
+                },
+                {
+                  "Name": "PolicyEngine",
+                  "Value": "grx_pe_r20260810T130945Z-t6hqadrspf"
+                }
+              ],
+              "sample_count": 36.0,
+              "sum": 20.0,
+              "timestamp": "2026-08-12 07:02:00+07:00"
+            },
+            {
+              "dimensions": [
+                {
+                  "Name": "OperationName",
+                  "Value": "AuthorizeAction"
+                },
+                {
+                  "Name": "PolicyEngine",
+                  "Value": "grx_pe_r20260810T130945Z-t6hqadrspf"
+                }
+              ],
+              "sample_count": 40.0,
+              "sum": 0.0,
+              "timestamp": "2026-08-12 07:01:00+07:00"
+            },
+            {
+              "dimensions": [
+                {
+                  "Name": "OperationName",
+                  "Value": "AuthorizeAction"
+                }
+              ],
+              "sample_count": 36.0,
+              "sum": 20.0,
+              "timestamp": "2026-08-12 07:02:00+07:00"
+            },
+            {
+              "dimensions": [
+                {
+                  "Name": "OperationName",
+                  "Value": "AuthorizeAction"
+                }
+              ],
+              "sample_count": 40.0,
+              "sum": 0.0,
+              "timestamp": "2026-08-12 07:01:00+07:00"
+            }
+          ],
+          "dimension_combinations_listed": 4,
+          "metric": "TotalMismatchedPolicies",
+          "n_datapoints": 8,
+          "sum": 80.0,
+          "window": {
+            "end": "2026-08-12 00:03:39.552454+00:00",
+            "start": "2026-08-12 00:00:48.141719+00:00"
+          }
+        },
+        "before": {
+          "datapoints": [],
+          "dimension_combinations_listed": 4,
+          "metric": "TotalMismatchedPolicies",
+          "n_datapoints": 0,
+          "sum": 0.0,
+          "window": {
+            "end": "2026-08-12 00:00:48.141719+00:00",
+            "start": "2026-08-11 23:00:48.141719+00:00"
+          }
+        },
+        "verdict": "exercised"
+      }
+    },
+    "poll_rounds": 16,
+    "still_absent_at_bound": [
+      "LogOnlyEvalIncomplete"
+    ],
+    "waited_s": 900.0
+  },
+  "n_per_arm": 20,
+  "oracle_text": "OUTCOME UNKNOWN — that is the experiment. Records DENY or ALLOW and whether MismatchErrors/PolicyMismatch fire. Either result is a finding",
+  "paths": {
+    "missing": "context.input.doesNotExist",
+    "valid": "context.input.text"
+  },
+  "planned_n": null,
+  "policy_engine_id": "grx_pe_r20260810T130945Z-t6hqadrspf",
+  "probes": {
+    "cedar_missing_attr": {
+      "arm": "cedar_missing_attr",
+      "attempts": [
+        {
+          "accepted": true,
+          "arm": "cedar_missing_attr",
+          "enforcement_mode": "ACTIVE",
+          "error_code": null,
+          "error_message": null,
+          "http_status": 202,
+          "policy_id": "grx_f54a_cedars_r20260810T130945Z-0g05tl6iy3",
+          "request_id": "4e4ba954-6854-498c-9a1a-07fe1068d236",
+          "validation_mode": "FAIL_ON_ANY_FINDINGS"
+        }
+      ],
+      "created": true,
+      "enforcement_mode": "ACTIVE",
+      "lint": [],
+      "outcome": "create_failed",
+      "policy_id": "grx_f54a_cedars_r20260810T130945Z-0g05tl6iy3",
+      "policy_name": "grx_f54a_cedars_r20260810T130945Z",
+      "reading": "the policy was accepted by the API and then settled in a failed state, so it never enforced. Distinct from both a rejection and a fail-open.",
+      "settled_ok": false,
+      "statement": "forbid (principal, action == AgentCore::Action::\"grxecho___echo\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n\")\nwhen { context.input.doesNotExist == \"grx-value-that-is-never-compared\" };",
+      "status": "CREATE_FAILED",
+      "status_reasons": [
+        "for policy `grx_f54a_cedars_r20260810T130945Z_0g05tl6iy3_0`, attribute `input.doesNotExist` in context for AgentCore::Action::\"grxecho___echo\" not found\nfor policy `grx_f54a_cedars_r20260810T130945Z_0g05tl6iy3_0`, attribute `input.doesNotExist` in context for AgentCore::Action::\"grxecho___echo\" not found at line 2, column 8:\n1 forbid (principal, action == AgentCore::Action::\"grxecho___echo\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n\")\n2 when { context.input.doesNotExist == \"grx-value-that-is-never-compared\" };\ndid you mean `text`?\n"
+      ],
+      "validation_mode_accepted_under": "FAIL_ON_ANY_FINDINGS"
+    },
+    "control_no_probe": {
+      "arm": "control_no_probe",
+      "created": false,
+      "outcome": "no_policy_by_design",
+      "statement": null
+    },
+    "guardrail_missing_logonly": {
+      "arm": "guardrail_missing_logonly",
+      "attempts": [
+        {
+          "accepted": true,
+          "arm": "guardrail_missing_logonly",
+          "enforcement_mode": "LOG_ONLY",
+          "error_code": null,
+          "error_message": null,
+          "http_status": 202,
+          "policy_id": "grx_f54a_misslogs_r20260810T130945Z-hqv947bkzw",
+          "request_id": "8393a16c-30e4-41ad-aa76-7c11e63d7781",
+          "validation_mode": "FAIL_ON_ANY_FINDINGS"
+        }
+      ],
+      "created": true,
+      "enforcement_mode": "LOG_ONLY",
+      "lint": [],
+      "outcome": "active",
+      "policy_id": "grx_f54a_misslogs_r20260810T130945Z-hqv947bkzw",
+      "policy_name": "grx_f54a_misslogs_r20260810T130945Z",
+      "reading": null,
+      "settled_ok": true,
+      "statement": "forbid (principal, action == AgentCore::Action::\"grxecho___echo\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n\")\nwhen guardrails {\n    BedrockGuardrails::ContentFilter([\"HATE\"], [context.input.doesNotExist])[\"HATE\"].confidenceScore.greaterThan(decimal(\"0.2\"))\n};",
+      "status": "ACTIVE",
+      "status_reasons": [],
+      "validation_mode_accepted_under": "FAIL_ON_ANY_FINDINGS"
+    },
+    "guardrail_missing_path": {
+      "arm": "guardrail_missing_path",
+      "attempts": [
+        {
+          "accepted": true,
+          "arm": "guardrail_missing_path",
+          "enforcement_mode": "ACTIVE",
+          "error_code": null,
+          "error_message": null,
+          "http_status": 202,
+          "policy_id": "grx_f54a_misss_r20260810T130945Z-a_dsxxojwv",
+          "request_id": "28da1ca8-d433-42eb-ba94-6626190293a3",
+          "validation_mode": "FAIL_ON_ANY_FINDINGS"
+        }
+      ],
+      "created": true,
+      "enforcement_mode": "ACTIVE",
+      "lint": [],
+      "outcome": "active",
+      "policy_id": "grx_f54a_misss_r20260810T130945Z-a_dsxxojwv",
+      "policy_name": "grx_f54a_misss_r20260810T130945Z",
+      "reading": null,
+      "settled_ok": true,
+      "statement": "forbid (principal, action == AgentCore::Action::\"grxecho___echo\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n\")\nwhen guardrails {\n    BedrockGuardrails::ContentFilter([\"HATE\"], [context.input.doesNotExist])[\"HATE\"].confidenceScore.greaterThan(decimal(\"0.2\"))\n};",
+      "status": "ACTIVE",
+      "status_reasons": [],
+      "validation_mode_accepted_under": "FAIL_ON_ANY_FINDINGS"
+    },
+    "guardrail_valid_path": {
+      "arm": "guardrail_valid_path",
+      "attempts": [
+        {
+          "accepted": true,
+          "arm": "guardrail_valid_path",
+          "enforcement_mode": "ACTIVE",
+          "error_code": null,
+          "error_message": null,
+          "http_status": 202,
+          "policy_id": "grx_f54a_valid_r20260810T130945Z-7fvggwhwpj",
+          "request_id": "275eb0b5-ec59-4755-b67b-1030f409260a",
+          "validation_mode": "IGNORE_ALL_FINDINGS"
+        }
+      ],
+      "created": true,
+      "enforcement_mode": "ACTIVE",
+      "lint": [],
+      "outcome": "active",
+      "policy_id": "grx_f54a_valid_r20260810T130945Z-7fvggwhwpj",
+      "policy_name": "grx_f54a_valid_r20260810T130945Z",
+      "reading": null,
+      "settled_ok": true,
+      "statement": "forbid (principal, action == AgentCore::Action::\"grxecho___echo\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n\")\nwhen guardrails {\n    BedrockGuardrails::ContentFilter([\"HATE\"], [context.input.text])[\"HATE\"].confidenceScore.greaterThan(decimal(\"0.2\"))\n};",
+      "status": "ACTIVE",
+      "status_reasons": [],
+      "validation_mode_accepted_under": "IGNORE_ALL_FINDINGS"
+    }
+  },
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F5-4a",
+    "evidence": {
+      "observation": {
+        "arms": {
+          "cedar_missing_attr": {
+            "arm": "cedar_missing_attr",
+            "decision": "ALLOW",
+            "n_allowed": 20,
+            "n_denied": 0,
+            "n_reached_gateway": 20,
+            "n_usable": 20,
+            "unanimous": true
+          },
+          "control_no_probe": {
+            "arm": "control_no_probe",
+            "decision": "ALLOW",
+            "n_allowed": 20,
+            "n_denied": 0,
+            "n_reached_gateway": 20,
+            "n_usable": 20,
+            "unanimous": true
+          },
+          "guardrail_missing_logonly": {
+            "arm": "guardrail_missing_logonly",
+            "decision": "ALLOW",
+            "n_allowed": 20,
+            "n_denied": 0,
+            "n_reached_gateway": 20,
+            "n_usable": 20,
+            "unanimous": true
+          },
+          "guardrail_missing_path": {
+            "arm": "guardrail_missing_path",
+            "decision": "DENY",
+            "n_allowed": 0,
+            "n_denied": 20,
+            "n_reached_gateway": 20,
+            "n_usable": 20,
+            "unanimous": true
+          },
+          "guardrail_valid_path": {
+            "arm": "guardrail_valid_path",
+            "decision": "DENY",
+            "n_allowed": 0,
+            "n_denied": 20,
+            "n_reached_gateway": 20,
+            "n_usable": 20,
+            "unanimous": true
+          }
+        },
+        "deletions": {
+          "cedar_missing_attr": {
+            "attempts": 1,
+            "deleted": true,
+            "errors": []
+          },
+          "guardrail_missing_logonly": {
+            "attempts": 1,
+            "deleted": true,
+            "errors": []
+          },
+          "guardrail_missing_path": {
+            "attempts": 1,
+            "deleted": true,
+            "errors": []
+          },
+          "guardrail_valid_path": {
+            "attempts": 1,
+            "deleted": true,
+            "errors": []
+          }
+        },
+        "findings_per_unknown_arm": {
+          "cedar_missing_attr": "CREATE_FAILED",
+          "guardrail_missing_path": "FAIL_CLOSED"
+        },
+        "guards": {
+          "control_arm_was_allowed": true,
+          "engine_was_quiet_at_start": true,
+          "every_arm_reached_the_gateway": true,
+          "probe_was_deleted": true,
+          "valid_path_arm_was_denied": true
+        },
+        "guards_failed": [],
+        "mismatch_metrics": {
+          "absence_is_bounded_not_proven": "a metric absent at the bound may publish later; this is an upper bound on patience, not a proof of non-publication",
+          "bound_s": 900,
+          "per_metric": {
+            "LogOnlyEvalIncomplete": {
+              "after": {
+                "datapoints": [],
+                "dimension_combinations_listed": 0,
+                "metric": "LogOnlyEvalIncomplete",
+                "n_datapoints": 0,
+                "sum": 0.0,
+                "window": {
+                  "end": "2026-08-12 00:19:10.878695+00:00",
+                  "start": "2026-08-12 00:00:48.141719+00:00"
+                }
+              },
+              "before": {
+                "datapoints": [],
+                "dimension_combinations_listed": 0,
+                "metric": "LogOnlyEvalIncomplete",
+                "n_datapoints": 0,
+                "sum": 0.0,
+                "window": {
+                  "end": "2026-08-12 00:00:48.141719+00:00",
+                  "start": "2026-08-11 23:00:48.141719+00:00"
+                }
+              },
+              "verdict": "absent"
+            },
+            "MismatchErrors": {
+              "after": {
+                "datapoints": [
+                  {
+                    "dimensions": [
+                      {
+                        "Name": "OperationName",
+                        "Value": "AuthorizeAction"
+                      },
+                      {
+                        "Name": "PolicyEngine",
+                        "Value": "grx_pe_r20260810T130945Z-t6hqadrspf"
+                      },
+                      {
+                        "Name": "PolicyEnforcementMode",
+                        "Value": "ACTIVE"
+                      }
+                    ],
+                    "sample_count": 20.0,
+                    "sum": 20.0,
+                    "timestamp": "2026-08-12 07:02:00+07:00"
+                  },
+                  {
+                    "dimensions": [
+                      {
+                        "Name": "TargetResource",
+                        "Value": "grx-gw-r20260810t130945z-zpkfmpwo9n"
+                      },
+                      {
+                        "Name": "OperationName",
+                        "Value": "AuthorizeAction"
+                      },
+                      {
+                        "Name": "PolicyEngine",
+                        "Value": "grx_pe_r20260810T130945Z-t6hqadrspf"
+                      },
+                      {
+                        "Name": "PolicyEnforcementMode",
+                        "Value": "ACTIVE"
+                      }
+                    ],
+                    "sample_count": 20.0,
+                    "sum": 20.0,
+                    "timestamp": "2026-08-12 07:02:00+07:00"
+                  },
+                  {
+                    "dimensions": [
+                      {
+                        "Name": "OperationName",
+                        "Value": "AuthorizeAction"
+                      },
+                      {
+                        "Name": "PolicyEnforcementMode",
+                        "Value": "ACTIVE"
+                      }
+                    ],
+                    "sample_count": 20.0,
+                    "sum": 20.0,
+                    "timestamp": "2026-08-12 07:02:00+07:00"
+                  },
+                  {
+                    "dimensions": [
+                      {
+                        "Name": "TargetResource",
+                        "Value": "grx-gw-r20260810t130945z-zpkfmpwo9n"
+                      },
+                      {
+                        "Name": "OperationName",
+                        "Value": "AuthorizeAction"
+                      },
+                      {
+                        "Name": "PolicyEnforcementMode",
+                        "Value": "ACTIVE"
+                      }
+                    ],
+                    "sample_count": 20.0,
+                    "sum": 20.0,
+                    "timestamp": "2026-08-12 07:02:00+07:00"
+                  },
+                  {
+                    "dimensions": [
+                      {
+                        "Name": "Policy",
+                        "Value": "grx_f54a_misss_r20260810T130945Z-a_dsxxojwv"
+                      },
+                      {
+                        "Name": "TargetResource",
+                        "Value": "grx-gw-r20260810t130945z-zpkfmpwo9n"
+                      },
+                      {
+                        "Name": "OperationName",
+                        "Value": "AuthorizeAction"
+                      },
+                      {
+                        "Name": "PolicyEngine",
+                        "Value": "grx_pe_r20260810T130945Z-t6hqadrspf"
+                      },
+                      {
+                        "Name": "PolicyEnforcementMode",
+                        "Value": "ACTIVE"
+                      }
+                    ],
+                    "sample_count": 20.0,
+                    "sum": 20.0,
+                    "timestamp": "2026-08-12 07:02:00+07:00"
+                  },
+                  {
+                    "dimensions": [
+                      {
+                        "Name": "Policy",
+                        "Value": "grx_f54a_misss_r20260810T130945Z-a_dsxxojwv"
+                      },
+                      {
+                        "Name": "TargetResource",
+                        "Value": "grx-gw-r20260810t130945z-zpkfmpwo9n"
+                      },
+                      {
+                        "Name": "OperationName",
+                        "Value": "AuthorizeAction"
+                      },
+                      {
+                        "Name": "PolicyEnforcementMode",
+                        "Value": "ACTIVE"
+                      }
+                    ],
+                    "sample_count": 20.0,
+                    "sum": 20.0,
+                    "timestamp": "2026-08-12 07:02:00+07:00"
+                  }
+                ],
+                "dimension_combinations_listed": 20,
+                "metric": "MismatchErrors",
+                "n_datapoints": 6,
+                "sum": 120.0,
+                "window": {
+                  "end": "2026-08-12 00:03:39.552454+00:00",
+                  "start": "2026-08-12 00:00:48.141719+00:00"
+                }
+              },
+              "before": {
+                "datapoints": [],
+                "dimension_combinations_listed": 16,
+                "metric": "MismatchErrors",
+                "n_datapoints": 0,
+                "sum": 0.0,
+                "window": {
+                  "end": "2026-08-12 00:00:48.141719+00:00",
+                  "start": "2026-08-11 23:00:48.141719+00:00"
+                }
+              },
+              "verdict": "exercised"
+            },
+            "PolicyMismatch": {
+              "after": {
+                "datapoints": [
+                  {
+                    "dimensions": [
+                      {
+                        "Name": "Policy",
+                        "Value": "grx_f54a_misss_r20260810T130945Z-a_dsxxojwv"
+                      },
+                      {
+                        "Name": "TargetResource",
+                        "Value": "grx-gw-r20260810t130945z-zpkfmpwo9n"
+                      },
+                      {
+                        "Name": "OperationName",
+                        "Value": "AuthorizeAction"
+                      }
+                    ],
+                    "sample_count": 20.0,
+                    "sum": 20.0,
+                    "timestamp": "2026-08-12 07:02:00+07:00"
+                  },
+                  {
+                    "dimensions": [
+                      {
+                        "Name": "Policy",
+                        "Value": "grx_f54a_misss_r20260810T130945Z-a_dsxxojwv"
+                      },
+                      {
+                        "Name": "TargetResource",
+                        "Value": "grx-gw-r20260810t130945z-zpkfmpwo9n"
+                      },
+                      {
+                        "Name": "OperationName",
+                        "Value": "AuthorizeAction"
+                      },
+                      {
+                        "Name": "PolicyEngine",
+                        "Value": "grx_pe_r20260810T130945Z-t6hqadrspf"
+                      }
+                    ],
+                    "sample_count": 20.0,
+                    "sum": 20.0,
+                    "timestamp": "2026-08-12 07:02:00+07:00"
+                  }
+                ],
+                "dimension_combinations_listed": 8,
+                "metric": "PolicyMismatch",
+                "n_datapoints": 2,
+                "sum": 40.0,
+                "window": {
+                  "end": "2026-08-12 00:03:39.552454+00:00",
+                  "start": "2026-08-12 00:00:48.141719+00:00"
+                }
+              },
+              "before": {
+                "datapoints": [],
+                "dimension_combinations_listed": 6,
+                "metric": "PolicyMismatch",
+                "n_datapoints": 0,
+                "sum": 0.0,
+                "window": {
+                  "end": "2026-08-12 00:00:48.141719+00:00",
+                  "start": "2026-08-11 23:00:48.141719+00:00"
+                }
+              },
+              "verdict": "exercised"
+            },
+            "TotalMismatchedPolicies": {
+              "after": {
+                "datapoints": [
+                  {
+                    "dimensions": [
+                      {
+                        "Name": "TargetResource",
+                        "Value": "grx-gw-r20260810t130945z-zpkfmpwo9n"
+                      },
+                      {
+                        "Name": "OperationName",
+                        "Value": "AuthorizeAction"
+                      },
+                      {
+                        "Name": "PolicyEngine",
+                        "Value": "grx_pe_r20260810T130945Z-t6hqadrspf"
+                      }
+                    ],
+                    "sample_count": 36.0,
+                    "sum": 20.0,
+                    "timestamp": "2026-08-12 07:02:00+07:00"
+                  },
+                  {
+                    "dimensions": [
+                      {
+                        "Name": "TargetResource",
+                        "Value": "grx-gw-r20260810t130945z-zpkfmpwo9n"
+                      },
+                      {
+                        "Name": "OperationName",
+                        "Value": "AuthorizeAction"
+                      },
+                      {
+                        "Name": "PolicyEngine",
+                        "Value": "grx_pe_r20260810T130945Z-t6hqadrspf"
+                      }
+                    ],
+                    "sample_count": 40.0,
+                    "sum": 0.0,
+                    "timestamp": "2026-08-12 07:01:00+07:00"
+                  },
+                  {
+                    "dimensions": [
+                      {
+                        "Name": "TargetResource",
+                        "Value": "grx-gw-r20260810t130945z-zpkfmpwo9n"
+                      },
+                      {
+                        "Name": "OperationName",
+                        "Value": "AuthorizeAction"
+                      }
+                    ],
+                    "sample_count": 36.0,
+                    "sum": 20.0,
+                    "timestamp": "2026-08-12 07:02:00+07:00"
+                  },
+                  {
+                    "dimensions": [
+                      {
+                        "Name": "TargetResource",
+                        "Value": "grx-gw-r20260810t130945z-zpkfmpwo9n"
+                      },
+                      {
+                        "Name": "OperationName",
+                        "Value": "AuthorizeAction"
+                      }
+                    ],
+                    "sample_count": 40.0,
+                    "sum": 0.0,
+                    "timestamp": "2026-08-12 07:01:00+07:00"
+                  },
+                  {
+                    "dimensions": [
+                      {
+                        "Name": "OperationName",
+                        "Value": "AuthorizeAction"
+                      },
+                      {
+                        "Name": "PolicyEngine",
+                        "Value": "grx_pe_r20260810T130945Z-t6hqadrspf"
+                      }
+                    ],
+                    "sample_count": 36.0,
+                    "sum": 20.0,
+                    "timestamp": "2026-08-12 07:02:00+07:00"
+                  },
+                  {
+                    "dimensions": [
+                      {
+                        "Name": "OperationName",
+                        "Value": "AuthorizeAction"
+                      },
+                      {
+                        "Name": "PolicyEngine",
+                        "Value": "grx_pe_r20260810T130945Z-t6hqadrspf"
+                      }
+                    ],
+                    "sample_count": 40.0,
+                    "sum": 0.0,
+                    "timestamp": "2026-08-12 07:01:00+07:00"
+                  },
+                  {
+                    "dimensions": [
+                      {
+                        "Name": "OperationName",
+                        "Value": "AuthorizeAction"
+                      }
+                    ],
+                    "sample_count": 36.0,
+                    "sum": 20.0,
+                    "timestamp": "2026-08-12 07:02:00+07:00"
+                  },
+                  {
+                    "dimensions": [
+                      {
+                        "Name": "OperationName",
+                        "Value": "AuthorizeAction"
+                      }
+                    ],
+                    "sample_count": 40.0,
+                    "sum": 0.0,
+                    "timestamp": "2026-08-12 07:01:00+07:00"
+                  }
+                ],
+                "dimension_combinations_listed": 4,
+                "metric": "TotalMismatchedPolicies",
+                "n_datapoints": 8,
+                "sum": 80.0,
+                "window": {
+                  "end": "2026-08-12 00:03:39.552454+00:00",
+                  "start": "2026-08-12 00:00:48.141719+00:00"
+                }
+              },
+              "before": {
+                "datapoints": [],
+                "dimension_combinations_listed": 4,
+                "metric": "TotalMismatchedPolicies",
+                "n_datapoints": 0,
+                "sum": 0.0,
+                "window": {
+                  "end": "2026-08-12 00:00:48.141719+00:00",
+                  "start": "2026-08-11 23:00:48.141719+00:00"
+                }
+              },
+              "verdict": "exercised"
+            }
+          },
+          "poll_rounds": 16,
+          "still_absent_at_bound": [
+            "LogOnlyEvalIncomplete"
+          ],
+          "waited_s": 900.0
+        },
+        "probes": {
+          "cedar_missing_attr": {
+            "arm": "cedar_missing_attr",
+            "attempts": [
+              {
+                "accepted": true,
+                "arm": "cedar_missing_attr",
+                "enforcement_mode": "ACTIVE",
+                "error_code": null,
+                "error_message": null,
+                "http_status": 202,
+                "policy_id": "grx_f54a_cedars_r20260810T130945Z-0g05tl6iy3",
+                "request_id": "4e4ba954-6854-498c-9a1a-07fe1068d236",
+                "validation_mode": "FAIL_ON_ANY_FINDINGS"
+              }
+            ],
+            "created": true,
+            "enforcement_mode": "ACTIVE",
+            "lint": [],
+            "outcome": "create_failed",
+            "policy_id": "grx_f54a_cedars_r20260810T130945Z-0g05tl6iy3",
+            "policy_name": "grx_f54a_cedars_r20260810T130945Z",
+            "reading": "the policy was accepted by the API and then settled in a failed state, so it never enforced. Distinct from both a rejection and a fail-open.",
+            "settled_ok": false,
+            "statement": "forbid (principal, action == AgentCore::Action::\"grxecho___echo\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n\")\nwhen { context.input.doesNotExist == \"grx-value-that-is-never-compared\" };",
+            "status": "CREATE_FAILED",
+            "status_reasons": [
+              "for policy `grx_f54a_cedars_r20260810T130945Z_0g05tl6iy3_0`, attribute `input.doesNotExist` in context for AgentCore::Action::\"grxecho___echo\" not found\nfor policy `grx_f54a_cedars_r20260810T130945Z_0g05tl6iy3_0`, attribute `input.doesNotExist` in context for AgentCore::Action::\"grxecho___echo\" not found at line 2, column 8:\n1 forbid (principal, action == AgentCore::Action::\"grxecho___echo\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n\")\n2 when { context.input.doesNotExist == \"grx-value-that-is-never-compared\" };\ndid you mean `text`?\n"
+            ],
+            "validation_mode_accepted_under": "FAIL_ON_ANY_FINDINGS"
+          },
+          "control_no_probe": {
+            "arm": "control_no_probe",
+            "created": false,
+            "outcome": "no_policy_by_design",
+            "statement": null
+          },
+          "guardrail_missing_logonly": {
+            "arm": "guardrail_missing_logonly",
+            "attempts": [
+              {
+                "accepted": true,
+                "arm": "guardrail_missing_logonly",
+                "enforcement_mode": "LOG_ONLY",
+                "error_code": null,
+                "error_message": null,
+                "http_status": 202,
+                "policy_id": "grx_f54a_misslogs_r20260810T130945Z-hqv947bkzw",
+                "request_id": "8393a16c-30e4-41ad-aa76-7c11e63d7781",
+                "validation_mode": "FAIL_ON_ANY_FINDINGS"
+              }
+            ],
+            "created": true,
+            "enforcement_mode": "LOG_ONLY",
+            "lint": [],
+            "outcome": "active",
+            "policy_id": "grx_f54a_misslogs_r20260810T130945Z-hqv947bkzw",
+            "policy_name": "grx_f54a_misslogs_r20260810T130945Z",
+            "reading": null,
+            "settled_ok": true,
+            "statement": "forbid (principal, action == AgentCore::Action::\"grxecho___echo\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n\")\nwhen guardrails {\n    BedrockGuardrails::ContentFilter([\"HATE\"], [context.input.doesNotExist])[\"HATE\"].confidenceScore.greaterThan(decimal(\"0.2\"))\n};",
+            "status": "ACTIVE",
+            "status_reasons": [],
+            "validation_mode_accepted_under": "FAIL_ON_ANY_FINDINGS"
+          },
+          "guardrail_missing_path": {
+            "arm": "guardrail_missing_path",
+            "attempts": [
+              {
+                "accepted": true,
+                "arm": "guardrail_missing_path",
+                "enforcement_mode": "ACTIVE",
+                "error_code": null,
+                "error_message": null,
+                "http_status": 202,
+                "policy_id": "grx_f54a_misss_r20260810T130945Z-a_dsxxojwv",
+                "request_id": "28da1ca8-d433-42eb-ba94-6626190293a3",
+                "validation_mode": "FAIL_ON_ANY_FINDINGS"
+              }
+            ],
+            "created": true,
+            "enforcement_mode": "ACTIVE",
+            "lint": [],
+            "outcome": "active",
+            "policy_id": "grx_f54a_misss_r20260810T130945Z-a_dsxxojwv",
+            "policy_name": "grx_f54a_misss_r20260810T130945Z",
+            "reading": null,
+            "settled_ok": true,
+            "statement": "forbid (principal, action == AgentCore::Action::\"grxecho___echo\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n\")\nwhen guardrails {\n    BedrockGuardrails::ContentFilter([\"HATE\"], [context.input.doesNotExist])[\"HATE\"].confidenceScore.greaterThan(decimal(\"0.2\"))\n};",
+            "status": "ACTIVE",
+            "status_reasons": [],
+            "validation_mode_accepted_under": "FAIL_ON_ANY_FINDINGS"
+          },
+          "guardrail_valid_path": {
+            "arm": "guardrail_valid_path",
+            "attempts": [
+              {
+                "accepted": true,
+                "arm": "guardrail_valid_path",
+                "enforcement_mode": "ACTIVE",
+                "error_code": null,
+                "error_message": null,
+                "http_status": 202,
+                "policy_id": "grx_f54a_valid_r20260810T130945Z-7fvggwhwpj",
+                "request_id": "275eb0b5-ec59-4755-b67b-1030f409260a",
+                "validation_mode": "IGNORE_ALL_FINDINGS"
+              }
+            ],
+            "created": true,
+            "enforcement_mode": "ACTIVE",
+            "lint": [],
+            "outcome": "active",
+            "policy_id": "grx_f54a_valid_r20260810T130945Z-7fvggwhwpj",
+            "policy_name": "grx_f54a_valid_r20260810T130945Z",
+            "reading": null,
+            "settled_ok": true,
+            "statement": "forbid (principal, action == AgentCore::Action::\"grxecho___echo\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n\")\nwhen guardrails {\n    BedrockGuardrails::ContentFilter([\"HATE\"], [context.input.text])[\"HATE\"].confidenceScore.greaterThan(decimal(\"0.2\"))\n};",
+            "status": "ACTIVE",
+            "status_reasons": [],
+            "validation_mode_accepted_under": "IGNORE_ALL_FINDINGS"
+          }
+        },
+        "strict_validation_caught_it": {
+          "cedar_missing_attr": false,
+          "guardrail_missing_logonly": false,
+          "guardrail_missing_path": false
+        }
+      },
+      "why_no_verdict": "the pre-registration declares this outcome unknown; both answers are findings"
+    },
+    "family": "unassigned_by_seal",
+    "kind": "RECORDED",
+    "mutation_required": false,
+    "n_attempted": 100,
+    "n_met": true,
+    "n_usable": 100,
+    "notes": [],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [],
+    "verdict": "RECORDED"
+  },
+  "region": "us-east-1",
+  "run_id": "r20260810T130945Z",
+  "strict_validation_caught_it": {
+    "cedar_missing_attr": false,
+    "guardrail_missing_logonly": false,
+    "guardrail_missing_path": false
+  },
+  "verdict": "RECORDED",
+  "what_this_retires_in_f7_3": "F7-3 recorded MismatchErrors, TotalMismatchedPolicies, PolicyMismatch and LogOnlyEvalIncomplete as NOT_EXERCISED because reproducing them 'would also perturb the axis F4 measures'. F4 is complete, so the objection has expired. This reading is published here and does NOT rewrite F7-3's sealed verdict.",
+  "why_recorded": "the pre-registration declares this outcome unknown; fail-open, fail-closed and refused-at-creation are all findings and none is a confirmation or a refutation of the document"
+}

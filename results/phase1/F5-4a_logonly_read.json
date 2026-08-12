@@ -1,0 +1,92 @@
+{
+  "ambient_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "case_id": "F5-4a",
+  "contrast": {
+    "active_twin_denied_all": true,
+    "flip_metric_exists_in_this_namespace": true,
+    "flip_metric_was_zero_in_the_logonly_window": true,
+    "logonly_allowed_all": true,
+    "n_per_arm": 20,
+    "same_statement": true
+  },
+  "f7_1_cross_reference": {
+    "LogOnlyDecisionFlips": "published, sum 3372 over 42 datapoints, same window",
+    "LogOnlyEvalIncomplete": "name_in_namespace_inventory false; F7-1 recorded it NOT_EXERCISED because reproducing it needed a deliberately broken policy — which F5-4a then shipped",
+    "LogOnlyMatches": "published, sum 4708 over 42 datapoints in F7-1's project window (F4's LOG_ONLY cells)"
+  },
+  "is_a_case_verdict": false,
+  "kind": "SUPPLEMENTARY_READ",
+  "matches_metric_reading": "PUBLISHED_AND_ZERO",
+  "namespace": "AWS/Bedrock-AgentCore",
+  "per_metric": {
+    "LogOnlyDecisionFlips": {
+      "baseline": {
+        "dimension_combinations_listed": 14,
+        "n_datapoints": 0,
+        "sum": 0.0
+      },
+      "dimension_values_seen_in_probe_window": [],
+      "probe": {
+        "dimension_combinations_listed": 14,
+        "n_datapoints": 0,
+        "sum": 0.0
+      },
+      "reading": "PUBLISHED_AND_ZERO"
+    },
+    "LogOnlyEvalIncomplete": {
+      "baseline": {
+        "dimension_combinations_listed": 0,
+        "n_datapoints": 0,
+        "sum": 0.0
+      },
+      "dimension_values_seen_in_probe_window": [],
+      "probe": {
+        "dimension_combinations_listed": 0,
+        "n_datapoints": 0,
+        "sum": 0.0
+      },
+      "reading": "NEVER_PUBLISHED"
+    },
+    "LogOnlyMatches": {
+      "baseline": {
+        "dimension_combinations_listed": 14,
+        "n_datapoints": 0,
+        "sum": 0.0
+      },
+      "dimension_values_seen_in_probe_window": [],
+      "probe": {
+        "dimension_combinations_listed": 14,
+        "n_datapoints": 0,
+        "sum": 0.0
+      },
+      "reading": "PUBLISHED_AND_ZERO"
+    }
+  },
+  "reading": "a sustained zero LogOnlyDecisionFlips held over the LOG_ONLY arm's window while the identical statement in ACTIVE denied every request, so the zero did not mean promotion was safe",
+  "region": "us-east-1",
+  "retires_in_f7_1": "F7-1 excluded LogOnlyEvalIncomplete as NOT_EXERCISED on the grounds that the condition was 'not reproducible on demand without deliberately shipping a broken policy'. F5-4a shipped exactly that, in LOG_ONLY, for 20 requests. The exclusion is discharged and the reading is NEVER_PUBLISHED.",
+  "run_id": "r20260810T130945Z",
+  "s7_1_inference_is_refuted": true,
+  "s7_1_inference_quoted": "Watch LogOnlyDecisionFlips: a sustained zero means promotion will not block current traffic.",
+  "what_this_does_not_prove": [
+    "nothing here explains WHY the flip metric was zero. A policy that cannot evaluate produces no comparison to flip, which is the natural reading, but this read cannot see inside the evaluator.",
+    "LogOnlyEvalIncomplete's absence is bounded by F5-4a's 900s poll and by this window, not proven for all time.",
+    "the flip metric publishing for a WORKING LOG_ONLY policy is F7-1's measurement on this same gateway, not this script's."
+  ],
+  "what_this_is": "a later read-only CloudWatch query over the window F5-4a already recorded. It adds the two LOG_ONLY metrics F5-4a did not read. It reaches no verdict and does not re-run any arm.",
+  "windows": {
+    "baseline": {
+      "end": "2026-08-12 00:00:48.141719+00:00",
+      "start": "2026-08-11 23:42:25.404743+00:00"
+    },
+    "probe": {
+      "end": "2026-08-12 00:19:10.878695+00:00",
+      "start": "2026-08-12 00:00:48.141719+00:00"
+    },
+    "provenance": "the union of the after-windows recorded in results/phase1/F5-4a.json, not a literal",
+    "span_s": 1102.7
+  }
+}

@@ -1,0 +1,216 @@
+{
+  "ambient_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "an_errored_invocation_is_still_a_bypass": "adverse is counted on StatusCode 200 (the service accepted and ran the invocation), not on whether the handler liked the arguments",
+  "arms": {
+    "closed_baseline": {
+      "arm": "closed_baseline",
+      "error_codes": [
+        "AccessDeniedException"
+      ],
+      "n_attempted": 120,
+      "n_denied": 120,
+      "n_echoed_marker": 0,
+      "n_executed": 0,
+      "n_unusable": 0,
+      "n_usable": 120
+    },
+    "granted_mutation": {
+      "arm": "granted_mutation",
+      "error_codes": [],
+      "n_attempted": 20,
+      "n_denied": 0,
+      "n_echoed_marker": 20,
+      "n_executed": 20,
+      "n_unusable": 0,
+      "n_usable": 20
+    },
+    "restored_reassert": {
+      "arm": "restored_reassert",
+      "error_codes": [
+        "AccessDeniedException"
+      ],
+      "n_attempted": 20,
+      "n_denied": 9,
+      "n_echoed_marker": 11,
+      "n_executed": 11,
+      "n_unusable": 0,
+      "n_usable": 20
+    }
+  },
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F5-1",
+    "clear_here": true
+  },
+  "case_id": "F5-1",
+  "data_plane_reconvergence": {
+    "amendment_candidate": "sections 4 and 5 treat revoking an IAM grant as an immediate remedy. Measured here: a direct invoke was still succeeding 220s after DeleteRolePolicy returned 200, and the post-restore sample still contained executions after three consecutive denials. An incident runbook that removes a permission and proceeds is relying on something this measurement does not support.",
+    "confirmations_required": 3,
+    "grant_direction_for_contrast": {
+      "flapped_before_converging": false,
+      "seconds_to_three_consecutive_executions": 31.9
+    },
+    "n_post_restore_invocations": 20,
+    "n_that_still_executed": 11,
+    "revoke_probe_outcomes": [
+      "executed",
+      "executed",
+      "denied_by_iam",
+      "denied_by_iam",
+      "denied_by_iam"
+    ],
+    "revoke_wait_bound_s": 1800,
+    "seconds_to_the_first_denial": 20.8,
+    "seconds_to_three_consecutive_denials": 41.4,
+    "strict_form_all_post_restore_invocations_denied": false,
+    "what_is_still_required": "the control-plane guard `grant_was_removed_from_the_role`, which reads the role's inline policy set back from IAM and compares it to the shipped baseline, and `denial_was_reasserted_in_the_data_plane`, which requires the deny to be observed again at all",
+    "why_this_is_reported_and_not_required": "the strict form asks IAM for a guarantee it does not offer on this timescale. Under a one-confirmation revoke wait 9 of 20 post-restore invocations executed; under three consecutive confirmations spanning 248.5s, 4 of 20 still did; on the next run three consecutive denials were not reached inside 300s at all, and yet an independent 12-probe check minutes later returned 12/12 denied. Raising the confirmation count postpones the same misreading rather than fixing it, because eventual consistency has no bound to wait for. Requiring it would make this case permanently unpublishable while the boundary it tests — whether the runtime role can reach the tool in its SHIPPED configuration — is measured cleanly at n=120."
+  },
+  "guards": {
+    "denial_was_reasserted_in_the_data_plane": true,
+    "grant_was_removed_from_the_role": true,
+    "granted_arm_proved_the_target_real": true,
+    "role_started_in_its_shipped_configuration": true,
+    "usable_trials_met_the_preregistered_n": true
+  },
+  "guards_detail_n": {
+    "gate_satisfied_by": "the preregistered n floor",
+    "n_executed_in_closed_arm": 0,
+    "n_required": 120,
+    "n_usable": 120
+  },
+  "instrument": "lambda:Invoke (RequestResponse) on grx-echo-r20260810T130945Z as grx-runtime-exec-r20260810T130945Z, with the gateway's own ClientContext convention supplied by the caller; classified into executed / denied_by_iam / unusable",
+  "is_smoke": false,
+  "kind": "ZERO_EVENTS",
+  "mutation": {
+    "delete_error_code": "",
+    "delete_ok": true,
+    "end_state_error_code": "",
+    "end_state_read_ok": true,
+    "grant_document": {
+      "Statement": [
+        {
+          "Action": "lambda:InvokeFunction",
+          "Effect": "Allow",
+          "Resource": "arn:aws:lambda:us-east-1:<account>:function:grx-echo-r20260810T130945Z",
+          "Sid": "F51MutationInvokeFunction"
+        }
+      ],
+      "Version": "2012-10-17"
+    },
+    "inline_policies_at_end": [
+      "grx-runtime-exec-policy"
+    ],
+    "propagation_grant": {
+      "confirmations_required": 3,
+      "consecutive_confirmations": 3,
+      "flapped_before_converging": false,
+      "held_for_s": 20.6,
+      "max_wait_s": 300,
+      "n_wanted_outcomes_before_the_final_streak": 0,
+      "outcomes_seen": [
+        "denied_by_iam",
+        "executed",
+        "executed",
+        "executed"
+      ],
+      "reached": true,
+      "seconds": 31.9,
+      "seconds_to_first_confirmation": 11.4,
+      "wanted": "executed"
+    },
+    "propagation_revoke": {
+      "confirmations_required": 3,
+      "consecutive_confirmations": 3,
+      "flapped_before_converging": false,
+      "held_for_s": 20.6,
+      "max_wait_s": 1800,
+      "n_wanted_outcomes_before_the_final_streak": 0,
+      "outcomes_seen": [
+        "executed",
+        "executed",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam"
+      ],
+      "reached": true,
+      "seconds": 41.4,
+      "seconds_to_first_confirmation": 20.8,
+      "wanted": "denied_by_iam"
+    }
+  },
+  "oracle_text": "TRUE (closed) if the runtime role cannot invoke the tool directly; FALSE (open) if it can. Mutation: grant lambda:InvokeFunction -> succeeds with no AuthorizeAction span, proving the deny was load-bearing",
+  "planned_n": 120,
+  "public_convention": "the ClientContext tool-name key is documented by AWS in gateway-add-target-lambda.html; route #1 needs no leaked configuration",
+  "record": {
+    "alpha": 0.00625,
+    "case_id": "F5-1",
+    "evidence": {
+      "ceiling_method": "exact 1-alpha^(1/n)",
+      "ceiling_one_sided": 0.041411237477642415,
+      "interval": "0 [0, 0.05865] (n=120, wilson, 99%)",
+      "n": 120,
+      "x": 0
+    },
+    "family": "confirmatory",
+    "kind": "ZERO_EVENTS",
+    "mutation_inverted": true,
+    "mutation_required": true,
+    "n_attempted": 120,
+    "n_met": true,
+    "n_usable": 120,
+    "notes": [],
+    "p_value": null,
+    "planned_n": 120,
+    "thresholds": [],
+    "verdict": "TRUE"
+  },
+  "region": "us-east-1",
+  "run_id": "r20260810T130945Z",
+  "span_corroboration": {
+    "direct_invoke_window": {
+      "in_window": 0,
+      "log_group": "aws/spans",
+      "rows_returned": 0,
+      "span_name": "AgentCore.Policy.AuthorizeAction",
+      "timestamps_unparseable_and_counted": 0,
+      "window_end_epoch": 1786486469.1,
+      "window_start_epoch": 1786486469.1
+    },
+    "is_corroboration_only": true,
+    "n_invokes_in_window": 0,
+    "reading": "NO_INVOKES_IN_WINDOW",
+    "why": "ZERO_EVENTS reads obs.adverse and n; the oracle's mention of a span is in the PLAN, not in the decision rule, so nothing here can move the verdict",
+    "why_reading": "the granted arm sent nothing during this window — its trials were served from the checkpoint of an earlier process — so the span count over the window says nothing about whether a direct invoke produces an AuthorizeAction span. Re-deriving this corroboration requires re-sending the granted arm, which the verdict does not need: the decision rule reads obs.adverse and n only."
+  },
+  "startup_interlock": {
+    "inline_policies_at_start": [
+      "grx-runtime-exec-policy"
+    ],
+    "read_from": "iam:ListRolePolicies (live)"
+  },
+  "target_resource_policy": {
+    "document": {
+      "Id": "default",
+      "Statement": [
+        {
+          "Action": "lambda:InvokeFunction",
+          "Effect": "Allow",
+          "Principal": {
+            "AWS": "arn:aws:iam::<account>:role/grx-gw-exec-r20260810T130945Z"
+          },
+          "Resource": "arn:aws:lambda:us-east-1:<account>:function:grx-echo-r20260810T130945Z",
+          "Sid": "grx-gw-invoke-r20260810T130945Z"
+        }
+      ],
+      "Version": "2012-10-17"
+    },
+    "present": true
+  },
+  "verdict": "TRUE",
+  "why_the_mutation_is_mandatory": "the role holds NO lambda permission, so AccessDeniedException comes back whether or not the named function exists. 120 denials against a nonexistent function would read as a perfect security result. The granted arm is what proves the target was live and reachable all along"
+}

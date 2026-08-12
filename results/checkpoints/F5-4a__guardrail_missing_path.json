@@ -1,0 +1,510 @@
+{
+  "case_id": "F5-4a",
+  "cell": "guardrail_missing_path",
+  "done": {
+    "guardrail_missing_path__0fa179976809": {
+      "arm": "guardrail_missing_path",
+      "attempts": 1,
+      "decision": {
+        "authorize_exception": false,
+        "default_deny": false,
+        "duration_ms": 490.465,
+        "http_status": 200,
+        "is_error": null,
+        "jsonrpc_error": {
+          "code": -32002,
+          "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]"
+        },
+        "outcome": "policy_denied",
+        "request_id": "cd556db5-d74f-465d-adba-962f82fb3fb0",
+        "session_id": "5fd3a176-c334-4d68-810c-bcf818f0db99",
+        "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]",
+        "unclassified": false
+      },
+      "denied": true,
+      "http_status": 200,
+      "item_id": "0fa179976809",
+      "ran": false,
+      "retry_delay_s": 0.0
+    },
+    "guardrail_missing_path__15a468c75c62": {
+      "arm": "guardrail_missing_path",
+      "attempts": 1,
+      "decision": {
+        "authorize_exception": false,
+        "default_deny": false,
+        "duration_ms": 481.558,
+        "http_status": 200,
+        "is_error": null,
+        "jsonrpc_error": {
+          "code": -32002,
+          "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]"
+        },
+        "outcome": "policy_denied",
+        "request_id": "b5dad05a-d55c-430a-b0ba-a4db06ea6574",
+        "session_id": "5fd3a176-c334-4d68-810c-bcf818f0db99",
+        "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]",
+        "unclassified": false
+      },
+      "denied": true,
+      "http_status": 200,
+      "item_id": "15a468c75c62",
+      "ran": false,
+      "retry_delay_s": 0.0
+    },
+    "guardrail_missing_path__25373e2be68f": {
+      "arm": "guardrail_missing_path",
+      "attempts": 1,
+      "decision": {
+        "authorize_exception": false,
+        "default_deny": false,
+        "duration_ms": 492.258,
+        "http_status": 200,
+        "is_error": null,
+        "jsonrpc_error": {
+          "code": -32002,
+          "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]"
+        },
+        "outcome": "policy_denied",
+        "request_id": "98dca420-0d57-4c95-8df0-d87ffc6cbcb8",
+        "session_id": "5fd3a176-c334-4d68-810c-bcf818f0db99",
+        "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]",
+        "unclassified": false
+      },
+      "denied": true,
+      "http_status": 200,
+      "item_id": "25373e2be68f",
+      "ran": false,
+      "retry_delay_s": 0.0
+    },
+    "guardrail_missing_path__3f5ae85d4534": {
+      "arm": "guardrail_missing_path",
+      "attempts": 1,
+      "decision": {
+        "authorize_exception": false,
+        "default_deny": false,
+        "duration_ms": 456.146,
+        "http_status": 200,
+        "is_error": null,
+        "jsonrpc_error": {
+          "code": -32002,
+          "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]"
+        },
+        "outcome": "policy_denied",
+        "request_id": "e2940c3d-3d15-41ef-852c-6fb84a393032",
+        "session_id": "5fd3a176-c334-4d68-810c-bcf818f0db99",
+        "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]",
+        "unclassified": false
+      },
+      "denied": true,
+      "http_status": 200,
+      "item_id": "3f5ae85d4534",
+      "ran": false,
+      "retry_delay_s": 0.0
+    },
+    "guardrail_missing_path__441575986e16": {
+      "arm": "guardrail_missing_path",
+      "attempts": 1,
+      "decision": {
+        "authorize_exception": false,
+        "default_deny": false,
+        "duration_ms": 420.934,
+        "http_status": 200,
+        "is_error": null,
+        "jsonrpc_error": {
+          "code": -32002,
+          "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]"
+        },
+        "outcome": "policy_denied",
+        "request_id": "e23b2a9b-68e6-457c-9801-4718b887ed28",
+        "session_id": "5fd3a176-c334-4d68-810c-bcf818f0db99",
+        "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]",
+        "unclassified": false
+      },
+      "denied": true,
+      "http_status": 200,
+      "item_id": "441575986e16",
+      "ran": false,
+      "retry_delay_s": 0.0
+    },
+    "guardrail_missing_path__447d5e4977b6": {
+      "arm": "guardrail_missing_path",
+      "attempts": 1,
+      "decision": {
+        "authorize_exception": false,
+        "default_deny": false,
+        "duration_ms": 470.247,
+        "http_status": 200,
+        "is_error": null,
+        "jsonrpc_error": {
+          "code": -32002,
+          "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]"
+        },
+        "outcome": "policy_denied",
+        "request_id": "ed0257c1-ca2e-471e-b3d4-99bb4d214c51",
+        "session_id": "5fd3a176-c334-4d68-810c-bcf818f0db99",
+        "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]",
+        "unclassified": false
+      },
+      "denied": true,
+      "http_status": 200,
+      "item_id": "447d5e4977b6",
+      "ran": false,
+      "retry_delay_s": 0.0
+    },
+    "guardrail_missing_path__7d0452118e43": {
+      "arm": "guardrail_missing_path",
+      "attempts": 1,
+      "decision": {
+        "authorize_exception": false,
+        "default_deny": false,
+        "duration_ms": 476.769,
+        "http_status": 200,
+        "is_error": null,
+        "jsonrpc_error": {
+          "code": -32002,
+          "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]"
+        },
+        "outcome": "policy_denied",
+        "request_id": "7c801d17-1a7b-4cce-a51d-f398d161c93f",
+        "session_id": "5fd3a176-c334-4d68-810c-bcf818f0db99",
+        "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]",
+        "unclassified": false
+      },
+      "denied": true,
+      "http_status": 200,
+      "item_id": "7d0452118e43",
+      "ran": false,
+      "retry_delay_s": 0.0
+    },
+    "guardrail_missing_path__831c5a857c25": {
+      "arm": "guardrail_missing_path",
+      "attempts": 1,
+      "decision": {
+        "authorize_exception": false,
+        "default_deny": false,
+        "duration_ms": 511.116,
+        "http_status": 200,
+        "is_error": null,
+        "jsonrpc_error": {
+          "code": -32002,
+          "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]"
+        },
+        "outcome": "policy_denied",
+        "request_id": "51b859bf-25b9-4052-9102-6f6bc4313864",
+        "session_id": "5fd3a176-c334-4d68-810c-bcf818f0db99",
+        "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]",
+        "unclassified": false
+      },
+      "denied": true,
+      "http_status": 200,
+      "item_id": "831c5a857c25",
+      "ran": false,
+      "retry_delay_s": 0.0
+    },
+    "guardrail_missing_path__a29c52603cc2": {
+      "arm": "guardrail_missing_path",
+      "attempts": 1,
+      "decision": {
+        "authorize_exception": false,
+        "default_deny": false,
+        "duration_ms": 549.569,
+        "http_status": 200,
+        "is_error": null,
+        "jsonrpc_error": {
+          "code": -32002,
+          "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]"
+        },
+        "outcome": "policy_denied",
+        "request_id": "19fd287e-fd15-4723-9e90-03c5ce782129",
+        "session_id": "5fd3a176-c334-4d68-810c-bcf818f0db99",
+        "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]",
+        "unclassified": false
+      },
+      "denied": true,
+      "http_status": 200,
+      "item_id": "a29c52603cc2",
+      "ran": false,
+      "retry_delay_s": 0.0
+    },
+    "guardrail_missing_path__b0abe173e9ea": {
+      "arm": "guardrail_missing_path",
+      "attempts": 1,
+      "decision": {
+        "authorize_exception": false,
+        "default_deny": false,
+        "duration_ms": 490.314,
+        "http_status": 200,
+        "is_error": null,
+        "jsonrpc_error": {
+          "code": -32002,
+          "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]"
+        },
+        "outcome": "policy_denied",
+        "request_id": "c2d236a8-f46a-4416-89c1-5925b6b41e64",
+        "session_id": "5fd3a176-c334-4d68-810c-bcf818f0db99",
+        "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]",
+        "unclassified": false
+      },
+      "denied": true,
+      "http_status": 200,
+      "item_id": "b0abe173e9ea",
+      "ran": false,
+      "retry_delay_s": 0.0
+    },
+    "guardrail_missing_path__b1ab1c52746b": {
+      "arm": "guardrail_missing_path",
+      "attempts": 1,
+      "decision": {
+        "authorize_exception": false,
+        "default_deny": false,
+        "duration_ms": 507.892,
+        "http_status": 200,
+        "is_error": null,
+        "jsonrpc_error": {
+          "code": -32002,
+          "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]"
+        },
+        "outcome": "policy_denied",
+        "request_id": "c2bcaecc-1001-4a2f-be96-78762b7d451f",
+        "session_id": "5fd3a176-c334-4d68-810c-bcf818f0db99",
+        "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]",
+        "unclassified": false
+      },
+      "denied": true,
+      "http_status": 200,
+      "item_id": "b1ab1c52746b",
+      "ran": false,
+      "retry_delay_s": 0.0
+    },
+    "guardrail_missing_path__b48e3f561f21": {
+      "arm": "guardrail_missing_path",
+      "attempts": 1,
+      "decision": {
+        "authorize_exception": false,
+        "default_deny": false,
+        "duration_ms": 976.969,
+        "http_status": 200,
+        "is_error": null,
+        "jsonrpc_error": {
+          "code": -32002,
+          "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]"
+        },
+        "outcome": "policy_denied",
+        "request_id": "01f32da5-482f-4630-b8a2-b6913db95edd",
+        "session_id": "5fd3a176-c334-4d68-810c-bcf818f0db99",
+        "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]",
+        "unclassified": false
+      },
+      "denied": true,
+      "http_status": 200,
+      "item_id": "b48e3f561f21",
+      "ran": false,
+      "retry_delay_s": 0.0
+    },
+    "guardrail_missing_path__ba8453afcdd9": {
+      "arm": "guardrail_missing_path",
+      "attempts": 1,
+      "decision": {
+        "authorize_exception": false,
+        "default_deny": false,
+        "duration_ms": 483.275,
+        "http_status": 200,
+        "is_error": null,
+        "jsonrpc_error": {
+          "code": -32002,
+          "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]"
+        },
+        "outcome": "policy_denied",
+        "request_id": "bf9dc76f-bf7f-4f4f-948f-65459ca43d21",
+        "session_id": "5fd3a176-c334-4d68-810c-bcf818f0db99",
+        "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]",
+        "unclassified": false
+      },
+      "denied": true,
+      "http_status": 200,
+      "item_id": "ba8453afcdd9",
+      "ran": false,
+      "retry_delay_s": 0.0
+    },
+    "guardrail_missing_path__c65c44da64a6": {
+      "arm": "guardrail_missing_path",
+      "attempts": 1,
+      "decision": {
+        "authorize_exception": false,
+        "default_deny": false,
+        "duration_ms": 459.07,
+        "http_status": 200,
+        "is_error": null,
+        "jsonrpc_error": {
+          "code": -32002,
+          "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]"
+        },
+        "outcome": "policy_denied",
+        "request_id": "8496f092-0f1d-4184-b842-588c74a1433b",
+        "session_id": "5fd3a176-c334-4d68-810c-bcf818f0db99",
+        "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]",
+        "unclassified": false
+      },
+      "denied": true,
+      "http_status": 200,
+      "item_id": "c65c44da64a6",
+      "ran": false,
+      "retry_delay_s": 0.0
+    },
+    "guardrail_missing_path__ca8d091563c2": {
+      "arm": "guardrail_missing_path",
+      "attempts": 1,
+      "decision": {
+        "authorize_exception": false,
+        "default_deny": false,
+        "duration_ms": 487.731,
+        "http_status": 200,
+        "is_error": null,
+        "jsonrpc_error": {
+          "code": -32002,
+          "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]"
+        },
+        "outcome": "policy_denied",
+        "request_id": "ad657e16-bd41-44eb-a045-9a57d01e6296",
+        "session_id": "5fd3a176-c334-4d68-810c-bcf818f0db99",
+        "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]",
+        "unclassified": false
+      },
+      "denied": true,
+      "http_status": 200,
+      "item_id": "ca8d091563c2",
+      "ran": false,
+      "retry_delay_s": 0.0
+    },
+    "guardrail_missing_path__d042165ddce8": {
+      "arm": "guardrail_missing_path",
+      "attempts": 1,
+      "decision": {
+        "authorize_exception": false,
+        "default_deny": false,
+        "duration_ms": 380.717,
+        "http_status": 200,
+        "is_error": null,
+        "jsonrpc_error": {
+          "code": -32002,
+          "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]"
+        },
+        "outcome": "policy_denied",
+        "request_id": "dd59fa09-a454-49d6-a469-950951857adb",
+        "session_id": "5fd3a176-c334-4d68-810c-bcf818f0db99",
+        "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]",
+        "unclassified": false
+      },
+      "denied": true,
+      "http_status": 200,
+      "item_id": "d042165ddce8",
+      "ran": false,
+      "retry_delay_s": 0.0
+    },
+    "guardrail_missing_path__d51a5746aa95": {
+      "arm": "guardrail_missing_path",
+      "attempts": 1,
+      "decision": {
+        "authorize_exception": false,
+        "default_deny": false,
+        "duration_ms": 494.97,
+        "http_status": 200,
+        "is_error": null,
+        "jsonrpc_error": {
+          "code": -32002,
+          "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]"
+        },
+        "outcome": "policy_denied",
+        "request_id": "63577e95-3c9c-471b-b01e-5980062aabbc",
+        "session_id": "5fd3a176-c334-4d68-810c-bcf818f0db99",
+        "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]",
+        "unclassified": false
+      },
+      "denied": true,
+      "http_status": 200,
+      "item_id": "d51a5746aa95",
+      "ran": false,
+      "retry_delay_s": 0.0
+    },
+    "guardrail_missing_path__e4542f4e415c": {
+      "arm": "guardrail_missing_path",
+      "attempts": 1,
+      "decision": {
+        "authorize_exception": false,
+        "default_deny": false,
+        "duration_ms": 6020.215,
+        "http_status": 200,
+        "is_error": null,
+        "jsonrpc_error": {
+          "code": -32002,
+          "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]"
+        },
+        "outcome": "policy_denied",
+        "request_id": "b822f64d-8e14-4e21-8d1c-ac1900fea277",
+        "session_id": "5fd3a176-c334-4d68-810c-bcf818f0db99",
+        "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]",
+        "unclassified": false
+      },
+      "denied": true,
+      "http_status": 200,
+      "item_id": "e4542f4e415c",
+      "ran": false,
+      "retry_delay_s": 0.0
+    },
+    "guardrail_missing_path__ecad8f288e74": {
+      "arm": "guardrail_missing_path",
+      "attempts": 1,
+      "decision": {
+        "authorize_exception": false,
+        "default_deny": false,
+        "duration_ms": 9460.646,
+        "http_status": 200,
+        "is_error": null,
+        "jsonrpc_error": {
+          "code": -32002,
+          "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]"
+        },
+        "outcome": "policy_denied",
+        "request_id": "6ede6ad7-974a-4057-a6d5-d22f98f286e0",
+        "session_id": "5fd3a176-c334-4d68-810c-bcf818f0db99",
+        "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]",
+        "unclassified": false
+      },
+      "denied": true,
+      "http_status": 200,
+      "item_id": "ecad8f288e74",
+      "ran": false,
+      "retry_delay_s": 0.0
+    },
+    "guardrail_missing_path__fd2dd12645f8": {
+      "arm": "guardrail_missing_path",
+      "attempts": 1,
+      "decision": {
+        "authorize_exception": false,
+        "default_deny": false,
+        "duration_ms": 461.238,
+        "http_status": 200,
+        "is_error": null,
+        "jsonrpc_error": {
+          "code": -32002,
+          "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]"
+        },
+        "outcome": "policy_denied",
+        "request_id": "36b1e92b-2626-4d77-982c-973516cbe479",
+        "session_id": "5fd3a176-c334-4d68-810c-bcf818f0db99",
+        "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied: request missing field(s) required for guardrail evaluation: context.input.doesNotExist.]",
+        "unclassified": false
+      },
+      "denied": true,
+      "http_status": 200,
+      "item_id": "fd2dd12645f8",
+      "ran": false,
+      "retry_delay_s": 0.0
+    }
+  },
+  "failed": {},
+  "meta": {},
+  "n_done": 20,
+  "n_failed": 0
+}

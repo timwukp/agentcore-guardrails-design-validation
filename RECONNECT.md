@@ -2,7 +2,79 @@
 
 Read this first if the session dropped. It is the shortest path back to the live state.
 
-## ⇢ RESUME HERE (2026-08-11, evening): F4 smoke is GREEN (rc=0); next is the full n=120 run
+## ⇢ RESUME HERE (2026-08-11, late): F4 full + F2-1 both landed; **F7 is now the critical path**
+
+44 of 93 sealed cases have a `results/phase1/<case>.json` verdict. Two more (F0-1, F5-7a) are
+measured but recorded in their own shape under `results/` rather than as phase-1 records.
+
+**Do F7 next, not F2-2.** The plan had this backwards and a probe settled it — see below.
+
+- **F4 full run: DONE at n=120/cell.** F4-1..F4-5 TRUE, F4-6 FALSE (the pre-registered
+  refutation). Every cell 120/120 usable, 0 failed, 0 unclassified.
+- **F2-1: DONE and TRUE.** `f2_determinism/02_policy_determinism.py`, 3 arms under ONE
+  configuration (engine ENFORCE / baseline LOG_ONLY / narrow permit ACTIVE):
+  `boundary_below` amount=499.9 → 300/300 **allowed**; `boundary_at` amount=500.0 → 300/300
+  **policy_denied**; `far_outside` amount=4242.0 → 30/30 denied. **630/630 usable, 0 flips, 0
+  failures**, one-sided flip-rate ceiling **0.00474**. All four subject guards passed, so the
+  constancy is not the constancy of an inert policy. Testbed restored, 15/15 blocking checks
+  PASS.
+  - New config-surface fact from its unscored probe: **four-fractional-digit request literals DO
+    bind** (`amount=499.9999` → allowed). The scored arms use one digit anyway, because that was
+    unmeasured when the arms were chosen and a wrong guess would have cost the run.
+  - Read alongside F2-5 (FALSE, guardrail ceiling 0.00994), **the document's determinism
+    contrast in §3.1 did not appear**: neither surface produced any observable variation. That is
+    v1.3 material and needs its own finding doc before the amendment pass.
+- **DEV-P4-01 registered — no numeric guardrail score is published anywhere.**
+  `f7_observability/00_span_shape_probe.py` (read-only, scores nothing) read 60 real spans for
+  our gateway from `aws/spans`: **58 distinct attribute paths, zero matches for
+  `score`/`confidence`/`threshold`/`guardrail`**, and the plan's predicted
+  `aws.agentcore.policy.guardrails.<category>.scores` is **ABSENT**. Full inventory:
+  `results/span_shape_probe.json`.
+  - **Consequence for ordering: F7 is upstream of F2-2/F2-3/F2-4 and of F3-10.** All four were
+    scheduled before F7 on the assumption the score came from the response; it comes from
+    telemetry or nowhere, and F7-5 is what makes any span-derived reading non-vacuous.
+  - F2-2/F2-3/F2-4 move to a **τ-sweep** instrument (mixed decisions at fixed τ over a fixed
+    input prove ≥2 distinct latent scores without observing one — conservative, can only
+    under-report). F2-3's strata become τ-bands, which can only *hide* a mixed stratum, so a
+    TRUE there must be reported as weakened **in the verdict**, not a footnote.
+  - **F1-18 is not rescued and must not be.** It claims a six-value numeric lattice no surface
+    exposes → v1.3 amendment material, not a manufactured verdict.
+  - What the spans DO carry, per request: `aws.request.id`,
+    `aws.agentcore.policy.authorization_decision`, `authorization_reason`,
+    `determining_policies[]`, `log_only_matched_policies[]`,
+    `log_only_decision_flipping_policies[]`, `gateway.policy.mode`, `jsonrpc.error.code`,
+    `tool.name`, and **`latency_ms` / `overhead_latency_ms` / `execute_tool_latency_ms`**.
+  - F3-10's FALSE direction is now indicated (decision is joinable per request; the score §7.1
+    needs has no left-hand side) but is **not scored** — it gets its own script, including the
+    metrics-only arm its sealed method requires.
+  - F6 gains a better instrument: server-side per-request latency attributes, which exclude the
+    client's own network variance from the policy-overhead number. Register that separately when
+    F6 is written.
+  - **F7-4: `AgentCore.Policy.AuthorizeAction` spans DO exist** — 246 of them over 48 h, paired
+    1:1 with `AgentCore.Gateway.InvokeTool`, and **27 were already inside the probe's original
+    60-row sample**. An earlier draft of this file claimed the opposite. That claim was written
+    in prose from the *one* sample span the probe serialises into `sample_span_leaves` (an
+    InvokeTool row); the probe tallies leaf **paths** and never tallied span `name` at all, so
+    nothing checked it — `feedback_prose_is_not_verified` exactly. Re-measured at three
+    window/limit settings (120 min × 60, 120 min × 500, 48 h × 500): AuthorizeAction present in
+    all three. **The document is right here and F7-4 has no amendment material.** The full span
+    inventory is 5 operations: `AgentCore.Gateway.InvokeTool`,
+    `AgentCore.Gateway.InvokeTool.grxecho___echo`, `AgentCore.Policy.AuthorizeAction`,
+    `AgentCore.Gateway.Initialize`, `AgentCore.Gateway.NotificationsInitialized`.
+  - **The request-id join is real and measured: 242 of 250 span `attributes.aws.request.id`
+    values (96.8%) match a client-observed `x-amzn-requestid` recorded in an F4/F2-1 checkpoint.**
+    One request id carries two spans (InvokeTool + AuthorizeAction), which is the join F7-4's
+    sealed method asks for and the left-hand side F3-10 needs. The 8 non-joining ids are the
+    `Initialize` / `NotificationsInitialized` spans, whose request ids we never recorded as
+    trials. This also gives F7-5 a **specific** absent-arm marker: not "no spans in a window"
+    but "no span carries any of *these* request ids".
+- Gates re-run after all of the above: `verify_prereg.py` **rc=0, seal `a2136a9d…` intact, 189
+  assertions**; `lib/tests/` **672 passed, 2 skipped** (this includes the static
+  module-name-collision test that both new by-path loaders had to satisfy).
+- Stale checkpoints: the F2-1 n=3 smoke is quarantined under
+  `results/checkpoints/_stale_20260811_f2smoke/`. Never resume from a quarantine directory.
+
+## HISTORICAL (2026-08-11, evening): F4 smoke is GREEN (rc=0); next is the full n=120 run
 
 The section below this one is HISTORICAL — F4 was finished later the same day. Current state:
 

@@ -1,0 +1,100 @@
+{
+  "case_id": "F2-1",
+  "cell": "far_outside",
+  "done": {
+    "t0001": {
+      "amount": 4242.0,
+      "arm": "far_outside",
+      "attempts": 1,
+      "authorize_exception": false,
+      "decision": "policy_denied",
+      "default_deny": true,
+      "duration_ms": 459.706,
+      "expect": "denied",
+      "hit": false,
+      "http_status": 200,
+      "is_error": null,
+      "jsonrpc_error": {
+        "code": -32002,
+        "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (denied by default).]"
+      },
+      "outcome": "policy_denied",
+      "request_id": "27e99149-395a-452c-aff2-9e93a4965198",
+      "retry_delay_s": 0.0,
+      "session_id": "1daf60bf-88bb-45f2-9534-bc34b68c41b2",
+      "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (denied by default).]",
+      "text_archived_complete": true,
+      "text_len": 126,
+      "trial_id": "t0001",
+      "trial_index": 1,
+      "unclassified": false
+    },
+    "t0002": {
+      "amount": 4242.0,
+      "arm": "far_outside",
+      "attempts": 1,
+      "authorize_exception": false,
+      "decision": "policy_denied",
+      "default_deny": true,
+      "duration_ms": 488.51,
+      "expect": "denied",
+      "hit": false,
+      "http_status": 200,
+      "is_error": null,
+      "jsonrpc_error": {
+        "code": -32002,
+        "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (denied by default).]"
+      },
+      "outcome": "policy_denied",
+      "request_id": "1d003945-d5a3-4d8b-a6ca-2df720c00b2a",
+      "retry_delay_s": 0.0,
+      "session_id": "1daf60bf-88bb-45f2-9534-bc34b68c41b2",
+      "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (denied by default).]",
+      "text_archived_complete": true,
+      "text_len": 126,
+      "trial_id": "t0002",
+      "trial_index": 2,
+      "unclassified": false
+    },
+    "t0003": {
+      "amount": 4242.0,
+      "arm": "far_outside",
+      "attempts": 1,
+      "authorize_exception": false,
+      "decision": "policy_denied",
+      "default_deny": true,
+      "duration_ms": 478.147,
+      "expect": "denied",
+      "hit": false,
+      "http_status": 200,
+      "is_error": null,
+      "jsonrpc_error": {
+        "code": -32002,
+        "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (denied by default).]"
+      },
+      "outcome": "policy_denied",
+      "request_id": "90537c4d-6a49-4aee-bc16-3f50d397ed59",
+      "retry_delay_s": 0.0,
+      "session_id": "1daf60bf-88bb-45f2-9534-bc34b68c41b2",
+      "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (denied by default).]",
+      "text_archived_complete": true,
+      "text_len": 126,
+      "trial_id": "t0003",
+      "trial_index": 3,
+      "unclassified": false
+    }
+  },
+  "failed": {},
+  "meta": {
+    "corpus": "synthetic:echo(text,amount=4242.0)",
+    "guardrail_version": "none:pure-cedar-no-guardrail-term",
+    "is_smoke": true,
+    "operation": "InvokeGateway",
+    "output_scope": "tool_result",
+    "qualifiers": "engine=ENFORCE;baseline=LOG_ONLY;narrow=ACTIVE;amount=4242.0",
+    "region": "us-east-1",
+    "source": "gateway_tools_call"
+  },
+  "n_done": 3,
+  "n_failed": 0
+}

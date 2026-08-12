@@ -1,0 +1,1065 @@
+{
+  "ambient_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F7-7",
+    "clear_here": true
+  },
+  "case_id": "F7-7",
+  "cell": "publish_lag_cell",
+  "coarser_check": {
+    "distinct_gaps_s": [
+      60.0,
+      180.0,
+      240.0,
+      360.0,
+      600.0,
+      720.0,
+      780.0,
+      840.0,
+      900.0
+    ],
+    "grid_appears_coarser_than_60s": false,
+    "min_positive_gap_s": 60.0,
+    "reading": "the smallest positive gap between consecutive datapoint timestamps is 60.0s, consistent with the documented 60s batching interval",
+    "why_measured_separately": "F7-7's oracle text says 'FALSE if finer OR coarser', but the sealed decision code checks abs(remainder(t, 60)) < 1e-6, which cannot detect coarser: 300s timestamps are also multiples of 60 and would publish TRUE. lib/oracle.py is a sealed bound artifact and is NOT edited, so the coarser direction is measured here and reported. The verdict remains what the sealed code says"
+  },
+  "gateway_id": "grx-gw-r20260810t130945z-zpkfmpwo9n",
+  "guard_detail": {
+    "all_trials_became_visible": {
+      "n_timed_out": 0,
+      "per_trial_timeout_s": 600.0,
+      "why": "a censored lag is not a large lag — a timeout means the distribution's upper tail is unmeasured, and p90 would be computed on the observed subset while claiming to describe all of them"
+    },
+    "calls_reached_gateway": {
+      "n_real": 30,
+      "n_sent": 30,
+      "outcomes": [
+        "allowed"
+      ]
+    },
+    "datapoint_is_ours": {
+      "dimensions": [
+        {
+          "Name": "Resource",
+          "Value": "arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n"
+        },
+        {
+          "Name": "Operation",
+          "Value": "InvokeGateway"
+        },
+        {
+          "Name": "Method",
+          "Value": "tools/call"
+        },
+        {
+          "Name": "Protocol",
+          "Value": "MCP"
+        },
+        {
+          "Name": "Name",
+          "Value": "grxecho___echo"
+        }
+      ],
+      "why": "six pre-existing gateways publish into this namespace; an unattributed read biases the lag downwards"
+    },
+    "distinct_minute_buckets": {
+      "n_distinct": 30,
+      "n_excluded_prepopulated": 0,
+      "n_usable": 30,
+      "why": "two trials in one bucket share a datapoint, so the second's lag would be measured against visibility the first had already produced"
+    },
+    "n_met": {
+      "is_smoke": false,
+      "n_usable": 30,
+      "planned": 30
+    },
+    "quant_period_is_subminute": {
+      "error": "",
+      "honoured": true,
+      "period_requested_s": 1,
+      "why": "a 60s grid observed through a 60s query is an artifact of the query, not a property of the service"
+    }
+  },
+  "guard_names": [
+    "calls_reached_gateway",
+    "distinct_minute_buckets",
+    "datapoint_is_ours",
+    "all_trials_became_visible",
+    "quant_period_is_subminute",
+    "n_met"
+  ],
+  "guards": {
+    "all_trials_became_visible": true,
+    "calls_reached_gateway": true,
+    "datapoint_is_ours": true,
+    "distinct_minute_buckets": true,
+    "n_met": true,
+    "quant_period_is_subminute": true
+  },
+  "instrument": {
+    "attribution": "the polled query is dimensioned to our gateway; a namespace-wide read would stop the clock on another gateway's datapoint and bias the lag downwards",
+    "lag": "serial trials; per trial, send one tool call at t_send and poll GetMetricData every 10s until a datapoint exists at the 60s bucket containing t_send. lag = t_visible - t_send",
+    "quantization": "a separate read at Period=1s, because a 60s grid observed through a 60s query is an artifact of the query",
+    "why_serial": "CloudWatch aggregates per period, so concurrent trials in one bucket share a datapoint and 29 of 30 lags would be near zero"
+  },
+  "is_smoke": false,
+  "kind": "QUANTIZATION",
+  "lag_summary": {
+    "all_s": [
+      11.351,
+      11.354,
+      11.37,
+      11.372,
+      11.38,
+      11.391,
+      11.395,
+      11.395,
+      11.396,
+      11.398,
+      11.403,
+      11.413,
+      11.413,
+      11.421,
+      11.421,
+      11.431,
+      11.437,
+      11.441,
+      11.444,
+      11.446,
+      11.447,
+      11.448,
+      11.449,
+      11.451,
+      11.461,
+      11.471,
+      11.485,
+      11.488,
+      11.507,
+      11.513
+    ],
+    "max_s": 11.513,
+    "min_s": 11.351,
+    "n": 30,
+    "note": "p90 is the order statistic at ceil(0.90*n) on the sorted lags — the sealed cell's own instrument, computed inline rather than through lib/stats.quantile, which is a type-7 INTERPOLATED estimator and would return a value between two observations. Both are reported so the difference is visible instead of being an unstated convention; the verdict uses the order statistic. No p99 is reported because the sealed cell states n=30 does not support one",
+    "p50_s": 11.426,
+    "p90_s": 11.485,
+    "p90_s_type7_interpolated": 11.485
+  },
+  "metric_choice": {
+    "candidates_considered": [
+      "Invocations",
+      "Latency",
+      "Duration",
+      "TargetExecutionTime"
+    ],
+    "combinations": {
+      "candidates": [
+        [
+          {
+            "Name": "Resource",
+            "Value": "arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n"
+          },
+          {
+            "Name": "Operation",
+            "Value": "InvokeGateway"
+          },
+          {
+            "Name": "Method",
+            "Value": "tools/call"
+          },
+          {
+            "Name": "Protocol",
+            "Value": "MCP"
+          },
+          {
+            "Name": "Name",
+            "Value": "echo"
+          }
+        ],
+        [
+          {
+            "Name": "Resource",
+            "Value": "arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n"
+          },
+          {
+            "Name": "Operation",
+            "Value": "InvokeGateway"
+          },
+          {
+            "Name": "Method",
+            "Value": "tools/call"
+          },
+          {
+            "Name": "Protocol",
+            "Value": "MCP"
+          },
+          {
+            "Name": "Name",
+            "Value": "grxecho___echo"
+          }
+        ],
+        [
+          {
+            "Name": "Resource",
+            "Value": "arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n"
+          },
+          {
+            "Name": "Operation",
+            "Value": "InvokeGateway"
+          },
+          {
+            "Name": "Method",
+            "Value": "tools/list"
+          },
+          {
+            "Name": "Protocol",
+            "Value": "MCP"
+          }
+        ],
+        [
+          {
+            "Name": "Resource",
+            "Value": "arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n"
+          },
+          {
+            "Name": "Operation",
+            "Value": "InvokeGateway"
+          },
+          {
+            "Name": "Method",
+            "Value": "notifications/initialized"
+          },
+          {
+            "Name": "Protocol",
+            "Value": "MCP"
+          }
+        ],
+        [
+          {
+            "Name": "Resource",
+            "Value": "arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n"
+          },
+          {
+            "Name": "Operation",
+            "Value": "InvokeGateway"
+          },
+          {
+            "Name": "Method",
+            "Value": "initialize"
+          },
+          {
+            "Name": "Protocol",
+            "Value": "MCP"
+          }
+        ],
+        [
+          {
+            "Name": "Resource",
+            "Value": "arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n"
+          },
+          {
+            "Name": "Operation",
+            "Value": "InvokeGateway"
+          },
+          {
+            "Name": "Method",
+            "Value": "prompts/list"
+          },
+          {
+            "Name": "Protocol",
+            "Value": "MCP"
+          }
+        ],
+        [
+          {
+            "Name": "Resource",
+            "Value": "arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n"
+          },
+          {
+            "Name": "Operation",
+            "Value": "InvokeGateway"
+          },
+          {
+            "Name": "Method",
+            "Value": "tools/call"
+          },
+          {
+            "Name": "Protocol",
+            "Value": "MCP"
+          }
+        ],
+        [
+          {
+            "Name": "Resource",
+            "Value": "arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n"
+          },
+          {
+            "Name": "Operation",
+            "Value": "InvokeGateway"
+          },
+          {
+            "Name": "Protocol",
+            "Value": "MCP"
+          }
+        ],
+        [
+          {
+            "Name": "TargetResource",
+            "Value": "grx-gw-r20260810t130945z-zpkfmpwo9n"
+          },
+          {
+            "Name": "OperationName",
+            "Value": "PartiallyAuthorizeActions"
+          }
+        ],
+        [
+          {
+            "Name": "TargetResource",
+            "Value": "grx-gw-r20260810t130945z-zpkfmpwo9n"
+          },
+          {
+            "Name": "OperationName",
+            "Value": "AuthorizeAction"
+          }
+        ]
+      ],
+      "chosen": [
+        {
+          "Name": "Resource",
+          "Value": "arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n"
+        },
+        {
+          "Name": "Operation",
+          "Value": "InvokeGateway"
+        },
+        {
+          "Name": "Method",
+          "Value": "tools/call"
+        },
+        {
+          "Name": "Protocol",
+          "Value": "MCP"
+        },
+        {
+          "Name": "Name",
+          "Value": "grxecho___echo"
+        }
+      ],
+      "metric": "Invocations",
+      "n_series_in_namespace": 535,
+      "preflight": [
+        {
+          "dimensions": [
+            {
+              "Name": "Resource",
+              "Value": "arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n"
+            },
+            {
+              "Name": "Operation",
+              "Value": "InvokeGateway"
+            },
+            {
+              "Name": "Method",
+              "Value": "tools/call"
+            },
+            {
+              "Name": "Protocol",
+              "Value": "MCP"
+            },
+            {
+              "Name": "Name",
+              "Value": "echo"
+            }
+          ],
+          "hours_looked_back": 6,
+          "latest": "",
+          "n_buckets": 0,
+          "ok": false
+        },
+        {
+          "dimensions": [
+            {
+              "Name": "Resource",
+              "Value": "arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n"
+            },
+            {
+              "Name": "Operation",
+              "Value": "InvokeGateway"
+            },
+            {
+              "Name": "Method",
+              "Value": "tools/call"
+            },
+            {
+              "Name": "Protocol",
+              "Value": "MCP"
+            },
+            {
+              "Name": "Name",
+              "Value": "grxecho___echo"
+            }
+          ],
+          "hours_looked_back": 6,
+          "latest": "2026-08-11 23:21:00+07:00",
+          "n_buckets": 37,
+          "ok": true
+        }
+      ],
+      "problems": [],
+      "why": "the most specific published series of Invocations naming this gateway that also has datapoints in the last 6h (37 buckets, latest 2026-08-11 23:21:00+07:00)"
+    },
+    "dimension_names_available": [
+      "AggregateOperation",
+      "EndpointQualifier",
+      "HarnessId",
+      "Method",
+      "Name",
+      "Operation",
+      "OperationName",
+      "Protocol",
+      "Resource",
+      "StrategyId",
+      "StrategyType",
+      "TargetResource",
+      "TargetType",
+      "ToolName"
+    ],
+    "dimension_names_carrying_our_gateway": [
+      "Resource",
+      "TargetResource"
+    ],
+    "dimensions": [
+      {
+        "Name": "Resource",
+        "Value": "arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n"
+      },
+      {
+        "Name": "Operation",
+        "Value": "InvokeGateway"
+      },
+      {
+        "Name": "Method",
+        "Value": "tools/call"
+      },
+      {
+        "Name": "Protocol",
+        "Value": "MCP"
+      },
+      {
+        "Name": "Name",
+        "Value": "grxecho___echo"
+      }
+    ],
+    "metric": "Invocations",
+    "precondition_verdicts": {
+      "F7-1": "FALSE",
+      "F7-2": "TRUE"
+    },
+    "problems": [],
+    "published_per_metric": {
+      "AllowDecisions": true,
+      "ConfidenceScore": false,
+      "ConfidenceThreshold": false,
+      "DenyDecisions": true,
+      "DeterminingPolicies": true,
+      "Duration": true,
+      "GuardrailLatency": true,
+      "Invocations": true,
+      "Latency": true,
+      "LogOnlyDecisionFlips": true,
+      "LogOnlyEvalIncomplete": false,
+      "LogOnlyMatches": true,
+      "MismatchErrors": true,
+      "NoDeterminingPolicies": true,
+      "PolicyMismatch": true,
+      "SuppressOutputs": false,
+      "SystemErrors": true,
+      "TargetExecutionTime": true,
+      "TemporalLatency": false,
+      "Throttles": true,
+      "TotalMismatchedPolicies": true,
+      "UserErrors": true
+    },
+    "source": "F7-2/F7-1 recorded inventory",
+    "why": "Invocations is the first entry of the pre-committed preference order that F7-2/F7-1 measured as published; the order was fixed before any lag was observed"
+  },
+  "n_requested": 30,
+  "namespace": "AWS/Bedrock-AgentCore",
+  "no_p99": "the sealed publish_lag_cell rule states n=30 supports p50 and p90 and does NOT support a p99 lag claim. None is computed",
+  "oracle_text": "TRUE if datapoint timestamps quantize to 60s; FALSE if finer or coarser",
+  "planned_n": 30,
+  "planned_n_cell": 30,
+  "quantization_read": {
+    "distinct_gaps_s": [
+      60.0,
+      180.0,
+      240.0,
+      360.0,
+      600.0,
+      720.0,
+      780.0,
+      840.0,
+      900.0
+    ],
+    "end": "2026-08-11T16:51:17+00:00",
+    "error": "",
+    "gaps_s": [
+      180.0,
+      360.0,
+      600.0,
+      240.0,
+      360.0,
+      240.0,
+      840.0,
+      900.0,
+      720.0,
+      780.0,
+      600.0,
+      240.0,
+      60.0,
+      60.0,
+      60.0,
+      60.0,
+      60.0,
+      60.0,
+      60.0,
+      60.0,
+      60.0,
+      60.0,
+      60.0,
+      60.0,
+      60.0,
+      60.0,
+      60.0,
+      60.0,
+      60.0,
+      60.0,
+      60.0,
+      60.0,
+      60.0,
+      60.0,
+      60.0,
+      60.0,
+      60.0,
+      60.0,
+      60.0,
+      60.0,
+      60.0,
+      60.0,
+      60.0,
+      60.0
+    ],
+    "min_positive_gap_s": 60.0,
+    "n_datapoints": 45,
+    "offsets_from_60s_grid_s": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "period_honoured": true,
+    "period_requested_s": 1,
+    "seconds_field_all_zero": true,
+    "start": "2026-08-11T14:01:17+00:00",
+    "timestamps_s": [
+      1786459080.0,
+      1786459260.0,
+      1786459620.0,
+      1786460220.0,
+      1786460460.0,
+      1786460820.0,
+      1786461060.0,
+      1786461900.0,
+      1786462800.0,
+      1786463520.0,
+      1786464300.0,
+      1786464900.0,
+      1786465140.0,
+      1786465200.0,
+      1786465260.0,
+      1786465320.0,
+      1786465380.0,
+      1786465440.0,
+      1786465500.0,
+      1786465560.0,
+      1786465620.0,
+      1786465680.0,
+      1786465740.0,
+      1786465800.0,
+      1786465860.0,
+      1786465920.0,
+      1786465980.0,
+      1786466040.0,
+      1786466100.0,
+      1786466160.0,
+      1786466220.0,
+      1786466280.0,
+      1786466340.0,
+      1786466400.0,
+      1786466460.0,
+      1786466520.0,
+      1786466580.0,
+      1786466640.0,
+      1786466700.0,
+      1786466760.0,
+      1786466820.0,
+      1786466880.0,
+      1786466940.0,
+      1786467000.0,
+      1786467060.0
+    ]
+  },
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F7-7",
+    "evidence": {
+      "grid_s": 60.0,
+      "max_offset_s": 0.0
+    },
+    "family": "unassigned_by_seal",
+    "kind": "QUANTIZATION",
+    "mutation_required": false,
+    "n_attempted": 30,
+    "n_met": true,
+    "n_usable": 45,
+    "notes": [],
+    "p_value": null,
+    "planned_n": 30,
+    "thresholds": [
+      60.0
+    ],
+    "verdict": "TRUE"
+  },
+  "region": "us-east-1",
+  "run_id": "r20260810T130945Z",
+  "s6_4_alarms": {
+    "amendment_material": "6 of 7 §6.4 alarm rows state a condition and no evaluation period. F7-6 cannot check them, and an operator cannot implement them as written: 'MismatchErrors > 0' is not an alarm until a window is named. That omission is a document defect independent of whatever lag is measured here",
+    "n_rows": 7,
+    "n_with_stated_period": 1,
+    "rows": [
+      {
+        "condition": "Latency > P99 + 50%",
+        "name": "Gateway guardrail latency spike",
+        "stated_period_s": null
+      },
+      {
+        "condition": "InvocationLatency > P99 + 50%",
+        "name": "Bedrock guardrail latency spike",
+        "stated_period_s": null
+      },
+      {
+        "condition": "Total duration > SLA threshold",
+        "name": "End-to-end session latency",
+        "stated_period_s": null
+      },
+      {
+        "condition": "MismatchErrors > 0",
+        "name": "Policy evaluation errors",
+        "stated_period_s": null
+      },
+      {
+        "condition": "Block rate > 20% in 5 min",
+        "name": "High rejection rate",
+        "stated_period_s": 300.0
+      },
+      {
+        "condition": "InvocationServerErrors > 0",
+        "name": "Guardrail invocation failures",
+        "stated_period_s": null
+      },
+      {
+        "condition": "InvocationThrottles > 0",
+        "name": "Throttling",
+        "stated_period_s": null
+      }
+    ],
+    "scored_periods_s": [
+      300.0
+    ],
+    "why_60s_is_not_scored": "the oracle's closing sentence mentions 1-minute alarms because the document elsewhere claims gateway metrics are batched at 1-minute intervals. No §6.4 row states a 60s window, so 60s is reported beside the verdict and not added to the scored periods — adding an alarm the document does not state, in order to fail it, would manufacture a FALSE"
+  },
+  "tool_name": "grxecho___echo",
+  "trials": [
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786465320,
+      "i": 1,
+      "lag_s": 11.398,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "e920fa58-1152-4dd1-8b5b-19de3212dbea",
+      "t_send_epoch_s": 1786465352.009,
+      "timed_out": false
+    },
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786465380,
+      "i": 2,
+      "lag_s": 11.372,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "23903658-90a6-4b66-b9c3-c2cc9d413dcb",
+      "t_send_epoch_s": 1786465385.823,
+      "timed_out": false
+    },
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786465440,
+      "i": 3,
+      "lag_s": 11.351,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "dcab5267-ad4f-4757-85e6-2d0201793d3b",
+      "t_send_epoch_s": 1786465445.853,
+      "timed_out": false
+    },
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786465500,
+      "i": 4,
+      "lag_s": 11.413,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "962ff6c3-0aa5-4e5c-ac6f-2b00fe64ab43",
+      "t_send_epoch_s": 1786465505.903,
+      "timed_out": false
+    },
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786465560,
+      "i": 5,
+      "lag_s": 11.431,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "8ee8dea2-b222-43f3-b080-335bf24f01f0",
+      "t_send_epoch_s": 1786465565.919,
+      "timed_out": false
+    },
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786465620,
+      "i": 6,
+      "lag_s": 11.403,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "00079a5e-2753-43fd-adfe-0ccf561d0503",
+      "t_send_epoch_s": 1786465625.839,
+      "timed_out": false
+    },
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786465680,
+      "i": 7,
+      "lag_s": 11.413,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "767625b4-e82b-4b6e-9154-5c758f2512b8",
+      "t_send_epoch_s": 1786465685.857,
+      "timed_out": false
+    },
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786465740,
+      "i": 8,
+      "lag_s": 11.354,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "a65ff842-4fb2-4c9a-ac7a-acb6f4828326",
+      "t_send_epoch_s": 1786465745.854,
+      "timed_out": false
+    },
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786465800,
+      "i": 9,
+      "lag_s": 11.471,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "9d61544a-05e8-4a5c-8290-fa963b661469",
+      "t_send_epoch_s": 1786465805.928,
+      "timed_out": false
+    },
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786465860,
+      "i": 10,
+      "lag_s": 11.391,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "d0ec8f31-f69a-42ec-a6da-69d66ed9dd42",
+      "t_send_epoch_s": 1786465865.941,
+      "timed_out": false
+    },
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786465920,
+      "i": 11,
+      "lag_s": 11.395,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "f1d81c3a-da6e-466c-bb5a-495ab7078179",
+      "t_send_epoch_s": 1786465925.846,
+      "timed_out": false
+    },
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786465980,
+      "i": 12,
+      "lag_s": 11.396,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "7c01fe06-c588-4fab-85a4-db2cea0f1737",
+      "t_send_epoch_s": 1786465986.553,
+      "timed_out": false
+    },
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786466040,
+      "i": 13,
+      "lag_s": 11.448,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "07d4636c-2df2-4a21-9550-8faa97559960",
+      "t_send_epoch_s": 1786466045.937,
+      "timed_out": false
+    },
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786466100,
+      "i": 14,
+      "lag_s": 11.447,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "cc7085ee-22ca-43e9-9ad8-363e1480fa46",
+      "t_send_epoch_s": 1786466105.929,
+      "timed_out": false
+    },
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786466160,
+      "i": 15,
+      "lag_s": 11.38,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "9ed848af-b7cf-4b26-860c-bf2571d41a7c",
+      "t_send_epoch_s": 1786466165.871,
+      "timed_out": false
+    },
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786466220,
+      "i": 16,
+      "lag_s": 11.395,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "19f91973-3fd8-4d71-b53e-b252c51cfcc2",
+      "t_send_epoch_s": 1786466225.841,
+      "timed_out": false
+    },
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786466280,
+      "i": 17,
+      "lag_s": 11.461,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "b3d4ddbe-91d2-4715-a2c5-531aa0520cb8",
+      "t_send_epoch_s": 1786466285.936,
+      "timed_out": false
+    },
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786466340,
+      "i": 18,
+      "lag_s": 11.446,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "eafe17b7-4046-44c7-91ef-b78828bd08b5",
+      "t_send_epoch_s": 1786466345.868,
+      "timed_out": false
+    },
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786466400,
+      "i": 19,
+      "lag_s": 11.507,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "f3154abc-7170-4de9-92ef-7b5a438af328",
+      "t_send_epoch_s": 1786466405.95,
+      "timed_out": false
+    },
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786466460,
+      "i": 20,
+      "lag_s": 11.437,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "28a57e9f-db63-4be5-9e46-ba19c9430464",
+      "t_send_epoch_s": 1786466465.916,
+      "timed_out": false
+    },
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786466520,
+      "i": 21,
+      "lag_s": 11.451,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "924280ef-5472-426a-8037-5d22f8abbc62",
+      "t_send_epoch_s": 1786466525.905,
+      "timed_out": false
+    },
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786466580,
+      "i": 22,
+      "lag_s": 11.444,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "6651d148-4c02-4a6d-b52d-c33dce140f14",
+      "t_send_epoch_s": 1786466585.863,
+      "timed_out": false
+    },
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786466640,
+      "i": 23,
+      "lag_s": 11.449,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "4027ed55-3468-4e7c-b0e4-7d2873299f47",
+      "t_send_epoch_s": 1786466646.632,
+      "timed_out": false
+    },
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786466700,
+      "i": 24,
+      "lag_s": 11.37,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "fc61cd8f-f539-4218-bc14-24f25f7ad732",
+      "t_send_epoch_s": 1786466705.988,
+      "timed_out": false
+    },
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786466760,
+      "i": 25,
+      "lag_s": 11.421,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "0d67966b-409c-4542-b4b2-a24ffc137b08",
+      "t_send_epoch_s": 1786466765.861,
+      "timed_out": false
+    },
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786466820,
+      "i": 26,
+      "lag_s": 11.441,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "2f795d60-427a-407c-bd0e-0f4c925d4bf1",
+      "t_send_epoch_s": 1786466825.845,
+      "timed_out": false
+    },
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786466880,
+      "i": 27,
+      "lag_s": 11.488,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "59647840-61c1-441f-8076-2e7c204152ab",
+      "t_send_epoch_s": 1786466885.966,
+      "timed_out": false
+    },
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786466940,
+      "i": 28,
+      "lag_s": 11.485,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "2252d532-358c-4304-9d01-1c61e35d8e34",
+      "t_send_epoch_s": 1786466945.94,
+      "timed_out": false
+    },
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786467000,
+      "i": 29,
+      "lag_s": 11.513,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "e33db846-92c8-4c82-af4a-2280934b5d1b",
+      "t_send_epoch_s": 1786467005.929,
+      "timed_out": false
+    },
+    {
+      "bucket_already_had_a_datapoint": false,
+      "bucket_epoch_s": 1786467060,
+      "i": 30,
+      "lag_s": 11.421,
+      "n_polls": 1,
+      "outcome": "allowed",
+      "request_id": "c65a3f03-9697-4cf7-9076-498a967ff4b2",
+      "t_send_epoch_s": 1786467065.942,
+      "timed_out": false
+    }
+  ],
+  "verdict": "TRUE",
+  "verdict_reading": "TRUE: 45 datapoint timestamps read at Period=1s, maximum offset from the 60s grid 0s",
+  "verdict_rule": "TRUE iff every datapoint timestamp sits on the 60s grid, decided by the sealed code in lib/oracle.py",
+  "what_true_does_not_prove": "that a datapoint is queryable at its own timestamp — the grid is where the aggregation window starts, and F7-6 measures how long after that the datapoint can actually be read",
+  "why_the_period_matters": "this read used Period=1s. At Period=60 every returned timestamp is a multiple of 60 by construction, so the verdict would have been TRUE for any service behaviour whatsoever — the same defect as the sealed note's inferred ms conversion, which made the threshold 60000 and would have been satisfied by every observation"
+}

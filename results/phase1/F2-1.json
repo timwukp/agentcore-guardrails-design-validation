@@ -1,0 +1,311 @@
+{
+  "adverse": 0,
+  "ambient_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "arm_summaries": [
+    {
+      "arm": "boundary_below",
+      "checkpoint": "results/checkpoints/F2-1__boundary_below.json",
+      "decision_counts": {
+        "allowed": 300
+      },
+      "expect": "allowed",
+      "failure_codes": [],
+      "flips": 0,
+      "modal_decision": "allowed",
+      "modal_matches_expect": true,
+      "modal_n": 300,
+      "n_attempted": 300,
+      "n_disagreeing_with_expect": 0,
+      "n_failed": 0,
+      "n_not_a_decision": 0,
+      "n_recorded": 300,
+      "n_unclassified": 0,
+      "n_usable": 300,
+      "not_a_decision_outcomes": [],
+      "planned_n": 300
+    },
+    {
+      "arm": "boundary_at",
+      "checkpoint": "results/checkpoints/F2-1__boundary_at.json",
+      "decision_counts": {
+        "policy_denied": 300
+      },
+      "expect": "denied",
+      "failure_codes": [],
+      "flips": 0,
+      "modal_decision": "policy_denied",
+      "modal_matches_expect": true,
+      "modal_n": 300,
+      "n_attempted": 300,
+      "n_disagreeing_with_expect": 0,
+      "n_failed": 0,
+      "n_not_a_decision": 0,
+      "n_recorded": 300,
+      "n_unclassified": 0,
+      "n_usable": 300,
+      "not_a_decision_outcomes": [],
+      "planned_n": 300
+    },
+    {
+      "arm": "far_outside",
+      "checkpoint": "results/checkpoints/F2-1__far_outside.json",
+      "decision_counts": {
+        "policy_denied": 30
+      },
+      "expect": "denied",
+      "failure_codes": [],
+      "flips": 0,
+      "modal_decision": "policy_denied",
+      "modal_matches_expect": true,
+      "modal_n": 30,
+      "n_attempted": 30,
+      "n_disagreeing_with_expect": 0,
+      "n_failed": 0,
+      "n_not_a_decision": 0,
+      "n_recorded": 30,
+      "n_unclassified": 0,
+      "n_usable": 30,
+      "not_a_decision_outcomes": [],
+      "planned_n": 30
+    }
+  ],
+  "arms": {
+    "boundary_at": {
+      "amount": 500.0,
+      "expect": "denied",
+      "n": 300,
+      "scored": true,
+      "why": "the other side of the same boundary, and equally scored. amount=500.0 is NOT less than 500.0, so nothing in the enforced set matches and Cedar default-deny decides. Determinism of a DENY is the same claim as determinism of an ALLOW and the document draws no distinction, so this arm's flips are counted into the same `adverse` rather than reported beside the verdict — a flip reported beside a verdict is a verdict (DEV-P1-11), and here it would be a refutation left out of the number that decides"
+    },
+    "boundary_below": {
+      "amount": 499.9,
+      "expect": "allowed",
+      "n": 300,
+      "scored": true,
+      "why": "the arm the sealed n is spent on. amount=499.9 is inside `amount.lessThan(decimal(\"500.0\"))` by one step of the lattice `lib/cedar.decimal_literal` accepts from a float, so the narrow permit is the only thing in the enforced set that can grant this request — the baseline permit is in LOG_ONLY. 300 identical calls, and every one must come back allowed or the permit is not granting and constancy would be vacuous"
+    },
+    "far_outside": {
+      "amount": 4242.0,
+      "expect": "denied",
+      "n": 30,
+      "scored": true,
+      "why": "the F2-5 companion-arm pattern at n=30: a second value on the deny side, far from the boundary, so a FALSE verdict cannot rest on one input sitting exactly where a comparator is most likely to be implemented ambiguously. Scored like the others — 30 identical calls that were not identical in outcome would falsify the claim just as surely — but it is not what the sealed n is spent on, and the record says which arms carried the 300"
+    }
+  },
+  "axis_drivers_imported_from": "f4_modes/01_truth_table.py — UpdateGateway is a REPLACE so the live configuration is re-read and re-sent whole; UpdatePolicy does not resend `definition`; 'the testbed is intact' is infra/06_verify.py's own verify_engine/verify_gateways. Two definitions of any of those can disagree, and then which one ran decides whether a broken shared testbed is reported",
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F2-1",
+    "clear_here": true
+  },
+  "case_id": "F2-1",
+  "config": {
+    "dwell_s": 15.0,
+    "engine": {
+      "axis": "engine",
+      "changed": false,
+      "engine_arn_unchanged": true,
+      "from": "ENFORCE",
+      "to": "ENFORCE",
+      "verified": true,
+      "why_no_call": "the gateway is already in this mode, read live rather than assumed from the ledger. Sending an UpdateGateway to set a field to its current value would be a mutation with no measurement behind it, and every mutation on a shared testbed is a chance to reset a member this script does not re-send"
+    },
+    "modes_declared": {
+      "baseline": "LOG_ONLY",
+      "narrow": "ACTIVE"
+    },
+    "policies": [
+      {
+        "axis": "policy",
+        "changed": true,
+        "definition_resent": false,
+        "from": "ACTIVE",
+        "logical": "baseline",
+        "polls": 3,
+        "readback_mode": "LOG_ONLY",
+        "readback_status": "ACTIVE",
+        "request_id": "a9191603-83fa-4e8b-9c24-89858670ffd0",
+        "status_before": "ACTIVE",
+        "to": "LOG_ONLY",
+        "update_response_mode": "LOG_ONLY",
+        "verified": true
+      },
+      {
+        "axis": "policy",
+        "changed": true,
+        "definition_resent": false,
+        "from": "LOG_ONLY",
+        "logical": "narrow",
+        "polls": 3,
+        "readback_mode": "ACTIVE",
+        "readback_status": "ACTIVE",
+        "request_id": "134ced07-b6de-4d67-8b07-51aba0fa643a",
+        "status_before": "ACTIVE",
+        "to": "ACTIVE",
+        "update_response_mode": "ACTIVE",
+        "verified": true
+      }
+    ],
+    "why_one_configuration": "all three arms run under this single configuration and no mode is switched between the first trial and the last. F2-1 asks whether an unchanged configuration returns an unchanged answer, so a reconfiguration mid-run would be an event that could explain a flip"
+  },
+  "expiry": "a service behaviour, not a model read. AWS could change Cedar evaluation at any time; if it does, that is an AWS-BEHAVIOR-CHANGES.md entry rather than a correction to this record",
+  "false_means_what": "FALSE means at least one trial in a scored arm decided differently from the rest of its own arm under a byte-identical request and an unchanged configuration — a single counterexample, which is why the seal puts this case in the `single_counterexample` family with no multiplicity correction",
+  "flip_definition": "a flip is a usable trial whose decision differs from its own arm's MODAL decision, and `adverse` is the sum over arms. Per-arm and not per-run: the two boundary arms are DESIGNED to differ from each other, so pooling them and counting distinct values would report this experiment's independent variable as non-determinism. The modal decision is not the expected decision — an arm that denied every trial has zero flips even if it was configured to allow them, which is exactly what the guards exist to catch",
+  "guards": [
+    {
+      "id": "permit_grants",
+      "why": "`boundary_below` must be ALLOWED. If it is denied, the narrow permit never matched — `context.input.amount` appears nowhere in the document under test and only in lib/cedar.py's own samples — and then all three arms default-deny, all three are constant, and F2-1 reads TRUE because nothing was ever decided. This is F4-4's CASE_GUARDS reasoning applied to a determinism claim, where it bites harder: F4-4 would at least have noticed a wrong verdict, and constancy looks the same either way"
+    },
+    {
+      "id": "default_deny_fires",
+      "why": "`boundary_at` must be DENIED. If it is allowed, something in the enforced set is granting requests the narrow permit does not match — the likeliest candidate being a baseline permit whose drive to LOG_ONLY did not take — and the engine is then not the configuration this script declared"
+    },
+    {
+      "id": "boundary_discriminates",
+      "why": "`boundary_below` and `boundary_at` must reach OPPOSITE modal decisions. They differ by 0.1 in one parameter and in nothing else, so opposite outcomes are the positive evidence that the condition is evaluated per request at all. Identical outcomes on both sides mean the constancy this case measures belongs to an instrument that is not asking a question"
+    },
+    {
+      "id": "no_unclassified",
+      "why": "no trial may carry an error shape `lib/mcp.classify` does not recognise. An unrecognised shape is a gap in the INSTRUMENT: classified as a decision it could manufacture a flip, and classified as unusable it could hide one"
+    }
+  ],
+  "instrument": "signed MCP tools/call POSTs to the main gateway's /mcp endpoint as the grx-caller role, classified by lib/mcp.classify(); one pure-Cedar permit created for the run, both mode axes driven by UpdateGateway/UpdatePolicy and verified by readback from independent calls",
+  "is_smoke": false,
+  "kind": "ZERO_EVENTS",
+  "local_amendment_blockers": [],
+  "measured_start": {
+    "baseline_mode": "ACTIVE",
+    "engine_mode": "ENFORCE"
+  },
+  "n_usable": 630,
+  "not_measured_here": "whether the policy decision is a deterministic FUNCTION of a non-deterministic guardrail score. That is F2-2/F2-3/F2-4, and it needs per-trial score observability, which a policy with no guardrail term cannot produce by construction",
+  "oracle_text": "TRUE if 0 decision flips in n=300 identical calls to a policy with no guardrail term; FALSE if >=1 flip (H0: p_flip=0, one counterexample suffices)",
+  "planned_n": 300,
+  "policy": {
+    "action_scope": "grxecho___echo",
+    "name": "grx_f2_narrow_r20260810T130945Z",
+    "statement": "permit (principal, action == AgentCore::Action::\"grxecho___echo\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n\")\nwhen { context.input has amount && context.input.amount.lessThan(decimal(\"500.0\")) };",
+    "why": "a permit that matches SOME requests and not others, conditioned on one numeric parameter with no guardrail term anywhere in it. amount < 500.0 admits 499.9 and excludes 500.0 and 4242.0, which is the entire independent variable of this case: three arms differing in one number and in nothing else"
+  },
+  "precision_probe": {
+    "amount": 499.9999,
+    "distinct_outcomes": [
+      "allowed"
+    ],
+    "error": null,
+    "n": 4,
+    "outcomes": [
+      {
+        "http_status": 200,
+        "outcome": "allowed",
+        "request_id": "7342bbf5-c3bf-4ee1-96fe-0eb5cf8ff681",
+        "text": "{\"tool\":\"echo\",\"context\":{\"bedrockAgentCoreMessageVersion\":\"1.0\",\"bedrockAgentCoreAwsRequestId\":\"7342bbf5-c3bf-4ee1-96fe-0eb5cf8ff681\",\"bedrockAgentCoreMcpMessageId\":\"2\",\"bedrockAgentCoreGatewayId\":\"grx-gw-r20260810t130945z-zpkfmpwo9n\",\"bedrockAgentCoreTargetId\":\"I7DX308MPV\",\"bedrockAgentCoreToolName\":\"grxecho___echo\"},\"mode\":\"echo\",\"text\":\"f2 policy determinism\",\"amount\":499.9999,\"amount_type\":\"f"
+      },
+      {
+        "http_status": 200,
+        "outcome": "allowed",
+        "request_id": "c4b9a918-9fe4-4e36-b89c-ae3e9892f976",
+        "text": "{\"tool\":\"echo\",\"context\":{\"bedrockAgentCoreMessageVersion\":\"1.0\",\"bedrockAgentCoreAwsRequestId\":\"c4b9a918-9fe4-4e36-b89c-ae3e9892f976\",\"bedrockAgentCoreMcpMessageId\":\"3\",\"bedrockAgentCoreGatewayId\":\"grx-gw-r20260810t130945z-zpkfmpwo9n\",\"bedrockAgentCoreTargetId\":\"I7DX308MPV\",\"bedrockAgentCoreToolName\":\"grxecho___echo\"},\"mode\":\"echo\",\"text\":\"f2 policy determinism\",\"amount\":499.9999,\"amount_type\":\"f"
+      },
+      {
+        "http_status": 200,
+        "outcome": "allowed",
+        "request_id": "8a82ec6d-0084-425c-adf1-c6509c14ea86",
+        "text": "{\"tool\":\"echo\",\"context\":{\"bedrockAgentCoreMessageVersion\":\"1.0\",\"bedrockAgentCoreAwsRequestId\":\"8a82ec6d-0084-425c-adf1-c6509c14ea86\",\"bedrockAgentCoreMcpMessageId\":\"4\",\"bedrockAgentCoreGatewayId\":\"grx-gw-r20260810t130945z-zpkfmpwo9n\",\"bedrockAgentCoreTargetId\":\"I7DX308MPV\",\"bedrockAgentCoreToolName\":\"grxecho___echo\"},\"mode\":\"echo\",\"text\":\"f2 policy determinism\",\"amount\":499.9999,\"amount_type\":\"f"
+      },
+      {
+        "http_status": 200,
+        "outcome": "allowed",
+        "request_id": "c2f4a162-dac2-4ba3-93d1-359cee57d6df",
+        "text": "{\"tool\":\"echo\",\"context\":{\"bedrockAgentCoreMessageVersion\":\"1.0\",\"bedrockAgentCoreAwsRequestId\":\"c2f4a162-dac2-4ba3-93d1-359cee57d6df\",\"bedrockAgentCoreMcpMessageId\":\"5\",\"bedrockAgentCoreGatewayId\":\"grx-gw-r20260810t130945z-zpkfmpwo9n\",\"bedrockAgentCoreTargetId\":\"I7DX308MPV\",\"bedrockAgentCoreToolName\":\"grxecho___echo\"},\"mode\":\"echo\",\"text\":\"f2 policy determinism\",\"amount\":499.9999,\"amount_type\":\"f"
+      }
+    ],
+    "predicted": "allowed, if the engine binds four fractional digits: 499.9999 is strictly less than 500.0",
+    "reading": "four-digit request literals bind and the permit matched",
+    "why_unscored": "a different request shape from the scored arms, so it is not one of the 'identical calls' F2-1's oracle counts. It answers a config-surface question (F1's family) that would otherwise sit behind an unexamined choice in this script"
+  },
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F2-1",
+    "evidence": {
+      "ceiling_method": "exact 1-alpha^(1/n)",
+      "ceiling_one_sided": 0.004743842858103475,
+      "interval": "0 [0, 0.006061] (n=630, wilson, 95%)",
+      "n": 630,
+      "x": 0
+    },
+    "family": "single_counterexample",
+    "kind": "ZERO_EVENTS",
+    "mutation_required": false,
+    "n_attempted": 630,
+    "n_met": true,
+    "n_usable": 630,
+    "notes": [],
+    "p_value": null,
+    "planned_n": 300,
+    "thresholds": [],
+    "verdict": "TRUE"
+  },
+  "region": "us-east-1",
+  "relation_to_f2_5": "F2-5 measured the other clause of the same sentence on a different service: 300 identical ApplyGuardrail calls, verdict FALSE, flip rate bounded at ~0.0099. The two together are the document's contrast — non-deterministic guardrails, deterministic policies — measured on the two surfaces separately. Neither licenses the other: F2-5's guardrail returns a 4-value enum, and this case's policy has no guardrail term at all",
+  "replication_required": "the conflict-resolution protocol requires reproduction on >=2 separate UTC days before the document is amended. One run of this script is one day",
+  "run_id": "r20260810T130945Z",
+  "true_means_what": "TRUE means zero flips in 630 usable decisions, which bounds the per-call flip rate by the Clopper-Pearson ceiling in the record rather than establishing determinism. It bounds only OBSERVABLE flips: the instrument sees the decision, not the evaluation, so a policy engine that reached the same answer by a different path on some trial is invisible to it",
+  "unverified_context_path": "the permit conditions on `context.input.amount`. No `context.` path appears anywhere in the document under test; the shape comes from lib/cedar.py's own samples and was measured live by F4. The `permit_grants` guard exists because an unmatched path would make the policy inert — and an inert policy is perfectly constant, which is what this case counts",
+  "update_gateway_shape_check": {
+    "absent_from_model": [],
+    "handled": [
+      "authorizerConfiguration",
+      "authorizerType",
+      "customTransformConfiguration",
+      "description",
+      "exceptionLevel",
+      "gatewayIdentifier",
+      "interceptorConfigurations",
+      "kmsKeyArn",
+      "name",
+      "policyEngineConfiguration",
+      "protocolConfiguration",
+      "protocolType",
+      "roleArn",
+      "wafConfiguration"
+    ],
+    "live_members": [
+      "authorizerConfiguration",
+      "authorizerType",
+      "customTransformConfiguration",
+      "description",
+      "exceptionLevel",
+      "gatewayIdentifier",
+      "interceptorConfigurations",
+      "kmsKeyArn",
+      "name",
+      "policyEngineConfiguration",
+      "protocolConfiguration",
+      "protocolType",
+      "roleArn",
+      "wafConfiguration"
+    ],
+    "ok": true,
+    "required": [
+      "authorizerType",
+      "gatewayIdentifier",
+      "name",
+      "roleArn"
+    ],
+    "sdk": {
+      "boto3": "1.43.67",
+      "botocore": "1.43.67"
+    },
+    "unhandled": [],
+    "why_checked": "UpdateGateway is a REPLACE, so an omitted member is a reset. A member this SDK accepts and this script does not re-send would be wiped by the first mode switch; resetting exceptionLevel alone would change the body of every error message every later phase reads, including the denial bodies F4-6 measures"
+  },
+  "usable_definition": "a trial is usable only if its outcome is a DECISION (allowed or policy_denied). A transport fault or a JSON-RPC protocol error is not an answer to 'what did the policy decide', and 300 identical protocol errors are perfectly constant — scoring them would let a broken instrument publish TRUE (measured 2026-08-11: a bare tool name yields -32602 on every call)",
+  "validation_mode_for_this_policy": "IGNORE_ALL_FINDINGS",
+  "verdict": "TRUE",
+  "why_validation_off": "F1-3 is the validation experiment and it established that a permit needs IGNORE_ALL_FINDINGS to create at all (DC-1). A policy that failed to create is not a determinism measurement, so letting the finding gate reject this statement would turn a determinism question into a validation one"
+}
