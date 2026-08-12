@@ -241,3 +241,71 @@ by a `.gitignore` rule, `.git` being the sole exception because git never tracks
 Two mutation arms prove that check can fail.
 
 **Next action is the staged push** (item 4 above), which was blocked only on the gate.
+
+## The push, and what it found about the repo (2026-08-12, later still)
+
+Three PRs are open, stacked:
+
+| PR | head → base | what |
+|---|---|---|
+| **#6** | `feat/f5-redteam` → `main` | lands #3/#4/#5, which had merged but never propagated |
+| **#7** | `feat/f3-10-score-label-join` → `feat/f5-redteam` | the F3-10 claim group + DEV-P4-23/-24 |
+| **#8** | `feat/ec2-runner` → `feat/f3-10-score-label-join` | the runner + the gate changes it forced + DEV-P4-25/-26 |
+
+Working tree and `feat/ec2-runner` now agree exactly: **522 blobs both sides, 0 changed, 0 unpushed,
+0 on the branch but not local.**
+
+### Three PRs were merged and none of their content was on `main`
+
+The first thing the push needed was a diff against `main`, and it came back with **144 "new" files**
+— including the whole F6, F7 and F5 families, which were reviewed and merged days ago. That is not a
+plausible answer, so it was the diff that got checked next, not the files.
+
+`#2..#5` were a stack, `main ← harness-guards ← f6-f7 ← f5-redteam ← register-and-docs`, merged in
+ascending PR order inside **23 seconds**:
+
+| PR | head | base | merged |
+|---|---|---|---|
+| #2 | `feat/harness-guards` | `main` | 06:52:32Z |
+| #3 | `feat/f6-f7-results` | `feat/harness-guards` | 06:52:41Z |
+| #4 | `feat/f5-redteam` | `feat/f6-f7-results` | 06:52:47Z |
+| #5 | `feat/register-and-docs` | `feat/f5-redteam` | 06:52:55Z |
+
+#2 put `harness-guards` into `main` **first**, and only nine seconds later did #3 put `f6-f7` into
+`harness-guards`. Every parent was merged into *its* parent before receiving its child, so the stack
+collapsed downward into itself and never propagated up. `main` @ `a854d650` served **378** blobs; the
+tip `feat/f5-redteam` @ `3738e9b2` served **497**. Every merge succeeded and every PR says "Merged".
+
+A stack has to be merged **top-down**, or each PR re-parented onto `main` as the one below it lands.
+The detection is the same either way: diff the working tree against what the branch *serves*, never
+against what the PR list claims. `feedback_merged_pr_is_not_landed` records it.
+
+### The pusher had to be rewritten, and the reason was measured
+
+`/tmp/api_push.sh`'s blob loop uses `gh api -X POST --input <file>`. On the 17-file PR #7 push it
+returned `HTTP 400 "We received a malformed request from your client"` on **9 of 17** blobs and
+`net/http: TLS handshake timeout` on a 10th — **in no size order**: a 98 KB source file landed while a
+22 KB one did not, and that same 22 KB file landed byte-identical on the very next attempt. So a
+retry version (`api_push2.sh`) was written. It made things worse: the timeouts became persistent and
+it gave up after six attempts.
+
+Retrying harder was the wrong move, so the next step was to find out what was actually broken. In the
+same shell, the same minute:
+
+* `gh api rate_limit` → `4969/5000` remaining. Not a rate limit.
+* `curl https://api.github.com/rate_limit` → HTTP 200, TLS handshake 0.07 s, total 0.09 s. Not the
+  network.
+* `curl -X POST -H "Authorization: bearer $(gh auth token)" --data-binary @payload.json` → uploaded
+  all three previously-failing blobs, **including the 1.2 MB `results/phase1/F3-10.json`**, SHAs
+  matching `git hash-object` on the first attempt each. Not the payload and not the API.
+
+The fault is in gh's HTTP client at this body size. `/tmp/api_push3.sh` uses curl for every call and
+keeps `gh auth token` only for the credential; both pushes then went through with **0 mismatches** and
+**0 files not served with the expected sha**. The retry loop is kept, and it is only safe because the
+SHA comparison is what decides success — the API can answer 201 for bytes that were never sent
+(`feedback_verify_uploaded_blob_sha`, now updated with this).
+
+Two details worth keeping: `curl -f` is not used, because on a 4xx it throws away the body and the
+body is where GitHub names the field it objected to; and every payload goes to a **file**, never argv,
+because a 1.6 MB base64 string on a command line dies as "Argument list too long" partway through a
+list, which looks exactly like a network error.
