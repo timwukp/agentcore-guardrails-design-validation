@@ -1,0 +1,456 @@
+{
+  "ambient_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F7-4",
+    "clear_here": true
+  },
+  "case_id": "F7-4",
+  "coverage_reading_not_scored": {
+    "coverage": 1.0,
+    "n_request_ids": 20,
+    "n_with_authz_span": 20,
+    "read_timing": {
+      "coverage_settle_s": 600,
+      "early_read": {
+        "elapsed_s": 114.8,
+        "n_ids_joined": 17
+      },
+      "who_owns_the_lag": "F7-6. The bound here (somewhere between 1 and 11 minutes for the slowest of twenty spans) is what set COVERAGE_SETTLE_S; F7-6 replaces the bound with a distribution",
+      "why_two_reads": "a coverage number taken before the publish lag has cleared is a LOWER BOUND, not a gap. This script's first run read 15 of 20 at ~60s past the first join and 20 of 20 when the same ids were re-queried ~11 minutes later: the five 'missing' authorization spans existed and had simply not been published. Reporting the early number as a gap would have put a correction into v1.3 for a defect the document does not have"
+    },
+    "reading": "20 of 20 requests carry their own authorization span, read after a 600s settle. Coverage below 1.0 is only a finding if publishing had finished — see `read_timing` below, which is why this number is taken late and not at the first join",
+    "why_not_scored": "the sealed oracle is an existence claim, satisfied by one span. Per-request coverage is the property an auditor needs, and it is strictly stronger — so it is measured and reported, but deciding the verdict on it would be strengthening a sealed oracle after seeing the data",
+    "wilson_95_hi": 1.0,
+    "wilson_95_lo": 0.838875
+  },
+  "expiry": "a statement about the span schema this service publishes today. Span names and attribute paths are service-owned and can change without notice, so the inventory is timestamped evidence, not a stable contract",
+  "f7_5_precondition": {
+    "present": true,
+    "reading": "F7-5 is TRUE, so deleting the vended TRACES delivery removed these spans and restoring it brought them back: the rows joined below are here because of our delivery, not because of some other account-level configuration",
+    "verdict": "TRUE"
+  },
+  "family_note": "F7-4's presence reading is only about OUR configuration because F7-5 removed the delivery and the spans went away. That is why F7-5 runs first",
+  "gateway_id": "grx-gw-r20260810t130945z-zpkfmpwo9n",
+  "guard_detail": {
+    "authz_span_named": {
+      "all_span_names": {
+        "AgentCore.Gateway.InvokeTool": 20,
+        "AgentCore.Gateway.InvokeTool.grxecho___echo": 20,
+        "AgentCore.Policy.AuthorizeAction": 20
+      },
+      "names_matching_prefix": [
+        "AgentCore.Policy.AuthorizeAction"
+      ]
+    },
+    "calls_reached_gateway": {
+      "n_real": 20,
+      "n_sent": 20,
+      "outcomes": [
+        "allowed"
+      ]
+    },
+    "join_is_this_run": {
+      "first_join_s": 50.20312220800042,
+      "n_joined": 20,
+      "n_wanted": 20
+    },
+    "no_truncation": {
+      "limit": 500,
+      "n_rows": 60
+    }
+  },
+  "guard_names": [
+    "calls_reached_gateway",
+    "join_is_this_run",
+    "no_truncation",
+    "authz_span_named"
+  ],
+  "guards": {
+    "authz_span_named": true,
+    "calls_reached_gateway": true,
+    "join_is_this_run": true,
+    "no_truncation": true
+  },
+  "harvested_for_other_cases": {
+    "dev_p4_01": "the COMPLETE leaf-path inventory per span name is in `span_inventory`; the `score_shaped` harvest group is the list DEV-P4-01 claims is empty, now as data rather than prose",
+    "f3_10": "the `decision` harvest group is the left-hand side F3-10 needs",
+    "f6": "the `latency` harvest group is server-side and per request, which removes the client's network variance from F6's numbers",
+    "note": "collected here because the same rows answer these questions, and a later re-fetch would sample a different population. NOT scored here"
+  },
+  "is_smoke": false,
+  "join": {
+    "first_join_s": 50.20312220800042,
+    "n_joined_any": 20,
+    "n_rows": 60,
+    "n_wanted": 20,
+    "truncated": false
+  },
+  "kind": "EXISTENCE",
+  "log_group": "aws/spans",
+  "n_planned": 20,
+  "n_sent": 20,
+  "non_vacuity_legs": {
+    "arn_filter": "query_spans filters every read to one gateway ARN; aws/spans is a pre-existing shared group carrying other systems' spans",
+    "f7_5": "read below; recorded, not used to gate this case",
+    "per_request_join": "the join is on this run's own x-amzn-requestid values, so rows predating this script cannot satisfy it"
+  },
+  "oracle_text": "TRUE if AuthorizeAction-style spans appear for our gateway ARN; FALSE if absent",
+  "planned_n": null,
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F7-4",
+    "evidence": {
+      "detail": {
+        "authz_span_names": [
+          "AgentCore.Policy.AuthorizeAction"
+        ],
+        "first_join_s": 50.20312220800042,
+        "n_joined_any_span": 20,
+        "n_request_ids": 20,
+        "n_with_authz_span": 20,
+        "span_names": [
+          "AgentCore.Gateway.InvokeTool",
+          "AgentCore.Gateway.InvokeTool.grxecho___echo",
+          "AgentCore.Policy.AuthorizeAction"
+        ]
+      },
+      "observed": true
+    },
+    "family": "descriptive_no_test",
+    "kind": "EXISTENCE",
+    "mutation_required": false,
+    "n_attempted": 20,
+    "n_met": true,
+    "n_usable": 20,
+    "notes": [],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [],
+    "verdict": "TRUE"
+  },
+  "region": "us-east-1",
+  "run_id": "r20260810T130945Z",
+  "sealed_reading": {
+    "observed_bool": true,
+    "rule": "TRUE iff at least one span whose name starts with 'AgentCore.Policy.AuthorizeAction' carries one of this run's request ids"
+  },
+  "span_inventory": {
+    "AgentCore.Gateway.InvokeTool": {
+      "harvest": {
+        "decision": [
+          "attributes.aws.agentcore.gateway.policy.mode",
+          "attributes.aws.agentcore.policy.authorization_decision"
+        ],
+        "identity": [
+          "attributes.aws.request.id",
+          "attributes.aws.span.kind",
+          "spanId",
+          "traceId"
+        ],
+        "latency": [
+          "attributes.execute_tool_latency_ms",
+          "attributes.latency_ms",
+          "attributes.overhead_latency_ms",
+          "durationNano"
+        ],
+        "score_shaped": []
+      },
+      "n_paths": 38,
+      "n_rows": 20,
+      "paths": [
+        "attributes.PlatformType",
+        "attributes.aws.account.id",
+        "attributes.aws.agentcore.gateway.policy.mode",
+        "attributes.aws.agentcore.policy.authorization_decision",
+        "attributes.aws.local.environment",
+        "attributes.aws.local.operation",
+        "attributes.aws.local.service",
+        "attributes.aws.operation.name",
+        "attributes.aws.region",
+        "attributes.aws.request.id",
+        "attributes.aws.resource.arn",
+        "attributes.aws.resource.type",
+        "attributes.aws.span.kind",
+        "attributes.aws.xray.origin",
+        "attributes.execute_tool_latency_ms",
+        "attributes.gateway.id",
+        "attributes.gateway.name",
+        "attributes.http.method",
+        "attributes.http.response.status_code",
+        "attributes.http.status_code",
+        "attributes.latency_ms",
+        "attributes.overhead_latency_ms",
+        "attributes.telemetry.extended",
+        "attributes.tool.name",
+        "attributes.url.path",
+        "durationNano",
+        "endTimeUnixNano",
+        "flags",
+        "kind",
+        "name",
+        "resource.attributes.cloud.platform",
+        "resource.attributes.cloud.provider",
+        "resource.attributes.cloud.resource_id",
+        "resource.attributes.service.name",
+        "spanId",
+        "startTimeUnixNano",
+        "status.code",
+        "traceId"
+      ]
+    },
+    "AgentCore.Gateway.InvokeTool.grxecho___echo": {
+      "harvest": {
+        "decision": [],
+        "identity": [
+          "attributes.aws.request.id",
+          "attributes.aws.span.kind",
+          "parentSpanId",
+          "spanId",
+          "traceId"
+        ],
+        "latency": [
+          "durationNano"
+        ],
+        "score_shaped": []
+      },
+      "n_paths": 33,
+      "n_rows": 20,
+      "paths": [
+        "attributes.PlatformType",
+        "attributes.aws.account.id",
+        "attributes.aws.local.environment",
+        "attributes.aws.local.operation",
+        "attributes.aws.local.service",
+        "attributes.aws.region",
+        "attributes.aws.remote.operation",
+        "attributes.aws.remote.service",
+        "attributes.aws.request.id",
+        "attributes.aws.resource.arn",
+        "attributes.aws.resource.type",
+        "attributes.aws.span.kind",
+        "attributes.aws.xray.origin",
+        "attributes.gateway.id",
+        "attributes.gateway.name",
+        "attributes.target.type",
+        "attributes.targetId",
+        "attributes.telemetry.extended",
+        "attributes.tool.name",
+        "durationNano",
+        "endTimeUnixNano",
+        "flags",
+        "kind",
+        "name",
+        "parentSpanId",
+        "resource.attributes.cloud.platform",
+        "resource.attributes.cloud.provider",
+        "resource.attributes.cloud.resource_id",
+        "resource.attributes.service.name",
+        "spanId",
+        "startTimeUnixNano",
+        "status.code",
+        "traceId"
+      ]
+    },
+    "AgentCore.Policy.AuthorizeAction": {
+      "harvest": {
+        "decision": [
+          "attributes.aws.agentcore.gateway.policy.arn",
+          "attributes.aws.agentcore.gateway.policy.mode",
+          "attributes.aws.agentcore.policy.authorization_decision",
+          "attributes.aws.agentcore.policy.determining_policies[]",
+          "attributes.aws.agentcore.policy.mismatched_policies[]",
+          "attributes.aws.agentcore.policy.target_resource.id",
+          "attributes.aws.agentcore.policy.temporal.evaluation_invoked",
+          "attributes.aws.agentcore.policy.types[][]"
+        ],
+        "identity": [
+          "attributes.aws.request.id",
+          "attributes.aws.span.kind",
+          "parentSpanId",
+          "spanId",
+          "traceId"
+        ],
+        "latency": [
+          "durationNano"
+        ],
+        "score_shaped": []
+      },
+      "n_paths": 39,
+      "n_rows": 20,
+      "paths": [
+        "attributes.PlatformType",
+        "attributes.aws.agentcore.gateway.policy.arn",
+        "attributes.aws.agentcore.gateway.policy.mode",
+        "attributes.aws.agentcore.policy.authorization_decision",
+        "attributes.aws.agentcore.policy.determining_policies[]",
+        "attributes.aws.agentcore.policy.mismatched_policies[]",
+        "attributes.aws.agentcore.policy.target_resource.id",
+        "attributes.aws.agentcore.policy.temporal.evaluation_invoked",
+        "attributes.aws.agentcore.policy.types[][]",
+        "attributes.aws.local.environment",
+        "attributes.aws.local.operation",
+        "attributes.aws.local.service",
+        "attributes.aws.remote.operation",
+        "attributes.aws.remote.service",
+        "attributes.aws.request.id",
+        "attributes.aws.resource.arn",
+        "attributes.aws.resource.type",
+        "attributes.aws.span.kind",
+        "attributes.aws.xray.origin",
+        "attributes.http.response.status_code",
+        "attributes.http.status_code",
+        "attributes.rpc.method",
+        "attributes.rpc.service",
+        "attributes.rpc.system",
+        "attributes.telemetry.extended",
+        "durationNano",
+        "endTimeUnixNano",
+        "flags",
+        "kind",
+        "name",
+        "parentSpanId",
+        "resource.attributes.cloud.platform",
+        "resource.attributes.cloud.provider",
+        "resource.attributes.cloud.resource_id",
+        "resource.attributes.service.name",
+        "spanId",
+        "startTimeUnixNano",
+        "status.code",
+        "traceId"
+      ]
+    }
+  },
+  "span_name_matched_by_prefix": "AgentCore.Policy.AuthorizeAction",
+  "tool_name": "grxecho___echo",
+  "trials": [
+    {
+      "http_status": 200,
+      "i": 1,
+      "outcome": "allowed",
+      "request_id": "41680906-229d-498a-a405-a9a48d64ea3c"
+    },
+    {
+      "http_status": 200,
+      "i": 2,
+      "outcome": "allowed",
+      "request_id": "0d2f2f42-99ef-44d7-b2f1-165ba5c940cc"
+    },
+    {
+      "http_status": 200,
+      "i": 3,
+      "outcome": "allowed",
+      "request_id": "c4ce1c33-c440-4c5c-ae42-c8f209f2eb5b"
+    },
+    {
+      "http_status": 200,
+      "i": 4,
+      "outcome": "allowed",
+      "request_id": "9d53a223-1cf0-489a-a5e5-b6bd6ece932c"
+    },
+    {
+      "http_status": 200,
+      "i": 5,
+      "outcome": "allowed",
+      "request_id": "2c5df5bb-f79c-4460-9a3f-17fed21c2c4b"
+    },
+    {
+      "http_status": 200,
+      "i": 6,
+      "outcome": "allowed",
+      "request_id": "18abcc26-dc00-493e-8009-ef7c8ecf9615"
+    },
+    {
+      "http_status": 200,
+      "i": 7,
+      "outcome": "allowed",
+      "request_id": "512270ee-48a6-4293-a446-53253e52e3b4"
+    },
+    {
+      "http_status": 200,
+      "i": 8,
+      "outcome": "allowed",
+      "request_id": "baacb37a-b00f-4c60-a21d-bfd2c04c38df"
+    },
+    {
+      "http_status": 200,
+      "i": 9,
+      "outcome": "allowed",
+      "request_id": "7f9ad111-4648-4f3f-968b-4ffd48692505"
+    },
+    {
+      "http_status": 200,
+      "i": 10,
+      "outcome": "allowed",
+      "request_id": "de3a33c4-b24d-4b46-a83a-35edcc8e6875"
+    },
+    {
+      "http_status": 200,
+      "i": 11,
+      "outcome": "allowed",
+      "request_id": "84c18d4d-f3f8-4812-88f3-cf9ea788aa52"
+    },
+    {
+      "http_status": 200,
+      "i": 12,
+      "outcome": "allowed",
+      "request_id": "a433cc19-fb71-4990-88ae-8d86f534d06b"
+    },
+    {
+      "http_status": 200,
+      "i": 13,
+      "outcome": "allowed",
+      "request_id": "dee94d25-a1eb-4e43-8800-b0b6c6a6f4ad"
+    },
+    {
+      "http_status": 200,
+      "i": 14,
+      "outcome": "allowed",
+      "request_id": "477838ef-cb9e-4127-8979-ad2fd2888043"
+    },
+    {
+      "http_status": 200,
+      "i": 15,
+      "outcome": "allowed",
+      "request_id": "fd8c124b-d0e8-4a54-ba98-c576d605480f"
+    },
+    {
+      "http_status": 200,
+      "i": 16,
+      "outcome": "allowed",
+      "request_id": "b6cdf160-e71b-42b4-ae48-a1ee77baf9c1"
+    },
+    {
+      "http_status": 200,
+      "i": 17,
+      "outcome": "allowed",
+      "request_id": "abe2926c-1acf-4be4-acd5-2f6bf0326fbf"
+    },
+    {
+      "http_status": 200,
+      "i": 18,
+      "outcome": "allowed",
+      "request_id": "ed0b8716-66ff-474a-ae0e-2ad3966e0529"
+    },
+    {
+      "http_status": 200,
+      "i": 19,
+      "outcome": "allowed",
+      "request_id": "b739c7aa-b9ba-43a6-b177-cb92b55831f5"
+    },
+    {
+      "http_status": 200,
+      "i": 20,
+      "outcome": "allowed",
+      "request_id": "3dacc1f3-1ed6-427a-96c4-ab6644811b5c"
+    }
+  ],
+  "verdict": "TRUE",
+  "verdict_reading": "TRUE means policy authorization is observable as its own span, joinable to a specific client request, on the gateway whose ARN this query filtered to. It does NOT mean every request produces one (see the coverage reading), and it does not say anything about what those spans contain — the attribute inventory is recorded as data for the cases that own those questions",
+  "verdict_rule": "TRUE iff >=1 AuthorizeAction-prefixed span joins one of this run's request ids, with all four guards holding. Any guard failure is INCONCLUSIVE, not a verdict",
+  "what_true_does_not_prove": "that the spans are complete, that they are timely (F7-6 measures publish lag), or that they carry a numeric guardrail score (DEV-P4-01 says they do not, and the `score_shaped` group here is where that would show up if it were wrong)"
+}
