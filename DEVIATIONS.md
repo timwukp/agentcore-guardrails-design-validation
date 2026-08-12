@@ -5125,6 +5125,71 @@ the same three readings and the same `s7_1_inference_is_refuted: true`.
 
 ---
 
+## DEV-P4-20 — F5-1's span positive control never opened an MCP session, and two live days hid it behind two different strings
+
+### What happened
+
+F5-1's span corroboration leg asks whether a direct Lambda invoke produces an
+`AgentCore.Policy.AuthorizeAction` span. Absence is only informative if presence is observable in
+the same window, so the leg sends **one ordinary gateway `tools/call`** as a positive control and
+reports `INSTRUMENT_UNAVAILABLE` if that control's own span never lands.
+
+The control call was `mcp_client.call_tool(...)` with **no preceding `initialize()`**. This gateway
+carries `sessionConfiguration`, so a `tools/call` without an MCP session id is answered HTTP 400 —
+a transport refusal with no bearing on any hypothesis in this case. Every other script that talks
+to this gateway (`f2_determinism/02`, `f3_efficacy/08`, `f4_modes/01`, `f6_latency/02` and `/03`,
+`f7_observability/01`–`/04`) calls `initialize()` first. This one did not, and **no test asserted
+the sequence**: the convention was carried by nine scripts and checked by none.
+
+**Two live days, two different readings, the same defect.**
+
+| | 2026-08-11 | 2026-08-12 |
+|---|---|---|
+| invokes inside the granted window | **0** (the arm was served from a crashed run's checkpoint) | 20 |
+| leg reading | `NO_INVOKES_IN_WINDOW` | `INSTRUMENT_UNAVAILABLE` |
+| control call attempted? | **no** — short-circuited before reaching it | yes, and it raised |
+| control span seen? | n/a | no, after a 303.1 s wait |
+
+Day 1 never reached the line. Day 2 reached it and the guard caught it correctly: the leg published
+`control_call: {ran: false, error: "McpTransportError: no MCP session id …"}` and read
+`INSTRUMENT_UNAVAILABLE`, and `absence_is_bounded_not_proven` was **not** published. So no false
+claim was ever made from this — the design's fail-safe is the reason this is a deviation and not a
+retraction. What it cost is the corroboration itself: **the leg has produced no measurement on
+either day**, and F5-1's span half stays unmeasured while its 120-trial verdict is unaffected
+(`ZERO_EVENTS` reads `obs.adverse` and `n`; the span is in the plan, not in the decision rule).
+
+### The fix, and why it is not a re-run
+
+`initialize()` now precedes the tool call, **inside the same `try`**, so a refused session is
+recorded as `control_initialized: false` with the error rather than raised into the case. The
+distinction is kept: a session that opened and a *tool call* that then failed reads
+`control_initialized: true`, because collapsing the two would hide which half broke.
+
+The leg is deliberately **not** being re-measured by re-running F5-1. It cannot move the verdict,
+and re-running it costs 161 invocations and two IAM mutations to fill in a corroboration line. It
+will be measured by the next run of this case that reaches the branch, whenever that is, and until
+then the finding says so.
+
+### Mutation-checked
+
+- `initialize()` deleted from the script → **exactly the two new tests fail** (`2 failed,
+  41 passed`), and re-instating it returns `43 passed`. The mutation was applied by rewriting the
+  file and restored from a `cp` copy, never `git checkout` (an API-pushed tree is ahead of `git
+  HEAD`).
+- `initialize()` raising → the tool call must **not** be attempted (asserted on a recording fake),
+  `control_initialized` is `False`, the reading is `INSTRUMENT_UNAVAILABLE`, and no bounded-absence
+  claim is published.
+- the order assertion is `order == ["init", "control"]`, not `"init" in order`: a call sequence that
+  initialised *after* calling the tool would satisfy membership.
+
+### Direction of the effect on the document under test
+
+Neutral, and it removes a corroboration that would have **supported** the document. §4.4 row 3's
+non-bypassable claim is what an absent `AuthorizeAction` span for a direct invoke would corroborate,
+so the leg failing costs the document a supporting observation, not the project a finding.
+
+---
+
 ## Analysis-time deviations
 
 *(None yet — this section is populated during Phase 9. Each entry states the

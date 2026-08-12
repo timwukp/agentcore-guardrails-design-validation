@@ -636,6 +636,79 @@ CANDIDATES = [
                 "review because both numbers look plausible: 120 is a fine-looking "
                 "MismatchErrors reading and it is 6× the truth.",
     },
+    {
+        "id": "V13-14",
+        "title": "§4.4 route #3 states least privilege as a property, and an operator reads "
+                 "it as an action — but removing the grant does not close the path, and "
+                 "observing the denial does not mean it has closed",
+        "severity": MISINFORMS,
+        "status": "MEASURED_READY",
+        "test_cases": [],
+        "merge_groups": [],
+        "claim_ids": ["C-s4-4-trow-009"],
+        "claim_id_rationale":
+            "Both expanders over-reach, measurably. `test_cases: [F5-1]` reaches 30 triage "
+            "rows — 27 in §4.4, of which 17 are architecture-diagram nodes — because F5-1 "
+            "is the case that tests whether the gateway is the only path at all; that is "
+            "V13-08's proposition and this candidate confirms it (0 of 120). "
+            "`merge_groups: [M-update-gateway-risk]` reaches 5, and three of them "
+            "(§3.1 BP#5, §6.4's CloudTrail alarm row, §8's checklist item) are about "
+            "alarming on `UpdateGateway` — F5-2's proposition, untouched here. So the site "
+            "is one table cell, named. It is `canonical: no` (merged into "
+            "`C-s3-1-numitem-005`), which is correct for the merge group's shared claim "
+            "about `UpdateGateway` and wrong as a redirect for this amendment: the sentence "
+            "being amended is row #3's own remedy clause, which §3.1 does not restate.",
+        "evidence": "F5-1, four replicates on two UTC calendar days; 32 of 80 invocations "
+                    "sent after a denial had been observed still executed, and on the "
+                    "second day a freshly granted permission never satisfied its own "
+                    "300-second poll while the path was open",
+        "finding": "FINDING-F5-1-REVOCATION.md",
+        "planned_cases": ["F5-1"],
+        "doc_says": "Route #3: because any code in the session can read the execution "
+                    "role's credentials, \"the execution role must NOT include "
+                    "`bedrock-agentcore:UpdateGateway`, policy/policy-engine mutation "
+                    "actions, or interceptor management … Least privilege here IS the "
+                    "anti-jailbreak control.\"",
+        "observed": "The steady-state claim is CONFIRMED, and this candidate does not "
+                    "weaken it: in the role's shipped configuration 0 of 120 direct "
+                    "invocations executed (Wilson 99% `[0, 0.05865]`, exact ceiling 0.0414 "
+                    "at α=0.00625), with a mutation that inverted at 20/20. What fails is "
+                    "the remedy an operator necessarily reads into \"IS the control\". "
+                    "Removing the grant does not close the path when `DeleteRolePolicy` "
+                    "returns, and — the part that is not obvious — it does not close when "
+                    "you check and see the denial either: across four replicates on "
+                    "2026-08-11 and 2026-08-12, 32 of 80 invocations sent after a denial "
+                    "had been observed still executed, including 11 of 20 after three "
+                    "consecutive `AccessDeniedException` responses spanning 20 seconds. The "
+                    "same eventual consistency misleads in the permissive direction: on "
+                    "2026-08-12 a freshly granted permission was still being denied 26 "
+                    "probes into a 300-second wait, flapped, never satisfied the poll — and "
+                    "the 20 invocations sent immediately afterwards all executed. A finite "
+                    "number of probes samples the eventually-consistent view rather than "
+                    "establishing it, in either direction.",
+        "proposed": "Keep the row, and add that least privilege is a control on the steady "
+                    "state, not an incident-response action: during containment use a "
+                    "control that fails closed at the boundary being crossed (disable the "
+                    "function, revoke the session, block at the gateway) with the IAM "
+                    "change as the durable fix behind it. Prohibit both runbook forms — "
+                    "\"remove the permission, confirm the deny, then proceed\" and its "
+                    "twin \"grant the permission, confirm it works, then start\" — and "
+                    "publish no wait-N-seconds number, because the measurement supports "
+                    "none.",
+        "note": "Two scope corrections, both against my own earlier prose. (1) Row #4 "
+                "(`C-s4-4-trow-010`, the SCP/permission-boundary backstop) is NOT a site: "
+                "an account-level deny is exactly the fail-closed control this measurement "
+                "argues for, so \"this holds even if route #3's role hygiene regresses\" "
+                "stands as written. What needs care is the implied timeline of *recovering* "
+                "from a regression, which lives in row #3. (2) The published analysis "
+                "record `results/phase1/F5-1.json` says in "
+                "`data_plane_reconvergence.amendment_candidate` that \"sections 4 and 5 "
+                "treat revoking an IAM grant as an immediate remedy\". §5 does not: its "
+                "only IAM sentence is about `UpdateConfigurationBundle`, and a triage grep "
+                "for revoke/incident/remediate/rotate returns one unrelated X-class row. "
+                "That string is unverified prose in a justification field "
+                "(`feedback_prose_is_not_verified`); the register does not inherit it.",
+    },
 ]
 
 
@@ -751,7 +824,13 @@ def expand(cand: dict, rows: list[dict],
         if own_groups and r["claim_id"] not in promoted and mg not in own_groups:
             related.append({**r, "_why": why})
         else:
-            if r["claim_id"] in promoted and mg not in own_groups:
+            # "promoted" means *this claim would have been listed as related and was moved
+            # to sites*. That decision only exists when the candidate declares merge
+            # groups; with no groups declared nothing is related, so the suffix would be
+            # labelling a decision the code did not make
+            # (`feedback_label_must_match_computation`). V13-13 and V13-14 name a single
+            # claim each and declare no group — they read "named explicitly", full stop.
+            if own_groups and r["claim_id"] in promoted and mg not in own_groups:
                 why += " · promoted"
             sites.append({**r, "_why": why})
 
