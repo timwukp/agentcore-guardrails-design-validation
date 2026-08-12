@@ -55,6 +55,8 @@ import boto3
 import botocore
 from botocore.config import Config
 
+import redact
+
 # The project's pinned region for every experiment except F8-1. Named so a reader of a
 # call site can see which choice is being made, rather than reading a bare string.
 MAIN_REGION = "us-east-1"
@@ -400,6 +402,26 @@ class ClientFactory:
 def factory(region: str, *, role_arn: str | None = None) -> ClientFactory:
     """The entry point. `region` is positional on purpose."""
     return ClientFactory(region=region, role_arn=role_arn)
+
+
+def account_id(fc: ClientFactory) -> str:
+    """This caller's account ID, and the ONE place it is resolved.
+
+    Every script previously wrote `fc.sts().get_caller_identity()["Account"]` inline. That is
+    a correct call and the wrong shape: the account ID has to be registered with
+    `redact.register_account_id` so the masker can find it outside ARN position — see that
+    function for the leak that made this necessary — and ten inline call sites are ten places
+    to forget. Routing them through here makes registration a consequence of needing the
+    value, and `lib/tests/test_account_id_choke_point.py` fails the suite if a new inline call
+    site appears.
+
+    Not cached: `get_caller_identity` is free, unthrottled and answered locally by the
+    signer's own credentials, and a cache keyed on nothing would return the wrong answer under
+    the assumed role this factory can carry.
+    """
+    aid = fc.sts().get_caller_identity()["Account"]
+    redact.register_account_id(aid)
+    return aid
 
 
 def sdk_versions() -> dict[str, str]:

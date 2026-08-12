@@ -446,7 +446,7 @@ def main() -> int:
     f = A.factory(args.region)
     logs = f.logs()
     xray = f.client("xray")
-    account_id = f.sts().get_caller_identity()["Account"]
+    account_id = A.account_id(f)
 
     store = EvidenceStore(run_id, "infra", "P2-07-traces")
     store.write_environment()

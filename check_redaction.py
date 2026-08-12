@@ -159,6 +159,34 @@ ALLOW: list[tuple[str, str, str, str]] = [
      "ParamValidator probe. It trips the shape-based account-ID pattern because the "
      "digit run has the same shape; it is a guardrail id, not an account ID, and the "
      "probe sends nothing anywhere"),
+    # F5's offline fixtures. Same reasoning as the f1_config/tests entries above, and the same
+    # verification: the account field is AWS's published documentation example, and neither this
+    # organization's management account nor either member account appears in any of these lines.
+    #
+    # Not redacted, for a reason specific to what these two fixtures feed. `_grant_policy` builds
+    # an IAM policy document whose `Resource` is the function ARN, and the F5-4a fixtures build a
+    # Cedar-side gateway ARN; both are asserted on for SHAPE. `redact.ACCOUNT_PLACEHOLDER` is
+    # `<account>`, which is not 12 digits, so a redacted fixture would assert against a policy
+    # document IAM would reject — the test would pass while describing a request that cannot be
+    # made. Each entry matches a narrow constant name, so it waives the fixture's line and nothing
+    # else in the file; a real identifier landing on any other line still fails the gate.
+    ("f5_redteam/tests/test_policy_failure_modes.py", "aws-account-id", "GW_ARN",
+     "AWS's published example account ID in the offline gateway-ARN fixture for F5-4a's "
+     "policy-failure arms; no AWS call is made anywhere in that file"),
+    ("f5_redteam/tests/test_policy_failure_modes.py", "arn", "GW_ARN",
+     "same line as the entry above: the `arn` pattern correctly fires on a complete ARN whose "
+     "account field is AWS's documentation example, not ours"),
+    ("f5_redteam/tests/test_route1_direct_invoke.py", "aws-account-id", "FN_ARN",
+     "AWS's published example account ID in the offline Lambda-ARN fixture. It is fed to "
+     "`_grant_policy`, whose output shape is asserted on, and IAM requires a 12-digit account "
+     "field in a Resource ARN"),
+    ("f5_redteam/tests/test_route1_direct_invoke.py", "arn", "FN_ARN",
+     "same line as the entry above: a complete example ARN, correctly matched by the shape-based "
+     "`arn` pattern"),
+    ("f5_redteam/tests/test_route1_direct_invoke.py", "arn", "_count_authorize_spans",
+     "a synthetic gateway ARN whose account field is the single digit `1` — not a 12-digit "
+     "account ID, and no AWS account can be numbered 1. It exists to assert that the span query "
+     "is filtered on the ARN it was handed; `query_spans` is replaced and nothing is sent"),
 ]
 
 
@@ -184,8 +212,8 @@ ALLOW: list[tuple[str, str, str, str]] = [
 #      characters; 4 of them in this run's output were all digits. Excused only when the
 #      match is preceded by the rest of the UUID on the same line, so a bare 12-digit
 #      number is never excused by this rule.
-_UUID_TAIL = re.compile(
-    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-(\d{12})\b")
+_UUID_HEAD = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-"
+_UUID_TAIL = re.compile(_UUID_HEAD + r"(\d{12})\b")
 
 # The ARN excuse's three regexes, separated so the excuse can DETECT an ARN it cannot decompose
 # and refuse rather than pass. `_ARN_DETECT` is the reporting pattern itself (same shape as
@@ -288,20 +316,45 @@ def allowed(path: Path, name: str, line: str) -> str | None:
                 f"{_redact.ACCOUNT_PLACEHOLDER} (lib/redact.py) or is a run-time format "
                 f"placeholder; partition, Region and resource id are not redaction targets")
     if name == "aws-account-id":
-        m = re.search(r"\b\d{12}\b", line)
-        tok = m.group() if m else ""
-        # Never excuse a token that sits in the account field of an ARN, whatever else it
-        # matches. That is the one position where a 12-digit number IS an account ID, and a
-        # corpus fixture that happened to equal one would otherwise waive a real leak.
-        if tok and not re.search(r"arn:aws[a-z-]*:[a-z0-9-]*:[a-z0-9-]*:" + tok, line):
+        # EVERY 12-digit token on the line must be excusable, not just the first one.
+        #
+        # Measured 2026-08-12: the previous version did `re.search(...)` and reasoned about
+        # that single token, so one excusable token waived the WHOLE line — a line carrying a
+        # corpus fixture and a real account id would have been excused by the fixture. This is
+        # the same vacuous-excuse shape DEV-P2-01 records for the ARN branch, in the branch
+        # right below it, and it survived that fix because only the ARN half was re-read.
+        toks = re.findall(r"\b\d{12}\b", line)
+        why: set[str] = set()
+        for tok in toks:
+            # Never excuse a token that sits in the account field of an ARN, whatever else it
+            # matches. That is the one position where a 12-digit number IS an account ID, and a
+            # corpus fixture that happened to equal one would otherwise waive a real leak.
+            if re.search(r"arn:aws[a-z-]*:[a-z0-9-]*:[a-z0-9-]*:" + tok, line):
+                return None
             if tok in corpus_values():
-                return ("appears verbatim in a sha256-sealed corpus file, so it is corpus "
+                why.add("appears verbatim in a sha256-sealed corpus file, so it is corpus "
                         "content (a 12-hex item id that is all digits, or a PII fixture "
                         "whose entity type IS a 12-digit number), not an account ID")
-            um = _UUID_TAIL.search(line)
-            if um and um.group(1) == tok:
-                return ("the last group of a UUID request id, matched only with the rest "
+                continue
+            if re.search(_UUID_HEAD + tok + r"\b", line):
+                why.add("the last group of a UUID request id, matched only with the rest "
                         "of the UUID present on the same line")
+                continue
+            # The fractional part of a decimal number. `\b\d{12}\b` treats `.` as a word
+            # boundary, so a latency figure whose fraction happens to be exactly twelve
+            # digits — `758.324053273605`, published by F6's CloudWatch percentile read —
+            # is reported as an account id. It cannot be one: an identifier is a token, and
+            # this token's own delimiters make it the tail of a number. Anchored on a digit
+            # before the `.` and on NO digit or `.` after, so neither an integer part nor a
+            # dotted-quad segment takes this branch.
+            if re.search(r"\d\." + tok + r"(?![\d.])", line):
+                why.add("the fractional part of a decimal number (digit, `.`, then exactly "
+                        "twelve digits and no further digit or `.`), which is a numeric "
+                        "value rather than an identifier")
+                continue
+            return None
+        if why:
+            return " AND ".join(sorted(why))
     # The same sealed-corpus rule, applied to access key IDs. `corpora/banks.py` already
     # has a path-scoped waiver for AWS's published example keys, but a PII corpus exists to
     # be SENT: the fixtures come back on every checkpoint row as `slot`, so the waiver was

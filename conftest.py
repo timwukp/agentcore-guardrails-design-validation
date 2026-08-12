@@ -59,12 +59,37 @@ So authorship is established by **`sys.addaudithook`**, not by inference from a 
 The two are combined so that each covers the other's blind spot without either one's failure
 mode leaking through:
 
-| diff shows a change | this test wrote in-process | this test spawned a child | verdict |
-|:---|:---|:---|:---|
-| yes | yes | — | **FAIL**, naming the write the hook recorded |
-| yes | no | **yes** | **FAIL** — the child is a write this session caused and cannot rule out |
-| yes | no | no | **not this test** — reported as concurrency, once, and not charged to any test |
-| no  | yes | — | **FAIL** — an in-place rewrite to identical (size, mtime_ns), which the diff would miss |
+| diff shows a change | this test wrote in-process | spawned a child | foreign live run | verdict |
+|:---|:---|:---|:---|:---|
+| yes | yes | — | — | **FAIL**, naming the write the hook recorded |
+| yes | no | **yes** | no | **FAIL** — the child is a write this session caused and cannot rule out |
+| yes | no | **yes** | **yes** | **not chargeable** — see the third channel below |
+| yes | no | no | — | **not this test** — reported as concurrency, once, and not charged |
+| no  | yes | — | — | **FAIL** — an in-place rewrite to identical (size, mtime_ns), which the diff would miss |
+
+THE THIRD CHANNEL: IS ANOTHER PROCESS WRITING RIGHT NOW?
+--------------------------------------------------------
+Row 3 was row 2 until a run of this suite finished `1438 passed, 3 skipped, **49 errors**`, where
+all 49 errors read `MODIFIED results/checkpoints/F5-4a__control_no_probe.json` and were charged to
+49 different tests — every one of which was innocent. `f5_redteam/04_policy_failure_modes.py` was
+live in another process, rewriting that checkpoint after each of its 100 trials. The tests were
+charged for one reason: they spawn subprocesses (the gate-runner tests all do), and the table said
+a spawner cannot be cleared.
+
+That is the same false accusation DEV-P1-19 records, arriving through the one door the fix left
+open. The audit and diff channels cannot settle it between them — the hook is blind to children
+and the diff is blind to authors — so it needs a third observation, and the observation that
+actually answers it is: **is a process that is NOT a descendant of this pytest run executing a
+script from this repository?** `_foreign_live_run` asks the process table exactly that, and only
+at the moment a charge is about to be made, so its cost is paid on the rare path.
+
+When the answer is yes, the diff is not evidence about any test and the change is reported as
+concurrency instead — but the spawning tests are NOT quietly cleared. They are listed in the
+terminal summary as *uncleared*, because a child that really did write into the live tree looks
+identical from here while a live run is in flight. Re-running with nothing live is what clears
+them, and the summary says so. The alternative — keeping row 2 — was measured against its actual
+consequence: 49 red teardowns on a green suite teaches the operator to read this guard's red as
+"a live run must be going", which is precisely how the real leak gets waved through.
 
 The last row is not hypothetical padding: it is the case where the audit channel is strictly
 stronger than the diff, and a checkpoint overwritten with stub trials is the worse of the two
@@ -262,6 +287,96 @@ _WHY = (
 # concurrency once, as information, instead of 147 times as an accusation.
 _UNATTRIBUTED: list[str] = []
 
+# The third channel's findings: foreign processes seen writing-capable during this session, and
+# the spawning tests that could therefore not be cleared. Both are reported; neither is a
+# failure, and neither is silent.
+_FOREIGN: set[str] = set()
+_UNCLEARED: set[str] = set()
+
+# Scripts a live Phase 1 run executes. Matched against the process table, not against a name a
+# caller supplies, so nothing can opt itself into being ignored.
+_LIVE_GLOBS = ("f1_config/", "f2_determinism/", "f3_efficacy/", "f4_modes/", "f5_redteam/",
+               "f6_latency/", "f7_observability/", "f8_regional/", "f10_billing/", "infra/")
+
+
+def _descendants_of(pid: int, procs: list[tuple[int, int, str]]) -> set[int]:
+    """Every pid whose parent chain reaches `pid`, including `pid` itself."""
+    kids: dict[int, list[int]] = {}
+    for p, pp, _cmd in procs:
+        kids.setdefault(pp, []).append(p)
+    seen, stack = {pid}, [pid]
+    while stack:
+        for k in kids.get(stack.pop(), ()):
+            if k not in seen:
+                seen.add(k)
+                stack.append(k)
+    return seen
+
+
+def _foreign_live_run() -> set[str]:
+    """`pid script` for repo scripts running OUTSIDE this pytest process tree.
+
+    Called only when a charge is about to be made, so the `ps` cost (~15 ms) is paid on the rare
+    path and never on the 1,489-test happy path.
+
+    Any failure to read the process table returns the empty set — i.e. it falls back to charging
+    the test. A guard that cannot make its observation must not use the *absence* of that
+    observation as exoneration (`feedback_guard_tool_exit_codes`), and here exoneration is the
+    lenient direction.
+    """
+    import subprocess
+    try:
+        out = subprocess.run(["ps", "-eo", "pid=,ppid=,command="],
+                             capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        return set()
+    if out.returncode != 0:
+        return set()
+    procs: list[tuple[int, int, str]] = []
+    for line in out.stdout.splitlines():
+        parts = line.split(None, 2)
+        if len(parts) == 3 and parts[0].isdigit() and parts[1].isdigit():
+            procs.append((int(parts[0]), int(parts[1]), parts[2]))
+    mine = _descendants_of(os.getpid(), procs)
+    found: set[str] = set()
+    for pid, _pp, cmd in procs:
+        if pid in mine or ".py" not in cmd:
+            continue
+        # A live run is identified by the case-script path it was launched with. `--dry-run` is
+        # excluded: a dry run makes no AWS call and writes nothing, so it is not an explanation
+        # for a tree change and must not become a blanket excuse.
+        if not any(g in cmd for g in _LIVE_GLOBS) or "--dry-run" in cmd:
+            continue
+        # And the script must resolve to a file INSIDE THIS TREE. Without this the channel would
+        # be scoped to the machine rather than to the repository, and the arms in
+        # `lib/tests/test_write_guard.py` — which run against a copy of this file whose ROOT is a
+        # pytester sandbox — would pass or fail depending on whether an unrelated live run
+        # happened to be in flight elsewhere. A guard whose verdict depends on that is not a
+        # guard.
+        #
+        # Containment is checked after `resolve`, not by `(ROOT / script).exists()` alone: joining
+        # an ABSOLUTE argv discards ROOT entirely, so a live run launched by absolute path from a
+        # different checkout of this repo satisfied `.exists()` and was credited to this tree.
+        #
+        # Residual, stated rather than papered over: a run in a different checkout launched with a
+        # RELATIVE path is indistinguishable from ours, because the process table does not carry
+        # the cwd. That error is in the conservative direction — it can only move a charge to
+        # UNCLEARED, never manufacture a conviction.
+        toks = cmd.split()
+        script = next((t for t in toks if t.endswith(".py")), "")
+        if not script:
+            continue
+        cand = (ROOT / script).resolve()
+        if cand.is_file() and str(cand).startswith(str(ROOT.resolve()) + os.sep):
+            # The SCRIPT and its arguments, not `cmd[:120]`. A macOS interpreter path is 108
+            # characters of framework directory, so a leading slice showed the operator
+            # `/opt/homebrew/Cellar/python@3.12/.../MacOS/P` and cut off the one field that
+            # identifies the run (feedback_label_must_match_computation: the label has to name
+            # what was actually found).
+            tail = " ".join(toks[toks.index(script):])
+            found.add(f"pid {pid}  {tail[:140]}")
+    return found
+
 
 @pytest.fixture(autouse=True)
 def _no_writes_to_results(request):
@@ -285,6 +400,15 @@ def _no_writes_to_results(request):
         pytest.fail("this test wrote into the live results tree:\n" + "\n".join(mine)
                     + ("\n\nthe tree also changed:\n" + "\n".join(lines) if lines else "")
                     + _WHY, pytrace=False)
+    if lines and spawned and (foreign := _foreign_live_run()):
+        # The third channel answered: a repo script is live in a process this session did not
+        # start, and it is writing into the tree the diff just measured. The diff is therefore
+        # not evidence about this test. Not cleared either — recorded as uncleared and named in
+        # the summary, because a child that really did write looks identical from here.
+        _FOREIGN.update(foreign)
+        _UNCLEARED.add(nodeid)
+        _UNATTRIBUTED.extend(lines)
+        return
     if lines and spawned:
         pytest.fail(
             "the live results tree changed while this test ran:\n" + "\n".join(lines)
@@ -326,6 +450,15 @@ def _no_writes_to_evidence(request):
             + ("\n\nthe tree also changed:\n" + "\n".join(lines) if lines else "")
             + _WHY)
 
+    if lines and spawners and (foreign := _foreign_live_run()):
+        # Same third channel, same reasoning, at session scope. `evidence/` is where a live run
+        # writes every one of its records, so this is the path that fires first and hardest when
+        # the suite is run beside one.
+        _FOREIGN.update(foreign)
+        _UNCLEARED.update(spawners)
+        _UNATTRIBUTED.extend(lines)
+        return
+
     if lines and spawners:
         raise AssertionError(
             "the live evidence tree changed while the suite ran:\n" + "\n".join(lines)
@@ -366,10 +499,21 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
     tr.write_line(
         f"{n} change(s) under results/ or evidence/ during this session were made by ANOTHER "
         f"PROCESS.", yellow=True)
-    tr.write_line(
-        "  No test wrote to a watched tree in this interpreter (audit hook: 0 charged writes) "
-        "and no test spawned a child that could have. A live run is almost certainly in "
-        "flight. Not charged to any test.")
+    if _UNCLEARED:
+        # The two paths reach this notice for DIFFERENT reasons and must not share a sentence.
+        # This branch fired because a repo script was found running outside this process tree
+        # while tests that DO spawn children were running; saying "no test spawned a child that
+        # could have" here would contradict the UNCLEARED list printed a few lines below it
+        # (feedback_label_must_match_computation).
+        tr.write_line(
+            "  No test wrote to a watched tree in this interpreter (audit hook: 0 charged "
+            "writes), and a live run WAS found in the process table, so the diff cannot be "
+            "attributed. Not charged to any test.")
+    else:
+        tr.write_line(
+            "  No test wrote to a watched tree in this interpreter (audit hook: 0 charged "
+            "writes) and no test spawned a child that could have. A live run is almost "
+            "certainly in flight. Not charged to any test.")
     tr.write_line(
         "  But the tree-diff channel is VOID for this session — only the audit channel was in "
         "force. Re-run with no live run active for full two-channel coverage.")
@@ -377,3 +521,23 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
         tr.write_line(f"  {line.strip()}")
     if n > 10:
         tr.write_line(f"  ... and {n - 10} more")
+
+    if _FOREIGN:
+        tr.write_line("")
+        tr.write_line("  the writer was identified in the process table, outside this pytest "
+                      "process tree:", yellow=True)
+        for p in sorted(_FOREIGN):
+            tr.write_line(f"    {p}")
+    if _UNCLEARED:
+        tr.write_line("")
+        tr.write_line(
+            f"  {len(_UNCLEARED)} test(s) spawned subprocesses during that window and are "
+            f"UNCLEARED, not cleared:", yellow=True)
+        for nodeid in sorted(_UNCLEARED)[:10]:
+            tr.write_line(f"    {nodeid}")
+        if len(_UNCLEARED) > 10:
+            tr.write_line(f"    ... and {len(_UNCLEARED) - 10} more")
+        tr.write_line(
+            "  A child that really did write into the live tree is indistinguishable from the "
+            "foreign run's writes while that run is in flight. These tests are neither charged "
+            "nor exonerated; re-run with nothing live to settle them.")

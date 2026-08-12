@@ -376,6 +376,46 @@ class EvidenceStore:
         return p
 
 
+def _drain_streams(response: dict) -> None:
+    """Replace any streaming payload in `response` with the text it carries, in place.
+
+    `InvokeModel` returns its payload as a `StreamingBody`, which is a file object over the
+    socket. Two consequences, and the second is why this function exists rather than a
+    `default=` hook on the serialiser:
+
+    1. It is not serialisable. Before this, `capture(store, "invoke_model", ...)` died with
+       `TypeError: cannot pickle 'BufferedReader' instances` at `store.add`, AFTER the call had
+       been billed and its request id received. So the evidence tree could not record an
+       `InvokeModel` call at all, and every case needing that transport was unreachable
+       (feedback_no_deploy_path_no_component). Found by F5-6's `--probe`, on four calls.
+
+    2. Reading it is DESTRUCTIVE and one-shot. That rules out serialising a copy and leaving
+       the original for the caller: whoever reads second gets an empty string, silently, and an
+       empty body parses to `{}` — which for F5-6 would have read as "no assessment present",
+       i.e. a failed trial, for reasons entirely internal to this file.
+
+    So the stream is drained exactly once, here, at the single point every record passes
+    through, and the text is put back where the payload was. Callers read the body off
+    `rec.response`, never off their own handle — there is no other handle, and a caller that
+    somehow kept one gets the empty read rather than a duplicate charge.
+
+    Decoded as UTF-8 with `errors="replace"` rather than left as bytes: the record is written
+    as JSON, and a body that cannot be decoded must still produce a readable record of a call
+    that really happened. Non-text payloads are left as a length marker instead of mangled.
+    """
+    for key, val in list(response.items()):
+        if not hasattr(val, "read"):
+            continue
+        raw = val.read()
+        if isinstance(raw, (bytes, bytearray)):
+            try:
+                response[key] = raw.decode("utf-8")
+            except UnicodeDecodeError:
+                response[key] = f"<{len(raw)} bytes, not utf-8>"
+        else:
+            response[key] = raw
+
+
 def capture(store: EvidenceStore, operation: str, client, **params) -> Record:
     """Call ``client.<operation>(**params)``, recording everything either way.
 
@@ -454,6 +494,7 @@ def capture(store: EvidenceStore, operation: str, client, **params) -> Record:
     if resp is not None:
         rmeta = resp.get("ResponseMetadata", {}) or {}
         rec.response = {k: v for k, v in resp.items() if k != "ResponseMetadata"}
+        _drain_streams(rec.response)
     elif isinstance(err, ClientError):
         rmeta = (err.response or {}).get("ResponseMetadata", {}) or {}
         rec.error_code = (err.response or {}).get("Error", {}).get("Code", "")

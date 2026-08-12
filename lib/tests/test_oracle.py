@@ -988,3 +988,54 @@ def test_every_kind_in_use_has_a_decision_branch():
 
 def test_the_case_and_binding_counts_match_the_floor():
     assert len(O.cases()) == len(O.BINDINGS) == O.MIN_BOUND_CASES
+
+
+def test_every_evaluate_call_site_in_the_repo_passes_exactly_one_argument():
+    """A static sweep, because this signature error is only reachable AFTER the money is spent.
+
+    `evaluate` takes the Observation alone — the case id travels inside it, so a record can
+    never be decided under one case's binding while carrying another's data. Writing
+    `O.evaluate(CASE, obs)` is therefore not a harmless duplicate: it is a TypeError raised at
+    the last line of a run's analysis, i.e. after every billed call and every IAM mutation has
+    already happened. F5-1 shipped with exactly that call, and it fired after 160 invocations
+    and both mutations. The cost of the mistake has nothing to do with its size, so it is
+    checked across the whole repo by AST rather than trusted to review.
+
+    Only positional arity is asserted. `evaluate(obs)` and `evaluate(obs=...)` are both fine;
+    two positionals cannot be.
+    """
+    import ast
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parent.parent.parent
+    offenders = []
+    n_sites = 0
+    for path in sorted(root.rglob("*.py")):
+        if "__pycache__" in path.parts or ".venv" in str(path):
+            continue
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+        except (SyntaxError, UnicodeDecodeError):
+            continue
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            fn = node.func
+            name = (fn.attr if isinstance(fn, ast.Attribute) else
+                    fn.id if isinstance(fn, ast.Name) else None)
+            if name != "evaluate":
+                continue
+            # `O.evaluate` / `oracle.evaluate` / a bare `evaluate` inside this module's own tests.
+            if isinstance(fn, ast.Attribute) and not isinstance(fn.value, ast.Name):
+                continue
+            n_sites += 1
+            if len(node.args) > 1:
+                offenders.append(f"{path.relative_to(root)}:{node.lineno} "
+                                 f"({len(node.args)} positional args)")
+
+    assert n_sites >= 15, (
+        f"only {n_sites} evaluate() call sites were found; the sweep is not reaching the case "
+        f"scripts, so it would pass with the defect present")
+    assert offenders == [], (
+        "evaluate() takes the Observation alone; these call sites raise TypeError at analysis "
+        "time, after the run is paid for:\n  " + "\n  ".join(offenders))

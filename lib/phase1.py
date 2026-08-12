@@ -44,6 +44,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import dataclasses
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping, Sequence
@@ -296,7 +297,7 @@ def create_probe_guardrail(client, store, lim, *, label: str, name: str, config:
         error_code=rec.error_code or None,
         error_message=rec.error_message or None,
         http_status=rec.http_status, request_id=rec.request_id,
-        evidence=rec.path, detail=dict(detail))
+        evidence=rec.path, detail=_detail(case_id, detail))
 
 
 def delete_probe_guardrails(client, store, lim,
@@ -453,6 +454,39 @@ def _counts(tallies: Iterable[dict]) -> tuple[int, int, int, list[str]]:
     return x, n_u, n_a, sorted(c for c in codes if c)
 
 
+_OBS_FIELDS = frozenset(f.name for f in dataclasses.fields(O.Observation)) - {"detail"}
+
+
+def _detail(case_id: str, detail: dict[str, Any]) -> dict[str, Any]:
+    """Refuse a `**detail` key that is really an Observation FIELD name.
+
+    Every `obs_*` helper below sweeps its surplus keywords into `detail`, which is free-form and
+    never read by the decision rule. So a caller who writes
+
+        P.obs_zero_events(CASE, adverse=0, n=120, mutation_inverted=True)
+
+    does not set `Observation.mutation_inverted`; the value lands in `detail`, the field stays
+    None, and for a case whose mutation is MANDATORY `evaluate` then downgrades a clean TRUE to
+    INCONCLUSIVE with "the mutation was not recorded" — while the payload plainly shows the
+    mutation inverted. F5-1 shipped exactly that call and published INCONCLUSIVE over a
+    successful 120-trial run whose mandatory mutation had inverted 20/20.
+
+    The failure is silent in the worst way: the value is present, visible in the result file, and
+    unread. The fields are set as attributes after construction (`o.mutation_inverted = ...`),
+    which is what every other case in the suite does. This makes the wrong spelling fatal at the
+    call rather than three arms later.
+    """
+    bad = sorted(_OBS_FIELDS & set(detail))
+    if bad:
+        raise TypeError(
+            f"{case_id}: {', '.join(bad)} " + ("is" if len(bad) == 1 else "are") +
+            " Observation field(s), not free-form detail. Passed as **detail the value is stored "
+            "where the decision rule never looks, so the field keeps its default and the verdict "
+            "is decided as if it were never measured. Set it as an attribute instead: "
+            f"o = P.obs_...(...); o.{bad[0]} = <value>")
+    return dict(detail)
+
+
 def obs_proportion(case_id: str, tallies: Sequence[dict], **detail: Any) -> O.Observation:
     """LOWER_ABOVE / UPPER_BELOW / ASYMMETRIC_FPR: x adverse-or-detected out of n.
 
@@ -464,7 +498,7 @@ def obs_proportion(case_id: str, tallies: Sequence[dict], **detail: Any) -> O.Ob
     """
     x, n_u, n_a, codes = _counts(tallies)
     return O.Observation(case_id=case_id, n_attempted=n_a, n_usable=n_u, adverse=x,
-                         detail={"failure_codes": codes, "x": x, **detail})
+                         detail={"failure_codes": codes, "x": x, **_detail(case_id, detail)})
 
 
 def obs_existence(case_id: str, observed: bool, *, n: int,
@@ -503,7 +537,7 @@ def obs_existence(case_id: str, observed: bool, *, n: int,
     if n < 0:
         raise ValueError(f"{case_id}: n={n} is negative; a trial count cannot be")
     return O.Observation(case_id=case_id, observed_bool=bool(observed),
-                         n_attempted=int(n), n_usable=int(n), detail=dict(detail))
+                         n_attempted=int(n), n_usable=int(n), detail=_detail(case_id, detail))
 
 
 def obs_zero_events(case_id: str, adverse: int, n: int, **detail: Any) -> O.Observation:
@@ -515,7 +549,7 @@ def obs_zero_events(case_id: str, adverse: int, n: int, **detail: Any) -> O.Obse
     is denominated in. A tally would supply the count of one of them.
     """
     return O.Observation(case_id=case_id, n_attempted=n, n_usable=n, adverse=int(adverse),
-                         detail=dict(detail))
+                         detail=_detail(case_id, detail))
 
 
 def obs_intervals(case_id: str, *, detect_x: int, detect_n: int,
@@ -531,27 +565,27 @@ def obs_intervals(case_id: str, *, detect_x: int, detect_n: int,
     return O.Observation(case_id=case_id,
                          n_attempted=detect_n + fpr_n, n_usable=detect_n + fpr_n,
                          detect_x=int(detect_x), detect_n=int(detect_n),
-                         fpr_x=int(fpr_x), fpr_n=int(fpr_n), detail=dict(detail))
+                         fpr_x=int(fpr_x), fpr_n=int(fpr_n), detail=_detail(case_id, detail))
 
 
 def obs_boundary(case_id: str, *, at_limit_ok: bool, over_limit_rejected: bool,
                  **detail: Any) -> O.Observation:
     return O.Observation(case_id=case_id, at_limit_ok=bool(at_limit_ok),
                          over_limit_rejected=bool(over_limit_rejected),
-                         detail=dict(detail))
+                         detail=_detail(case_id, detail))
 
 
 def obs_distinct(case_id: str, values: Sequence[float], n: int,
                  **detail: Any) -> O.Observation:
     return O.Observation(case_id=case_id, n_attempted=n, n_usable=n,
-                         distinct_values=list(values), detail=dict(detail))
+                         distinct_values=list(values), detail=_detail(case_id, detail))
 
 
 def obs_paired(case_id: str, *, improved: bool, p_value: float, n: int,
                **detail: Any) -> O.Observation:
     return O.Observation(case_id=case_id, n_attempted=n, n_usable=n,
                          improved=bool(improved), p_value=float(p_value),
-                         detail=dict(detail))
+                         detail=_detail(case_id, detail))
 
 
 def obs_roc(case_id: str, *, operating_points: int, argmax_j_interior: bool,
@@ -559,12 +593,12 @@ def obs_roc(case_id: str, *, operating_points: int, argmax_j_interior: bool,
     return O.Observation(case_id=case_id, n_attempted=n, n_usable=n,
                          operating_points=int(operating_points),
                          argmax_j_interior=bool(argmax_j_interior),
-                         detail=dict(detail))
+                         detail=_detail(case_id, detail))
 
 
 def obs_recorded(case_id: str, **detail: Any) -> O.Observation:
     """RECORDED: the pre-registration declares the outcome unknown; both are findings."""
-    return O.Observation(case_id=case_id, detail=dict(detail))
+    return O.Observation(case_id=case_id, detail=_detail(case_id, detail))
 
 
 # ---------------------------------------------------------------------------
