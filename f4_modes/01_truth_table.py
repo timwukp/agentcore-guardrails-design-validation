@@ -2023,7 +2023,7 @@ def main(argv: list[str] | None = None) -> int:                            # noq
 
     admin = A.factory(args.region)
     ac = admin.agentcore_control()
-    account_id = admin.sts().get_caller_identity()["Account"]
+    account_id = A.account_id(admin)
     store = EvidenceStore(run_id, FAMILY, "F4",
                           root=Path(args.evidence_root) if args.evidence_root else None)
     store.write_environment()

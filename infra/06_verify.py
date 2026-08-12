@@ -438,7 +438,7 @@ def main() -> int:
 
     state = State.load(Path(args.state) if args.state else None)
     f = A.factory(args.region)
-    account_id = f.sts().get_caller_identity()["Account"]
+    account_id = A.account_id(f)
 
     store = EvidenceStore(state.run_id, "infra", "P2-06-verify")
     store.write_environment()

@@ -66,10 +66,60 @@ _ARN_ACCOUNT = re.compile(
 
 ACCOUNT_PLACEHOLDER = "<account>"
 
+# The account IDs this process has been told about, masked as bare tokens as well as in ARN
+# position. See `register_account_id`.
+_KNOWN: set[str] = set()
+
+
+def register_account_id(account_id: str) -> None:
+    """Teach the mask one account ID, so it is masked OUTSIDE ARN position too.
+
+    Why a registry rather than widening `_ARN_ACCOUNT`
+    -------------------------------------------------
+    Measured 2026-08-12: the redaction gate found the account ID in `results/phase1/F7-1.json`
+    and `F7-2.json`, inside a CloudWatch dimension value — `ProviderName` on
+    `ResourceAccessTokenFetchSuccess`, naming another team's OAuth2 credential provider in the
+    same account, whose *name* embeds the account ID. That is not an ARN and no ARN-anchored
+    pattern can reach it. F7's whole instrument is a namespace-wide enumeration of a SHARED
+    namespace, so the general form of this leak is: any resource name any other team chose can
+    arrive in our results, and resource names are free text.
+
+    The obvious widening — mask every `\\b\\d{12}\\b` — is the one this module's docstring
+    already rejects, and for a live reason: a PII corpus fixture whose entity type IS a
+    12-digit number (`US_BANK_ACCOUNT_NUMBER`) comes back on checkpoint rows, and masking it
+    would destroy the record of which fixture was sent. Masking only IDs this process has
+    actually resolved is narrow enough to leave corpus content alone and wide enough to cover
+    a name nobody anticipated. The sealed corpora were checked for the live account ID at the
+    time of writing and do not contain it; `lib/tests/test_redact.py` keeps that check honest.
+
+    Registration is a side effect of `awsclients.account_id()`, which is the only place the ID
+    is resolved (enforced by `lib/tests/test_account_id_choke_point.py`), so a new case
+    inherits the mask without knowing this function exists — the same property the two-writer
+    design gives ARN masking. Unregistered is fail-OPEN, which is why the gate stays the
+    backstop: it is what caught this.
+    """
+    if not account_id or not account_id.isdigit() or len(account_id) != 12:
+        raise ValueError(f"account_id must be 12 digits, got {account_id!r}")
+    _KNOWN.add(account_id)
+
+
+def known_account_ids() -> frozenset[str]:
+    """The registered account IDs. For tests and for reporting what the mask can see."""
+    return frozenset(_KNOWN)
+
 
 def mask_text(s: str) -> str:
-    """Replace the account field of every ARN in `s`. Idempotent."""
-    return _ARN_ACCOUNT.sub(rf"\g<1>{ACCOUNT_PLACEHOLDER}\g<3>", s)
+    """Replace the account field of every ARN in `s`, and every registered account ID.
+
+    Idempotent: the placeholder contains no digits, so a second pass finds nothing to
+    replace. The bare-token pass is anchored on `\\b` at both ends, so a 12-digit account ID
+    embedded in a longer digit run is left alone — such a run is not an account reference.
+    """
+    out = _ARN_ACCOUNT.sub(rf"\g<1>{ACCOUNT_PLACEHOLDER}\g<3>", s)
+    for aid in _KNOWN:
+        if aid in out:
+            out = re.sub(rf"\b{aid}\b", ACCOUNT_PLACEHOLDER, out)
+    return out
 
 
 def mask(obj: Any) -> Any:

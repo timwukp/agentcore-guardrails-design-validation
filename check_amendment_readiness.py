@@ -69,13 +69,29 @@ def fatal(msg: str) -> int:
     return 2
 
 
-def observation_days(run_ids: list[str], problems: list[str], src: str) -> set[str]:
-    """Distinct UTC calendar days across every evidence record in the given runs.
+def observation_days(run_ids: list[str], cases: list[str], problems: list[str],
+                     src: str) -> set[str]:
+    """Distinct UTC calendar days across the evidence records OF THE DECLARED CASES.
 
     Read from `t_start_utc`, which `lib/evidence.py` writes for every call, success or
     exception. Derived rather than declared: a finding cannot assert it was replicated.
+
+    Scoped to `case_id`, and that scoping is the whole check. This project adopts ONE run id
+    for nearly everything, so a run-directory-wide scan credited every finding with every day
+    that ANY case ran on: FINDING-F5-1-REVOCATION, whose records all fall on 2026-08-11, was
+    reported as spanning ['2026-08-10', '2026-08-11'] on the strength of F1-3's and F4's
+    records. That is a replication check that cannot fail once the run spans two days — it
+    would have licensed amending the document from a single day's observation of the case
+    actually under test.
+
+    `cases` is declared in the provenance block rather than parsed out of the filename, because
+    the two do not match: FINDING-F5-7A.md rests on records whose `case_id` is `F5-7a`, and a
+    filename-derived guess would silently match nothing, which this function reports as a
+    failure — the right direction, but for the wrong reason and with a confusing message.
     """
     days: set[str] = set()
+    wanted = set(cases)
+    n_matched = 0
     for rid in run_ids:
         d = EVIDENCE / rid
         if not d.is_dir():
@@ -94,11 +110,20 @@ def observation_days(run_ids: list[str], problems: list[str], src: str) -> set[s
                 problems.append(f"{src}: {p.relative_to(ROOT)} is not readable JSON "
                                 f"({e}), so its date cannot be counted")
                 continue
+            if rec.get("case_id") not in wanted:
+                continue
+            n_matched += 1
             ts = rec.get("t_start_utc")
             if not ts:
                 # summary.json and similar aggregates carry no per-call timestamp.
                 continue
             days.add(str(ts)[:10])
+    if not n_matched:
+        problems.append(
+            f"{src}: no evidence record under runs {run_ids} carries a case_id in {cases}. "
+            f"Either the declared cases are misspelled (records use the id the script passed "
+            f"to lib/evidence, e.g. `F5-7a`, not the filename's `F5-7A`) or the claim rests on "
+            f"records that were never written")
     return days
 
 
@@ -152,7 +177,21 @@ def check_findings(problems: list[str]) -> int:
                     f"amendment cannot rest on zero observations")
             continue
 
-        days = observation_days(runs, problems, src)
+        # Which CASE's records the replication is counted over. Required whenever there are runs:
+        # without it the days come from every case sharing the adopted run id, which is how a
+        # single-day observation was reported as spanning two (see observation_days).
+        cases = meta.get("cases")
+        n += 1
+        if not isinstance(cases, list) or not cases or not all(
+                isinstance(c, str) and c.strip() for c in cases):
+            problems.append(
+                f"{src}: declares evidence_runs but no `cases` list of case_ids. Replication "
+                f"has to be counted over the records of the case under test — this project "
+                f"adopts one run id for nearly everything, so a run-wide count is satisfied by "
+                f"any sibling case that happened to run on another day")
+            continue
+
+        days = observation_days(runs, cases, problems, src)
         n += 1
         if not days:
             problems.append(f"{src}: no observation date could be derived from runs "
@@ -261,7 +300,8 @@ def main(argv: list[str] | None = None) -> int:
         m = BLOCK_RE.search(f.read_text(encoding="utf-8"))
         meta = json.loads(m.group(1))
         runs = meta.get("evidence_runs") or []
-        days = sorted(observation_days(runs, [], f.name)) if runs else []
+        days = (sorted(observation_days(runs, meta.get("cases") or [], [], f.name))
+                if runs else [])
         summary.append((f.name, meta["status"], len(days), days))
 
     print(f"OK — {total} assertions over {len(findings)} findings")

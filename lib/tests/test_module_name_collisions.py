@@ -119,6 +119,27 @@ def _string_constants(tree: ast.AST) -> dict[str, str]:
     return out
 
 
+def _expr_constants(tree: ast.AST) -> dict[str, str]:
+    """Module-level `NAME = <expression>` bindings, rendered as source text.
+
+    The sibling of `_string_constants`, for the loader's SECOND argument. Three F7 scripts hold
+    their target in `TRACES_PATH = ROOT / "infra" / "07_traces.py"` and pass the constant, while a
+    fourth passes the expression inline; comparing the two spellings textually reported a
+    conflict where there is none. Resolving one level of module-level binding is enough for every
+    shape in the tree and keeps the comparison exact — an unresolvable target still compares as
+    its own text, so the failure mode stays "told about a spelling" rather than "silently
+    treated as equal".
+    """
+    out: dict[str, str] = {}
+    for node in getattr(tree, "body", []):
+        if isinstance(node, (ast.Assign, ast.AnnAssign)) and node.value is not None:
+            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+            for t in targets:
+                if isinstance(t, ast.Name):
+                    out[t.id] = ast.unparse(node.value)
+    return out
+
+
 # Files whose loader name cannot be resolved statically, each with the reason. Listed rather
 # than absorbed into a tolerance count: "3 unresolvable" says nothing about whether the third
 # one is a new blind spot, and per feedback_prose_is_not_verified the count is derived from
@@ -130,6 +151,12 @@ UNRESOLVABLE = {
         "_load(stem, name) helper — same shape as the f3 one",
     "lib/tests/test_stats_mutation.py":
         "f'_mutant_{name}' — generated per mutant, and prefixed so it cannot collide",
+    "lib/tests/test_f7_metric_tables.py":
+        "f'_mutant_{abs(hash(label))}' and '_control_metrics_module' — the same mutation-harness "
+        "shape as test_stats_mutation.py: the names are generated per mutant, prefixed, and "
+        "popped from sys.modules in a finally, so they cannot collide with a phase script's key. "
+        "Its ONE fixed key, METRICS_MODULE_NAME, is a module-level constant and is resolved by "
+        "the registration scan above; only the mutant call sites are unresolvable",
     "infra/tests/conftest.py":
         "f'_infra_{stem}' — the infra scripts start with a digit so they cannot be imported "
         "by name at all; the prefix is asserted to be collision-proof by "
@@ -137,10 +164,44 @@ UNRESOLVABLE = {
         "rather than merely written",
 }
 
+# How many unresolvable loader calls each of those files holds. Every entry of UNRESOLVABLE
+# appears here exactly once; a file gaining a second by-path loader has to say so.
+UNRESOLVABLE_CALLS = {
+    "f3_efficacy/tests/test_f3_helpers.py": 1,
+    "f8_regional/tests/test_f8_helpers.py": 1,
+    "lib/tests/test_stats_mutation.py": 1,
+    "lib/tests/test_f7_metric_tables.py": 2,      # one per mutation call site
+    "infra/tests/conftest.py": 1,
+}
+assert set(UNRESOLVABLE_CALLS) == set(UNRESOLVABLE), (
+    "UNRESOLVABLE and UNRESOLVABLE_CALLS name different files; a reason without a count, or a "
+    "count without a reason, is half a record")
+
 # The prefix `infra/tests/conftest.py` builds its module names with. Duplicated here on purpose:
 # the assertion below is only meaningful if this test states the invariant independently of the
 # code under test, so a change to the prefix fails here instead of silently redefining the claim.
 INFRA_LOADER_PREFIX = "_infra_"
+
+
+def _unresolvable_calls_by_file() -> dict[str, int]:
+    """How many loader calls per file register a name this scan cannot read. Counted, not capped.
+
+    Separate from the file SET asserted above: a file can hold more than one such call, and the
+    count is the thing that must not drift. `test_f7_metric_tables.py` holds two (one per
+    mutation call site) and every other listed file holds one.
+    """
+    out: dict[str, int] = {}
+    for path in _py_files():
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        consts = _string_constants(tree)
+        for node in _loader_calls(tree):
+            arg = node.args[0]
+            ok = (isinstance(arg, ast.Constant) and isinstance(arg.value, str)) or (
+                isinstance(arg, ast.Name) and arg.id in consts)
+            if not ok:
+                key = str(path.relative_to(ROOT))
+                out[key] = out.get(key, 0) + 1
+    return out
 
 
 def loader_registrations() -> list[tuple[Path, int, str]]:
@@ -233,10 +294,77 @@ def test_every_loader_call_is_either_resolvable_or_listed_as_unresolvable():
         f"  documented:       {sorted(UNRESOLVABLE)}\n"
         "Pass a literal or a module-level string constant, or add the file to UNRESOLVABLE "
         "with a reason why its name cannot collide.")
-    assert total - resolvable == len(UNRESOLVABLE), (total, resolvable, len(UNRESOLVABLE))
+    # The blind spots are counted PER CALL, not per file. `len(UNRESOLVABLE)` was the earlier
+    # form and it silently assumed one unresolvable call per listed file; when
+    # `test_f7_metric_tables.py` grew a second mutation call site that assumption became a
+    # tolerance one call wide, which is exactly the "at most N" shape this test's own docstring
+    # rejects. `UNRESOLVABLE_CALLS` states the number for each file and the total is derived.
+    per_file = _unresolvable_calls_by_file()
+    assert per_file == UNRESOLVABLE_CALLS, (
+        "the number of statically-unreadable loader calls per file has changed.\n"
+        f"  now:        {per_file}\n"
+        f"  documented: {UNRESOLVABLE_CALLS}")
+    assert total - resolvable == sum(UNRESOLVABLE_CALLS.values()), (
+        total, resolvable, sum(UNRESOLVABLE_CALLS.values()))
     assert "redact" in importable_names(), (
         "lib/redact.py is the module the original collision was against; if it is gone "
         "this gate's own premise needs re-checking")
+
+
+def test_a_shared_loader_name_always_points_at_the_same_source():
+    """Two scripts may share a `sys.modules` key only if they load the SAME file under it.
+
+    The hazard this whole gate is about is a name resolving to someone else's module. A name
+    registered twice for one path is harmless — `grx_infra_06_verify` is deliberately shared by
+    `f1_config/04_update_revalidation.py` and `f4_modes/01_truth_table.py`, and both mean
+    `infra/06_verify.py`, so the second loader finds the first's object and that is the point of
+    borrowing one definition of "the testbed is intact". A name registered twice for two
+    DIFFERENT paths is the original defect wearing a different file name, and until this test
+    existed the gate could not tell the two cases apart: it only compared registered names with
+    `importable_names()`, so a duplicate among the loaders themselves passed unread.
+
+    The comparison is on the unparsed target expression rather than a resolved filesystem path.
+    That is deliberate: rendering `ROOT / "infra" / "06_verify.py"` requires interpreting the
+    expression, and an interpreter that silently failed on a shape it did not know would report
+    "no duplicates" for the wrong reason. Textual equality can only err by flagging one file
+    spelled two ways, which is a thing worth being told about.
+    """
+    by_name: dict[str, set[str]] = {}
+    sites: dict[str, list[str]] = {}
+    for path in _py_files():
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        consts = _string_constants(tree)
+        for node in _loader_calls(tree):
+            arg = node.args[0]
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                name = arg.value
+            elif isinstance(arg, ast.Name) and arg.id in consts:
+                name = consts[arg.id]
+            else:
+                continue                     # counted as a blind spot by the test above
+            if len(node.args) > 1:
+                raw = node.args[1]
+                paths = _expr_constants(tree)
+                target = (paths.get(raw.id, raw.id) if isinstance(raw, ast.Name)
+                          else ast.unparse(raw))
+            else:
+                target = "<no target arg>"
+            by_name.setdefault(name, set()).add(target)
+            sites.setdefault(name, []).append(
+                f"{path.relative_to(ROOT)}:{node.lineno} -> {target}")
+
+    conflicting = {n: sorted(t) for n, t in by_name.items() if len(t) > 1}
+    assert not conflicting, (
+        "one sys.modules key is used for more than one source file; whichever script loads "
+        "second silently gets the first one's module object.\n"
+        + "\n".join(f"  {n}:\n    " + "\n    ".join(sites[n]) for n in sorted(conflicting)))
+
+    # The premise: at least one name IS shared, so the test is exercising the shared-key path
+    # rather than passing because every key happens to be unique.
+    shared = sorted(n for n, v in sites.items() if len(v) > 1)
+    assert shared, (
+        "no loader name is registered by two files any more, so this test no longer covers the "
+        "case it was written for; drop it or re-derive the premise")
 
 
 def test_the_repo_root_is_part_of_the_owned_name_space():

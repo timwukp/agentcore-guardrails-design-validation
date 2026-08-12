@@ -279,6 +279,217 @@ def test_a_child_that_writes_nothing_still_passes(guarded):
     r.assert_outcomes(passed=1)
 
 
+# ------------------------------------------- row 3': a spawner cannot be charged during a
+# ------------------------------------------- foreign live run (the 49-error regression)
+
+# A live-run-shaped script inside the sandbox. `_foreign_live_run` requires BOTH a path
+# matching one of the family prefixes AND that the path exist under the guard's own ROOT, so
+# this file has to be created in the sandbox tree — which is also what keeps these arms from
+# reacting to whatever happens to be running on the machine outside the sandbox.
+FAKE_LIVE = """
+import os, sys, time
+root = os.environ["GRX_SANDBOX"]
+if "--dry-run" not in sys.argv:
+    c = os.path.join(root, "results", "checkpoints")
+    os.makedirs(c, exist_ok=True)
+    with open(os.path.join(c, "F5-4a__control_no_probe.json"), "w") as fh:
+        fh.write("{}")
+open(os.path.join(root, "LIVE_WROTE"), "w").close()
+# Stay visible in the process table until the arm says it is finished looking, then exit
+# promptly. The first version of this arm only had the 60s deadline, and the orphan it left
+# running was picked up as a FOREIGN WRITER by the two arms that ran after it — both sandboxes
+# contain the same relative script path, so `(ROOT / script).exists()` was true in a sandbox
+# the orphan had nothing to do with. That is why each arm now gets a uniquely named script AND
+# a STOP sentinel: a leftover process must not be able to decide another arm's verdict.
+deadline = time.monotonic() + 30
+while not os.path.exists(os.path.join(root, "STOP")) and time.monotonic() < deadline:
+    time.sleep(0.02)
+"""
+
+# Launched via a double fork so the writer is reparented to init and is therefore NOT a
+# descendant of the sandbox pytest process. That is the whole distinction the third channel
+# turns on, and `Popen` alone — even with `start_new_session=True` — leaves ppid pointing at
+# the parent, so it would produce a descendant and measure the wrong row.
+ORPHAN_LAUNCHER = """
+import os, sys
+script, extra = sys.argv[1], sys.argv[2:]
+if os.fork() == 0:
+    os.setsid()
+    os.execv(sys.executable, [sys.executable, script, *extra])
+os._exit(0)
+"""
+
+
+def _plugin_that_orphans(script_rel: str, *extra: str) -> str:
+    """A conftest plugin that starts the foreign writer before any test exists.
+
+    From `pytest_configure` for the same reason `test_a_concurrent_external_writer_fails_nobody`
+    does it there: inside a test's window the `subprocess.Popen` would be charged to that test
+    and the run would become row 2, passing this arm while measuring something else.
+
+    `script_rel` is per-arm and not a shared constant — see the note in `FAKE_LIVE`.
+    """
+    args = ", ".join(repr(e) for e in extra)
+    return f"""
+        import os, subprocess, sys, time
+
+        def pytest_configure(config):
+            root = str(config.rootpath)
+            os.environ["GRX_SANDBOX"] = root
+            with open(os.path.join(root, {script_rel!r}), "w") as fh:
+                fh.write({FAKE_LIVE!r})
+            subprocess.run([sys.executable, "-c", {ORPHAN_LAUNCHER!r},
+                            {script_rel!r}, {args}], cwd=root, check=True)
+            # Wait for the orphan to have DONE its write, so the diff has something to see and
+            # the process is certainly in the table. A sentinel, not a sleep.
+            deadline = time.monotonic() + 60
+            while not os.path.exists(os.path.join(root, "LIVE_WROTE")):
+                assert time.monotonic() < deadline, "the orphaned writer never started"
+                time.sleep(0.01)
+    """
+
+
+@pytest.fixture
+def with_foreign_live_run(guarded):
+    """A sandbox with an `f5_redteam/` directory, and a STOP sentinel dropped on teardown.
+
+    The sentinel is written after the arm has finished asserting, so the orphan exits instead of
+    lingering into the next arm's window.
+    """
+    (guarded.path / "f5_redteam").mkdir()
+    yield guarded
+    (guarded.path / "STOP").touch()
+
+
+def test_a_foreign_live_run_makes_a_spawners_charge_unenforceable(with_foreign_live_run):
+    """THE 49-ERROR REGRESSION. A green suite reported 49 teardown errors, all innocent.
+
+    `f5_redteam/04_policy_failure_modes.py` was live in another process, rewriting
+    `results/checkpoints/F5-4a__control_no_probe.json` after each of its 100 trials, while the
+    offline suite ran. Every test that spawns a subprocess — the gate-runner tests all do — was
+    charged for it, because row 2 said a spawner cannot be cleared.
+
+    Both of the original channels are blind here: the hook cannot see into a child, and the diff
+    cannot name an author. The third channel asks the process table whether a script from THIS
+    tree is running outside this pytest process tree, and when it is, the diff is not evidence
+    about any test.
+
+    The test here BOTH spawns a writing child and runs beside a foreign writer, which is the
+    ambiguous case in its hardest form: the guard cannot tell the two writes apart, so it charges
+    neither and says so. Reported as uncleared — not passed silently.
+    """
+    p = with_foreign_live_run
+    p.makepyfile(foreign_plugin=_plugin_that_orphans("f5_redteam/01_foreign_spawner.py"))
+    p.makepyfile(test_child="""
+        import subprocess, sys
+
+        def test_spawns_a_writer():
+            subprocess.run([sys.executable, "-c",
+                            "open('results/from_child.json','w').close()"], check=True)
+    """)
+    r = run(p, "-p", "foreign_plugin")
+    out = r.stdout.str()
+    r.assert_outcomes(passed=1)
+    assert "concurrent writer" in out, out
+    assert "f5_redteam/01_foreign_spawner.py" in out, (
+        "the summary must NAME the foreign process; an unattributed notice that does not say "
+        "who was writing leaves the operator exactly where the 49 errors did\n" + out)
+    assert "UNCLEARED" in out, (
+        "a spawning test excused by this channel must be reported as uncleared, not cleared: "
+        "a child that really did write is indistinguishable from the foreign run's writes\n"
+        + out)
+    assert "test_child.py::test_spawns_a_writer" in out, out
+
+
+def test_a_foreign_dry_run_is_not_an_excuse(with_foreign_live_run):
+    """`--dry-run` makes no AWS call and writes nothing, so it cannot explain a tree change.
+
+    Without this arm the channel would be a blanket amnesty: leave any case script dry-running
+    in another terminal and every spawning test is unchargeable for as long as it lives. The
+    foreign process here is real and matches every other condition — only its `--dry-run` flag
+    differs — and the spawning test must still be convicted.
+    """
+    p = with_foreign_live_run
+    p.makepyfile(foreign_plugin=_plugin_that_orphans("f5_redteam/02_foreign_dryrun.py",
+                                                    "--dry-run"))
+    p.makepyfile(test_child="""
+        import subprocess, sys
+
+        def test_spawns_a_writer():
+            subprocess.run([sys.executable, "-c",
+                            "open('results/from_child.json','w').close()"], check=True)
+    """)
+    r = run(p, "-p", "foreign_plugin")
+    assert_convicted(r)
+    assert "results/from_child.json" in r.stdout.str()
+
+
+def test_a_live_run_in_a_DIFFERENT_tree_is_not_an_excuse(with_foreign_live_run):
+    """The channel is scoped to this repository, not to this machine.
+
+    A live run belonging to another checkout is nothing to do with the tree being guarded, and
+    treating it as an explanation would make the amnesty as wide as the filesystem. It is caught
+    only if containment is checked AFTER resolving: `(ROOT / script)` with an ABSOLUTE script
+    discards ROOT, so the first version of this channel accepted this process as ours purely
+    because the absolute path existed.
+
+    The foreign script here lives in a sibling directory of the sandbox, is launched by its
+    absolute path, matches a family prefix, is orphaned, and writes into the guarded tree — every
+    condition but the one that matters.
+    """
+    p = with_foreign_live_run
+    other = p.path.parent / "other_checkout" / "f5_redteam"
+    other.mkdir(parents=True, exist_ok=True)
+    script = other / "09_other_tree.py"
+    script.write_text(FAKE_LIVE)
+    p.makepyfile(foreign_plugin=_plugin_that_orphans(str(script)))
+    p.makepyfile(test_child="""
+        import subprocess, sys
+
+        def test_spawns_a_writer():
+            subprocess.run([sys.executable, "-c",
+                            "open('results/from_child.json','w').close()"], check=True)
+    """)
+    r = run(p, "-p", "foreign_plugin")
+    assert_convicted(r)
+    out = r.stdout.str()
+    assert "results/from_child.json" in out, out
+    assert "09_other_tree.py" not in out, (
+        "a script outside this tree was named as the writer, so the channel is scoped to the "
+        "machine rather than to the repository\n" + out)
+
+
+def test_a_case_script_run_by_a_test_is_still_charged(with_foreign_live_run):
+    """A descendant is not foreign, however live-run-shaped its command line is.
+
+    This is the hole the third channel could have opened: if "a repo script is running" were
+    enough, a test could run a case script ITSELF and be excused by its own child. The
+    discriminator is the parent chain, so the identical script — launched by the test rather
+    than orphaned — must convict.
+    """
+    p = with_foreign_live_run
+    (p.path / "f5_redteam" / "03_own_child.py").write_text(FAKE_LIVE)
+    p.makepyfile(test_runs_a_case_script="""
+        import os, subprocess, sys, time
+
+        def test_runs_it():
+            os.environ["GRX_SANDBOX"] = os.getcwd()
+            proc = subprocess.Popen([sys.executable, "f5_redteam/03_own_child.py"])
+            # Leave it ALIVE and in the process table while the guard looks, then let the
+            # teardown see the write it made. Killing it first would test a different thing.
+            deadline = time.monotonic() + 60
+            while not os.path.exists("LIVE_WROTE"):
+                assert time.monotonic() < deadline
+                time.sleep(0.01)
+            assert proc.poll() is None, "the child exited before the guard could look at it"
+    """)
+    r = run(p)
+    assert_convicted(r)
+    out = r.stdout.str()
+    assert "F5-4a__control_no_probe.json" in out, out
+    assert "spawned" in out, out
+
+
 # ---------------------------------------------------------------- row 4: audit beats diff
 
 def test_an_in_place_rewrite_to_identical_size_and_mtime_is_still_caught(guarded):

@@ -391,8 +391,41 @@ def test_deviations_file_records_every_reseal_as_an_unbroken_chain():
     pinned = STAMP.read_text(encoding="utf-8").split()[0]
     assert afters[-1] == pinned, "the last recorded hash is not the live seal"
     # Every entry must state whether data existed; that field decides how much
-    # the change matters.
-    assert dev.count("**Data existed:**") == len(befores)
+    # the change matters. Checked per SECTION, not by a document-wide count.
+    #
+    # Measured 2026-08-12: the previous line here was
+    #     assert dev.count("**Data existed:**") == len(befores)
+    # and it failed at 13 == 7. Both numbers were right and the equality was never a
+    # property of the file: `befores` counts only entries that RE-SEALED the
+    # preregistration, while `Data existed` is stated by every entry including the
+    # analysis-time deviations that seal nothing. The two counts were equal once, when
+    # every entry happened to be a re-seal, and the assertion pinned that coincidence
+    # (feedback_prose_is_not_verified: a count from a structural accident is worse than
+    # prose). It would also have passed on a file where one re-seal omitted the field and
+    # one deviation stated it twice.
+    #
+    # The field is required of the entries that RE-SEALED — the ones this test's chain is
+    # built from. That is where the question bites: a re-seal edits the sealed artifact, so
+    # "had we measured anything yet" decides whether the edit could have been
+    # outcome-driven. An analysis-time deviation leaves the seal alone and is scoped by its
+    # own `Class` field instead, so demanding the field there would be a formatting rule
+    # dressed up as an honesty check. Scoped, not weakened: every link in the chain is
+    # still covered, and a re-seal that omits the field still fails here.
+    #
+    # Both spellings are accepted because both are in use — `**Data existed:** no` in the
+    # early entries and `**Data existed** no` in the one-line metadata header of the later
+    # ones.
+    sections = [s for s in _re.split(r"\n(?=## )", dev)[1:] if s.strip()]
+    resealing = [s for s in sections
+                 if _re.search(r"\*\*Hash before:?\*\*\s*`[0-9a-f]{64}`", s)]
+    assert len(resealing) == len(befores), (
+        f"{len(befores)} 'Hash before' matches but {len(resealing)} sections carry one: "
+        f"a hash pair outside any entry, or two in one")
+    missing = [s.splitlines()[0].strip()[:60] for s in resealing
+               if not _re.search(r"\*\*Data existed:?\*\*", s)]
+    assert not missing, (
+        f"{len(missing)} re-sealing DEVIATIONS entr(ies) do not state whether data "
+        f"existed: {missing}")
     assert "DEV-SEAL-1" in dev and "DEV-SEAL-2" in dev
 
 

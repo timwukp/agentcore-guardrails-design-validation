@@ -56,6 +56,7 @@ future refactor cannot quietly generalise it.
 from __future__ import annotations
 
 import sys
+import re
 from pathlib import Path
 
 import pytest
@@ -291,7 +292,28 @@ def test_only_grounding_opts_into_the_guard_for_now():
     users = sorted(p.relative_to(root).as_posix()
                    for p in root.glob("f*/[0-9]*.py")
                    if "require_policy=" in p.read_text(encoding="utf-8"))
-    assert users == ["f3_efficacy/06_grounding.py"], users
+    # Widened 2026-08-12 for F3-11 (`07_model_drift.py`), which requires a block on all five
+    # strata: `contentPolicy` on four and `sensitiveInformationPolicy` on the PII one. Both are
+    # in SELF_DECLARING, so neither can eat a true negative — and F3-11's day-0 baseline is the
+    # live proof rather than the reasoning: 300/300 usable with 0 failures while 19 of its 64 PII
+    # items went undetected. Had `sensitiveInformationPolicy` been absent on a non-detection,
+    # those 19 would have been failed trials instead of the drift signal the case is built on.
+    assert users == ["f3_efficacy/06_grounding.py", "f3_efficacy/07_model_drift.py"], users
+
+    # The allowlist above is about blast radius; THIS is the invariant. Every block any arm
+    # requires must be one the service returns on a non-detection (or grounding, which is
+    # required by design because its absence means did-not-run). Checked over the values rather
+    # than the file list, so the next widening cannot smuggle in a fire-only block by editing
+    # one line of the list above.
+    allowed = set(SELF_DECLARING) | {"contextualGroundingPolicy"}
+    for rel in users:
+        src = (root / rel).read_text(encoding="utf-8")
+        required = set(re.findall(r'"require_policy":\s*"([A-Za-z]+)"', src)) | set(
+            re.findall(r'require_policy="([A-Za-z]+)"', src))
+        assert required, f"{rel} matched the scan but no require_policy value could be read"
+        assert required <= allowed, (
+            f"{rel} requires {sorted(required - allowed)}, which the live service omits when "
+            f"nothing fires; every true negative in that arm would become a failed trial")
 
 
 @pytest.mark.parametrize("block", ONLY_WHEN_FIRING)

@@ -119,10 +119,16 @@ MUTANTS: list[Mutant] = [
     # so exactly one of the two regressions was ever measured. Targets carry a leading newline
     # and their full indent so each matches exactly once (the 4-space session line is a
     # substring of the 8-space per-test line otherwise).
+    # M5a's target carries its own preceding comment line. The bare 8-space
+    # `_UNATTRIBUTED.extend(lines)` matched ONCE when this table was written and matches THREE
+    # times now that the third channel routes to the same collector from two more places — so the
+    # bare form would apply to whichever came first and silently stop measuring row 3. Caught by
+    # `test_every_mutant_target_appears_exactly_once`, which is exactly what that arm is for.
     Mutant(
         "M5a-per-test-unattributed-raises",
-        "\n        _UNATTRIBUTED.extend(lines)\n",
-        '\n        raise AssertionError("tree changed: " + "\\n".join(lines))\n',
+        "        # Recorded for one session-level notice, NOT charged to this test.\n"
+        "        _UNATTRIBUTED.extend(lines)\n",
+        '        raise AssertionError("tree changed: " + "\\n".join(lines))\n',
         "The regression itself, per test: an unattributable diff convicts whichever test "
         "happened to be running. This is the line-for-line behaviour that produced 147 errors.",
         killers=("test_a_concurrent_external_writer_fails_nobody",),
@@ -182,6 +188,45 @@ MUTANTS: list[Mutant] = [
         "re-filtering or an arm started asserting on the recording scope — both need arguing, "
         "not banking.",
         inert=True,
+    ),
+    # M12..M15 cover the THIRD channel — the process-table check that stops a spawning test from
+    # being charged for a concurrent live run's writes. Added after a green suite reported 49
+    # teardown errors, every one of them innocent, because `f5_redteam/04_policy_failure_modes.py`
+    # was live in another process while the offline suite ran.
+    Mutant(
+        "M12-foreign-channel-removed",
+        "    if lines and spawned and (foreign := _foreign_live_run()):",
+        "    if False and lines and spawned and (foreign := _foreign_live_run()):",
+        "Restores the 49-error regression exactly: with the third channel switched off, every "
+        "test that spawns a subprocess is charged for a concurrent live run's writes. This is "
+        "DEV-P1-19's false accusation arriving through the one door its fix left open.",
+        killers=("test_a_foreign_live_run_makes_a_spawners_charge_unenforceable",),
+    ),
+    Mutant(
+        "M13-dry-run-becomes-an-excuse",
+        '        if not any(g in cmd for g in _LIVE_GLOBS) or "--dry-run" in cmd:',
+        "        if not any(g in cmd for g in _LIVE_GLOBS):",
+        "A `--dry-run` makes no AWS call and writes nothing, so it cannot explain a tree change. "
+        "Accepting one turns the channel into a blanket amnesty: leave a case script dry-running "
+        "in another terminal and no spawning test can be charged for as long as it lives.",
+        killers=("test_a_foreign_dry_run_is_not_an_excuse",),
+    ),
+    Mutant(
+        "M14-descendants-count-as-foreign",
+        '        if pid in mine or ".py" not in cmd:',
+        '        if ".py" not in cmd:',
+        "The discriminator is the parent chain. Without it a test could run a case script ITSELF "
+        "and be excused by its own child — the guard's largest hole, reopened from the inside.",
+        killers=("test_a_case_script_run_by_a_test_is_still_charged",),
+    ),
+    Mutant(
+        "M15-scope-is-the-machine-not-the-tree",
+        '        if cand.is_file() and str(cand).startswith(str(ROOT.resolve()) + os.sep):',
+        "        if cand.is_file():",
+        "Containment must be checked after resolving. `(ROOT / script)` with an ABSOLUTE argv "
+        "discards ROOT, so a live run in a different checkout satisfies `is_file()` and is "
+        "credited to this tree — an amnesty as wide as the filesystem.",
+        killers=("test_a_live_run_in_a_DIFFERENT_tree_is_not_an_excuse",),
     ),
     Mutant(
         "M11-session-reads-all-trees",

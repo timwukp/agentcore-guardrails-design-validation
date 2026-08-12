@@ -455,7 +455,7 @@ def main(argv: list[str] | None = None) -> int:                          # noqa:
 
     fac = A.factory(args.region)
     ac = fac.agentcore_control()
-    account_id = fac.sts().get_caller_identity()["Account"]
+    account_id = A.account_id(fac)
     tags = A.tags_for(run_id, state.expires_at)
     store = EvidenceStore(run_id, FAMILY, CASE,
                           root=Path(args.evidence_root) if args.evidence_root else None)

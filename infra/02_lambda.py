@@ -227,7 +227,7 @@ def main() -> int:
     f = A.factory(args.region)
     lam = f.lambda_()
     iam = f.iam()
-    account_id = f.sts().get_caller_identity()["Account"]
+    account_id = A.account_id(f)
 
     state = State.load_or_new(run_id, args.region, expires, path=Path(args.state)
                               if args.state else None)

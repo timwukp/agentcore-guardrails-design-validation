@@ -440,7 +440,7 @@ def main() -> int:
 
     dry = not args.confirm
     f = A.factory(args.region)
-    account_id = f.sts().get_caller_identity()["Account"]
+    account_id = A.account_id(f)
 
     try:
         state = State.load(Path(args.state) if args.state else None)

@@ -305,8 +305,8 @@ def main(argv: list[str] | None = None) -> int:
         print("blocking assertion, re-run after the chain:")
         checks = _vf.Checks()
         _vf.verify_engine(ac, state, checks)
-        _vf.verify_gateways(ac, state, A.factory(args.region).sts().get_caller_identity()
-                            ["Account"], args.region, checks)
+        _vf.verify_gateways(ac, state, A.account_id(A.factory(args.region)),
+                            args.region, checks)
         verify_ok = bool(checks.ok)
         checks.print()
 
