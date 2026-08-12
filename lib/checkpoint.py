@@ -213,6 +213,39 @@ def is_retryable(exc: BaseException) -> bool:
     return False
 
 
+# Exception classes that are a defect in THIS code rather than an answer from the service.
+# A trial that raises one of these has not measured anything, and the next 299 trials will
+# raise it identically — so it aborts the arm instead of being recorded 300 times.
+#
+# Measured cost of not doing this, 2026-08-12: `f2_determinism/03_score_harvest.py` built its
+# result row with `item["corpus_label"]` on an item that carried `label`. `_call` sends the
+# request BEFORE it builds the row, so all 300 trials of the harvest arm paid for their
+# gateway round trip and then threw the row away; the evidence tree holds 304
+# `mcp-tools-call` records against 0 usable rows. The arm then read an empty support and
+# raised in `_place_tau`, which is the only reason the run did not go on to publish from it.
+#
+# `is_retryable` already classifies these permanent, so they cost one attempt each and not
+# three. That was never the problem: the problem is that a permanent failure of OUR making is
+# recorded in the same channel as `AccessDeniedException`, which is a finding.
+#
+# Deliberately NOT here: `ValueError` and `RuntimeError`. Both are raised on purpose in this
+# repo — `ConfigError` subclasses `RuntimeError`, and `lib/` raises `ValueError` for a bad
+# argument — and a set that swallowed them would change the meaning of code that is working.
+# The five below have no legitimate raiser inside a trial body.
+HARNESS_BUG_CLASSES = frozenset({
+    "KeyError", "AttributeError", "TypeError", "NameError", "IndexError",
+})
+
+
+def is_harness_bug(exc: BaseException) -> bool:
+    """True when `exc` is a defect in this code, not a reading from the service.
+
+    Judged through `error_code`, so a bug that reaches here inside an `evidence` wrapper is
+    classified the same as a raw one — the seam `is_retryable`'s docstring records twice.
+    """
+    return error_code(exc) in HARNESS_BUG_CLASSES
+
+
 def backoff_delay(attempt: int, *, base: float = BASE_DELAY_S) -> float:
     """`base * attempt` — linear, matching the validated overnight run.
 
@@ -474,6 +507,18 @@ class Checkpoint:
         # test_an_oracle_error_costs_exactly_one_attempt, which asserted the observable
         # call count and the recorded count separately; only the second one caught it.
         self.record_failure(trial_id, last, attempts=made, retry_delay_s=total_delay)
+        # Recorded FIRST, then re-raised. The record is the honest account of what the trial
+        # cost — `_call` had already sent its request when the row-building line threw — and
+        # the raise is what stops the arm from paying that cost 299 more times for the same
+        # defect. Callers hold their cleanup in `finally`, so probe policies are still removed.
+        if is_harness_bug(last):
+            raise RuntimeError(
+                f"{self.case_id}/{self.cell} trial {trial_id} raised "
+                f"{type(last).__name__}: {last}. That is a defect in this harness, not a "
+                f"reading from the service: every remaining trial would raise it identically, "
+                f"and each one has already paid for its API call by the time it does. The "
+                f"failure is recorded in {self.path.name}; fix the code and re-run — the "
+                f"completed trials are still there.") from last
         return None
 
 

@@ -5881,11 +5881,45 @@ the number:
 2. **One category, one policy, one filter type.** All 61 values come from one `contentFilter[]`
    entry of one policy on one gateway. The lattice claim is about the service.
 3. **One calendar day**, 283 seconds — the same block that holds V13-05.
-4. **The comparison is not free.** The value is a **string** with four fixed decimals, so a
-   membership test has to parse before comparing, and `0.2`/`0.4`/`0.6`/`0.8` are not exactly
-   representable in binary — the test must use `Fraction`/`Decimal` or an explicit tolerance, or it
-   will report an off-lattice value that is a float artefact. An earlier pass of this project would
-   have written `score in {0, .2, .4, .6, .8, 1.0}` and believed the result.
+4. **The comparison is not free** — but the reason first given for that was wrong, and is corrected
+   in place below rather than deleted. The value is a **string** with four fixed decimals, so a
+   membership test has to parse before comparing. That much holds. The justification did not:
+
+   > ~~"`0.2`/`0.4`/`0.6`/`0.8` are not exactly representable in binary — the test must use
+   > `Fraction`/`Decimal` or an explicit tolerance, or it will report an off-lattice value that is a
+   > float artefact. An earlier pass of this project would have written
+   > `score in {0, .2, .4, .6, .8, 1.0}` and believed the result."~~
+
+   **Measured, and it is FALSE.** `float("0.6000") == 0.6` → True; `3/5 == 0.6` → True; and
+   `[r for r in raws if float(r) not in {0, .2, .4, .6, .8, 1.0}]` is `[]` over all six published
+   spellings. The naive membership test this note warned about would have returned the **same**
+   verdict. The premise is true — those four values are not exactly representable — but the
+   conclusion does not follow, because `float("0.6000")` and the literal `0.6` round to the *same*
+   double. The claim was plausible, was never run, and would have justified the right code for the
+   wrong reason ([[feedback_prose_is_not_verified]]). It is pinned by
+   `lib/tests/test_f2_score_harvest.py::test_float_equality_would_NOT_have_failed_on_this_lattice`,
+   written in the direction that costs the claim.
+
+   **What the string type actually costs**, each measured rather than argued:
+
+   * **`jq` silently answers the wrong question.** jq's total order places every number below every
+     string, so a string score compares TRUE against *any* numeric threshold. At the shell:
+     `echo '{"score":"0.4000"}' | jq 'select(.score > 0.5)'` **emits the record**. A calibrating
+     reader following §7.1 with `jq 'select(.score > 0.5)'` is handed every row, not the high ones.
+     This is the reader-facing hazard, and it is a candidate amendment to §7.1 in its own right.
+   * **A threshold comparison breaks at equality, and only there.** A second draft of this
+     correction claimed the strings "compare lexically, silently backwards" — also false. For
+     fixed-width four-decimal strings in [0, 1], lexical order agrees with numeric order everywhere
+     the two values *differ* (`"0.8000" > "0.5"`, `"0.4000" < "0.5"`). It disagrees only at
+     **equality**, where the padded spelling sorts above its own numeric equal: `"0.2000" > "0.2"`
+     is True while `0.2 > 0.2` is False. Equality at τ is precisely the case a threshold decides —
+     whether a score *at* the configured value publishes — so the one disagreement is the one that
+     matters. In Python the mixed comparison is loud (`TypeError`), so it cannot pass silently.
+   * **Counting distinct STRINGS inflates F1-18's and F2-2's numbers**, and F2-2's verdict *is* a
+     distinct count: `"0.8000"`, `"0.8"` and `"0.80"` are three strings and one score.
+   * **`Fraction` arithmetic is exact and float arithmetic is not** (`0.2 * 3 != 0.6`). This is the
+     real reason the harness uses `Fraction`: `_place_tau` **computes** a threshold (`hi + 1/5`)
+     rather than parsing one, so a float path could place a τ off the lattice it must land on.
 
 So F1-18 moves from *unmeasurable* to *pre-registered and partly harvested*, and it is scheduled with
 F2-2 rather than published from F3-10's leftovers, because F2-2's n=300 at a deliberately low τ is
@@ -5925,6 +5959,465 @@ path is discovered by pattern rather than hardcoded (`score_key_path_found` fail
 `logs_reconcile_with_metrics` is the guard that makes the identity claim above falsifiable — it
 compares two instruments against each other and fails on any per-arm disagreement, which is the check
 `feedback_verify_against_real_artifact` and DEV-P4-04's closing lesson both argue for.
+
+---
+
+## DEV-P4-28 — five ways the instrument reported success it had not observed, all on 2026-08-12, all on the runner
+
+### Why they are one entry
+
+Each of the five below is small, and they were found in one sequence of attempts at the same
+900-call run. What makes them one entry is that four of the five share a mechanism: **a step
+announced a state it had never observed.** A push printed an instruction that read as a report; a
+derivation read operation names and concluded it had found every action; a resource created on an
+error path was invisible to both cleanup channels; a harness bug was recorded 300 times in the
+channel reserved for findings. The fifth (a property called as a method) is a plain slip, and it is
+here because of *when* it surfaced — after `--dry-run` had returned 0, which is the same blind spot.
+
+The cost is measurable and is stated up front. Across the failed attempts the account paid for
+**304 `mcp-tools-call` requests**, 5 `CreatePolicy` (2 of which failed), 2 `DeletePolicy`, and one
+leaked policy that had to be removed by hand. Every one of those 304 calls reached the gateway and
+had its response thrown away.
+
+### 1. `sync.py push` printed a deploy step and never ran it
+
+```
+pushed 526 files, 3,232,921 bytes, sha256 d0110f92cc78cafe
+on the instance: grx-refresh
+```
+
+The second line was a hint to the operator. Nothing executed it, and a job was launched against
+code from four hours earlier. It announced itself only by luck: the file the job needed was
+**absent**, so python died with `[Errno 2] No such file or directory` in the first second. Had the
+file merely been **stale** — one edit behind, the far more common state after a push — the run would
+have completed and published results attributed to code that never produced them.
+
+This is the third instance of the same class in this project's history
+(`feedback_no_deploy_path_no_component`: a config nothing deploys does not exist;
+`feedback_build_reported_success_built_nothing`: a Makefile whose default goal was not `all`, so
+integration tests exercised a three-day-old daemon).
+
+**Fix.** `cmd_push` now runs `grx-refresh` over SSM as part of the push, uploads a sha256 manifest
+of every packaged file, and has the instance verify it:
+
+```
+grx-refresh || { echo "grx-refresh FAILED with $?"; exit 9; }
+[ "$lines" -ne <packaged count> ] && exit 6
+sha256sum -c --quiet MANIFEST.txt || exit 5
+echo "VERIFIED $lines file(s) on the instance"
+```
+
+It returns non-zero unless the invocation succeeded **and** the output contains `VERIFIED`, with the
+message *"PUSH NOT CONFIRMED (rc=…). The instance is NOT known to be running this tree; do not
+launch a job against it."* Both halves are needed: `set -uo pipefail` without `-e` runs to the end
+of a script after a failed line, so rc alone cannot carry the verdict.
+
+**Residual, stated rather than implied by silence.** This proves every packaged file is present with
+the packaged bytes. It does **not** prove nothing extra is there: `tar -xzf` overwrites and never
+deletes, so a file removed from the repo survives on the instance until the next teardown.
+
+### 2. Two IAM actions no derivation from operation names could find
+
+`runner/iam_policy.py` derives the runner's role from the evidence tree — every archived call's
+`(service, operation)` pair, mapped to the actions it needs. The premise has a structural hole:
+**an operation name cannot reveal an action the service checks under a different name.** Under admin
+credentials the extra checks passed invisibly for two weeks. The runner is this project's first
+least-privilege caller, and it surfaced two of them in one run:
+
+```
+AccessDeniedException: ... not authorized to perform:
+bedrock-agentcore:ManageResourceScopedPolicy on resource: <the GATEWAY arn>
+```
+
+The role already held `bedrock-agentcore:CreatePolicy`. A policy is scoped to the resource it
+guards, so the service authorizes against the **gateway** too. Then, with that added:
+
+```
+CreatePolicy -> 200 OK
+... policy settles CREATE_FAILED
+reasons=['Insufficient permissions to list targets on gateway with ID <gw>']
+```
+
+**The second failure is asynchronous.** It does not arrive as an `AccessDeniedException` on the call;
+it arrives as a status on a resource that was created. A harness that checked only the `CreatePolicy`
+response would have carried on with a dead policy — which is `feedback_missing_check_is_not_pass`
+exactly, and why `_create_probe` waits for the settled status and refuses to continue without a live
+guardrail.
+
+**Fix.** The role went from 58 to **61 actions in 5 statements**. Each addition is annotated
+`# measured` or `# inferred` in the source, so the distinction survives: `ManageResourceScopedPolicy`
+on `create_policy` and `ListGatewayTargets` are measured; the same action on `get`/`update`/`delete`
+policy, plus `GetGatewayTarget` and `ListPolicyEngines`, are inferred from the same mechanism and
+included because each one otherwise costs a failed multi-hundred-call run to discover.
+
+### 3. A policy created on an error path was invisible to both cleanup channels
+
+`_create_probe` raised after `state.record(...)` but before `main` stored the policy id in the dict
+its `finally` iterates. So the resource existed, the state file knew about it, and neither cleanup
+path could see it. The next run died on
+
+```
+ConflictException: Policy with the same name already exists
+```
+
+— a **name** conflict, which reads as a naming bug rather than as an unreleased resource three
+failures earlier.
+
+**Fix.** The settle-failure path deletes before it raises, and the message says which happened:
+`"The failed policy <id> was deleted"`, or `"NOT deleted (<errors>) and must be removed by hand
+before the next attempt, which would otherwise fail on the name conflict"`. Mutation-checked: a
+mutant that *reports* cleanup and performs none is killed by two arms, and the control arm (a policy
+that settles `ACTIVE` is **not** deleted) means an unconditional delete cannot pass either.
+
+### 4. `Checkpoint.n_done` is a property, called as a method in five places
+
+```
+TypeError: 'int' object is not callable
+```
+
+after the run had created its first probe policy. `--dry-run` had returned 0, and it always would
+have: **the dry run returns before the live loop**, so it exercises the plan and the banner and
+nothing that touches a collected trial (`feedback_dry_run_before_expensive_run`). Two of the five
+sites were inside guard computations and one was `alpha_n` for F2-2's own verdict, so the same slip
+further down would have spent the calls first.
+
+**Fix.** All five corrected, and `lib/tests/test_property_not_called.py` now scans every `.py` in
+the repo by AST for `obj.name()` where `name` is a property on one of this repo's classes. The
+property names are **introspected from the classes**, not listed, so one added tomorrow is covered
+without anyone remembering the file. Its limit is stated in its own docstring: it cannot see the
+mistake behind an alias, and it does not claim to.
+
+### 5. 304 gateway calls spent on one bad dictionary key
+
+`f2_determinism/03_score_harvest.py` imports `_call` from F3-10, because that reader has to mean
+here exactly what it meant when it produced the 61 values DEV-P4-27 rests on. In F3-10 the items
+come from `_golden_set` and carry `corpus_label`; this script builds its item from
+`arms.load_corpus`, which carries `label`. `_call` **sends the request before it builds the row**, so
+every trial paid for its round trip and then raised `KeyError: 'corpus_label'`. The evidence tree
+holds 304 `mcp-tools-call` records against 0 usable rows.
+
+`is_retryable` had already classified the `KeyError` permanent, so it cost one attempt per trial and
+not three. **That was never the problem.** The problem is that a permanent failure of *our* making
+went into the same channel as an `AccessDeniedException`, which is a finding — so the loop recorded
+it and moved to the next of 300.
+
+**Two fixes, at two layers.**
+
+* `lib/checkpoint.py` now aborts the arm on the first exception that is a defect in this code:
+  `KeyError`, `AttributeError`, `TypeError`, `NameError`, `IndexError`. The failure is **recorded
+  first, then re-raised** — the record is the honest account of what the trial cost, and the raise is
+  what stops the arm paying it 299 more times. `ValueError` and `RuntimeError` are deliberately
+  excluded: `ConfigError` subclasses the latter and `lib/` raises the former for a bad argument, so a
+  set that swallowed them would change the meaning of code that is working. The mutation arm asserts
+  that an `AccessDeniedException` still records and returns `None`, because an over-broad abort would
+  destroy every F5 oracle case.
+* `lib/tests/test_f2_score_harvest.py` derives the required item keys from `_call`'s own source by
+  AST and asserts `_fixed_input()` covers them. Derived, not listed: the reader lives in another
+  family's file and can grow a field without this script's author being present, which is the exact
+  situation the check exists for.
+
+### 6. A postscript the fix itself produced: the smoke blocked the sealed run
+
+With `--n 4` green, the 300-trial run died in `set_meta`:
+
+```
+results/checkpoints/F2-2__tau_floor.json holds 4 completed trial(s) collected under a
+DIFFERENT arm design:
+  is_smoke: on disk True -> now False
+```
+
+**The guard was right and the workflow was wrong.** Absorbing 4 smoke rows into a 300-trial arm
+would publish them as if collected under the sealed design — that is the DEV-P1-18 failure the guard
+was written for. But "smoke, then full run" is this project's standard order after
+`feedback_dry_run_before_expensive_run`, so with one shared cell the guard fires on *every* sealed
+run, after the arm has already created its probe policy. A smoke now writes `<arm>__smoke`. The cost
+is that a smoke's trials are never reused, which is the intended cost — reusing them is what the
+guard forbids — and it is 4 calls. The three shared-cell checkpoints already on the instance were
+archived by hand, with an assertion that each held `is_smoke: True` and at most 4 done trials first.
+
+### The rows
+
+| | before | after |
+|---|---|---|
+| what "pushed" meant | 526 files reached S3; the instance was unobserved | every packaged file verified present on the instance by sha256, or rc≠0 |
+| runner role | 58 actions; `CreatePolicy` denied | 61 actions in 5 statements, each marked measured or inferred |
+| an async `CREATE_FAILED` | carried on with a dead policy | waits for the settled status, deletes it, and raises |
+| a policy created on an error path | leaked; next run hit a name conflict | deleted before the raise, or the raise names it and says "by hand" |
+| a property called as a method | found by a live run, after a probe policy | found by an AST scan over 528 files, at no cost |
+| a harness bug inside a trial | recorded 300 times; 304 calls spent | aborts on the first one, recorded then re-raised |
+| a smoke before a sealed run | blocked it after creating a policy | separate checkpoint cell |
+
+---
+
+## DEV-P4-29 — the 900-call run answered three questions nobody had asked it, and two of the answers contradicted the record it wrote
+
+**Date:** 2026-08-12 · **Cases:** F2-2, F2-3, F2-4, F1-18 · **Script:** `f2_determinism/03_score_harvest.py`
+**Verdicts affected:** none. **Published explanatory fields superseded:** three.
+
+### Why an entry with no verdict change is still an entry
+
+The run of 2026-08-12 completed clean: `rc=0`, `failed_guards: []`, 900/900 trials evaluated,
+four verdicts published (F2-2 FALSE, F2-3 INCONCLUSIVE, F2-4 FALSE, F1-18 TRUE). Nothing
+failed. What follows was found by reading the run's own JSON against its own numbers
+afterwards, and two of the three are cases where **the record states a reason that is not the
+operative one**. A verdict that is right for a reason the data refutes is still a verdict this
+project cannot defend when asked *why*, and it is `feedback_prose_is_not_verified` at the layer
+below prose: the offending text was a `p_hat_definition` string and an `M2` description, both
+carried into the published record, neither ever compared against a run.
+
+All three are corrected in code, each behind a mutation-checked assertion, and none required
+re-spending the 900 calls (see *Why the run was not repeated*).
+
+### 1. The threshold comparison is strict, and the record said otherwise
+
+The run's own three arms measured it, by accident of the degenerate support:
+
+| arm | τ | published score | outcome | n |
+|---|---|---|---|---|
+| `tau_floor` | 0.2000 | `0.8000` | DENY | 300/300 |
+| `tau_inside` | **0.8000** | *(none)* | **ALLOW** | 300/300 |
+| `tau_above` | 1.0000 | *(none)* | ALLOW | 300/300 |
+
+The middle row is the discriminating cell: τ **equal** to the observed score, and the service
+allowed all 300. Denial therefore requires `S > τ`, not `S >= τ`. That is only reachable
+because `_place_tau` took its `degenerate_support` branch — a one-point support admits no
+interior placement, so τ landed *on* the value — which makes an artefact of the shape of the
+data into the one configuration that can separate the two operators.
+
+The published record said the opposite, in the field that names the estimand:
+
+```json
+"p_hat_definition": "P(S >= tau_inside), estimated on the tau_floor arm's scores",
+"p_hat_from_harvest_arm": 1.0,
+"predicted_2p_1_minus_p": 0.0
+```
+
+`p_hat = 1.0` asserts that every τ_inside request clears τ. The same file records that arm
+denying **0 of 300**. Both readings give `2p(1-p) = 0`, so the prediction, the interval
+containment, the McNemar p-value and F2-4's FALSE are all untouched — the number was right and
+its stated reason was refuted by the run that produced it.
+
+The sealed design had it right all along and the code was the thing out of step:
+`PREREGISTRATION.yaml:reachable_operating_points` derives `|S| + 1 = 7` operating points "for a
+6-value score lattice with a **greaterThan** threshold", and 7 is the count only under a strict
+comparison (a non-strict one gives 6). So this is not a new finding about the service; it is the
+first time the project *measured* what it had assumed, and the measurement was recorded in a
+field that disagreed with it.
+
+**Fix.** `_threshold_comparison()` derives the operator from the equality arm and publishes it
+with the evidence; `_f2_4` counts `p_hat` with the operator it measured and keeps **both**
+readings (`p_hat_under_each_operator`, `prediction_under_each_operator`) so the choice is
+visible rather than baked into one number. `UNDECIDED` (no arm on an observed score) falls back
+to `>=` and says so in `default_when_undecided`; a mixed equality arm reads `INCONSISTENT`,
+which is F2-2's business, not the operator's.
+
+**Alternative explanation, registered and not dismissed.** The operator is inferred from the
+score *as published*. If the log renders a rounded value, an internal score marginally below
+4/5 allows under either operator. What makes that strained here is that all 300 published
+values sit exactly on the lattice (`n_off_lattice: 0`), so the rounding would have to land on a
+lattice point every time. It is not excluded. Separating them needs a τ placed **between**
+lattice points, and a one-point support admits no such placement — so this stays a
+representation-bound reading (`feedback_constraints_are_choices`), not a closed question.
+
+### 2. M2 censors the score, not the record
+
+The M1/M2 discriminator returned M2, correctly. Its published description did not:
+
+> the record is written only when the score clears tau, so every observable score belongs to a
+> denial
+
+The run refutes the first clause. **Every trial in every arm produced exactly one
+policy-evaluation block — 900 of 900 —** and the two arms that denied nothing carried an
+explicit `ALLOW` decision with no score beside it. The surface does not go dark below τ; it
+stays lit and drops one field.
+
+This is not a wording preference. F1-18 tests set membership over a **censored union** and its
+censoring note is the reason a clean result is not read as a strong one; F2-3 is INCONCLUSIVE
+*because* of what is censored. Whether the censoring removes records or removes values changes
+what each of those limits actually is — and only one of the two was observed.
+
+**Fix.** `_f2_3_publication_mechanism` now measures `n_rows_with_a_log_block` and
+`n_rows_with_a_logged_decision` and publishes `what_is_censored`. The no-block case is
+deliberately **not** called censoring: a dark surface and a join that matched nothing produce
+it identically, and the second is a fact about this harness — `n_trials_with_no_log_event` on
+the join is where that separates.
+
+### 3. F2-4's "underpowered" blocker is a unit mismatch, and cannot ever clear
+
+The published F2-4 record carries:
+
+```json
+"blockers": ["n_usable=299 is below the pre-registered 300", ...]
+```
+
+299 is not a shortfall. F2-4's measure is a flip rate over **consecutive pairs**, and n
+decisions span n−1 pairs (`_flips`, `feedback_span_vs_points_offbyone`). The sealed cell's n is
+300 trials, so a pairwise measure **at the sealed n reports 299 by construction** and the
+oracle's generic floor (`n_usable >= planned_n`, `lib/oracle.py`) is unreachable for this case
+at any conforming run size. It is the same off-by-one as `feedback_span_vs_points_offbyone`,
+seen from the other side: there, a test pinned 12 where 11 was correct; here, a floor demands
+300 where 299 is the design point.
+
+And the seal itself says 299 is the design point, in its own words —
+`sample_sizes.determinism_cell.rule`:
+
+> power >= 0.95 to observe at least one flip if the true flip rate is 1% **(requires n >= 299)**
+
+The unit of that calculation is the flip *opportunity*, i.e. the pair: `1 − 0.99^299 = 0.950464`
+clears the 0.95 floor and `1 − 0.99^298 = 0.949963` does not, so 299 pairs is the minimum to the
+pair — exactly the number the seal names. 300 trials is precisely the smallest run that yields
+it, with no margin at all: the sealed n is the design point and not a round number near it.
+
+**No edit was made to `lib/oracle.py`** — it is a sealed bound artifact pinned by sha256, and
+its floor is generic and correct for the count-shaped cases it was written for. **No inflation
+of `n_usable` to 300 either**, which would report trials where the measure consumes pairs and
+would be the dishonest fix. Instead `_determinism_power()` computes the achieved power and
+publishes it beside the blocker, **parsing the floor, the flip rate and the required n out of
+the sealed file** rather than copying them into constants — `lib/oracle.py` gives the reason
+(a second copy in code is a second source of truth that no hash covers). A parse failure
+withholds the power claim instead of falling back to a remembered number, which is asserted:
+strip the figures from the rule and `parsed` goes `False` and every power key disappears.
+
+So the blocker stands in the published record, as it must, and the record now also carries
+the arithmetic showing what it is: a floor counting trials, applied to a measure counting
+pairs.
+
+### Why the run was not repeated
+
+All three corrections are analysis-side. Re-running is not cheap in the way it looks: the
+checkpoints hold 300/300 per arm, so a resume spends no trial calls — but the log-read window
+is `t0..t1` of *the invocation*, and a resume that skips every trial produces a degenerate
+window, matches no log events, and fails `every_arm_was_evaluated`. A resume would therefore
+not reproduce the analysis; it would destroy it.
+
+So the verdicts were checked the only way left: the corrected analysis was fed **the 900
+published rows themselves**, out of `results/phase1/F2_score_harvest_shared.json`, and every
+input to F2-4's verdict was diffed against the published record
+(`feedback_verify_against_real_artifact` — a synthetic double would only have confirmed the
+assumptions that produced the bug):
+
+| quantity | published 2026-08-12 | corrected analysis, same 900 rows | |
+|---|---|---|---|
+| `improved` | `False` | `False` | same |
+| `p_value` | `1.0` | `1.0` | same |
+| `inside_rate_rose` | `False` | `False` | same |
+| `outside_rates_are_zero` | `True` | `True` | same |
+| `ci_contains_prediction` | `True` | `True` | same |
+| `inside_flip_rate_ci` | `(0.0, 0.0126847…)` | `(0.0, 0.0126847…)` | same |
+| `predicted_2p_1_minus_p` | `0.0` | `0.0` | same |
+| **`p_hat_from_harvest_arm`** | **`1.0`** | **`0.0`** | **the corrected field** |
+| F2-3 `vacuous` | `True` | `True` | same |
+
+and the three new derivations read, off the real rows: `operator: STRICT_GREATER` from an
+equality arm of 300 rows with 0 denials; `n_rows_with_a_log_block: 300` against
+`n_rows_with_a_score: 0`; `power_at_n_pairs: 0.9504637…` at `n_pairs: 299` against the sealed
+floor of 0.95. F2-2 counts distinct values and F1-18 tests lattice membership, neither of which
+any changed code path touches.
+
+The corrected code applies from the next run of this script; the superseded fields are named
+above so the published JSON can be read against them.
+
+### What each fix rests on
+
+| finding | measured by | assertion | mutation arm |
+|---|---|---|---|
+| comparison is strict `>` | 300 ALLOWs at τ = S | `test_the_comparison_operator_is_measured_off_the_arm_that_sits_on_the_score` | deny at equality ⇒ `GREATER_OR_EQUAL`; mixed ⇒ `INCONSISTENT`; no equality arm ⇒ `UNDECIDED` |
+| `p_hat` follows the measured operator | `p_hat` 1.0 → 0.0 | `test_p_hat_uses_the_measured_operator_and_keeps_the_other_reading_visible` | ignore the operator ⇒ test fails |
+| M2 censors the value, not the record | 900/900 blocks, 0 scores | `test_m2_censors_the_score_and_not_the_record` | strip the blocks ⇒ the claim is withdrawn as `undetermined` |
+| 299 pairs is the design point | `1 − 0.99^299 = 0.9505` vs a sealed 0.95 | `test_the_power_requirement_is_read_from_the_seal_and_299_pairs_meets_it` | n_pairs=100 ⇒ fails the floor; seal without figures ⇒ claim withheld |
+
+---
+
+## DEV-P4-30 — the one write in this repo that put a distributable file together by hand, and the account id rode out on it six times
+
+**Date:** 2026-08-12
+**Class:** redaction failure, caught before publication
+**Verdicts affected:** none. **Files that must not be merged as they stand:** one.
+
+`results/` is the distributable record; `evidence/` is local-only. The line between them is
+`lib/phase1.emit`, which masks on the way out (`lib/phase1.py:833`, `_redact.mask_text(text)`).
+Every *case verdict* in this project goes through that channel, so the mask covers the writes
+that use it — and only those.
+
+`f2_determinism/03_score_harvest.py` has one write that does not. The 900 joined rows are too
+large to carry inside four verdict records, so they go to a side file,
+`results/phase1/F2_score_harvest_shared.json`, built with a bare `json.dumps`. It shipped the
+live account id **six times**: `account_id` once, and `attributes.aws.account.id` inside
+`join.<arm>.log_surface.numeric_strings_seen` for each of the three arms plus the shared
+header. Not inside an ARN — as a standalone twelve-digit value, which is exactly how the
+gateway's log surface publishes it.
+
+The four `P.emit` files written from the same dict, in the same function, on the same run were
+clean: 0 raw ids, 6 `<account>` placeholders each. That is the shape of
+`feedback_second_instance_bugs` — the fix lived in the shared path, and this one write was not
+on it. The precedent was already in the repo: `f7_observability/00_span_shape_probe.py:135`
+carries a `_mask_bare_account` for the same field on the same surface.
+
+### Why the standing gate did not make this a non-event
+
+`check_redaction.py` would have failed the push. It is a real backstop and it works. But it is
+a gate at the boundary, not an invariant at the write: it fires **after** the file exists, and
+only for files in a tree it is pointed at. The leaking file was written on the EC2 runner and
+staged to S3; it has never been through the laptop's gate, and it is still unmasked where it
+sits. Publication would have caught it. Nothing was going to catch it *there*.
+
+### What changed
+
+1. **The write masks.** `RESULT_EXTRA.write_text(_redact.mask_text(json.dumps(...)))` — the
+   mask goes on the serialized string, not the object, because the same object is handed to
+   the four `P.emit` calls whose `evidence/` copy must keep the true ARN.
+2. **A repo-wide invariant**, `lib/tests/test_results_writes_are_masked.py`: every
+   `.write_text` whose target path resolves under `results/` either masks, or appears in
+   `WAIVED` with a written reason. The resolver walks assignments to a fixpoint and follows
+   `BinOp` (pathlib's `/`), because `RESULTS / "x.json"` hides its only name in the left arm —
+   the first version omitted that and silently missed three sites already on the inventory.
+   It credits a mask bound to a local (`after = mask_text(s)` … `p.write_text(after)`) as
+   masked, because the alternative pressures a repair script into deleting the assertions
+   that stand between masking and writing.
+3. **A second rule for targets that only exist at runtime.** Static resolution cannot follow
+   `Path(args.path)`. So in any module that declares a module-level `results/` path, a write
+   the resolver cannot place must still mask, or be named in `NOT_A_RESULTS_TARGET`. That list
+   is four entries, three of which are the deliberately-**unmasked** `evidence/` copy sitting
+   one line below a masked `results/` write — `lib/phase1.py:835`,
+   `f3_efficacy/08b_log_surface_join.py:676`, `f5_redteam/04b_logonly_flip_read.py:344`. The
+   `evidence/` copy holds the true ARN by written policy; masking it would destroy the only
+   record of which gateway produced a row. This entry is the first time that boundary is
+   asserted rather than merely observed.
+4. **The inventory is twelve entries**, which is every unmasked `results/` write in the repo.
+   None of them leaks today, measured not assumed: across all 287 files under `results/`, the
+   live account id appears **0** times and **0** of 8635 `arn:aws` strings carry a 12-digit
+   account. The 205 twelve-digit tokens that do appear are synthetic PII-corpus values
+   (`000123456789`, `987654321000`, and 200 fabricated numbers). Eleven of the twelve are
+   waived on structure, not on a clean scan: eight write derivations of files already masked
+   on the way in, and three carry no AWS response at all.
+
+### The file already written is repaired by transforming its bytes, not by re-running
+
+The code fix applies from the next run. The file that exists —
+`results/phase1/F2_score_harvest_shared.json`, run `r20260810T130945Z`, written on the runner —
+holds the six raw ids, and re-running the script cannot replace it: the harvest reads the log
+surface over `t0..t1` of its own invocation, so a resume that skips every trial matches no
+events and fails `every_arm_was_evaluated` on a degenerate window (DEV-P4-29).
+
+`f2_determinism/remask_score_harvest_side_file.py` repairs it, and the repair is **equal** to
+the fix rather than an approximation of it: the fix writes `mask_text(json.dumps(obj))`, this
+file holds `json.dumps(obj)`, so `mask_text(<file>)` is byte-identical to what the fixed
+script would have produced from the same object. Before writing, it asserts the account id
+resolves through `A.account_id` (the choke point that registers it — without registration
+`mask_text` cannot see a bare 12-digit token, and the script would report success having
+changed nothing), that the id is present beforehand, that zero occurrences survive, that the
+result still parses, and that the key shape and all 900 rows are unchanged. `--check` reports
+without writing. The four verdict files beside it need nothing.
+
+| guard | assertion | mutation arm |
+|---|---|---|
+| the leaking write masks | `test_the_harvest_side_file_is_masked_and_not_waived` | drop `mask_text` ⇒ fails, and cannot be silenced by a waiver |
+| no thirteenth unmasked `results/` write appears | `test_every_results_write_is_masked_or_named` | drop `mask_text` ⇒ fails |
+| a runtime-chosen target still masks | `test_a_write_in_a_results_module_is_masked_or_placed_outside_results`, `test_a_mask_bound_to_a_name_before_the_write_counts_as_masked` | unmask the repair script ⇒ both fail |
+| the evidence copy is exempt by name | `test_the_evidence_copy_is_excluded_and_never_required_to_mask` | mask `lib/phase1.py:835` ⇒ fails, as does the decay check |
+| neither inventory has decayed | `test_every_waiver_still_points_at_a_real_unmasked_write`, `test_every_exclusion_still_points_at_a_real_unmasked_write` | an entry whose write was masked or moved ⇒ fails |
+| each entry says something | `test_every_waiver_states_a_reason_not_a_shrug`, `test_every_exclusion_states_a_reason_not_a_shrug` | caught one of my own entries at 39 characters |
+| the scan is not reading zero | `test_the_scan_reads_more_than_zero_files` | 92 files, 10 writer modules, four named probes that a widened `SKIP_DIRS` would drop |
 
 ---
 

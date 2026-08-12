@@ -771,3 +771,74 @@ def test_the_failure_isolation_arm_would_catch_the_reference_implementations_beh
     fresh.run_trial("t1", lambda: (_ for _ in ()).throw(_client_error("ThrottlingException")),
                     base_delay=0, sleep=lambda _s: None)
     assert fresh.results() == {}
+
+
+# ------------------------------------------------------------------------------------------
+# a harness bug is not a trial failure
+# ------------------------------------------------------------------------------------------
+
+def test_a_harness_bug_aborts_the_arm_instead_of_being_recorded_300_times(cp):
+    """The 304-call defect of 2026-08-12, in the layer that let it repeat.
+
+    `f2_determinism/03_score_harvest.py` built its result row with `item["corpus_label"]` on an
+    item that carried `label`. The reader it borrows sends the gateway request BEFORE it builds
+    the row, so every one of the 300 trials paid for a round trip and then raised
+    `KeyError: 'corpus_label'`; the evidence tree holds 304 `mcp-tools-call` records against 0
+    usable rows. `is_retryable` had already classified it permanent, so it cost one attempt per
+    trial rather than three — that was never the problem. The problem is that a permanent
+    failure of OUR making went into the same channel as `AccessDeniedException`, which is a
+    finding, and the loop carried on to the next 299.
+
+    Recorded first, then raised: the record is the honest account of what the trial cost.
+    """
+    calls = []
+
+    def bug():
+        calls.append(1)
+        return {"corpus_label": {}["corpus_label"]}
+
+    with pytest.raises(RuntimeError, match="defect in this harness"):
+        cp.run_trial("t0000", bug, base_delay=0, sleep=lambda _s: None)
+    assert len(calls) == 1, "a harness bug must not be retried either"
+    rec = cp.failures()["t0000"]
+    assert rec["error_class"] == "KeyError", \
+        "the trial is still recorded — it spent an API call, and an unrecorded cost is a cost " \
+        "nobody can audit"
+    assert rec["attempts"] == 1
+
+
+@pytest.mark.parametrize("exc,aborts", [
+    (KeyError("corpus_label"), True),
+    (AttributeError("x"), True),
+    (TypeError("'int' object is not callable"), True),
+    (NameError("x"), True),
+    (IndexError("list index out of range"), True),
+    # THE MUTATION ARM. These are the classes the abort must NOT swallow: a service answer and
+    # the two exception types this repo raises deliberately. An `is_harness_bug` that returned
+    # True for everything would pass every arm above and destroy F5's oracle cases, which
+    # depend on an AccessDenied being *recorded* and the loop continuing.
+    (_client_error("AccessDeniedException"), False),
+    (_client_error("ThrottlingException"), False),
+    (RuntimeError("a ConfigError subclasses this"), False),
+    (ValueError("lib/ raises this for a bad argument"), False),
+])
+def test_which_exceptions_abort_and_which_are_recorded_as_trials(exc, aborts):
+    assert C.is_harness_bug(exc) is aborts, (
+        f"{type(exc).__name__} classified wrong; the abort set is the difference between "
+        f"stopping a 300-call arm on its first bad row and burning it")
+
+
+def test_an_oracle_error_still_returns_none_and_keeps_the_loop_going(cp):
+    """The end-to-end form of the mutation arm above, through `run_trial` itself.
+
+    `is_harness_bug` being right is not the same claim as `run_trial` consulting it correctly
+    (`feedback_identical_output_wrong_assertion`): a mis-placed raise would abort here too, and
+    only an assertion on the loop's continuation catches that.
+    """
+    seen = []
+    for tid in ("t0", "t1", "t2"):
+        def denied():
+            raise _client_error("AccessDeniedException", "UpdateGateway")
+        seen.append(cp.run_trial(tid, denied, base_delay=0, sleep=lambda _s: None))
+    assert seen == [None, None, None], "three oracle answers, three recorded trials, no abort"
+    assert cp.n_failed == 3
