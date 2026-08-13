@@ -1,0 +1,723 @@
+{
+  "arms": [
+    {
+      "key": "tau_floor",
+      "role": "harvest + tau-outside-below",
+      "why": "tau at the floor, so every lattice value clears it and every trial publishes a score: this is the arm F2-2 counts distinct values in and F1-18 tests for lattice membership, and its flip rate is F2-4's outside-below reading"
+    },
+    {
+      "key": "tau_inside",
+      "role": "tau-inside + F2-3 stratification",
+      "why": "tau at the second-smallest observed value, the only placement at which a decision can flip; F2-3 stratifies here because a purity test on a constant decision is vacuous"
+    },
+    {
+      "key": "tau_above",
+      "role": "tau-outside-above + M1/M2 discriminator",
+      "why": "tau above the observed maximum: nothing is denied, and whether anything is LOGGED separates 'no finding, no score' from 'suppressed below tau' — which decides whether F2-3 is answerable on this surface at all"
+    }
+  ],
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F1-18",
+    "clear_here": true
+  },
+  "bucket_separation": {
+    "bucket_span_per_arm": {
+      "tau_above": [
+        1786539720,
+        1786539900
+      ],
+      "tau_floor": [
+        1786539060,
+        1786539180
+      ],
+      "tau_inside": [
+        1786539360,
+        1786539540
+      ]
+    },
+    "ok": true,
+    "overlapping_windows": {}
+  },
+  "case_id": "F1-18",
+  "cases_in_this_script": [
+    "F2-2",
+    "F2-3",
+    "F2-4",
+    "F1-18"
+  ],
+  "dev_p4_27": "this script exists because DEV-P4-01's absolute form was retired: the per-trial score IS published, in the gateway's application logs",
+  "f1_18": {
+    "comparison": "Fraction on the raw string, for exactness against a COMPUTED tau; float equality on these six values would also have passed",
+    "distinct_raw": [
+      "0.8000"
+    ],
+    "histogram": {
+      "0.8000": 300
+    },
+    "lattice": [
+      "0",
+      "1/5",
+      "2/5",
+      "3/5",
+      "4/5",
+      "1"
+    ],
+    "n": 300,
+    "n_off_lattice": 0,
+    "n_on_lattice": 300,
+    "n_unparseable": 0,
+    "off_lattice_values": [],
+    "unparseable_values": []
+  },
+  "failed_guards": [],
+  "family": "f2_determinism",
+  "fixed_input": {
+    "corpus_id": "e4542f4e415c",
+    "corpus_label": "HATE",
+    "selection": "the first item of content_filter/hate.jsonl, in file order",
+    "text_len": 63,
+    "truth": "positive"
+  },
+  "gateway_id": "grx-gw-r20260810t130945z-zpkfmpwo9n",
+  "guard_names": [
+    "fixed_input_matches_the_filtered_category",
+    "tool_name_advertised",
+    "engine_in_enforce",
+    "every_arm_landed",
+    "every_arm_was_evaluated",
+    "arms_own_their_buckets",
+    "join_is_total",
+    "log_decision_agrees_with_client",
+    "harvest_arm_published_scores",
+    "tau_placements_are_distinct",
+    "f2_3_stratification_is_not_vacuous",
+    "probe_policies_removed"
+  ],
+  "guards": {
+    "arms_own_their_buckets": true,
+    "engine_in_enforce": true,
+    "every_arm_landed": true,
+    "every_arm_was_evaluated": true,
+    "f2_3_stratification_is_not_vacuous": false,
+    "fixed_input_matches_the_filtered_category": true,
+    "harvest_arm_published_scores": true,
+    "join_is_total": true,
+    "log_decision_agrees_with_client": true,
+    "probe_policies_removed": true,
+    "tau_placements_are_distinct": true,
+    "tool_name_advertised": true
+  },
+  "harvest": {
+    "lattice": {
+      "comparison": "Fraction on the raw string, for exactness against a COMPUTED tau; float equality on these six values would also have passed",
+      "distinct_raw": [
+        "0.8000"
+      ],
+      "histogram": {
+        "0.8000": 300
+      },
+      "lattice": [
+        "0",
+        "1/5",
+        "2/5",
+        "3/5",
+        "4/5",
+        "1"
+      ],
+      "n": 300,
+      "n_off_lattice": 0,
+      "n_on_lattice": 300,
+      "n_unparseable": 0,
+      "off_lattice_values": [],
+      "unparseable_values": []
+    },
+    "lattice_union": {
+      "comparison": "Fraction on the raw string, for exactness against a COMPUTED tau; float equality on these six values would also have passed",
+      "distinct_raw": [
+        "0.8000"
+      ],
+      "histogram": {
+        "0.8000": 300
+      },
+      "lattice": [
+        "0",
+        "1/5",
+        "2/5",
+        "3/5",
+        "4/5",
+        "1"
+      ],
+      "n": 300,
+      "n_off_lattice": 0,
+      "n_on_lattice": 300,
+      "n_unparseable": 0,
+      "off_lattice_values": [],
+      "unparseable_values": []
+    },
+    "n_evaluations": 900,
+    "n_scored": 300,
+    "n_scored_union": 300,
+    "raw_by_arm": {
+      "tau_above": [],
+      "tau_floor": [
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000",
+        "0.8000"
+      ],
+      "tau_inside": []
+    }
+  },
+  "is_smoke": false,
+  "join": {
+    "tau_above": {
+      "arm": "tau_above",
+      "log_surface": {
+        "log_line_kinds": {
+          "Executing tool grxecho___echo from target I7DX308MPV": 300,
+          "Policy evaluation completed": 300,
+          "Received request for initialize method": 1,
+          "Received request for notifications/initialized method": 1,
+          "Received request for tools/call method": 300,
+          "Started processing request": 302,
+          "Successfully processed request": 302
+        },
+        "n_events": 1506,
+        "n_unparsed": 0,
+        "numeric_keys_seen": {
+          "body.policy.latencyMs": 538,
+          "event_timestamp": 1786539725089,
+          "severityNumber": 9,
+          "timeUnixNano": 1786539725089734157
+        },
+        "numeric_strings_seen": {
+          "account_id": "<account>",
+          "attributes.aws.account.id": "<account>",
+          "body.id": "603"
+        },
+        "score_key_paths_are_numbers": [],
+        "score_key_paths_are_strings": [],
+        "score_valued_key_paths": []
+      },
+      "n_log_events_unmatched": 0,
+      "n_rows": 300,
+      "n_trials_with_no_log_event": 0,
+      "trials_with_no_log_event": []
+    },
+    "tau_floor": {
+      "arm": "tau_floor",
+      "log_surface": {
+        "log_line_kinds": {
+          "Policy evaluation denied request": 300,
+          "Received request for initialize method": 1,
+          "Received request for notifications/initialized method": 1,
+          "Received request for tools/call method": 300,
+          "Received request for tools/list method": 1,
+          "Started processing request": 303,
+          "Successfully processed request": 3,
+          "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy e": 300
+        },
+        "n_events": 1209,
+        "n_unparsed": 0,
+        "numeric_keys_seen": {
+          "body.policy.latencyMs": 566,
+          "event_timestamp": 1786539050171,
+          "severityNumber": 9,
+          "timeUnixNano": 1786539050171367064
+        },
+        "numeric_strings_seen": {
+          "account_id": "<account>",
+          "attributes.aws.account.id": "<account>",
+          "body.id": "1",
+          "body.policy.guardrailFindings.grx_f2_03_tau_floor_r20260810T130945Z-7gijcj9rml.contentFilter[].score": "0.8000"
+        },
+        "score_key_paths_are_numbers": [],
+        "score_key_paths_are_strings": [
+          "body.policy.guardrailFindings.grx_f2_03_tau_floor_r20260810T130945Z-7gijcj9rml.contentFilter[].score"
+        ],
+        "score_valued_key_paths": [
+          "body.policy.guardrailFindings.grx_f2_03_tau_floor_r20260810T130945Z-7gijcj9rml.contentFilter[].score"
+        ]
+      },
+      "n_log_events_unmatched": 0,
+      "n_rows": 300,
+      "n_trials_with_no_log_event": 0,
+      "trials_with_no_log_event": []
+    },
+    "tau_inside": {
+      "arm": "tau_inside",
+      "log_surface": {
+        "log_line_kinds": {
+          "Executing tool grxecho___echo from target I7DX308MPV": 300,
+          "Policy evaluation completed": 300,
+          "Received request for tools/call method": 300,
+          "Started processing request": 300,
+          "Successfully processed request": 300
+        },
+        "n_events": 1500,
+        "n_unparsed": 0,
+        "numeric_keys_seen": {
+          "body.policy.latencyMs": 468,
+          "event_timestamp": 1786539365088,
+          "severityNumber": 9,
+          "timeUnixNano": 1786539365088055092
+        },
+        "numeric_strings_seen": {
+          "account_id": "<account>",
+          "attributes.aws.account.id": "<account>",
+          "body.id": "303",
+          "spanId": "9332569830983160",
+          "span_id": "9332569830983160"
+        },
+        "score_key_paths_are_numbers": [],
+        "score_key_paths_are_strings": [],
+        "score_valued_key_paths": []
+      },
+      "n_log_events_unmatched": 0,
+      "n_rows": 300,
+      "n_trials_with_no_log_event": 0,
+      "trials_with_no_log_event": []
+    }
+  },
+  "kind": "EXISTENCE",
+  "n_per_arm": 300,
+  "notes": [
+    "tau_inside: degenerate_support — the harvest arm's support is the single value 4/5, so no INTERIOR tau exists. tau is placed AT that value, the only placement a one-point support admits. The flip rate is then insensitive to tau at EVERY placement, which is F2-4's sealed FALSE branch — measured here rather than inferred",
+    "tau_above: above — tau one lattice step above the observed maximum, so p = 0"
+  ],
+  "oracle_text": "TRUE if every observed ConfidenceScore across >=500 evaluations lies on the lattice; FALSE if any intermediate value appears",
+  "planned_n": null,
+  "probe_removals": [
+    {
+      "arm": "tau_floor",
+      "attempts": 1,
+      "deleted": true,
+      "errors": []
+    },
+    {
+      "arm": "tau_inside",
+      "attempts": 1,
+      "deleted": true,
+      "errors": []
+    },
+    {
+      "arm": "tau_above",
+      "attempts": 1,
+      "deleted": true,
+      "errors": []
+    }
+  ],
+  "publication_mechanism": {
+    "M1": "a finding is published and scored regardless of tau; tau selects the EFFECT",
+    "M2": "the record is written only when the score clears tau, so every observable score belongs to a denial",
+    "arm": "tau_above",
+    "consequence_for_f2_3": "F2-3's stratum-purity test cannot fail on this surface — every observable score belongs to a denied request, so P(D=1|S=s)=1 for every observable s and a TRUE would be produced by the censoring, not by the service",
+    "mechanism": "M2",
+    "n_denied": 0,
+    "n_rows": 300,
+    "n_rows_with_a_score": 0
+  },
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F1-18",
+    "evidence": {
+      "detail": {
+        "censoring": "scores below the configured threshold may not publish at all, so the two lowest lattice points can be unobserved; a set-membership test over a censored union can only come back clean, and that is a limit of the surface, not a result",
+        "comparison": "Fraction on the raw string, for exactness against a COMPUTED tau; float equality on these six values would also have passed",
+        "distinct_raw": [
+          "0.8000"
+        ],
+        "histogram": {
+          "0.8000": 300
+        },
+        "lattice": [
+          "0",
+          "1/5",
+          "2/5",
+          "3/5",
+          "4/5",
+          "1"
+        ],
+        "n": 300,
+        "n_evaluations": 900,
+        "n_off_lattice": 0,
+        "n_on_lattice": 300,
+        "n_unparseable": 0,
+        "off_lattice_values": [],
+        "publication_mechanism": "M2",
+        "unparseable_values": []
+      },
+      "observed": true
+    },
+    "family": "descriptive_no_test",
+    "kind": "EXISTENCE",
+    "mutation_required": false,
+    "n_attempted": 900,
+    "n_met": true,
+    "n_usable": 300,
+    "notes": [],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [],
+    "verdict": "TRUE"
+  },
+  "region": "us-east-1",
+  "run_id": "r20260810T130945Z",
+  "threshold_placements": {
+    "tau_above": {
+      "branch": "above",
+      "note": "tau one lattice step above the observed maximum, so p = 0",
+      "support": [
+        "4/5"
+      ],
+      "tau": "1.0000"
+    },
+    "tau_inside": {
+      "branch": "degenerate_support",
+      "note": "the harvest arm's support is the single value 4/5, so no INTERIOR tau exists. tau is placed AT that value, the only placement a one-point support admits. The flip rate is then insensitive to tau at EVERY placement, which is F2-4's sealed FALSE branch — measured here rather than inferred",
+      "support": [
+        "4/5"
+      ],
+      "tau": "0.8000"
+    }
+  },
+  "thresholds": {
+    "tau_above": "1.0000",
+    "tau_floor": "0.2000",
+    "tau_inside": "0.8000"
+  },
+  "verdict": "TRUE",
+  "windows": {
+    "tau_above": {
+      "bucket_isolation": {
+        "bucket_after": 1786539720,
+        "bucket_before": 1786539660,
+        "margin_s": 5.0,
+        "slept_s": 50.646,
+        "why": "the previous arm's requests and this arm's must not share a minute bucket, or `our_buckets` names both arms' traffic"
+      },
+      "t0": 1786539725.0001426,
+      "t1": 1786539900.7157032
+    },
+    "tau_floor": {
+      "bucket_isolation": {
+        "bucket_after": 1786539060,
+        "bucket_before": 1786539000,
+        "margin_s": 5.0,
+        "slept_s": 8.137,
+        "why": "the previous arm's requests and this arm's must not share a minute bucket, or `our_buckets` names both arms' traffic"
+      },
+      "t0": 1786539065.000128,
+      "t1": 1786539230.1371672
+    },
+    "tau_inside": {
+      "bucket_isolation": {
+        "bucket_after": 1786539360,
+        "bucket_before": 1786539300,
+        "margin_s": 5.0,
+        "slept_s": 7.286,
+        "why": "the previous arm's requests and this arm's must not share a minute bucket, or `our_buckets` names both arms' traffic"
+      },
+      "t0": 1786539365.0001147,
+      "t1": 1786539546.7548304
+    }
+  }
+}

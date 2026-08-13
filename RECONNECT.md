@@ -1,13 +1,100 @@
-# Reconnect note — updated 2026-08-11
+# Reconnect note — updated 2026-08-13
 
 Read this first if the session dropped. It is the shortest path back to the live state.
 
-## ⇢ RESUME HERE (2026-08-11, late): F4 full + F2-1 both landed; **F7 is now the critical path**
+## ⇢ RESUME HERE (2026-08-13): **71 of 92 published; F5 is the whole remaining bulk**
 
-44 of 93 sealed cases have a `results/phase1/<case>.json` verdict. Two more (F0-1, F5-7a) are
-measured but recorded in their own shape under `results/` rather than as phase-1 records.
+Do not read the case counts out of this file. Regenerate them:
 
-**Do F7 next, not F2-2.** The plan had this backwards and a probe settled it — see below.
+```
+.venv-oracle/bin/python census.py --write     # rewrites results/_progress_census.txt
+```
+
+Every number in that file is derived from `claims/triage_rules.py` + what is on disk under
+`results/phase1/`; nothing in it is remembered, which is why it is the artifact and this section is
+only a pointer. As of this writing it reads **71 published / 21 outstanding** of **92
+verdict-eligible** (93 registered minus F9-1, the one case untestable by its own sealed oracle), and
+**TRUE 41 / FALSE 18 / INCONCLUSIVE 11 / RECORDED 1**. `RECORDED` is a verdict value, not an
+exemption: that case (F5-4a) has a file like every other.
+
+| family | state |
+|:---|:---|
+| **F0, F2, F3, F4, F6, F7** | **complete** — 1/1, 5/5, 11/11, 6/6, 9/9, 7/7 |
+| F1 | 20/28 — outstanding F1-6, F1-15, F1-19, F1-24…F1-28 |
+| **F5** | **4/12** — outstanding F5-2, F5-3a, F5-3b, F5-4b, F5-5, F5-7b, F5-8, F5-9 |
+| F8 | 7/8 — F8-1 |
+| F9 | 0/2 — F9-2, F9-3 (F9-1 is untestable, not outstanding) |
+| F10 | 1/3 — F10-1, F10-3 |
+
+**Do F5 next.** It is 8 of the 21 outstanding cases and the only family with a large block left; the
+rest are singletons.
+
+**F5-7a and F0-1 were not work — they were bookkeeping.** Both were measured, written up and
+guarded, and neither had a `results/phase1/` record, so the census counted them outstanding while
+their finding documents said they were done (DEV-P4-33). F0-1 was found by
+`test_a_written_up_case_has_a_verdict_record`, the guard written after F5-7a, on its first run. That
+guard now exists, so this specific way of being wrong is closed — but the general shape is worth
+carrying: **a family line reading `F5 4/12` is indistinguishable from honest remaining work.** If a
+case looks stuck, check whether it is actually finished before planning a run for it.
+
+### Two things below this line are now WITHDRAWN — do not resume from them
+
+- **The τ-sweep is dead.** The section below plans F2-2/F2-3/F2-4 as a τ-sweep because "no numeric
+  guardrail score is published anywhere" (DEV-P4-01). **DEV-P4-27 refuted that**: the score is in the
+  *application* logs, at `body.policy.guardrailFindings.<policy>.contentFilter[].score`, as a
+  **string**. F2-2/F2-3/F2-4 and F1-18 were measured directly against it and are sealed. The
+  original absence probes were not sloppy — they surveyed the surfaces the *document* named, and the
+  value was somewhere the document never mentions (`feedback_surfaces_a_doc_names`).
+- **"Do F7 next, not F2-2" is spent.** F7 is 7/7.
+
+### Owed write-ups, tracked because a verdict on disk is not a finding
+
+- **FINDING docs owed** for F1-18, F2-2, F2-3, F2-4 (one doc, DEV-P4-27's surface is the story);
+  for §3.1's determinism contrast (F2-5 FALSE beside F2-1 TRUE — neither surface varied at all);
+  and for F4-6's pre-registered refutation. Format reference: `results/FINDING-F3-10.md`.
+- **Day-2 replications owed**: F4-6, F2-1. *(F5-7a's is done — `r20260810T002001Z`, 75 fields, 0
+  disagreements, `results/f5_7a_replication.json`; it was listed here in error.)*
+- **F0-1 rests on one dated observation** (2026-08-09) of a property that can change — link
+  liveness. A re-check must write a **second dated file**, not overwrite
+  `results/FINDING-F0-1-references.json`: that artifact is the only observation of that date and
+  `claims/tests/test_finding_numbers.py` pins the document's "24/24" against it.
+- `FINDING-F3-10.md` is `OBSERVATIONS_COMPLETE`, blocked on a UTC day after 2026-08-12.
+  `V13-05` is `BLOCKED_ON_REPLICATION`. `F3-11` needs `--compare` on **2026-08-18** and
+  **2026-09-10**.
+
+### The repo state that matters more than any of the above
+
+**`main` is missing 42 files, including the entire `runner/` tree.** PRs #6–#11 were merged in
+ascending number order, which for a stack is *top-down*: #6 put `feat/f5-redteam` into `main` first,
+then #7–#11 merged upward into branches that `main` had already stopped tracking. Nothing
+propagated (`feedback_merged_pr_is_not_landed`, now the third occurrence).
+
+**PR #12** (`feat/write-guard-column-width` → `main`) lands all of it in one merge — 539 blobs
+verified byte-for-byte against the trees API, `MERGEABLE`/`CLEAN`. **Push further work onto that same
+branch so #12 updates in place. Do not open a new stack** — restacking is what caused this.
+
+```
+/tmp/api_push3.sh feat/write-guard-column-width feat/write-guard-column-width <msg-file> <file-list>
+```
+
+### There is an EC2 runner, and it is the reason the suites are green on two kernels
+
+`t3.small` in us-east-1, `runner/provision.py` → `runner/sync.py push` → `runner/run.py --detach`.
+It exists because five test arms need `setsid` / GNU `df --output=avail` and one needs a `ps` that
+truncates — all Linux-only. The laptop suite skips those arms and the runner runs them, so the two
+pass counts differ by design and neither is quoted here — regenerate them. Every skip states its
+reason and three state a measured number. Two things stay on the laptop by design: **F6 latency** (one network position) and **every
+publication** (the instance holds no GitHub credential).
+
+Its disk is the hazard — see **DEV-P4-31**. One suite's `--basetemp` scratch is a measured 10.6 GB,
+`run.py` refuses a launch below a **12 GB** floor, and pruning also reclaims a job killed without an
+rc file. `--jobs` says `LOST?` rather than inferring `RUNNING`.
+
+## HISTORICAL (2026-08-11, late): F4 full + F2-1 landed; F7 was then the critical path
+
+Kept for the reasoning, not the plan. Its case counts ("44 of 93") and its τ-sweep design are both
+superseded above — F7 is 7/7 and DEV-P4-27 found the score. What survives intact is the span
+inventory, the request-id join, and the F7-4 correction, all of which were re-measured.
 
 - **F4 full run: DONE at n=120/cell.** F4-1..F4-5 TRUE, F4-6 FALSE (the pre-registered
   refutation). Every cell 120/120 usable, 0 failed, 0 unclassified.
@@ -199,13 +286,27 @@ assertions) — neither file is a sealed bound artifact.
 
 ## Where the work is
 
-- Tree: `/Users/tmwu/Downloads/grx-validation/` (**not** a git repo — do not look for a branch)
+- Tree: `/Users/tmwu/Downloads/grx-validation/` (**not** a git repo — do not look for a branch, and
+  never `git checkout -- <file>`: the working tree is ahead of anything git here knows about, so a
+  mutation harness restores with `cp` only)
+- Published to `github.com/timwukp/agentcore-guardrails-design-validation` **by API push only** — see
+  the PR #12 note at the top of this file before pushing anything.
 - Approved plan: `/Users/tmwu/.claude/plans/melodic-hatching-seal.md`
 - Python: `.venv-oracle/bin/python` (botocore 1.43.67). `.venv-baseline` is 1.42.79 and is **data**, not a fallback.
-- Full gate: `./verify_phase0.sh` — ~6 min, 14 gates. Last **full** run was 14/14 PASS (1253 tests,
-  3 skips) and that was **before** this session's `lib/mcp.py` + `lib/checkpoint.py` edits. The
-  library suite alone is green since (`.venv-oracle/bin/python -m pytest lib/tests/ -q` → 639 passed,
-  1 skipped), but re-run the full gate before treating 14/14 as current.
+- Full gate: `./verify_phase0.sh` — ~6 min, 14 gates.
+- Full suite: `.venv-oracle/bin/python -m pytest -q --basetemp=<scratch>` → ~15 min. Pass
+  `--basetemp`; the default location is what wedged the runner's disk (DEV-P4-31). Regenerate the
+  pass count rather than trusting one written here.
+- **Do not edit the tree while the suite runs.** The write guard watches `results/` and charges a
+  concurrent modification to whichever test last spawned a subprocess, so an interactive edit
+  surfaces as `ERROR at teardown of test_mutant[...]` naming a file that test never touched. Seen
+  2026-08-13: editing `results/FINDING-P0-TRIAGE.md` mid-run errored
+  `test_write_guard_mutation.py::test_mutant[M3-no-abspath]`, which passes 20/20 when the tree is
+  quiescent. The guard is right — a write into the live results tree must not be excused — so the
+  fix is to finish editing first, not to loosen it.
+- Redaction gate: `.venv-oracle/bin/python check_redaction.py` — **>120 s**, last run rc=0 over 478
+  files / 30,835,735 bytes. Read its exit code *directly*; piping it to `tail` reports `tail`'s rc.
+  A run that reads **zero files is an error, not a pass.**
 
 ## There is live AWS state right now
 
@@ -224,24 +325,35 @@ and the work is not continuing, run `infra/99_teardown.py --run` and confirm zer
 
 ## Money spent so far
 
-**≈$0.00**, and the first billable request has now been sent. Everything created is control plane
-(free) plus CloudWatch Logs delivery objects (free to define). `08_smoke.py --run` sent 2 billable
-`tools/call` requests to a Lambda-backed gateway target plus span ingestion — under $0.01 in total,
-below the resolution of Cost Explorer. Phases 3–8 are projected at **$5.86** combined.
+Still **under $2**, and the largest single line is now the runner rather than the experiments.
+Derived, not remembered:
+
+| item | how it is priced | to date |
+|:---|:---|---:|
+| control plane, CloudWatch Logs delivery objects | free to create and define | $0.00 |
+| billable `tools/call` requests + span ingestion across F1–F7 | per request, all well under Cost Explorer's resolution | <$0.50 |
+| EC2 runner `t3.small`, us-east-1 | $0.0208/h; provisioned 2026-08-11, ≤19 h wall-clock since | ≤$0.40 |
+| runner root volume, 40 GB gp3 | $0.08/GB-month ⇒ $0.11/day | ≤$0.20 |
+
+The `t3.small` figure is a **ceiling**: EC2's `LaunchTime` resets on stop/start (the volume was grown
+from 20 GiB to 40 GB after DEV-P4-31), so uptime cannot be read off the current launch time and the
+row above bills the whole window as if it never stopped. Phases 3–8 were projected at **$5.86**
+combined and the measured spend is running well under that. **Stop the instance if the work pauses**
+— `runner/provision.py` knows the instance id, and a stopped `t3.small` costs only its volume.
 
 ## Task state
 
 | # | Task | State |
 |--:|:---|:---|
 | 1–6 | Phase 0 + Phase 1 foundations | done |
-| **7** | **Phase 2 testbed** | **DONE — gate satisfied, see below** |
-| 8 | Phase 3: F1 config surface + F4 truth table | **in progress**, $0.06 — F1-3 done; F4 half-written, see top of this note |
-| 9 | Phase 4: F2 determinism 4×300 + gateway F3 + F3-10 + F7 | pending, $1.17 |
-| 10 | Phase 5 + 5c: F5 red team, watchdog, account-level gate | pending, $0.06 |
-| 11 | Phase 6 + 6b: latency n=1000 × ~8 arm pairs | pending, $3.60 |
-| 12 | Phase 7 + 8: nine-region probe, F3-11 at +7d/+30d | pending, $0.97 |
-| 13 | Phase 9: analysis, figures, bilingual v1.3, NDA release gate | pending, $0 |
-| 14 | Phase 99: teardown + tag sweep, zero survivors | pending, $0 |
+| 7 | Phase 2 testbed | done — gate satisfied, see below |
+| 8 | Phase 3: F1 config surface + F4 truth table | F4 **6/6 done**; F1 **20/28** |
+| 9 | Phase 4: F2 determinism + gateway F3 + F3-10 + F7 | **done** — F2 5/5, F3 11/11, F7 7/7 |
+| **10** | **Phase 5 + 5c: F5 red team, watchdog, account-level gate** | **3/12 — this is the critical path** |
+| 11 | Phase 6 + 6b: latency | **done** — F6 9/9, laptop-only by design |
+| 12 | Phase 7 + 8: nine-region probe, F3-11 at +7d/+30d | partly done; `F3-11 --compare` owed 2026-08-18 and 2026-09-10 |
+| 13 | Phase 9: analysis, figures, bilingual v1.3, NDA release gate | pending — blocked on the owed FINDING docs listed at the top |
+| 14 | Phase 99: teardown + tag sweep, zero survivors | pending — **includes terminating the runner** |
 
 ## Task #7 — closed, with the evidence
 
@@ -285,12 +397,21 @@ guards that would have reported clean while checking nothing:
   **any** public push. Run `.venv-oracle/bin/python check_redaction.py`; it must read a non-zero
   file count and exit 0. (The ids are deliberately not written here — the first draft of this note
   spelled all three out and the gate reported it, which is the rule working.)
-- Spend: act freely under $1000/mo project spend, but **always disclose**. Running total: <$0.01.
+- Spend: act freely under $1000/mo project spend, but **always disclose**. Running total: <$2 (see
+  the table above for how each row is priced).
 - **Never touch**: the 6 pre-existing READY gateways, the 3 DRAFT guardrails (`demo`, `test`,
   `demo123`), the 2 abandoned policy engines (read-only evidence for F1-3), any `harness_*` /
-  `uitestagent_*` runtime or Memory resource.
-- `lib/stats.py`, `claims/triage.csv`, `claims/triage_rules.py` are **sealed bound artifacts**
-  pinned by sha256 in `PREREGISTRATION.yaml`. Do not edit them.
+  `uitestagent_*` runtime or Memory resource, and the **`nopolicy` gateway** — it is F6's paired
+  baseline, so deleting it retroactively unmakes nine verdicts.
+- Do **not** modify the account-wide `AWS-AttachIAMToInstance` /
+  `SystemAssociationForManagingInstances` association. It targets every instance in the account and
+  three other projects depend on it.
+- `lib/stats.py`, `claims/triage.csv`, `claims/triage_rules.py`, `lib/oracle.py` and
+  `PREREGISTRATION.yaml` itself are **sealed bound artifacts** pinned by sha256. Reading is fine;
+  editing is not. `V13_CANDIDATES.md` is **generated** — regenerate it with
+  `build_v13_candidates.py`, never by hand. `assert_transaction_search` **asserts, never enables.**
+- `evidence/` is local-only by written policy and `.gitignore`d, as are `runner/.state/` and
+  `f1_config/.wheel_cache/`. `results/` **is** distributable and is masked by `lib/redact.py`.
 - Chinese for discussion, English for deliverables. `.md` and `.zh-TW.md` change together.
 
 ## Three things worth remembering about the testbed
@@ -307,3 +428,12 @@ guards that would have reported clean while checking nothing:
    §3.1/§7.2/§8 verbatim gets a `CREATE_FAILED` policy.
 3. **`state.json`'s `resources` is a LIST, not a dict.** Any ad-hoc inspection script needs
    `rows = res if isinstance(res, list) else list(res.values())`. This has cost time twice.
+4. **The guardrail score lives in the application logs**, at
+   `body.policy.guardrailFindings.<policy>.contentFilter[].score`, and it is a **string**. Three
+   rigorous probes reported it absent before DEV-P4-27 found it, because all three surveyed the
+   surfaces the *document* named. Scope an absence claim to the list you actually searched.
+5. **`ps` truncates rows to `$COLUMNS` even when stdout is a pipe** (procps-ng; BSD `ps` does not off
+   a tty), and pytest exports `COLUMNS`. `conftest._foreign_live_run` therefore ran blind on Linux
+   for two days and convicted every innocent spawner — DEV-P4-32. Two consequences worth carrying:
+   `ps -ww` everywhere, and **a process-table probe must find its target by PID**, because the row
+   that gets cut is precisely the row that no longer contains the name you would search for.

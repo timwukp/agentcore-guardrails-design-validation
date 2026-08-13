@@ -32,9 +32,11 @@ charge them to the outer arm. That confound would make these arms measure their 
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -320,6 +322,59 @@ os._exit(0)
 """
 
 
+# Long on purpose. The truncation only bites when the `.py` extension sits past the output
+# width, so the script name has to push the row beyond 80 columns on its own — the interpreter
+# path in front of it differs between machines and cannot be relied on to do it.
+_WIDTH_SCRIPT = "f5_redteam/01_width_probe_named_long_enough_to_be_cut_at_eighty.py"
+
+_WIDTH_PROBE = f'''
+"""Measure whether `ps` truncates, then ask the real guard what it sees. Prints one JSON line."""
+import importlib.util, json, os, subprocess, sys, time
+from pathlib import Path
+
+conftest_path, root = sys.argv[1], Path(sys.argv[2])
+(root / "f5_redteam").mkdir(parents=True, exist_ok=True)
+(root / {_WIDTH_SCRIPT!r}).write_text(
+    # It reports its OWN pid, because the row this probe has to find is the row whose command
+    # may have been cut — so it cannot be located by searching for the script name. A truncated
+    # row is exactly the row that no longer contains the string you would search for.
+    "import os, time\\n"
+    "s = os.environ['GRX_SANDBOX']\\n"
+    "open(os.path.join(s, 'LIVE_WROTE'), 'w').write(str(os.getpid()))\\n"
+    "d = time.monotonic() + 60\\n"
+    "while not os.path.exists(os.path.join(s, 'STOP')) and time.monotonic() < d:\\n"
+    "    time.sleep(0.02)\\n")
+os.environ["GRX_SANDBOX"] = str(root)
+subprocess.run([sys.executable, "-c", {ORPHAN_LAUNCHER!r}, {_WIDTH_SCRIPT!r}],
+               cwd=root, check=True)
+sentinel, deadline, orphan_pid = root / "LIVE_WROTE", time.monotonic() + 60, ""
+while not orphan_pid:
+    assert time.monotonic() < deadline, "the orphaned writer never started"
+    orphan_pid = sentinel.read_text().strip() if sentinel.exists() else ""
+    if not orphan_pid:
+        time.sleep(0.01)
+
+try:
+    # The UN-widened form, i.e. what the guard used to run. Whether this row is short is the
+    # platform fact the arm skips on. Found by PID and not by name, because the row that may
+    # have been cut is precisely the row that no longer contains the name.
+    raw = subprocess.run(["ps", "-eo", "pid=,ppid=,command="],
+                         capture_output=True, text=True, timeout=10).stdout
+    rows = [ln for ln in raw.splitlines() if ln.split()[:1] == [orphan_pid]]
+    assert rows, f"pid {{orphan_pid}} left the process table before it could be read"
+    row = rows[0]
+    spec = importlib.util.spec_from_file_location("_guard_under_test", conftest_path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    mod.ROOT = root          # the guard reads its own module global, so this is the whole graft
+    found = sorted(mod._foreign_live_run())
+    print(json.dumps({{"truncates": bool(row) and {_WIDTH_SCRIPT!r} not in row,
+                       "raw_len": len(row), "raw_row": row, "found": found}}))
+finally:
+    (root / "STOP").touch()
+'''
+
+
 def _plugin_that_orphans(script_rel: str, *extra: str) -> str:
     """A conftest plugin that starts the foreign writer before any test exists.
 
@@ -488,6 +543,60 @@ def test_a_case_script_run_by_a_test_is_still_charged(with_foreign_live_run):
     out = r.stdout.str()
     assert "F5-4a__control_no_probe.json" in out, out
     assert "spawned" in out, out
+
+
+def test_the_process_table_read_survives_a_narrow_COLUMNS(tmp_path):
+    """The channel must read the whole command line, not the first 80 columns of it.
+
+    THE BUG THIS PINS. `ps` truncates each row to the output width, and procps-ng takes that
+    width from `$COLUMNS` even when stdout is a pipe. pytest sets `COLUMNS` for its own terminal
+    reporting, so inside a pytest process the width was 80 and the row came back as
+
+        '/opt/grx/grx-validation/.venv-oracle/bin/python f5_redteam/01_fo'
+
+    which still matches `_LIVE_GLOBS` and no longer ends in `.py`, so `_foreign_live_run`
+    discarded it and reported no foreign run. Every spawning test was then convicted — the exact
+    49-error regression the third channel exists to prevent, reintroduced by an argument to `ps`.
+
+    WHY THIS ARM IS NOT THE ONE ABOVE. `test_a_foreign_live_run_makes_a_spawners_charge_-
+    unenforceable` does cover this — it failed on the Linux runner and nowhere else. It just
+    could not say *why*: its symptom is a conviction, which is also the symptom of a broken
+    parent chain, a missed glob, and a containment mismatch. This arm names the cause, and it
+    fails for one reason only.
+
+    WHY IT IS A SUBPROCESS. `conftest.py` calls `sys.addaudithook` at import, and an audit hook
+    cannot be removed, so importing the guard here would leave a second hook charging every
+    later test in this interpreter twice.
+
+    WHY IT MAY SKIP. macOS's BSD `ps` ignores `COLUMNS` when stdout is not a tty, so the
+    truncation is not reproducible there and the arm would assert nothing. The skip is decided by
+    MEASURING this machine's `ps` inside the probe — not by `sys.platform` — and it reports the
+    width it actually got, so a future `ps` that starts truncating turns the skip back into a
+    test rather than staying quiet.
+    """
+    root = tmp_path / "tree"
+    root.mkdir()
+    (root / "results").mkdir()
+    probe = tmp_path / "probe.py"
+    probe.write_text(_WIDTH_PROBE)
+    # COLUMNS is set here rather than inherited: the condition under test is a narrow width, and
+    # an arm that depended on whether the caller's pytest happened to export one would pass or
+    # fail for reasons that have nothing to do with the guard.
+    r = subprocess.run([sys.executable, str(probe), str(CONFTEST), str(root)],
+                       capture_output=True, text=True, timeout=180,
+                       env={**os.environ, "COLUMNS": "80"})
+    assert r.returncode == 0, f"the probe itself failed:\n{r.stdout}\n{r.stderr}"
+    got = json.loads(r.stdout.splitlines()[-1])
+    if not got["truncates"]:
+        pytest.skip(f"this machine's `ps` returned the orphan's full {got['raw_len']}-character "
+                    f"row under COLUMNS=80, so the truncation this arm pins cannot be reproduced "
+                    f"here; it is reproducible on procps-ng (the Linux runner)")
+    assert got["found"], (
+        "the foreign live run was invisible to the third channel under COLUMNS=80. Its row was "
+        f"present but cut to {got['raw_len']} characters: {got['raw_row']!r}\n"
+        "`ps` needs -ww (unlimited width) — see the note in conftest._foreign_live_run.")
+    assert any(_WIDTH_SCRIPT in f for f in got["found"]), (
+        f"the channel found something, but not this orphan: {got['found']}")
 
 
 # ---------------------------------------------------------------- row 4: audit beats diff

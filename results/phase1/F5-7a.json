@@ -1,0 +1,167 @@
+{
+  "analysis_only": true,
+  "aws_calls": 0,
+  "billable_calls": 0,
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F5-7a",
+    "clear_here": true
+  },
+  "case_id": "F5-7a",
+  "classification_table": {
+    "AWS_BEHAVIOR_CHANGED": {
+      "bucket": "MISMATCH",
+      "why": "the matrix does not match reality TODAY, which is what the oracle asks. That the row was accurate when written — five dated snapshots agreeing with it — is a fact about blame, not about the match, and it lives in the finding"
+    },
+    "CONFIRMED": {
+      "bucket": "MATCH",
+      "why": "the claim held on the instrument named for it"
+    },
+    "CONFIRMED_AS_LIMITATION": {
+      "bucket": "NOT_A_DOC_CLAIM",
+      "why": "finding 6 is a statement about OUR instrument: the three endpoint services exist in all three control regions the document lists as unsupported, so existence carries no information about availability. It bounds what instrument A can conclude and asserts nothing about the matrix"
+    },
+    "DOC_CONFIRMED": {
+      "bucket": "MATCH",
+      "why": "the live page still says what the matrix says — unobserved in both runs, and the branch findings 4 and 5 would have taken had AWS not shipped"
+    },
+    "DOC_CONTRADICTED_BY_AWS_DOCS": {
+      "bucket": "MISMATCH",
+      "why": "the live page contradicts the row with no dated history in either direction — unobserved in both runs"
+    },
+    "DOC_IMPRECISE": {
+      "bucket": "NOT_A_DOC_CLAIM",
+      "why": "finding 3 is about the matrix's COLUMN HEADER, not its facts: the rows name primitives while PrivateLink attaches to prefixes, so a reader cannot check the matrix the way BP#6 invites. That makes the table unusable, not false — the document's own words are DC-1's shape, right and unusable. Counted as a mismatch under the strict reading, which is reported beside the primary one"
+    },
+    "DOC_REFUTED_CHANGE_DATE_UNDETERMINED": {
+      "bucket": "MISMATCH",
+      "why": "the live page contradicts the row and the archive is SILENT rather than contradictory, so the date it became false cannot be established. The mismatch is nonetheless established: AWS's page and our matrix disagree now"
+    },
+    "INCONCLUSIVE": {
+      "bucket": "NOT_A_DOC_CLAIM",
+      "why": "the control arm did not settle its own premise; it still asserts nothing about the matrix — unobserved in both runs"
+    },
+    "NOT_CONFIRMED": {
+      "bucket": "MISMATCH",
+      "why": "an existence claim the enumeration was able to settle, and did not find — unobserved in both archived runs, and the branch caveat (b) would take if the third gateway endpoint were absent in any region"
+    },
+    "NOT_TESTED_BY_THIS_INSTRUMENT": {
+      "bucket": "NOT_A_DOC_CLAIM",
+      "why": "a first-class outcome in the producer, used where the instrument is silent. Silence is not agreement, so it may not be counted as a match"
+    },
+    "REFUTED": {
+      "bucket": "MISMATCH",
+      "why": "a keyword hit for `evaluat` or `agentcore-optimi` among the unfiltered service list would mean a dedicated endpoint service does exist — unobserved"
+    }
+  },
+  "kind": "EXISTENCE",
+  "mutations": 0,
+  "oracle_text": "TRUE if describe-vpc-endpoint-services matches the document's coverage matrix including the claimed Optimization gap; FALSE on any mismatch",
+  "per_run_tokens": {
+    "r20260809T094500Z": {
+      "caveat_b_third_gateway_endpoint": "CONFIRMED",
+      "endpoint_service_existence_is_not_feature_availability": "CONFIRMED_AS_LIMITATION",
+      "evaluations_data_plane_not_supported": "AWS_BEHAVIOR_CHANGED",
+      "matrix_rows_are_primitives_not_endpoint_services": "DOC_IMPRECISE",
+      "no_dedicated_evaluations_or_optimization_endpoint_service": "CONFIRMED",
+      "optimization_no_privatelink": "DOC_REFUTED_CHANGE_DATE_UNDETERMINED"
+    },
+    "r20260810T002001Z": {
+      "caveat_b_third_gateway_endpoint": "CONFIRMED",
+      "endpoint_service_existence_is_not_feature_availability": "CONFIRMED_AS_LIMITATION",
+      "evaluations_data_plane_not_supported": "AWS_BEHAVIOR_CHANGED",
+      "matrix_rows_are_primitives_not_endpoint_services": "DOC_IMPRECISE",
+      "no_dedicated_evaluations_or_optimization_endpoint_service": "CONFIRMED",
+      "optimization_no_privatelink": "DOC_REFUTED_CHANGE_DATE_UNDETERMINED"
+    }
+  },
+  "planned_n": null,
+  "reads": [
+    "evidence/r20260809T094500Z/f5/F5-7a/analysis.json",
+    "evidence/r20260810T002001Z/f5/F5-7a/analysis.json"
+  ],
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F5-7a",
+    "evidence": {
+      "detail": {
+        "canonical_run": "r20260810T002001Z",
+        "claims_about_our_instrument_or_prose": [
+          "endpoint_service_existence_is_not_feature_availability",
+          "matrix_rows_are_primitives_not_endpoint_services"
+        ],
+        "finding": "results/FINDING-F5-7A.md",
+        "matched_claims": [
+          "caveat_b_third_gateway_endpoint",
+          "no_dedicated_evaluations_or_optimization_endpoint_service"
+        ],
+        "mismatched_claims": [
+          "evaluations_data_plane_not_supported",
+          "optimization_no_privatelink"
+        ],
+        "n_basis": "32 per-call evidence records across 2 archived run(s) {'r20260809T094500Z': 16, 'r20260810T002001Z': 16}, counted on disk rather than read out of the analysis body",
+        "per_claim": {
+          "caveat_b_third_gateway_endpoint": {
+            "bucket": "MATCH",
+            "instrument": "A (ec2:DescribeVpcEndpointServices)",
+            "token": "CONFIRMED",
+            "why": "the claim held on the instrument named for it"
+          },
+          "endpoint_service_existence_is_not_feature_availability": {
+            "bucket": "NOT_A_DOC_CLAIM",
+            "instrument": "A (control arm)",
+            "token": "CONFIRMED_AS_LIMITATION",
+            "why": "finding 6 is a statement about OUR instrument: the three endpoint services exist in all three control regions the document lists as unsupported, so existence carries no information about availability. It bounds what instrument A can conclude and asserts nothing about the matrix"
+          },
+          "evaluations_data_plane_not_supported": {
+            "bucket": "MISMATCH",
+            "instrument": "B (AWS public documentation, live + Internet Archive)",
+            "token": "AWS_BEHAVIOR_CHANGED",
+            "why": "the matrix does not match reality TODAY, which is what the oracle asks. That the row was accurate when written — five dated snapshots agreeing with it — is a fact about blame, not about the match, and it lives in the finding"
+          },
+          "matrix_rows_are_primitives_not_endpoint_services": {
+            "bucket": "NOT_A_DOC_CLAIM",
+            "instrument": "A + B",
+            "token": "DOC_IMPRECISE",
+            "why": "finding 3 is about the matrix's COLUMN HEADER, not its facts: the rows name primitives while PrivateLink attaches to prefixes, so a reader cannot check the matrix the way BP#6 invites. That makes the table unusable, not false — the document's own words are DC-1's shape, right and unusable. Counted as a mismatch under the strict reading, which is reported beside the primary one"
+          },
+          "no_dedicated_evaluations_or_optimization_endpoint_service": {
+            "bucket": "MATCH",
+            "instrument": "A",
+            "token": "CONFIRMED",
+            "why": "the claim held on the instrument named for it"
+          },
+          "optimization_no_privatelink": {
+            "bucket": "MISMATCH",
+            "instrument": "B",
+            "token": "DOC_REFUTED_CHANGE_DATE_UNDETERMINED",
+            "why": "the live page contradicts the row and the archive is SILENT rather than contradictory, so the date it became false cannot be established. The mismatch is nonetheless established: AWS's page and our matrix disagree now"
+          }
+        },
+        "reading": "both instruments, because the case's own control arm (finding 6) shows instrument A cannot see feature availability and so cannot confirm the matrix on its own",
+        "readings_agree": true,
+        "replication": "the runs agree on every per-claim verdict this record is computed from; the 75-field comparison is results/f5_7a_replication.json",
+        "strict_reading_also_counts_doc_imprecision_as_a_mismatch": false,
+        "what_false_does_not_mean": "not 'the document was careless'. Finding 4 is the opposite: AWS's own page said 'Not yet supported' on five dated snapshots spanning 2026-04-12 to 2026-07-14, so §4.5.3 agreed with AWS for at least three months and the claim EXPIRED. The oracle is binary and cannot carry that; the finding can"
+      },
+      "observed": false
+    },
+    "family": "descriptive_no_test",
+    "kind": "EXISTENCE",
+    "mutation_required": false,
+    "n_attempted": 32,
+    "n_met": true,
+    "n_usable": 32,
+    "notes": [],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [],
+    "verdict": "FALSE"
+  },
+  "records_per_run": {
+    "r20260809T094500Z": 16,
+    "r20260810T002001Z": 16
+  },
+  "verdict": "FALSE"
+}

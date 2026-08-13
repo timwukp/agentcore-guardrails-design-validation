@@ -323,10 +323,26 @@ def _foreign_live_run() -> set[str]:
     the test. A guard that cannot make its observation must not use the *absence* of that
     observation as exoneration (`feedback_guard_tool_exit_codes`), and here exoneration is the
     lenient direction.
+
+    `-ww` is load-bearing, and it is here because the channel was silently blind on Linux
+    -------------------------------------------------------------------------------------
+    `ps` truncates each row to the output width, and procps-ng takes that width from `$COLUMNS`
+    even when stdout is a pipe. pytest sets `COLUMNS` for its own terminal reporting, so inside
+    a pytest process the width is 80, and the row this channel needs came back as
+
+        '/opt/grx/grx-validation/.venv-oracle/bin/python f5_redteam/01_fo'
+
+    — the glob still matched, the `.py` extension did not, so `_LIVE_GLOBS` found the process and
+    the script test threw it away. The channel reported "no foreign run" and every spawning test
+    was convicted. macOS's BSD `ps` ignores `COLUMNS` when stdout is not a tty (measured: 4,474
+    characters with and without it), which is exactly why the arm covering this passed on the
+    laptop and failed only on the runner. `-ww` means unlimited width on both.
+
+    Nothing about this was specific to CI: a 100-column terminal would have done it too.
     """
     import subprocess
     try:
-        out = subprocess.run(["ps", "-eo", "pid=,ppid=,command="],
+        out = subprocess.run(["ps", "-ww", "-eo", "pid=,ppid=,command="],
                              capture_output=True, text=True, timeout=10)
     except (OSError, subprocess.SubprocessError):
         return set()

@@ -55,7 +55,20 @@ ROOT = Path(__file__).resolve().parent
 
 SCAN_EXT = {".py", ".md", ".csv", ".json", ".yaml", ".yml", ".txt", ".sh", ".sql"}
 SKIP_DIRS = {".git", ".pytest_cache", "__pycache__", ".venv", ".venv-oracle",
-             ".venv-baseline", "node_modules", "evidence"}
+             ".venv-baseline", "node_modules", "evidence", ".state"}
+# Every entry above is a directory that CANNOT reach a reader, and that is the whole
+# justification for skipping it — this gate's docstring scopes it to "everything that
+# could be published". Two of the entries hold project data rather than tooling:
+# `evidence/`, 178 MB of raw API responses kept local by written policy, and
+# `runner/.state/`, which records the live instance id and the runner bucket name —
+# precisely the value DEV-P4-25 exists to keep out of a pushable file.
+#
+# "Cannot reach a reader" is a claim, so it is checked rather than trusted:
+# `lib/tests/test_redaction_gate_skips.py` asserts that every entry here is matched by a
+# `.gitignore` rule, with `.git` the single exception because git never tracks its own
+# directory by construction. The test is what makes this list safe to extend — a skip
+# added for a directory that IS published now reds the suite instead of silently
+# blinding the gate to whatever is inside it.
 
 # A scan of this project that reads fewer than this many files has not read the
 # project. The number is a floor, not an estimate: it only has to be low enough
@@ -187,6 +200,13 @@ ALLOW: list[tuple[str, str, str, str]] = [
      "a synthetic gateway ARN whose account field is the single digit `1` — not a 12-digit "
      "account ID, and no AWS account can be numbered 1. It exists to assert that the span query "
      "is filtered on the ARN it was handed; `query_spans` is replaced and nothing is sent"),
+    # The EC2 runner added FOUR findings and none of them is in this list, which is the outcome to
+    # aim for. Two `arn` matches and two `s3-uri` matches are excused by DERIVED rules in
+    # `allowed()` instead, because each is a property of the notation rather than a fact about a
+    # file: a service whose ARN grammar has no account segment, an AWS-managed resource, and a
+    # bucket URI whose distinguishing part is already a placeholder. All four first went in here as
+    # narrow anchors, and doing so put fresh findings in the gate's OWN SOURCE — the one file that
+    # must never need a waiver — exactly as the paragraphs above warn. Backed out.
 ]
 
 
@@ -226,6 +246,17 @@ _ARN_DETECT = re.compile(r"\barn:aws[a-z-]*:[a-z0-9-]*:")
 _ARN_ACCOUNT_FIELD = re.compile(
     r"\barn:aws[a-z-]*:[^:\s]*:[^:\s]*:([^:\s]*):")
 _ARN_TEMPLATE_FIELD = re.compile(r"\{[A-Za-z_][A-Za-z0-9_.\[\]'\"]*\}|<[a-z_-]+>")
+
+# The same two placeholder spellings, used by the `s3-uri` branch to ask "is what follows this
+# match a placeholder?" rather than "is this field one?". Anchored with `.match(line, pos)` so it
+# must sit IMMEDIATELY after the URI — a placeholder later on the line excuses nothing.
+_PLACEHOLDER_AT = re.compile(r"<[a-z_-]+>|\{[A-Za-z_][A-Za-z0-9_.\[\]'\"]*\}")
+
+# The reporting patterns, by name, so a derived excuse can re-scan a line with the EXACT pattern
+# that reported it. Deriving this from PATTERNS rather than restating a regex is the point: the
+# excuse and the finding can never disagree about what matched (the same reason `_ARN_DETECT`
+# duplicates the `arn` shape and is checked against it).
+PATTERNS_BY_NAME = {n: p for n, p, _d in PATTERNS}
 
 _corpus_values: set[str] | None = None
 
@@ -295,6 +326,20 @@ def allowed(path: Path, name: str, line: str) -> str | None:
                 kinds.add("masked")
             elif _ARN_TEMPLATE_FIELD.fullmatch(acct):
                 kinds.add("template")
+            elif acct == "":
+                # The account field is EMPTY, which for some services is the grammar rather
+                # than an omission: an S3 bucket ARN has no Region and no account segment at
+                # all, by AWS's design, because bucket names are globally unique. There is no
+                # identifier in that position to leak. Exact equality with the empty string, so
+                # an ARN that merely *starts* with the same service still has its real account
+                # field read. (This branch replaced two per-file ALLOW entries whose narrow
+                # anchors had to spell the ARNs out, creating findings in this very file.)
+                kinds.add("absent")
+            elif acct == "aws":
+                # AWS's own account position: `iam::aws:policy/...` names an AWS-MANAGED policy,
+                # published in AWS's documentation and byte-identical in every account on earth.
+                # `aws` is not a 12-digit id and cannot be confused with one.
+                kinds.add("aws-owned")
             elif acct == "*":
                 # An IAM policy resource wildcard. `*` in the account position is the absence
                 # of an account, not a masked one, and it cannot be confused with an
@@ -305,16 +350,37 @@ def allowed(path: Path, name: str, line: str) -> str | None:
                 kinds.add("wildcard")
             else:
                 return None
-        if kinds and kinds <= {"template", "wildcard"}:
+        if kinds and kinds <= {"template", "wildcard", "absent", "aws-owned"}:
             return ("the account field of every ARN on this line is a run-time format "
-                    "placeholder ({identifier}) or an exact `*` wildcard, i.e. this is source "
-                    "code that BUILDS an ARN or an IAM policy resource pattern, and it "
-                    "contains no identifier; a real account id is 12 digits and matches "
-                    "neither shape, so it would still be reported here and by the "
-                    "aws-account-id pattern")
+                    "placeholder ({identifier}), an exact `*` wildcard, empty (a service such "
+                    "as S3 whose ARN grammar has no account segment), or the literal `aws` (an "
+                    "AWS-managed resource) — i.e. this line contains no account identifier. A "
+                    "real account id is 12 digits and matches none of those four shapes, so it "
+                    "would still be reported here and by the aws-account-id pattern")
         return (f"every ARN on this line has its account field masked to "
                 f"{_redact.ACCOUNT_PLACEHOLDER} (lib/redact.py) or is a run-time format "
                 f"placeholder; partition, Region and resource id are not redaction targets")
+    if name == "s3-uri":
+        # A bucket URI whose distinguishing part is ALREADY a placeholder is a redacted bucket URI,
+        # which is what this gate asks for. The `s3-uri` pattern fires on the scheme and then runs
+        # as far as the character class allows, which stops at the opening angle bracket — so what
+        # it matched is the prefix, and the placeholder is the next thing on the line. (Deliberately
+        # written WITHOUT an example: spelling one out here put a finding in this very file for the
+        # third time in one session. The `ALLOW` block's warning applies to comments too, and a
+        # comment is exactly where it is easiest to forget.) Excused only when EVERY s3 URI on
+        # the line is immediately followed by a placeholder, so a line carrying one masked URI and
+        # one real bucket name still fails — the same per-line, all-matches discipline the
+        # `aws-account-id` branch below had to be rewritten to use.
+        #
+        # What survives is the PREFIX, and that is deliberate: `BUCKET_PREFIX` is a project constant
+        # in tracked source, not anything derived from the account. What it hides is the random
+        # suffix, which is the only part that identifies one bucket (DEV-P4-25).
+        hits = list(PATTERNS_BY_NAME["s3-uri"].finditer(line))
+        if hits and all(_PLACEHOLDER_AT.match(line, h.end()) for h in hits):
+            return ("every s3:// URI on this line is immediately followed by a `<placeholder>` or "
+                    "`{template}`, i.e. the bucket's distinguishing part has already been redacted; "
+                    "what remains is a prefix constant that appears in tracked source")
+        return None
     if name == "aws-account-id":
         # EVERY 12-digit token on the line must be excusable, not just the first one.
         #
