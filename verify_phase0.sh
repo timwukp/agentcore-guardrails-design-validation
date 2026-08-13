@@ -134,9 +134,46 @@ run_tests() {
   # gates in 99_teardown.py were found defective by measurement, and 0 of the 84 pre-existing
   # CloudWatch delivery resources in this account were protected by the original deny-list. A
   # directory that stopped being collected would take that whole argument with it silently.
-  for spec in "claims/tests:286" "lib/tests:587" "f5_redteam/tests:35" \
-              "f2_determinism/tests:30" "f3_efficacy/tests:71" \
-              "f8_regional/tests:80" "f10_billing/tests:35" "infra/tests:61"; do
+  # f5_redteam/tests 35 -> 325. The floor was set when the directory held one file and was never
+  # raised as F5-1 (43), F5-6 (19), F5-7a (18) and F5-2 (92) landed, so for several cases it was
+  # a floor a single surviving file could clear — the check was live but had stopped being able
+  # to see a whole suite vanish. 327 is the collected count with F5-2's two new files:
+  # test_finding_f52_figures.py (33 arms pinning every figure in FINDING-F5-2.md to the two
+  # analysis records) and test_finding_f52_mutation.py (26: 19 mutants over those arms, plus the
+  # control, the five static checks and the live-document sha256). Both belong behind this gate for
+  # the reason lib/tests' floor comment gives: their first run had two survivors, and a
+  # mutation result that no gate re-runs is a number in prose.
+  # f3_efficacy/tests 71 -> 268. Same failure as f5_redteam's: the floor was set when the
+  # directory held one file and was never raised, so by the time F3-10 landed four files it was a
+  # floor that test_f3_helpers.py alone could clear. 268 is the collected count including F3-10's
+  # two new files: test_publish_slack.py (14 arms, of which 3 are mutants pinning each half of
+  # DEV-P4-35's bucket-attribution fix against BOTH days' published records) and
+  # test_window_audit.py (38: the closed-window re-read's aggregation, one arm per comparison
+  # failure mode, the two dimension-roll-up regressions that instrument found in itself, and 11
+  # break arms — one per guard). The mutation arms are the reason these belong behind a gate: a
+  # mutation result nothing re-runs is a number in prose.
+  # claims/tests was likewise stale at 286 against 384 collected. 395 included
+  # test_repo_copy_exclusions.py (11 arms: the .gitignore-derived scratch-copy exclusion list,
+  # both bounds on a real copy, and the AST scan that stops a fourth hand-written list —
+  # DEV-P4-36, the 11.3 GB wedge that killed a full-gate run mid-flight). 411 adds DEV-P4-36's
+  # SECOND site: test_amendment_evidence_subset.py (10 arms bounding the amendment gate's
+  # per-arm evidence copy, of which the load-bearing one runs the real gate against the archive
+  # and against the subset and compares row by row) and 6 more in
+  # test_repo_copy_exclusions.py — the subtree-copy budget, which is the scan the first fix
+  # deliberately did not write and is therefore how `copytree(ROOT / "evidence", …)` survived it.
+  # runner/tests:55, f9_failsecure/tests:48, f1_config/tests:11 — the THREE directories this list
+  # had drifted past, found 2026-08-13 by listing `*/tests` on disk against it: 11 exist, 8 were
+  # here, and one of the 114 ungated arms was RED
+  # (test_every_api_the_validation_has_called_is_mapped_to_an_action — delete_gateway had entered
+  # evidence/ with no MAPPING entry, exactly the 2am-AccessDenied its docstring promises to catch
+  # at desk). The comment above argues why a `*/tests` glob would be worse than this list, and the
+  # argument is right — but a hand-written list is a CLAIM about what exists, and nothing checked
+  # it. claims/tests/test_verify_phase0_gates_every_test_directory.py now does: a 12th directory
+  # fails there, not silently here.
+  for spec in "claims/tests:412" "lib/tests:587" "f5_redteam/tests:327" \
+              "f2_determinism/tests:30" "f3_efficacy/tests:268" \
+              "f8_regional/tests:80" "f10_billing/tests:35" "infra/tests:61" \
+              "runner/tests:55" "f9_failsecure/tests:48" "f1_config/tests:11"; do
     dir="${spec%%:*}"; floor="${spec##*:}"
     if [ ! -d "$dir" ]; then
       echo "FATAL: $dir does not exist — its tests cannot be reported as passing" >&2
@@ -157,7 +194,8 @@ run_tests() {
   done
   "$PY" -m pytest claims/tests/ lib/tests/ f5_redteam/tests/ \
                   f2_determinism/tests/ f3_efficacy/tests/ \
-                  f8_regional/tests/ f10_billing/tests/ infra/tests/ -q || rc=$?
+                  f8_regional/tests/ f10_billing/tests/ infra/tests/ \
+                  runner/tests/ f9_failsecure/tests/ f1_config/tests/ -q || rc=$?
   return $rc
 }
 
@@ -242,7 +280,7 @@ gate "v1.3 amendment register (sites derived from the triage, not listed by hand
      "$PY" build_v13_candidates.py
 gate "cost projection within the sealed ceiling" \
      "$PY" estimate_cost.py
-gate "test suite (claims + lib + f2 + f3 + f5 + f8 + f10)" \
+gate "test suite (all 11 test directories)" \
      run_tests
 gate "redaction gate" \
      "$PY" check_redaction.py

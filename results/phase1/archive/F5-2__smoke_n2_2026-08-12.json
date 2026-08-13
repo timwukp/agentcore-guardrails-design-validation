@@ -1,0 +1,652 @@
+{
+  "a_conflict_is_an_authorized_call": "ConflictException is returned after authorization, so it is counted into adverse and tallied separately: 'authorized then serialized away' and 'authorized and applied' are different observations of the same authorization outcome",
+  "action_id": "grxecho___echo",
+  "ambient_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "arms": {
+    "closed_baseline": {
+      "arm": "closed_baseline",
+      "error_codes": [
+        "AccessDeniedException"
+      ],
+      "n_accepted": 0,
+      "n_attempted": 2,
+      "n_authorized": 0,
+      "n_conflict": 0,
+      "n_denied": 2,
+      "n_unusable": 0,
+      "n_usable": 2
+    },
+    "granted_mutation": {
+      "arm": "granted_mutation",
+      "error_codes": [],
+      "n_accepted": 2,
+      "n_attempted": 2,
+      "n_authorized": 2,
+      "n_conflict": 0,
+      "n_denied": 0,
+      "n_unusable": 0,
+      "n_usable": 2
+    },
+    "granted_update_only": {
+      "arm": "granted_update_only",
+      "error_codes": [
+        "AccessDeniedException"
+      ],
+      "n_accepted": 0,
+      "n_attempted": 2,
+      "n_authorized": 0,
+      "n_conflict": 0,
+      "n_denied": 2,
+      "n_unusable": 0,
+      "n_usable": 2
+    },
+    "restored_reassert": {
+      "arm": "restored_reassert",
+      "error_codes": [
+        "AccessDeniedException"
+      ],
+      "n_accepted": 0,
+      "n_attempted": 2,
+      "n_authorized": 0,
+      "n_conflict": 0,
+      "n_denied": 2,
+      "n_unusable": 0,
+      "n_usable": 2
+    }
+  },
+  "blockers": {
+    "blockers": [
+      "n_usable=2 is below the pre-registered 120"
+    ],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F5-2",
+    "clear_here": false
+  },
+  "case_id": "F5-2",
+  "chain": {
+    "flip": {
+      "elapsed_ms": 598.38,
+      "gateway_status_after": "UPDATING",
+      "http_status": 202,
+      "outcome": "accepted",
+      "trial_id": "chain__flip"
+    },
+    "flip_settled": {
+      "settled_ok": true,
+      "status": "READY",
+      "status_reasons": null
+    },
+    "forbid": {
+      "lint": [],
+      "policy_id": "grx_f52_block_r20260810T130945Z-8jwvh3vuj5",
+      "policy_name": "grx_f52_block_r20260810T130945Z",
+      "statement": "forbid (principal, action == AgentCore::Action::\"grxecho___echo\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n\")\nunless { context.input has amount && context.input.amount.lessThan(decimal(\"500.0\")) };",
+      "status": "ACTIVE"
+    },
+    "forbid_deletion": {
+      "attempts": 1,
+      "deleted": true,
+      "errors": []
+    },
+    "legs": {
+      "enforce_allowed": {
+        "amount": 1.0,
+        "decision": "ALLOW",
+        "leg": "enforce_allowed",
+        "n": 2,
+        "n_denied": 0,
+        "n_ran": 2,
+        "rows": [
+          {
+            "decision": {
+              "authorize_exception": false,
+              "default_deny": false,
+              "duration_ms": 737.568,
+              "http_status": 200,
+              "is_error": false,
+              "jsonrpc_error": null,
+              "outcome": "allowed",
+              "request_id": "95f3fd43-a0ae-42a7-bb86-c8719b1b55d7",
+              "session_id": "92e115b7-3a7b-468f-b3f6-c57c9cb84447",
+              "text": "{\"tool\":\"echo\",\"context\":{\"bedrockAgentCoreMessageVersion\":\"1.0\",\"bedrockAgentCoreAwsRequestId\":\"95f3fd43-a0ae-42a7-bb86-c8719b1b55d7\",\"bedrockAgentCoreMcpMessageId\":\"2\",\"bedrockAgentCoreGatewayId\":\"grx-gw-r20260810t130945z-zpkfmpwo9n\",\"bedrockAgentCoreTargetId\":\"I7DX308MPV\",\"bedrockAgentCoreToolName\":\"grxecho___echo\"},\"mode\":\"echo\",\"text\":\"grx-f5-2-r20260810T130945Z-enforce_allowed-01\",\"amount\":1.0,\"amount_type\":\"float\",\"text_len\":45,\"text_sha256\":\"53ea7538591c5fc0988d24f26cd25292ed6911bdc8d79b5a3648ac26bea73284\"}",
+              "unclassified": false
+            },
+            "denied": false,
+            "http_status": 200,
+            "i": 1,
+            "ran": true
+          },
+          {
+            "decision": {
+              "authorize_exception": false,
+              "default_deny": false,
+              "duration_ms": 522.694,
+              "http_status": 200,
+              "is_error": false,
+              "jsonrpc_error": null,
+              "outcome": "allowed",
+              "request_id": "fcc5c8c6-c5cf-4ce3-8e72-dc8f6e7a7b59",
+              "session_id": "92e115b7-3a7b-468f-b3f6-c57c9cb84447",
+              "text": "{\"tool\":\"echo\",\"context\":{\"bedrockAgentCoreMessageVersion\":\"1.0\",\"bedrockAgentCoreAwsRequestId\":\"fcc5c8c6-c5cf-4ce3-8e72-dc8f6e7a7b59\",\"bedrockAgentCoreMcpMessageId\":\"3\",\"bedrockAgentCoreGatewayId\":\"grx-gw-r20260810t130945z-zpkfmpwo9n\",\"bedrockAgentCoreTargetId\":\"I7DX308MPV\",\"bedrockAgentCoreToolName\":\"grxecho___echo\"},\"mode\":\"echo\",\"text\":\"grx-f5-2-r20260810T130945Z-enforce_allowed-02\",\"amount\":1.0,\"amount_type\":\"float\",\"text_len\":45,\"text_sha256\":\"fd9541d9ac7a94203958c69c76a693c2bbb113e3d91eef5be436eca65d5a167b\"}",
+              "unclassified": false
+            },
+            "denied": false,
+            "http_status": 200,
+            "i": 2,
+            "ran": true
+          }
+        ],
+        "unanimous": true
+      },
+      "enforce_blocked": {
+        "amount": 999.0,
+        "decision": "DENY",
+        "leg": "enforce_blocked",
+        "n": 2,
+        "n_denied": 2,
+        "n_ran": 0,
+        "rows": [
+          {
+            "decision": {
+              "authorize_exception": false,
+              "default_deny": false,
+              "duration_ms": 422.339,
+              "http_status": 200,
+              "is_error": null,
+              "jsonrpc_error": {
+                "code": -32002,
+                "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_f52_block_r20260810T130945Z-8jwvh3vuj5]"
+              },
+              "outcome": "policy_denied",
+              "request_id": "e70c27d2-43eb-4acc-9ff5-83a89a320512",
+              "session_id": "89e89b78-23d9-4f05-a105-75844f1bc1ee",
+              "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_f52_block_r20260810T130945Z-8jwvh3vuj5]",
+              "unclassified": false
+            },
+            "denied": true,
+            "http_status": 200,
+            "i": 1,
+            "ran": false
+          },
+          {
+            "decision": {
+              "authorize_exception": false,
+              "default_deny": false,
+              "duration_ms": 463.688,
+              "http_status": 200,
+              "is_error": null,
+              "jsonrpc_error": {
+                "code": -32002,
+                "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_f52_block_r20260810T130945Z-8jwvh3vuj5]"
+              },
+              "outcome": "policy_denied",
+              "request_id": "96889f8a-48f2-457a-8757-751e5dca7692",
+              "session_id": "89e89b78-23d9-4f05-a105-75844f1bc1ee",
+              "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_f52_block_r20260810T130945Z-8jwvh3vuj5]",
+              "unclassified": false
+            },
+            "denied": true,
+            "http_status": 200,
+            "i": 2,
+            "ran": false
+          }
+        ],
+        "unanimous": true
+      },
+      "logonly_blocked": {
+        "amount": 999.0,
+        "decision": "ALLOW",
+        "leg": "logonly_blocked",
+        "n": 2,
+        "n_denied": 0,
+        "n_ran": 2,
+        "rows": [
+          {
+            "decision": {
+              "authorize_exception": false,
+              "default_deny": false,
+              "duration_ms": 441.666,
+              "http_status": 200,
+              "is_error": false,
+              "jsonrpc_error": null,
+              "outcome": "allowed",
+              "request_id": "f351a759-76c4-493f-a6c7-697c2bdf96d1",
+              "session_id": "679fd1ed-cd3c-40be-8f30-04465c1028ce",
+              "text": "{\"tool\":\"echo\",\"context\":{\"bedrockAgentCoreMessageVersion\":\"1.0\",\"bedrockAgentCoreAwsRequestId\":\"f351a759-76c4-493f-a6c7-697c2bdf96d1\",\"bedrockAgentCoreMcpMessageId\":\"2\",\"bedrockAgentCoreGatewayId\":\"grx-gw-r20260810t130945z-zpkfmpwo9n\",\"bedrockAgentCoreTargetId\":\"I7DX308MPV\",\"bedrockAgentCoreToolName\":\"grxecho___echo\"},\"mode\":\"echo\",\"text\":\"grx-f5-2-r20260810T130945Z-logonly_blocked-01\",\"amount\":999.0,\"amount_type\":\"float\",\"text_len\":45,\"text_sha256\":\"79d34cbf98839515e3cfdfd096e39132c17011500ade46bc07389cda5f29bcc3\"}",
+              "unclassified": false
+            },
+            "denied": false,
+            "http_status": 200,
+            "i": 1,
+            "ran": true
+          },
+          {
+            "decision": {
+              "authorize_exception": false,
+              "default_deny": false,
+              "duration_ms": 429.718,
+              "http_status": 200,
+              "is_error": false,
+              "jsonrpc_error": null,
+              "outcome": "allowed",
+              "request_id": "d64f8c64-085c-41c7-a6d6-f5c5250d09e1",
+              "session_id": "679fd1ed-cd3c-40be-8f30-04465c1028ce",
+              "text": "{\"tool\":\"echo\",\"context\":{\"bedrockAgentCoreMessageVersion\":\"1.0\",\"bedrockAgentCoreAwsRequestId\":\"d64f8c64-085c-41c7-a6d6-f5c5250d09e1\",\"bedrockAgentCoreMcpMessageId\":\"3\",\"bedrockAgentCoreGatewayId\":\"grx-gw-r20260810t130945z-zpkfmpwo9n\",\"bedrockAgentCoreTargetId\":\"I7DX308MPV\",\"bedrockAgentCoreToolName\":\"grxecho___echo\"},\"mode\":\"echo\",\"text\":\"grx-f5-2-r20260810T130945Z-logonly_blocked-02\",\"amount\":999.0,\"amount_type\":\"float\",\"text_len\":45,\"text_sha256\":\"1b2c33eab2caddfc82461c8d901a2e66c824f7a1f8c46faf60a1af0b6b4635e2\"}",
+              "unclassified": false
+            },
+            "denied": false,
+            "http_status": 200,
+            "i": 2,
+            "ran": true
+          }
+        ],
+        "unanimous": true
+      },
+      "reasserted_blocked": {
+        "amount": 999.0,
+        "decision": "DENY",
+        "leg": "reasserted_blocked",
+        "n": 2,
+        "n_denied": 2,
+        "n_ran": 0,
+        "rows": [
+          {
+            "decision": {
+              "authorize_exception": false,
+              "default_deny": false,
+              "duration_ms": 419.461,
+              "http_status": 200,
+              "is_error": null,
+              "jsonrpc_error": {
+                "code": -32002,
+                "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_f52_block_r20260810T130945Z-8jwvh3vuj5]"
+              },
+              "outcome": "policy_denied",
+              "request_id": "60fb7688-8065-4e0a-9375-c0f15f0b6ad6",
+              "session_id": "5f0bc1d2-0563-4a0c-aef7-e3148a54127d",
+              "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_f52_block_r20260810T130945Z-8jwvh3vuj5]",
+              "unclassified": false
+            },
+            "denied": true,
+            "http_status": 200,
+            "i": 1,
+            "ran": false
+          },
+          {
+            "decision": {
+              "authorize_exception": false,
+              "default_deny": false,
+              "duration_ms": 414.555,
+              "http_status": 200,
+              "is_error": null,
+              "jsonrpc_error": {
+                "code": -32002,
+                "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_f52_block_r20260810T130945Z-8jwvh3vuj5]"
+              },
+              "outcome": "policy_denied",
+              "request_id": "0f51bf60-68da-4851-b1a4-d630a703e4b0",
+              "session_id": "5f0bc1d2-0563-4a0c-aef7-e3148a54127d",
+              "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_f52_block_r20260810T130945Z-8jwvh3vuj5]",
+              "unclassified": false
+            },
+            "denied": true,
+            "http_status": 200,
+            "i": 2,
+            "ran": false
+          }
+        ],
+        "unanimous": true
+      }
+    },
+    "mode_after_flip": "LOG_ONLY",
+    "wait_allow": {
+      "confirmations_required": 2,
+      "consecutive_confirmations": 2,
+      "decisions_seen": [
+        "ALLOW",
+        "ALLOW"
+      ],
+      "max_wait_s": 300,
+      "reached": true,
+      "seconds": 13.2,
+      "wanted": "ALLOW"
+    },
+    "wait_deny": {
+      "confirmations_required": 2,
+      "consecutive_confirmations": 2,
+      "decisions_seen": [
+        "DENY",
+        "DENY"
+      ],
+      "max_wait_s": 300,
+      "reached": true,
+      "seconds": 13.2,
+      "wanted": "DENY"
+    }
+  },
+  "data_plane_reconvergence": {
+    "n_post_restore_attempts": 2,
+    "n_that_were_still_authorized": 0,
+    "revoke_probe_outcomes": [
+      "accepted",
+      "accepted",
+      "accepted",
+      "accepted",
+      "denied_by_iam",
+      "denied_by_iam",
+      "denied_by_iam"
+    ],
+    "revoke_wait_bound_s": 1800,
+    "seconds_to_the_first_denial": 175.1,
+    "seconds_to_three_consecutive_denials": 195.7,
+    "strict_form_all_post_restore_attempts_denied": true,
+    "what_is_still_required": "`grants_were_removed_from_the_role`, which reads the role's inline policy set back from IAM, and `gateway_was_restored_field_for_field`, which reads the gateway back and diffs it",
+    "why_this_is_reported_and_not_required": "the strict form asks IAM for a guarantee it does not offer on this timescale; F5-1 measured the same asymmetry on lambda:Invoke. Requiring it would make this case permanently unpublishable while the boundary it tests — whether the runtime role can reconfigure the gateway in its SHIPPED configuration — is measured cleanly at n=120."
+  },
+  "gateway_id": "grx-gw-r20260810t130945z-zpkfmpwo9n",
+  "guards": {
+    "blocking_policy_was_load_bearing_before_the_mutation": true,
+    "blocking_was_reasserted_in_the_data_plane": true,
+    "engine_was_quiet_at_start": true,
+    "gateway_started_in_its_provisioned_configuration": true,
+    "gateway_was_restored_field_for_field": true,
+    "granted_arm_proved_the_call_is_otherwise_accepted": true,
+    "grants_were_removed_from_the_role": true,
+    "log_only_flip_let_the_blocked_request_through": true,
+    "probe_policy_was_deleted": true,
+    "role_started_in_its_shipped_configuration": true,
+    "usable_trials_met_the_preregistered_n": true
+  },
+  "guards_detail_n": {
+    "gate_satisfied_by": "the preregistered n floor",
+    "n_authorized_in_closed_arm": 0,
+    "n_required": 2,
+    "n_usable": 2
+  },
+  "instrument": "bedrock-agentcore:UpdateGateway on grx-gw-r20260810t130945z-zpkfmpwo9n as grx-runtime-exec-r20260810T130945Z, sending the gateway's own current configuration as a full replacement; classified into accepted / conflict / denied_by_iam / unusable",
+  "is_smoke": true,
+  "kind": "ZERO_EVENTS",
+  "mode_change_latency": {
+    "allow_reached_within_bound": true,
+    "bound_s": 300,
+    "confirmations_required": 2,
+    "decisions_seen_awaiting_enforce": [
+      "DENY",
+      "DENY"
+    ],
+    "decisions_seen_awaiting_log_only": [
+      "ALLOW",
+      "ALLOW"
+    ],
+    "deny_reached_within_bound": true,
+    "seconds_until_blocked_request_was_allowed": 13.2,
+    "seconds_until_blocking_returned": 13.2,
+    "why_it_is_recorded": "UpdateGateway returning 200 is a control-plane fact. A LOG_ONLY window that persists after the mode is set back to ENFORCE is an interval in which an operator believes enforcement has resumed and it has not."
+  },
+  "mutation": {
+    "binding_permission": "bedrock-agentcore:UpdateGateway AND iam:PassRole",
+    "chain": {
+      "fields_that_differ": [],
+      "flip_sent_as": "grx-runtime-exec-r20260810T130945Z",
+      "gateway_end_state_read_ok": true,
+      "mode_at_end": "ENFORCE",
+      "pec_restored_exactly": true,
+      "restore_as_runtime": {
+        "elapsed_ms": 564.7,
+        "gateway_status_after": "UPDATING",
+        "http_status": 202,
+        "outcome": "accepted",
+        "trial_id": "chain__restore_as_runtime"
+      },
+      "restore_ignore_list": [
+        "name",
+        "description",
+        "gatewayArn",
+        "gatewayId",
+        "gatewayUrl",
+        "createdAt",
+        "updatedAt",
+        "status",
+        "statusReasons",
+        "ResponseMetadata",
+        "workloadIdentityDetails"
+      ],
+      "restore_settled": {
+        "settled_ok": true,
+        "status": "READY",
+        "status_reasons": null
+      }
+    },
+    "grants": {
+      "deletions": {
+        "grx-f52-passrole-r20260810T130945Z": {
+          "error_code": "",
+          "ok": true
+        },
+        "grx-f52-update-r20260810T130945Z": {
+          "error_code": "",
+          "ok": true
+        }
+      },
+      "end_state_read_ok": true,
+      "inline_policies_at_end": [
+        "grx-runtime-exec-policy"
+      ],
+      "pass_role": {
+        "document": {
+          "Statement": [
+            {
+              "Action": "iam:PassRole",
+              "Effect": "Allow",
+              "Resource": "arn:aws:iam::<account>:role/grx-gw-exec-r20260810T130945Z",
+              "Sid": "F52MutationPassRole"
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "policy_name": "grx-f52-passrole-r20260810T130945Z"
+      },
+      "pass_role_was_needed": true,
+      "propagation_granted": {
+        "confirmations_required": 3,
+        "consecutive_confirmations": 1,
+        "max_wait_s": 300,
+        "outcomes_seen": [
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "accepted",
+          "accepted",
+          "denied_by_iam",
+          "accepted",
+          "denied_by_iam",
+          "accepted",
+          "denied_by_iam",
+          "accepted"
+        ],
+        "reached": false,
+        "seconds": 311.8,
+        "wanted": "accepted",
+        "why_it_matters": "the arm below ran against an IAM state that was never confirmed to have settled within 300s, so its tally is about an unknown configuration"
+      },
+      "propagation_revoke": {
+        "confirmations_required": 3,
+        "consecutive_confirmations": 3,
+        "flapped_before_converging": false,
+        "max_wait_s": 1800,
+        "n_wanted_outcomes_before_the_final_streak": 0,
+        "outcomes_seen": [
+          "accepted",
+          "accepted",
+          "accepted",
+          "accepted",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam"
+        ],
+        "reached": true,
+        "seconds": 195.7,
+        "seconds_to_first_confirmation": 175.1,
+        "wanted": "denied_by_iam"
+      },
+      "propagation_update_only": {
+        "confirmations_required": 3,
+        "consecutive_confirmations": 0,
+        "max_wait_s": 300,
+        "outcomes_seen": [
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam",
+          "denied_by_iam"
+        ],
+        "reached": false,
+        "seconds": 309.1,
+        "wanted": "accepted",
+        "why_it_matters": "the arm below ran against an IAM state that was never confirmed to have settled within 300s, so its tally is about an unknown configuration"
+      },
+      "swept_in_finally": [],
+      "update_gateway": {
+        "document": {
+          "Statement": [
+            {
+              "Action": "bedrock-agentcore:UpdateGateway",
+              "Effect": "Allow",
+              "Resource": "arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n",
+              "Sid": "F52MutationUpdateGateway"
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "policy_name": "grx-f52-update-r20260810T130945Z"
+      }
+    }
+  },
+  "noop_body_members": [
+    "authorizerType",
+    "description",
+    "exceptionLevel",
+    "gatewayIdentifier",
+    "name",
+    "policyEngineConfiguration",
+    "protocolConfiguration",
+    "protocolType",
+    "roleArn"
+  ],
+  "oracle_text": "TRUE (closed) if UpdateGateway is denied to the runtime role; FALSE if it succeeds. Full chain: grant -> LOG_ONLY set -> previously-blocked request passes -> restore -> re-assert blocking",
+  "planned_n": 120,
+  "policy_engine_id": "grx_pe_r20260810T130945Z-t6hqadrspf",
+  "record": {
+    "alpha": 0.00625,
+    "case_id": "F5-2",
+    "evidence": {
+      "ceiling_method": "exact 1-alpha^(1/n)",
+      "ceiling_one_sided": 0.9209430584957906,
+      "interval": "0 [0, 0.789] (n=2, wilson, 99%)",
+      "n": 2,
+      "x": 0
+    },
+    "family": "confirmatory",
+    "kind": "ZERO_EVENTS",
+    "mutation_inverted": true,
+    "mutation_required": true,
+    "n_attempted": 2,
+    "n_met": false,
+    "n_usable": 2,
+    "notes": [
+      "n_usable=2 is below the pre-registered 120; the verdict stands on the data collected but its interval is wider than the design promised, so it does not clear the amendment bar"
+    ],
+    "p_value": null,
+    "planned_n": 120,
+    "thresholds": [],
+    "verdict": "TRUE"
+  },
+  "region": "us-east-1",
+  "run_id": "r20260810T130945Z",
+  "staged_grant": {
+    "binding_permission": "bedrock-agentcore:UpdateGateway AND iam:PassRole",
+    "pass_role_was_needed": true,
+    "update_only_authorized": 0,
+    "update_only_denied": 2,
+    "why_it_matters": "§4's remedy is written as though withholding one API permission closes this route. Which permission is load-bearing belongs in the amendment."
+  },
+  "startup_engine_interlock": {
+    "checked": "state.json policy resources other than `baseline`",
+    "policies_on_engine_at_start": [
+      "baseline"
+    ]
+  },
+  "startup_gateway_interlock": {
+    "engine_arn_matches_ledger": true,
+    "exception_level": "DEBUG",
+    "mode": "ENFORCE",
+    "read_from": "bedrock-agentcore-control:GetGateway (live)",
+    "status": "READY"
+  },
+  "startup_role_interlock": {
+    "inline_policies_at_start": [
+      "grx-runtime-exec-policy"
+    ],
+    "read_from": "iam:ListRolePolicies (live)"
+  },
+  "update_gateway_shape": {
+    "accepted_members": [
+      "authorizerConfiguration",
+      "authorizerType",
+      "customTransformConfiguration",
+      "description",
+      "exceptionLevel",
+      "gatewayIdentifier",
+      "interceptorConfigurations",
+      "kmsKeyArn",
+      "name",
+      "policyEngineConfiguration",
+      "protocolConfiguration",
+      "protocolType",
+      "roleArn",
+      "wafConfiguration"
+    ],
+    "read_from": "botocore service model at runtime",
+    "required_members": [
+      "authorizerType",
+      "gatewayIdentifier",
+      "name",
+      "roleArn"
+    ]
+  },
+  "verdict": "TRUE",
+  "why_the_body_is_a_full_replacement": "UpdateGateway replaces rather than patches, so omitting protocolConfiguration or exceptionLevel would reset the gateway F4 and F6 are published against. Every attempt sends what GetGateway returned, which also makes an unexpectedly-accepted call in the closed arm a no-op — authorization is evaluated before the body takes effect, so this does not weaken what adverse counts",
+  "why_the_grant_is_staged": "roleArn is a REQUIRED member of UpdateGateway, so iam:PassRole is in play as well as bedrock-agentcore:UpdateGateway. Granting only the first would produce an AccessDeniedException indistinguishable from 'the route is closed' — a mutation that fails to invert, read as a confirmation",
+  "why_the_mutation_is_mandatory": "the role holds no bedrock-agentcore control-plane permission, so IAM answers AccessDeniedException before it looks at the request at all. A wrong identifier or a malformed body produces the same denial as a boundary, and 120 of them would read as a perfect security result"
+}

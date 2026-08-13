@@ -30,7 +30,6 @@ from __future__ import annotations
 
 import csv
 import importlib.util
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -89,7 +88,7 @@ def test_the_generator_runs_clean_on_the_real_triage():
     assert p.returncode == 0, p.stdout + p.stderr
 
 
-def test_the_register_on_disk_matches_a_fresh_generation(tmp_path):
+def test_the_register_on_disk_matches_a_fresh_generation(tmp_path, copy_repo):
     """A stale V13_CANDIDATES.md is worse than none: it reports counts for a triage that
     has since changed.
 
@@ -98,9 +97,9 @@ def test_the_register_on_disk_matches_a_fresh_generation(tmp_path):
     `feedback_provenance_stamp_liveness`: prove regenerability by rebuilding elsewhere.
     """
     assert _ON_DISK_AT_IMPORT is not None, "V13_CANDIDATES.md has not been generated"
-    work = tmp_path / "grx"
-    shutil.copytree(ROOT, work, ignore=shutil.ignore_patterns(
-        ".venv*", "__pycache__", "evidence", ".git"))
+    # `results/` is NOT excluded here: the builder reads it, and this arm's whole claim is that
+    # the register regenerates from the tree as shipped.
+    work = copy_repo(tmp_path / "grx")
     (work / "V13_CANDIDATES.md").unlink()
     p = subprocess.run([sys.executable, "build_v13_candidates.py"],
                        capture_output=True, text=True, cwd=work)
@@ -152,15 +151,13 @@ def test_a_candidate_cannot_list_fewer_sites_than_its_merge_group_holds(rows):
                 f"refuted claim")
 
 
-def test_a_truncated_triage_is_fatal_not_a_smaller_register(tmp_path):
+def test_a_truncated_triage_is_fatal_not_a_smaller_register(tmp_path, copy_repo):
     """A short triage.csv must abort, never generate a register with shrunken counts.
 
     This is `feedback_zero_file_scan_is_error` applied to rows instead of files: a scan
     that read less than it should must not report success.
     """
-    work = tmp_path / "grx"
-    shutil.copytree(ROOT, work, ignore=shutil.ignore_patterns(
-        ".venv*", "__pycache__", "evidence", ".git"))
+    work = copy_repo(tmp_path / "grx")
     tri = work / "claims" / "triage.csv"
     lines = tri.read_text(encoding="utf-8").splitlines(keepends=True)
     tri.write_text("".join(lines[:200]), encoding="utf-8")

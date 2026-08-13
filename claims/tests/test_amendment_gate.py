@@ -22,18 +22,22 @@ from pathlib import Path
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[2]
-GATE = ROOT / "check_amendment_readiness.py"
-BLOCK_RE = re.compile(r"^<!--\s*provenance\s*\n(.*?)^-->", re.S | re.M)
+from evidence_subset import BLOCK_RE, GATE, ROOT, copy_evidence_subset
 
 
 @pytest.fixture
 def tree(tmp_path: Path) -> Path:
     """A copy of the repo the mutants may edit freely.
 
-    Only what the gate reads is copied: the gate itself, the sealed pre-registration,
-    the findings and the evidence. Copying the whole tree would drag in .venv-oracle
-    and the corpora for no benefit.
+    The gate itself, the sealed pre-registration, the findings, and the SUBSET of
+    `evidence/` the gate's result can depend on — see `evidence_subset.py` for what that
+    is and why it is derived from the findings rather than listed here.
+
+    This fixture used to copy `evidence/` whole, 198,452 KB in 28,716 files, once per arm:
+    about 4.9 GB per run, and its docstring claimed "only what the gate reads is copied"
+    while taking the largest tree in the repo. That is DEV-P4-36's defect at a second site.
+    Now 25,577 KB in 4,600 files, ~0.65 GB per run, bounded by
+    `test_amendment_evidence_subset.py` above and below.
     """
     dst = tmp_path / "repo"
     (dst / "results").mkdir(parents=True)
@@ -41,7 +45,7 @@ def tree(tmp_path: Path) -> Path:
     shutil.copy2(ROOT / "PREREGISTRATION.yaml", dst / "PREREGISTRATION.yaml")
     for f in (ROOT / "results").glob("FINDING-*.md"):
         shutil.copy2(f, dst / "results" / f.name)
-    shutil.copytree(ROOT / "evidence", dst / "evidence")
+    copy_evidence_subset(dst)
     return dst
 
 

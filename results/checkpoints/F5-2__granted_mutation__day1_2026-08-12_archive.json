@@ -1,0 +1,62 @@
+{
+  "case_id": "F5-2",
+  "cell": "granted_mutation",
+  "done": {
+    "granted_mutation__0001": {
+      "arm": "granted_mutation",
+      "attempts": 1,
+      "elapsed_ms": 290.83,
+      "error_code": "AccessDeniedException",
+      "error_message": "User: arn:aws:sts::<account>:assumed-role/grx-runtime-exec-r20260810T130945Z/grx-harness is not authorized to perform: iam:PassRole on resource: arn:aws:iam::<account>:role/grx-gw-exec-r20260810T130945Z because no identity-based policy allows the iam:PassRole action",
+      "outcome": "denied_by_iam",
+      "retry_delay_s": 0.0,
+      "trial_id": "granted_mutation__0001"
+    },
+    "granted_mutation__0002": {
+      "arm": "granted_mutation",
+      "attempts": 1,
+      "elapsed_ms": 591.72,
+      "gateway_status_after": "UPDATING",
+      "http_status": 202,
+      "outcome": "accepted",
+      "retry_delay_s": 0.0,
+      "settle_error": "AccessDeniedException: An error occurred (AccessDeniedException) when calling the GetGateway operation (reached max retries: 0): User: arn:aws:sts::<account>:assumed-role/grx-runtime-exec-r20260810T130945Z/grx-harness is not authorized to perform: bedrock-agentcore:GetGateway on resource: arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n because no identity-based policy allows the bedrock-agentcore:GetGateway action",
+      "trial_id": "granted_mutation__0002"
+    },
+    "granted_mutation__0003": {
+      "arm": "granted_mutation",
+      "attempts": 1,
+      "elapsed_ms": 276.33,
+      "error_code": "AccessDeniedException",
+      "error_message": "User: arn:aws:sts::<account>:assumed-role/grx-runtime-exec-r20260810T130945Z/grx-harness is not authorized to perform: iam:PassRole on resource: arn:aws:iam::<account>:role/grx-gw-exec-r20260810T130945Z because no identity-based policy allows the iam:PassRole action",
+      "outcome": "denied_by_iam",
+      "retry_delay_s": 0.0,
+      "trial_id": "granted_mutation__0003"
+    },
+    "granted_mutation__0004": {
+      "arm": "granted_mutation",
+      "attempts": 1,
+      "elapsed_ms": 312.33,
+      "error_code": "AccessDeniedException",
+      "error_message": "User: arn:aws:sts::<account>:assumed-role/grx-runtime-exec-r20260810T130945Z/grx-harness is not authorized to perform: iam:PassRole on resource: arn:aws:iam::<account>:role/grx-gw-exec-r20260810T130945Z because no identity-based policy allows the iam:PassRole action",
+      "outcome": "denied_by_iam",
+      "retry_delay_s": 0.0,
+      "trial_id": "granted_mutation__0004"
+    },
+    "granted_mutation__0005": {
+      "arm": "granted_mutation",
+      "attempts": 1,
+      "elapsed_ms": 564.55,
+      "gateway_status_after": "UPDATING",
+      "http_status": 202,
+      "outcome": "accepted",
+      "retry_delay_s": 0.0,
+      "settle_error": "AccessDeniedException: An error occurred (AccessDeniedException) when calling the GetGateway operation (reached max retries: 0): User: arn:aws:sts::<account>:assumed-role/grx-runtime-exec-r20260810T130945Z/grx-harness is not authorized to perform: bedrock-agentcore:GetGateway on resource: arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n because no identity-based policy allows the bedrock-agentcore:GetGateway action",
+      "trial_id": "granted_mutation__0005"
+    }
+  },
+  "failed": {},
+  "meta": {},
+  "n_done": 5,
+  "n_failed": 0
+}

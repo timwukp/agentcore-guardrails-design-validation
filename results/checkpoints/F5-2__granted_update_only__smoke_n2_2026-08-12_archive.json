@@ -1,0 +1,30 @@
+{
+  "case_id": "F5-2",
+  "cell": "granted_update_only",
+  "done": {
+    "granted_update_only__0001": {
+      "arm": "granted_update_only",
+      "attempts": 1,
+      "elapsed_ms": 287.19,
+      "error_code": "AccessDeniedException",
+      "error_message": "User: arn:aws:sts::<account>:assumed-role/grx-runtime-exec-r20260810T130945Z/grx-harness is not authorized to perform: iam:PassRole on resource: arn:aws:iam::<account>:role/grx-gw-exec-r20260810T130945Z because no identity-based policy allows the iam:PassRole action",
+      "outcome": "denied_by_iam",
+      "retry_delay_s": 0.0,
+      "trial_id": "granted_update_only__0001"
+    },
+    "granted_update_only__0002": {
+      "arm": "granted_update_only",
+      "attempts": 1,
+      "elapsed_ms": 301.88,
+      "error_code": "AccessDeniedException",
+      "error_message": "User: arn:aws:sts::<account>:assumed-role/grx-runtime-exec-r20260810T130945Z/grx-harness is not authorized to perform: iam:PassRole on resource: arn:aws:iam::<account>:role/grx-gw-exec-r20260810T130945Z because no identity-based policy allows the iam:PassRole action",
+      "outcome": "denied_by_iam",
+      "retry_delay_s": 0.0,
+      "trial_id": "granted_update_only__0002"
+    }
+  },
+  "failed": {},
+  "meta": {},
+  "n_done": 2,
+  "n_failed": 0
+}
