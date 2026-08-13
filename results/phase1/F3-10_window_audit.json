@@ -1,0 +1,585 @@
+{
+  "absence_bound_widened_from_s_to_h": [
+    120.0,
+    23.589
+  ],
+  "case_id": "F3-10",
+  "comparison": {
+    "changed": [],
+    "errors": [],
+    "late_arrivals_in_our_buckets": [],
+    "n_datapoints_compared": 56,
+    "n_datapoints_outside_our_buckets": 0,
+    "n_fields_compared": 224,
+    "n_fields_exactly_equal": 212,
+    "n_recorded_datapoints": 56,
+    "n_series": 84,
+    "n_series_with_an_error": 0,
+    "vanished": [],
+    "within_tolerance_but_not_identical": [
+      {
+        "arm": "active_golden_set",
+        "bucket_s": 1786504140,
+        "delta": -1.4210854715202004e-14,
+        "field": "sum",
+        "name": "ConfidenceScore",
+        "recorded": 23.800000000000015,
+        "reread": 23.8
+      },
+      {
+        "arm": "active_golden_set",
+        "bucket_s": 1786504140,
+        "delta": -1.4210854715202004e-14,
+        "field": "sum",
+        "name": "ConfidenceScore",
+        "recorded": 23.800000000000015,
+        "reread": 23.8
+      },
+      {
+        "arm": "active_golden_set",
+        "bucket_s": 1786504140,
+        "delta": -1.4210854715202004e-14,
+        "field": "sum",
+        "name": "ConfidenceScore",
+        "recorded": 23.800000000000015,
+        "reread": 23.8
+      },
+      {
+        "arm": "active_golden_set",
+        "bucket_s": 1786504140,
+        "delta": -1.4210854715202004e-14,
+        "field": "sum",
+        "name": "ConfidenceScore",
+        "recorded": 23.800000000000015,
+        "reread": 23.8
+      },
+      {
+        "arm": "active_one_per_minute",
+        "bucket_s": 1786504380,
+        "delta": -7.105427357601002e-15,
+        "field": "sum",
+        "name": "ConfidenceScore",
+        "recorded": 24.20000000000001,
+        "reread": 24.200000000000003
+      },
+      {
+        "arm": "active_one_per_minute",
+        "bucket_s": 1786504380,
+        "delta": -7.105427357601002e-15,
+        "field": "sum",
+        "name": "ConfidenceScore",
+        "recorded": 24.20000000000001,
+        "reread": 24.200000000000003
+      },
+      {
+        "arm": "active_one_per_minute",
+        "bucket_s": 1786504380,
+        "delta": -7.105427357601002e-15,
+        "field": "sum",
+        "name": "ConfidenceScore",
+        "recorded": 24.20000000000001,
+        "reread": 24.200000000000003
+      },
+      {
+        "arm": "active_one_per_minute",
+        "bucket_s": 1786504380,
+        "delta": -1.0658141036401503e-14,
+        "field": "sum",
+        "name": "ConfidenceScore",
+        "recorded": 24.20000000000001,
+        "reread": 24.2
+      },
+      {
+        "arm": "log_only_golden_set",
+        "bucket_s": 1786504380,
+        "delta": -7.105427357601002e-15,
+        "field": "sum",
+        "name": "ConfidenceScore",
+        "recorded": 24.20000000000001,
+        "reread": 24.200000000000003
+      },
+      {
+        "arm": "log_only_golden_set",
+        "bucket_s": 1786504380,
+        "delta": -7.105427357601002e-15,
+        "field": "sum",
+        "name": "ConfidenceScore",
+        "recorded": 24.20000000000001,
+        "reread": 24.200000000000003
+      },
+      {
+        "arm": "log_only_golden_set",
+        "bucket_s": 1786504380,
+        "delta": -7.105427357601002e-15,
+        "field": "sum",
+        "name": "ConfidenceScore",
+        "recorded": 24.20000000000001,
+        "reread": 24.200000000000003
+      },
+      {
+        "arm": "log_only_golden_set",
+        "bucket_s": 1786504380,
+        "delta": -1.0658141036401503e-14,
+        "field": "sum",
+        "name": "ConfidenceScore",
+        "recorded": 24.20000000000001,
+        "reread": 24.2
+      }
+    ]
+  },
+  "failed_guards": [],
+  "family": "f3_efficacy",
+  "float_tolerance": {
+    "abs_tol": 1e-12,
+    "rel_tol": 1e-12,
+    "why": "equality is expected to be exact; n_fields_exactly_equal is reported separately so a tolerance can never hide a change"
+  },
+  "gateway_id": "grx-gw-r20260810t130945z-zpkfmpwo9n",
+  "guard_names": [
+    "record_day_is_an_earlier_utc_day",
+    "reread_lag_exceeds_the_floor",
+    "every_score_series_was_reread",
+    "no_read_error",
+    "every_recorded_datapoint_was_compared",
+    "no_datapoint_value_changed",
+    "no_datapoint_vanished",
+    "no_late_arrival_in_a_recorded_bucket",
+    "detection_total_is_unchanged",
+    "no_score_series_is_per_request_in_the_golden_arms",
+    "logged_sums_still_match_the_metric_sums"
+  ],
+  "guards": {
+    "detection_total_is_unchanged": true,
+    "every_recorded_datapoint_was_compared": true,
+    "every_score_series_was_reread": true,
+    "logged_sums_still_match_the_metric_sums": true,
+    "no_datapoint_value_changed": true,
+    "no_datapoint_vanished": true,
+    "no_late_arrival_in_a_recorded_bucket": true,
+    "no_read_error": true,
+    "no_score_series_is_per_request_in_the_golden_arms": true,
+    "record_day_is_an_earlier_utc_day": true,
+    "reread_lag_exceeds_the_floor": true
+  },
+  "kind": "SUPPLEMENTARY_READ",
+  "namespace": "AWS/Bedrock-AgentCore",
+  "observation_day": "2026-08-12",
+  "probe": {
+    "category": "HATE",
+    "threshold": "0.2"
+  },
+  "readings_on_reread": {
+    "per_dimension_combination": [
+      {
+        "arm": "active_golden_set",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f3_10_scored_r20260810T130945Z-ystne00vhh,PolicyEnforcementMode=ACTIVE,PolicyEngine=grx_pe_r20260810T130945Z-t6hqadrspf,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 2,
+        "sample_count": 30.0,
+        "sum": 24.6
+      },
+      {
+        "arm": "active_golden_set",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f3_10_scored_r20260810T130945Z-ystne00vhh,PolicyEnforcementMode=ACTIVE,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 2,
+        "sample_count": 30.0,
+        "sum": 24.6
+      },
+      {
+        "arm": "active_golden_set",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f54a_valid_r20260810T130945Z-3o4pjutxwg,PolicyEnforcementMode=ACTIVE,PolicyEngine=grx_pe_r20260810T130945Z-t6hqadrspf,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "active_golden_set",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f54a_valid_r20260810T130945Z-3o4pjutxwg,PolicyEnforcementMode=ACTIVE,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "active_golden_set",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f54a_valid_r20260810T130945Z-7fvggwhwpj,PolicyEnforcementMode=ACTIVE,PolicyEngine=grx_pe_r20260810T130945Z-t6hqadrspf,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "active_golden_set",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f54a_valid_r20260810T130945Z-7fvggwhwpj,PolicyEnforcementMode=ACTIVE,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "active_golden_set",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f6_guardrail_r20260810T130945Z-qys0a5w670,PolicyEnforcementMode=ACTIVE,PolicyEngine=grx_pe_r20260810T130945Z-t6hqadrspf,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "active_golden_set",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f6_guardrail_r20260810T130945Z-qys0a5w670,PolicyEnforcementMode=ACTIVE,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "active_golden_set",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f6c_guardrail_r20260810T130945Z-nyy0q9x320,PolicyEnforcementMode=ACTIVE,PolicyEngine=grx_pe_r20260810T130945Z-t6hqadrspf,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "active_golden_set",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f6c_guardrail_r20260810T130945Z-nyy0q9x320,PolicyEnforcementMode=ACTIVE,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "active_golden_set",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f6c_guardrail_r20260810T130945Z-p7nwh7htw6,PolicyEnforcementMode=ACTIVE,PolicyEngine=grx_pe_r20260810T130945Z-t6hqadrspf,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "active_golden_set",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f6c_guardrail_r20260810T130945Z-p7nwh7htw6,PolicyEnforcementMode=ACTIVE,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "active_golden_set",
+        "dimension_combination": "OperationName=AuthorizeAction,PolicyEnforcementMode=ACTIVE,PolicyEngine=grx_pe_r20260810T130945Z-t6hqadrspf,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 2,
+        "sample_count": 30.0,
+        "sum": 24.6
+      },
+      {
+        "arm": "active_golden_set",
+        "dimension_combination": "OperationName=AuthorizeAction,PolicyEnforcementMode=ACTIVE,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 2,
+        "sample_count": 30.0,
+        "sum": 24.6
+      },
+      {
+        "arm": "active_one_per_minute",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f3_10_scored_r20260810T130945Z-ystne00vhh,PolicyEnforcementMode=ACTIVE,PolicyEngine=grx_pe_r20260810T130945Z-t6hqadrspf,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 1,
+        "sample_count": 1.0,
+        "sum": 0.8
+      },
+      {
+        "arm": "active_one_per_minute",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f3_10_scored_r20260810T130945Z-ystne00vhh,PolicyEnforcementMode=ACTIVE,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 1,
+        "sample_count": 1.0,
+        "sum": 0.8
+      },
+      {
+        "arm": "active_one_per_minute",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f54a_valid_r20260810T130945Z-3o4pjutxwg,PolicyEnforcementMode=ACTIVE,PolicyEngine=grx_pe_r20260810T130945Z-t6hqadrspf,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "active_one_per_minute",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f54a_valid_r20260810T130945Z-3o4pjutxwg,PolicyEnforcementMode=ACTIVE,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "active_one_per_minute",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f54a_valid_r20260810T130945Z-7fvggwhwpj,PolicyEnforcementMode=ACTIVE,PolicyEngine=grx_pe_r20260810T130945Z-t6hqadrspf,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "active_one_per_minute",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f54a_valid_r20260810T130945Z-7fvggwhwpj,PolicyEnforcementMode=ACTIVE,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "active_one_per_minute",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f6_guardrail_r20260810T130945Z-qys0a5w670,PolicyEnforcementMode=ACTIVE,PolicyEngine=grx_pe_r20260810T130945Z-t6hqadrspf,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "active_one_per_minute",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f6_guardrail_r20260810T130945Z-qys0a5w670,PolicyEnforcementMode=ACTIVE,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "active_one_per_minute",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f6c_guardrail_r20260810T130945Z-nyy0q9x320,PolicyEnforcementMode=ACTIVE,PolicyEngine=grx_pe_r20260810T130945Z-t6hqadrspf,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "active_one_per_minute",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f6c_guardrail_r20260810T130945Z-nyy0q9x320,PolicyEnforcementMode=ACTIVE,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "active_one_per_minute",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f6c_guardrail_r20260810T130945Z-p7nwh7htw6,PolicyEnforcementMode=ACTIVE,PolicyEngine=grx_pe_r20260810T130945Z-t6hqadrspf,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "active_one_per_minute",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f6c_guardrail_r20260810T130945Z-p7nwh7htw6,PolicyEnforcementMode=ACTIVE,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "active_one_per_minute",
+        "dimension_combination": "OperationName=AuthorizeAction,PolicyEnforcementMode=ACTIVE,PolicyEngine=grx_pe_r20260810T130945Z-t6hqadrspf,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 1,
+        "sample_count": 1.0,
+        "sum": 0.8
+      },
+      {
+        "arm": "active_one_per_minute",
+        "dimension_combination": "OperationName=AuthorizeAction,PolicyEnforcementMode=ACTIVE,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 1,
+        "sample_count": 1.0,
+        "sum": 0.8
+      },
+      {
+        "arm": "log_only_golden_set",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f3_10_scored_r20260810T130945Z-ystne00vhh,PolicyEnforcementMode=ACTIVE,PolicyEngine=grx_pe_r20260810T130945Z-t6hqadrspf,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 1,
+        "sample_count": 30.0,
+        "sum": 24.2
+      },
+      {
+        "arm": "log_only_golden_set",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f3_10_scored_r20260810T130945Z-ystne00vhh,PolicyEnforcementMode=ACTIVE,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 1,
+        "sample_count": 30.0,
+        "sum": 24.200000000000003
+      },
+      {
+        "arm": "log_only_golden_set",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f54a_valid_r20260810T130945Z-3o4pjutxwg,PolicyEnforcementMode=ACTIVE,PolicyEngine=grx_pe_r20260810T130945Z-t6hqadrspf,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "log_only_golden_set",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f54a_valid_r20260810T130945Z-3o4pjutxwg,PolicyEnforcementMode=ACTIVE,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "log_only_golden_set",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f54a_valid_r20260810T130945Z-7fvggwhwpj,PolicyEnforcementMode=ACTIVE,PolicyEngine=grx_pe_r20260810T130945Z-t6hqadrspf,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "log_only_golden_set",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f54a_valid_r20260810T130945Z-7fvggwhwpj,PolicyEnforcementMode=ACTIVE,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "log_only_golden_set",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f6_guardrail_r20260810T130945Z-qys0a5w670,PolicyEnforcementMode=ACTIVE,PolicyEngine=grx_pe_r20260810T130945Z-t6hqadrspf,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "log_only_golden_set",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f6_guardrail_r20260810T130945Z-qys0a5w670,PolicyEnforcementMode=ACTIVE,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "log_only_golden_set",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f6c_guardrail_r20260810T130945Z-nyy0q9x320,PolicyEnforcementMode=ACTIVE,PolicyEngine=grx_pe_r20260810T130945Z-t6hqadrspf,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "log_only_golden_set",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f6c_guardrail_r20260810T130945Z-nyy0q9x320,PolicyEnforcementMode=ACTIVE,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "log_only_golden_set",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f6c_guardrail_r20260810T130945Z-p7nwh7htw6,PolicyEnforcementMode=ACTIVE,PolicyEngine=grx_pe_r20260810T130945Z-t6hqadrspf,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "log_only_golden_set",
+        "dimension_combination": "Category=contentFilter,Filter=HATE,OperationName=AuthorizeAction,Policy=grx_f6c_guardrail_r20260810T130945Z-p7nwh7htw6,PolicyEnforcementMode=ACTIVE,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 0,
+        "sample_count": 0.0,
+        "sum": 0.0
+      },
+      {
+        "arm": "log_only_golden_set",
+        "dimension_combination": "OperationName=AuthorizeAction,PolicyEnforcementMode=ACTIVE,PolicyEngine=grx_pe_r20260810T130945Z-t6hqadrspf,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 1,
+        "sample_count": 30.0,
+        "sum": 24.200000000000003
+      },
+      {
+        "arm": "log_only_golden_set",
+        "dimension_combination": "OperationName=AuthorizeAction,PolicyEnforcementMode=ACTIVE,TargetResource=grx-gw-r20260810t130945z-zpkfmpwo9n",
+        "n_datapoints": 1,
+        "sample_count": 30.0,
+        "sum": 24.200000000000003
+      }
+    ],
+    "reading_1_logs_reconcile_with_metrics": {
+      "all_agree": true,
+      "n_dimension_combinations_per_arm": {
+        "active_golden_set": 4,
+        "active_one_per_minute": 4,
+        "log_only_golden_set": 4
+      },
+      "per_arm": {
+        "active_golden_set": {
+          "agree": true,
+          "disagreeing": {},
+          "logged_sum_day1": 24.6,
+          "metric_sums_on_reread": [
+            24.6
+          ],
+          "n_agreeing": 4,
+          "n_dimension_combinations": 4
+        },
+        "active_one_per_minute": {
+          "agree": true,
+          "disagreeing": {},
+          "logged_sum_day1": 0.8,
+          "metric_sums_on_reread": [
+            0.8
+          ],
+          "n_agreeing": 4,
+          "n_dimension_combinations": 4
+        },
+        "log_only_golden_set": {
+          "agree": true,
+          "disagreeing": {},
+          "logged_sum_day1": 24.2,
+          "metric_sums_on_reread": [
+            24.2
+          ],
+          "n_agreeing": 4,
+          "n_dimension_combinations": 4
+        }
+      },
+      "why": "the day-1 per-request LOGGED score sums, re-compared against the metric Sum for the same buckets after a day of settle. A late-arriving datapoint would have broken this"
+    },
+    "reading_2_no_per_request_score_series": {
+      "holds": true,
+      "per_request_score_series_now": [],
+      "recorded": {
+        "active_golden_set": [],
+        "log_only_golden_set": []
+      },
+      "why": "one request per datapoint is the only shape from which a reader could attribute a score to a labelled request, so its absence in the golden arms IS the measured half of the FALSE verdict"
+    },
+    "reading_3_scores_are_absent_for_clean_requests": {
+      "absence_bound_at_record_time_s": 120.0,
+      "distinct_totals_across_dimension_combinations": [
+        61
+      ],
+      "holds": true,
+      "n_requests_evaluated": 122,
+      "n_scored_day1": 61,
+      "n_scored_on_reread": 61,
+      "n_unscored_on_reread": 61,
+      "why": "F3-10 measured this absence 120 s after the traffic. Re-read a day later, the same absence is bounded by the re-read lag instead",
+      "why_a_set_not_a_number": "each dimension combination is counted independently; n_scored_on_reread is -1 unless they all agree, so a single disagreeing roll-up fails the guard instead of being averaged into it"
+    }
+  },
+  "recorded_readings": {
+    "golden_arms": [
+      "active_golden_set",
+      "log_only_golden_set"
+    ],
+    "harvest_settle_s_at_record_time": 120.0,
+    "logged_per_arm": {
+      "active_golden_set": {
+        "n_scored_requests": 30,
+        "score_sum": 24.6
+      },
+      "active_one_per_minute": {
+        "n_scored_requests": 1,
+        "score_sum": 0.8
+      },
+      "log_only_golden_set": {
+        "n_scored_requests": 30,
+        "score_sum": 24.2
+      }
+    },
+    "n_requests_evaluated": 122,
+    "n_scored_requests": 61,
+    "per_request_score_series_in_golden_arms": {
+      "active_golden_set": [],
+      "log_only_golden_set": []
+    }
+  },
+  "region": "us-east-1",
+  "reread_lag_floor_h": 12.0,
+  "reread_lag_h": 23.589,
+  "reread_utc_day": "2026-08-13",
+  "run_id": "r20260810T130945Z",
+  "source_log_record": "results/phase1/archive/F3-10_log_surface_join__day1_2026-08-12.json",
+  "source_record": "results/phase1/archive/F3-10__day1_2026-08-12.json",
+  "statistics_compared": [
+    "Sum",
+    "SampleCount",
+    "Minimum",
+    "Maximum"
+  ],
+  "what_this_does_not_prove": [
+    "no verdict: F3-10's oracle names CloudWatch metrics alone and the FALSE stands",
+    "not a replication: re-reading a closed window cannot re-run the pipeline, so it cannot distinguish 'never published' from 'lost before publication'. The fresh window on a later day is what replicates; this widens the bound on the absence",
+    "nothing about any other day, region, policy or filter function",
+    "no traffic and no mutation: GetMetricStatistics only, so nothing here can have changed what it measured"
+  ],
+  "why_no_verdict": "F3-10's sealed oracle scopes its question to CloudWatch metrics alone and that verdict (FALSE) stands. This file re-reads the stored form of one closed window on a later day; it is provenance for three of the finding's readings, not a replication and not a re-scoring",
+  "window": {
+    "period_s": 60,
+    "span_s": 282.901,
+    "t0": 1786504145.009235,
+    "t1": 1786504427.910044
+  }
+}

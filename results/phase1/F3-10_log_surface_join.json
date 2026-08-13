@@ -55,30 +55,29 @@
     "n_events": 579,
     "n_unparsed": 0,
     "numeric_keys_seen": {
-      "body.policy.latencyMs": 701,
-      "event_timestamp": 1786504145279,
+      "body.policy.latencyMs": 396,
+      "event_timestamp": 1786588205249,
       "severityNumber": 9,
-      "timeUnixNano": 1786504145279101002
+      "timeUnixNano": 1786588205249703097
     },
     "numeric_strings_seen": {
       "account_id": "<account>",
       "attributes.aws.account.id": "<account>",
       "body.id": "3",
-      "body.policy.guardrailFindings.grx_f3_10_scored_r20260810T130945Z-ystne00vhh.contentFilter[].score": "0.8000"
+      "body.policy.guardrailFindings.grx_f3_10_scored_r20260810T130945Z-9qg439henl.contentFilter[].score": "0.8000"
     },
     "score_key_paths_are_numbers": [],
     "score_key_paths_are_strings": [
-      "body.policy.guardrailFindings.grx_f3_10_scored_r20260810T130945Z-ystne00vhh.contentFilter[].score"
+      "body.policy.guardrailFindings.grx_f3_10_scored_r20260810T130945Z-9qg439henl.contentFilter[].score"
     ],
     "score_valued_key_paths": [
-      "body.policy.guardrailFindings.grx_f3_10_scored_r20260810T130945Z-ystne00vhh.contentFilter[].score"
+      "body.policy.guardrailFindings.grx_f3_10_scored_r20260810T130945Z-9qg439henl.contentFilter[].score"
     ]
   },
   "per_arm": {
     "active_golden_set": {
       "buckets": [
-        1786504140,
-        1786504200
+        1786588200
       ],
       "client_outcomes": {
         "allowed": 30,
@@ -104,13 +103,13 @@
       "precision": 1.0,
       "recall": 1.0,
       "score_histogram": {
-        "0.6000": 1,
-        "0.8000": 25,
+        "0.6000": 2,
+        "0.8000": 24,
         "1.0000": 4
       },
       "score_max": 1.0,
       "score_min": 0.6,
-      "score_sum": 24.6,
+      "score_sum": 24.4,
       "scores_by_truth": {
         "negative": 0,
         "positive": 30
@@ -118,8 +117,8 @@
     },
     "active_one_per_minute": {
       "buckets": [
-        1786504260,
-        1786504320
+        1786588320,
+        1786588380
       ],
       "client_outcomes": {
         "allowed": 1,
@@ -157,7 +156,7 @@
     },
     "log_only_golden_set": {
       "buckets": [
-        1786504380
+        1786588440
       ],
       "client_outcomes": {
         "allowed": 60
@@ -182,14 +181,13 @@
       "precision": 1.0,
       "recall": 1.0,
       "score_histogram": {
-        "0.4000": 1,
-        "0.6000": 2,
-        "0.8000": 22,
+        "0.6000": 1,
+        "0.8000": 24,
         "1.0000": 5
       },
       "score_max": 1.0,
-      "score_min": 0.4,
-      "score_sum": 24.2,
+      "score_min": 0.6,
+      "score_sum": 24.8,
       "scores_by_truth": {
         "negative": 0,
         "positive": 30
@@ -199,7 +197,7 @@
   "probe": {
     "category": "HATE",
     "policy_ids_seen": [
-      "grx_f3_10_scored_r20260810T130945Z-ystne00vhh"
+      "grx_f3_10_scored_r20260810T130945Z-9qg439henl"
     ],
     "threshold": "0.2"
   },
@@ -209,39 +207,63 @@
     "per_arm": {
       "active_golden_set": {
         "agrees": true,
+        "buckets_added_for_publish_slack": [
+          1786588260
+        ],
         "buckets_compared": [
-          1786504140,
-          1786504200
+          1786588200,
+          1786588260
+        ],
+        "buckets_from_log_rows": [
+          1786588200
         ],
         "dimension_combinations_disagreeing": [],
-        "log_sum": 24.6,
+        "log_sum": 24.4,
         "metric_sample_count": 30.0,
-        "metric_sum": 24.6,
-        "n_logged_score_values": 30
+        "metric_sum": 24.4,
+        "n_logged_score_values": 30,
+        "slack_buckets_withheld_because_another_arm_owns_them": []
       },
       "active_one_per_minute": {
         "agrees": true,
+        "buckets_added_for_publish_slack": [],
         "buckets_compared": [
-          1786504320
+          1786588380
+        ],
+        "buckets_from_log_rows": [
+          1786588320,
+          1786588380
         ],
         "dimension_combinations_disagreeing": [],
         "log_sum": 0.8,
         "metric_sample_count": 1.0,
         "metric_sum": 0.8,
-        "n_logged_score_values": 1
+        "n_logged_score_values": 1,
+        "slack_buckets_withheld_because_another_arm_owns_them": [
+          1786588440
+        ]
       },
       "log_only_golden_set": {
         "agrees": true,
+        "buckets_added_for_publish_slack": [
+          1786588500
+        ],
         "buckets_compared": [
-          1786504380
+          1786588440
+        ],
+        "buckets_from_log_rows": [
+          1786588440
         ],
         "dimension_combinations_disagreeing": [],
-        "log_sum": 24.2,
+        "log_sum": 24.8,
         "metric_sample_count": 30.0,
-        "metric_sum": 24.2,
-        "n_logged_score_values": 30
+        "metric_sum": 24.8,
+        "n_logged_score_values": 30,
+        "slack_buckets_withheld_because_another_arm_owns_them": []
       }
-    }
+    },
+    "publish_slack_periods": 1,
+    "why_publish_slack": "a log event is stamped when the request is processed; the metric datapoint is bucketed by the service's own emit time, which follows it by up to the publish lag. The two therefore need not share a bucket, and on 2026-08-13 one detection of 30 was bucketed one period later than every log row for the same arm — so a bucket set taken from the log rows alone under-counted the metric by exactly that one sample (DEV-P4-35)"
   },
   "region": "us-east-1",
   "run_id": "r20260810T130945Z",
@@ -338,7 +360,7 @@
       0.95,
       1.0
     ],
-    "min_logged_score": 0.4,
+    "min_logged_score": 0.6,
     "n_requests_with_a_score": 61,
     "n_requests_with_no_score": 61,
     "not_evaluable": [
@@ -359,7 +381,7 @@
   "why_no_verdict": "F3-10's sealed oracle scopes its question to CloudWatch metrics alone and that verdict (FALSE) stands. This read is about the surface §7.1 step 3 actually names — the logs — and has no standing to reach a verdict on it",
   "window": {
     "n_arms": 3,
-    "t0": 1786504145.009235,
-    "t1": 1786504427.910044
+    "t0": 1786588205.00318,
+    "t1": 1786588473.932569
   }
 }

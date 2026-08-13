@@ -200,6 +200,27 @@ ALLOW: list[tuple[str, str, str, str]] = [
      "a synthetic gateway ARN whose account field is the single digit `1` — not a 12-digit "
      "account ID, and no AWS account can be numbered 1. It exists to assert that the span query "
      "is filtered on the ARN it was handed; `query_spans` is replaced and nothing is sent"),
+    # F5-2's offline fixtures need ONE entry, not the six the same fixtures would have needed
+    # written the obvious way, and the difference is worth recording because it is the pattern to
+    # copy. `test_route3_updategateway.py` holds AWS's published example account on a single line
+    # and interpolates it into every ARN, so each of those ARNs is excused by the DERIVED
+    # template-field rule in `allowed()` and only the digits themselves need reviewing. The digits
+    # cannot be replaced: `_pass_role_grant` builds an IAM policy `Resource` that is asserted on
+    # for shape, and `<account>` is a value IAM rejects, so a redacted fixture would assert against
+    # a request that cannot be made. Verified before waiving, not assumed — neither this
+    # organization's management account nor either member account appears anywhere in that file.
+    #
+    # The needle includes the assignment, not just the constant name. `needle in line` is a plain
+    # substring test, so the bare name `EXAMPLE_ACCOUNT` would also waive every line that
+    # INTERPOLATES it — and a real 12-digit account landing on one of those ARN lines would then be
+    # waived by an entry whose written reason says it cannot be. That is the shape where the
+    # justification prose and the code disagree and only the prose gets read
+    # (`feedback_prose_is_not_verified`), so the anchor is the definition itself.
+    ("f5_redteam/tests/test_route3_updategateway.py", "aws-account-id", 'EXAMPLE_ACCOUNT = "',
+     "AWS's published documentation-example account ID, bound to one constant that every ARN "
+     "fixture in the file interpolates. Anchored on the assignment, so it waives that one line: a "
+     "real identifier on any other line — including any line that uses the constant — still "
+     "fails the gate"),
     # The EC2 runner added FOUR findings and none of them is in this list, which is the outcome to
     # aim for. Two `arn` matches and two `s3-uri` matches are excused by DERIVED rules in
     # `allowed()` instead, because each is a property of the notation rather than a fact about a

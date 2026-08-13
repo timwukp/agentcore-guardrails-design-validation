@@ -585,9 +585,11 @@ CANDIDATES = [
         "evidence": "F5-4a's 900-second bounded poll plus the supplementary read "
                     "(results/phase1/F5-4a_logonly_read.json), reading NEVER_PUBLISHED with "
                     "0 dimension combinations; F7-1 independently recorded "
-                    "`name_in_namespace_inventory: false`",
+                    "`name_in_namespace_inventory: false`; F9-2 recounted the archived "
+                    "call records from scratch and found 0 positive datapoints in all 40 "
+                    "`get_metric_statistics` reads of the metric",
         "finding": "FINDING-F5-4A.md",
-        "planned_cases": ["F5-4a", "F7-1"],
+        "planned_cases": ["F5-4a", "F7-1", "F9-2"],
         "doc_says": "Alarm on `LogOnlyEvalIncomplete > 0` (§6.2 \"alarm on "
                     "LogOnlyEvalIncomplete\"; §6.4 row \"Incomplete LOG_ONLY evaluation → "
                     "calibration data is partial, extend the observation window\"; §8 "
@@ -626,9 +628,10 @@ CANDIDATES = [
         "claim_ids": [],
         "claim_id_rationale": "",
         "evidence": "F5-4a, 5 arms at n=20 with all 5 guards passing; the two broken arms "
-                    "fail by two different mechanisms",
+                    "fail by two different mechanisms; F9-2's per-dimension recount of the "
+                    "same call records for the mode-filtered reads",
         "finding": "FINDING-F5-4A.md",
-        "planned_cases": ["F5-4a"],
+        "planned_cases": ["F5-4a", "F9-2"],
         "doc_says": "\"A policy that cannot be evaluated results in DENY\" (§3.1); "
                     "\"fail-secure: unevaluable conditions result in DENY\" (§4.1). §4.4's "
                     "route #5 says fail-secure defaults do the first half and you own the "
@@ -644,15 +647,25 @@ CANDIDATES = [
                     "HTTP 202 and then settles `CREATE_FAILED` with an exact diagnostic "
                     "(``did you mean `text`?``). Same author error, compile error in one "
                     "clause type and silent total outage in the other. And route #5's own "
-                    "remedy does not hold: of the three mismatch metrics, only "
+                    "remedy does not hold, in two ways. Of the three mismatch metrics, only "
                     "`MismatchErrors` carries `PolicyEnforcementMode` as a dimension, so "
-                    "the other two cannot be filtered by mode at all.",
+                    "the other two cannot be filtered by mode at all. And the one metric "
+                    "that does carry it never emits a LOG_ONLY-valued series: on the days "
+                    "the firing DID occur, 12 of the 40 reads pinned to "
+                    "`PolicyEnforcementMode=ACTIVE` returned it, while all 20 reads pinned "
+                    "to `PolicyEnforcementMode=LOG_ONLY` and all 8 pinned to the LOG_ONLY "
+                    "twin's own `Policy` id returned nothing — even though that twin held "
+                    "the byte-identical statement and was half of the disagreement being "
+                    "counted. The mismatch is attributed entirely to the ACTIVE side.",
         "proposed": "State the guarantee per clause type and per mode. In ACTIVE, an "
                     "unevaluable guardrail condition denies every request, not some. In "
                     "LOG_ONLY it denies nothing and reports nothing. Say which failures are "
                     "caught at CreatePolicy and which are not, and correct route #5's "
                     "dimension advice to name the one metric that actually carries "
-                    "`PolicyEnforcementMode`.",
+                    "`PolicyEnforcementMode` — and add that filtering that metric to "
+                    "LOG_ONLY returns nothing even when a LOG_ONLY policy is half of the "
+                    "mismatch, so mode-filtered alarming is not a control an operator can "
+                    "rely on.",
         "note": "The three sites this expands to are the strongest claims in the document "
                 "that our own measurement CONFIRMS. The amendment sharpens them rather than "
                 "retracting them, and that is worth stating: a register that only collects "
@@ -683,9 +696,11 @@ CANDIDATES = [
             "list is exactly the sentence being amended.",
         "evidence": "F5-4a's metric poll: three of the four mismatch metrics fired for the "
                     "first time in this account, with every datapoint group summing to "
-                    "exactly the arm's n",
+                    "exactly the arm's n; F9-2 reproduced the same multiplier from the "
+                    "opposite direction — counting how many reads returned each single "
+                    "firing (6 / 4 / 2) rather than summing across combinations",
         "finding": "FINDING-F5-4A.md",
-        "planned_cases": ["F5-4a"],
+        "planned_cases": ["F5-4a", "F9-2"],
         "doc_says": "`MismatchErrors / TotalMismatchedPolicies / PolicyMismatch` are a "
                     "\"fail-secure signal (pairs with bypass route #5): a policy that "
                     "cannot evaluate is a policy that may not be protecting you — alarm on "
@@ -732,17 +747,21 @@ CANDIDATES = [
             "V13-08's proposition and this candidate confirms it (0 of 120). "
             "`merge_groups: [M-update-gateway-risk]` reaches 5, and three of them "
             "(§3.1 BP#5, §6.4's CloudTrail alarm row, §8's checklist item) are about "
-            "alarming on `UpdateGateway` — F5-2's proposition, untouched here. So the site "
-            "is one table cell, named. It is `canonical: no` (merged into "
+            "alarming on `UpdateGateway` — F5-2's proposition, which `V13-16` now carries "
+            "and this candidate still does not touch. So the site is one table cell, named. It is `canonical: no` (merged into "
             "`C-s3-1-numitem-005`), which is correct for the merge group's shared claim "
             "about `UpdateGateway` and wrong as a redirect for this amendment: the sentence "
             "being amended is row #3's own remedy clause, which §3.1 does not restate.",
         "evidence": "F5-1, four replicates on two UTC calendar days; 32 of 80 invocations "
                     "sent after a denial had been observed still executed, and on the "
                     "second day a freshly granted permission never satisfied its own "
-                    "300-second poll while the path was open",
+                    "300-second poll while the path was open; F5-2 then reproduced the same "
+                    "asymmetry on a control-plane action in a different service "
+                    "(`bedrock-agentcore:UpdateGateway`) on two further UTC days — first "
+                    "denial 325.0 s and 305.8 s after `DeleteRolePolicy` returned, with 6 of "
+                    "15 and 7 of 10 probes still accepted inside that window",
         "finding": "FINDING-F5-1-REVOCATION.md",
-        "planned_cases": ["F5-1"],
+        "planned_cases": ["F5-1", "F5-2"],
         "doc_says": "Route #3: because any code in the session can read the execution "
                     "role's credentials, \"the execution role must NOT include "
                     "`bedrock-agentcore:UpdateGateway`, policy/policy-engine mutation "
@@ -764,7 +783,18 @@ CANDIDATES = [
                     "probes into a 300-second wait, flapped, never satisfied the poll — and "
                     "the 20 invocations sent immediately afterwards all executed. A finite "
                     "number of probes samples the eventually-consistent view rather than "
-                    "establishing it, in either direction.",
+                    "establishing it, in either direction. F5-2 then measured the same thing "
+                    "on the control plane, on the very action this row names: after both "
+                    "grants were deleted and `ListRolePolicies` read back the shipped policy "
+                    "set, `UpdateGateway` was still authorized for 325.0 s (2026-08-12) and "
+                    "305.8 s (2026-08-13) — 6 of 15 and 7 of 10 probes accepted, day 1 "
+                    "alternating with denials and day 2 monotone, so the ~5-minute window "
+                    "replicates and the oscillation is a single-day observation. The "
+                    "permissive direction reproduced too, and more sharply: F5-2's pre-arm "
+                    "wait converged on day 1 and the arm behind it was then denied 3 of 5, "
+                    "while on day 2 the same wait never converged and the arm was authorized "
+                    "5 of 5. A wait that ends `reached: true` is not a licence to proceed and "
+                    "one that ends `reached: false` is not evidence the path is shut.",
         "proposed": "Keep the row, and add that least privilege is a control on the steady "
                     "state, not an incident-response action: during containment use a "
                     "control that fails closed at the boundary being crossed (disable the "
@@ -856,6 +886,142 @@ CANDIDATES = [
                 "exactness and of absence, which a clean or degraded pipeline can manufacture. "
                 "This one is a claim of presence — four named fields, 30 of 30 records, 0 "
                 "unparsed — and a second day cannot make a field that was there not have been.",
+    },
+    {
+        "id": "V13-16",
+        "title": "§3.1 BP#5 answers a reconfiguration measured in seconds with a detection "
+                 "path, and never tells the reader how long the detector has — end to end the "
+                 "switch is one sub-second call and about 13 seconds",
+        "severity": UNDERINFORMS,
+        "status": "MEASURED_READY",
+        "test_cases": [],
+        "merge_groups": [],
+        "claim_ids": ["C-s3-1-numitem-005", "C-s6-4-trow-007", "C-s8-checkitem-012"],
+        "claim_id_rationale":
+            "Both expanders over-reach, for the mirror-image reason V13-14 gives. "
+            "`test_cases: [F5-2]` reaches 21 triage rows, 15 of them §4.4 architecture-diagram "
+            "nodes and §4.4 prose about the threat model, because F5-2 is the case that tests "
+            "route #3 at all. `merge_groups: [M-update-gateway-risk]` reaches 5 and two of them "
+            "are the wrong claims: `C-s4-4-trow-009` is row #3's own remedy clause, which is "
+            "V13-14's site, and `C-s4-4-trow-010` is the SCP/permission-boundary backstop, "
+            "which this measurement supports rather than amends. What is named here is exactly "
+            "the three places the document offers detection as the answer to this hazard: "
+            "BP#5's closing sentence (the canonical claim of the merge group), §6.4's "
+            "CloudTrail verification row, and §8's alarm checklist item.",
+        "evidence": "F5-2, two UTC calendar days (2026-08-12, 2026-08-13), the full chain run "
+                    "as the runtime role in the data plane: flip accepted in 602.8 ms and "
+                    "931.7 ms, first confirmed ALLOW of a previously-blocked request 14.2 s "
+                    "and 13.2 s later, blocking back 13.4 s and 13.3 s after the restore, two "
+                    "consecutive confirmations from fresh MCP sessions at every step",
+        "finding": "FINDING-F5-2.md",
+        "planned_cases": ["F5-2"],
+        "doc_says": "\"Protect the enforcement mode: any principal with "
+                    "`bedrock-agentcore:UpdateGateway` can switch the gateway to LOG_ONLY or "
+                    "detach the policy engine entirely … Grant UpdateGateway only to trusted "
+                    "principals and alarm on gateway configuration changes via CloudTrail\" — "
+                    "restated as a §6.4 verification row (\"Policy engine mode change || "
+                    "CloudTrail UpdateGateway event || Verify the change was authorized\") and "
+                    "a §8 checklist item.",
+        "observed": "The hazard is real and the document is right about it — but the interval "
+                    "the recommended control has to beat is not in the document, and measured "
+                    "it is short. One `UpdateGateway` call, sent by the runtime role once the "
+                    "grant existed, returned 202 in 602.8 ms and 931.7 ms; a request the "
+                    "policy had been denying was served 14.2 s and 13.2 s later, confirmed "
+                    "twice from fresh sessions each time. Restoring `ENFORCE` took 587.2 ms "
+                    "and 549.9 ms with blocking back 13.4 s and 13.3 s after that. The "
+                    "attacker also needs no read permission: the same role was granted "
+                    "`UpdateGateway` and never `GetGateway`, so the 25 accepted writes whose "
+                    "settle polls ran under that role (11 on day 1, 14 on day 2) were each "
+                    "followed by `GetGateway` attempts that returned `AccessDeniedException` — "
+                    "and it made no difference, because the data plane reports the result for "
+                    "them. Separately, the call cannot be made "
+                    "without passing a role: `roleArn` is one of `UpdateGateway`'s 4 required "
+                    "members (read from the live botocore model on each run), so every attempt "
+                    "is evaluated against `iam:PassRole` as well as "
+                    "`bedrock-agentcore:UpdateGateway`.",
+        "proposed": "Keep the practice and add the two things a reader needs to choose a "
+                    "control. (1) Publish the measured interval — a sub-second call and about "
+                    "13 seconds to a served request — and say plainly that a CloudTrail-based "
+                    "path detects the change rather than prevents it, so if prevention is "
+                    "wanted it has to be an SCP, a permission boundary or a resource policy "
+                    "that denies the call. (2) Name `iam:PassRole` beside "
+                    "`bedrock-agentcore:UpdateGateway` in the audit, because `roleArn` is a "
+                    "required member and the second surface is the one an account's guardrails "
+                    "already cover. Do not publish a detection-latency number: this case "
+                    "measured the attack, not CloudTrail.",
+        "note": "Deliberately UNDERINFORMS, not MISINFORMS. Nothing in the three sites is "
+                "false — alarming on `UpdateGateway` via CloudTrail is a real control and the "
+                "row asking an operator to verify the change was authorized is sound advice. "
+                "What is missing is the number that makes it a decision. The finding measures "
+                "no CloudTrail latency and this candidate must not be drafted as though it "
+                "did; the asymmetry is that the attack side is now measured on two days and "
+                "the detection side is not measured at all.",
+    },
+    {
+        "id": "V13-17",
+        "title": "The two sites that specify a *mode-change* trigger cannot see the other "
+                 "half of the hazard their own sentence names: omitting "
+                 "`policyEngineConfiguration` from an UpdateGateway body detaches the engine",
+        "severity": MISINFORMS,
+        "status": "BLOCKED_ON_REPLICATION",
+        "test_cases": [],
+        "merge_groups": [],
+        "claim_ids": ["C-s6-4-trow-007", "C-s4-4-mermaid-008"],
+        "claim_id_rationale":
+            "The site list is the discriminating one, and drawing it required reading the "
+            "wording rather than the topic. Three of the four candidate sites say "
+            "\"configuration changes\" — BP#5's closing sentence and §8's checklist item — and "
+            "a rule written that way catches a detach as readily as a mode flip, so they are "
+            "NOT amended here (V13-16 asks them for an interval, which is a different "
+            "defect). The two named sites are the two that specify the trigger by mode: §6.4's "
+            "row keys on \"Policy engine mode change\", and the §4.4 diagram node enumerates "
+            "\"CloudTrail + CloudWatch alarms (UpdateGateway, policy changes, DenyDecisions, "
+            "Mode dimension)\". Neither expander isolates them — `test_cases: [F5-2]` reaches "
+            "21 rows and the merge group does not contain the diagram node at all, since the "
+            "triage assigned it no merge group.",
+        "evidence": "F5-2 §7, one accepted `UpdateGateway` call on 2026-08-13 against a "
+                    "throwaway gateway created and deleted for the probe: body omitted "
+                    "`policyEngineConfiguration` and changed nothing else, call accepted, "
+                    "gateway settled READY, read-back `pec_after: null`, "
+                    "`pec_was_cleared: true`",
+        "finding": "FINDING-F5-2.md",
+        "planned_cases": ["F5-2"],
+        "doc_says": "§6.4's detection row pairs the trigger \"Policy engine mode change\" with "
+                    "the source \"CloudTrail UpdateGateway event\", and the §4.4 architecture "
+                    "diagram lists the alarms as \"UpdateGateway, policy changes, "
+                    "DenyDecisions, Mode dimension\" — i.e. the change to watch for is one "
+                    "that names a mode.",
+        "observed": "§3.1 BP#5 and §4.4 row #3 both name two hazards: switch the engine to "
+                    "LOG_ONLY, or detach it entirely. The second one carries no mode. "
+                    "`UpdateGateway` is a full replacement — 14 accepted members, 4 required — "
+                    "and a body that simply does not mention `policyEngineConfiguration` "
+                    "CLEARS it: the call was accepted, the gateway settled READY, and the "
+                    "read-back returned `policyEngineConfiguration: null`. So the more "
+                    "complete attack is the one that mentions no mode at all, and a detection "
+                    "rule keyed on a mode change — or on a `Mode` dimension — matches nothing "
+                    "while the engine is being removed. The absence of a member is the attack, "
+                    "and a rule written to match a value cannot match an absence.",
+        "proposed": "Re-key both sites off the field and onto the call: alarm on every "
+                    "`UpdateGateway` event against a gateway that is supposed to have a policy "
+                    "engine, and compare the request's `policyEngineConfiguration` to the "
+                    "expected value — treating **absent** and `mode: LOG_ONLY` as the same "
+                    "finding. Say in the §6.4 row that a detach appears as an omission rather "
+                    "than a value, and drop the implication that a `Mode` dimension is "
+                    "sufficient coverage. (F5-4a is a third way the same expectation fails: an "
+                    "engine that is attached and configured ENFORCE can still evaluate "
+                    "nothing.)",
+        "note": "BLOCKED_ON_REPLICATION on one observation, and the honest reason is that one "
+                "is all there is: a single accepted call on a single throwaway gateway on a "
+                "single day. It is a possibility claim, so one observation does establish that "
+                "the API accepts and honours the omission — the same logic V13-15 uses for a "
+                "claim of presence — but it says nothing about a gateway with a different "
+                "configuration history, and the probe deliberately ran nowhere near the "
+                "gateway F4 and F6 published verdicts against. A second observation is cheap "
+                "and is what this status is waiting for.\n\n"
+                "MISINFORMS rather than UNDERINFORMS because a reader who implements the row "
+                "as written believes they have covered a hazard the same document told them to "
+                "worry about. The failure is silent in the worst way: the alarm never fires, "
+                "which is indistinguishable from nothing having happened.",
     },
 ]
 

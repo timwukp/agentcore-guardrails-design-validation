@@ -1,8 +1,8 @@
 # FINDING F3-10 — §7.1's confusion matrix is buildable, but not from the surface §6.2 points at, and only in one direction. CloudWatch metrics destroy the score↔label join at any usable request rate; the logs keep it, as a string
 
-**Status:** **OBSERVATIONS_COMPLETE** — every arm, guard and reading is complete and internally reconciled, but all 1,491 evidence records fall on a single UTC calendar day, so the ≥2-separate-days rule blocks amendment (see §11)
-**Dates:** **2026-08-12** (UTC, derived from `t_start_utc` on the evidence records, never asserted here: 1,491 records under `f3_efficacy/F3-10`, 9 under `f3_efficacy/F3-10-log-surface`, 63 under `f3/F3-10_audit_2026-08-12`)
-**Scripts:** `f3_efficacy/08_score_label_join.py` (the three arms, the verdict) · `f3_efficacy/08b_log_surface_join.py` (the supplementary read of the log surface; no verdict) · offline suites `f3_efficacy/tests/test_score_label_join.py` and `f3_efficacy/tests/test_log_surface_join.py`
+**Status:** **READY_TO_AMEND** — replicated on two separate UTC calendar days (**2026-08-12** and **2026-08-13**), 2,693 call records across the two, every reading reproduced and every guard clean on both. The replicate did what a replicate is for: it found a reader defect a single day had hidden (§13, DEV-P4-35)
+**Dates:** **2026-08-12** and **2026-08-13** (UTC, derived from `t_start_utc` on the evidence records, never asserted here). Day 1: 1,491 records under `f3_efficacy/F3-10`, 9 under `f3_efficacy/F3-10-log-surface`, 63 under `f3/F3-10_audit_2026-08-12`. Day 2: 1,202 under `f3_efficacy/F3-10`, 9 under `f3_efficacy/F3-10-log-surface`, 252 under `f3_efficacy/F3-10-window-audit`, 6 under `f3_efficacy/F3-10-log-surface-day1-rederived` — the last of these is a day-1 window re-read on day 2 with the fixed reader, so it is stamped day 2 and counted as day 2, which is what it is.
+**Scripts:** `f3_efficacy/08_score_label_join.py` (the three arms, the verdict) · `f3_efficacy/08b_log_surface_join.py` (the supplementary read of the log surface; no verdict) · `f3_efficacy/08c_window_audit.py` (the closed-window re-read §11 prescribed, 11 guards, no verdict) · offline suites `f3_efficacy/tests/test_score_label_join.py`, `f3_efficacy/tests/test_log_surface_join.py` and `f3_efficacy/tests/test_publish_slack.py`
 **Run id:** `r20260810T130945Z` (adopted from the ledger, not minted)
 **Raw evidence:** `evidence/r20260810T130945Z/f3_efficacy/F3-10/` — **1,491 call records, all 1,491 carrying `request_id`**: 1,196 `get_metric_statistics`, 242 `mcp:tools/call`, 16 `get_gateway`, 14 `list_metrics`, 6 `update_gateway`, 3 `mcp:initialize`, 3 `mcp:notifications/initialized`, 3 `create_policy`, 3 `delete_policy`, 2 `describe_log_groups`, 2 `filter_log_events`, 1 `mcp:tools/list` (1196+242+16+14+6+3+3+3+3+2+2+1 = 1491), plus `analysis.json`, `environment.json` and `summary.json`, which are aggregates rather than calls and carry no `t_start_utc`, so they contribute no observation day. And `evidence/r20260810T130945Z/f3_efficacy/F3-10-log-surface/` — 9 `filter_log_events` records for the supplementary read. And `evidence/r20260810T130945Z/f3/F3-10_audit_2026-08-12/` — 63 records (49 `get_metric_statistics`, 14 `list_metrics`) from the separate audit that re-read the same closed window.
 **Analysis records:** `results/phase1/F3-10.json` (verdict `FALSE`) and `results/phase1/F3-10_log_surface_join.json` (`kind: SUPPLEMENTARY_READ`, no verdict). Two withdrawn earlier attempts are archived rather than deleted: `results/phase1/archive/F3-10__withdrawn_unknown_tool_2026-08-12.json`, and the checkpoints `results/checkpoints/F3-10__log_only_golden_set__unknown_tool_2026-08-12_archive.json` and `…__aborted_restore_2026-08-12_archive.json`.
@@ -13,10 +13,10 @@
 
 <!-- provenance
 {
-  "status": "OBSERVATIONS_COMPLETE",
+  "status": "READY_TO_AMEND",
   "evidence_runs": ["r20260810T130945Z"],
   "cases": ["F3-10"],
-  "blocked_on": "A replication on a UTC calendar day after 2026-08-12. All 1,491 call records carry t_start_utc on 2026-08-12Z — one day — and three of the readings below rest on what a telemetry pipeline did or did not publish in a 283-second window: that ConfidenceScore carried real values summing to exactly the logged sums, that no score series held one request per datapoint, and that 61 of 122 requests published no score at all. Absence and exactness measured on one day cannot be separated from a pipeline that was degraded, or unusually clean, on that day. n is not the issue: the identity half is refuted by any single mixed bucket and the log-side join is total at 122/122. The replicate costs three arms, ~250 gateway calls, 3 policy mutations and 2 mode flips, under $0.03, and needs no new infrastructure. It should re-read the same window as well as taking a fresh one, because the audit directory already demonstrates that a closed window re-reads to the same values.",
+  "replicated_on": ["2026-08-12", "2026-08-13"], "replication": "Both days re-derived by ONE instrument after DEV-P4-35. Every structural figure reproduced exactly: 579 log events / 0 unparsed, 122 matched / 0 unmatched / 0 duplicate request_ids, 61 of 122 requests scored, 17 of 20 candidate thresholds evaluable, 30 shadow denials against 31 real ones, 57 series colliding in a mixed bucket, all 11 verdict guards and all 7 log-surface guards clean, verdict FALSE. The per-arm sums differ between days because the scores do (24.6/0.8/24.2 against 24.4/0.8/24.8, minimum logged score 0.4 against 0.6) and reconcile within each day. The day-2 replicate FAILED logs_reconcile_with_metrics on first reading and that failure was a reader-side bucket-attribution defect, now DEV-P4-35, whose two halves are each pinned by a mutation arm in f3_efficacy/tests/test_publish_slack.py.",
   "amends": ["S6.2", "S7.1"]
 }
 -->
@@ -65,7 +65,7 @@ Half (a) by contrast would have been *absolute* had it failed — `score_half.wh
 * **579 log events, 0 unparsed**, across 7 line kinds — including `Started processing request` ×122, `Policy evaluation completed` ×61 and `Policy evaluation denied request` ×61.
 * **The join is total and unique: 122 label rows, 122 matched, 0 unmatched, 0 duplicate `request_id`s.** Every request the client sent appears in the logs, keyed by an identifier the metrics surface does not carry.
 * **The confusion matrix is computable, and at the configured threshold it is perfect on this corpus**: `tp 30, tn 30, fp 0, fn 0`, precision 1.0, recall 1.0, in both 60-request arms and in the 2-request arm. The decision in the log agrees with the score in **every** arm.
-* **The two surfaces reconcile exactly.** Per-arm logged score sums versus `ConfidenceScore` metric sums over the same buckets: **24.6 vs 24.6** (30 values), **0.8 vs 0.8** (1 value), **24.2 vs 24.2** (30 values), `all_agree: true`, zero disagreeing dimension combinations. This is what makes §3's readings trustworthy: the metric is not merely present, it is the *same numbers*, aggregated.
+* **The two surfaces reconcile exactly.** Per-arm logged score sums versus `ConfidenceScore` metric sums over the same buckets, on **2026-08-12**: **24.6 vs 24.6** (30 values), **0.8 vs 0.8** (1 value), **24.2 vs 24.2** (30 values), `all_agree: true`, zero disagreeing dimension combinations. Day 2's own sums differ because the scores do, and reconcile the same way (§11); reaching that agreement on day 2 required fixing a reader defect this day's arrangement of the clock had concealed (DEV-P4-35). This is what makes §3's readings trustworthy: the metric is not merely present, it is the *same numbers*, aggregated.
 
 So step 3 is executable — on the surface its own sentence names, and not on the one §6.2 line 657 points at. That is an amendment about *where a reader is sent*, not about whether the workflow works.
 
@@ -150,26 +150,99 @@ This is deliberately **not** filed under `V13-12`, which states that in LOG_ONLY
 
 `AWS/Bedrock-AgentCore` **does** publish a numeric score, and the logs publish it per request. Any project text saying no surface publishes one must be narrowed to *no span attribute, and nothing joinable per request in metrics*. **This reopens F1-18's "not measurable" framing**, which was written under the absolute reading and now has a per-request numeric score available to it; F1-18 must be re-examined before it is filed as amendment-only material.
 
-## 11. Replication — one calendar day, and why that is the blocker
+## 11. Replication — two calendar days, and the defect the second one found
 
-Every one of the 1,491 call records carries `t_start_utc` on **2026-08-12Z**, so `days` is a single key with 1,491 observations. `check_amendment_readiness.py` enforces the sealed `MIN_DAYS` rule from `PREREGISTRATION.yaml` against the evidence records rather than against a sentence here, and it currently reports `OK — 52 assertions over 10 findings` with this finding carried as deferred.
+`check_amendment_readiness.py` derives observation days from `t_start_utc` on the evidence records,
+not from a sentence here. It now sees **two**: **2026-08-12** (1,491 call records) and
+**2026-08-13** (1,202). The second day is a full re-run of the same three arms — fresh window, 122
+requests, 3 policy mutations, 2 mode flips, under $0.03 — plus the closed-window re-read §11 asked
+for, which is now an in-repo instrument (`08c_window_audit.py`) rather than a throwaway script.
 
-The rule is right to bite here even though n is large. Three readings above are claims about what a telemetry pipeline did in a 283-second window: that `ConfidenceScore` carried values summing to *exactly* the logged sums, that no score series held one request per datapoint, and that 61 of 122 requests published no score at all. Exactness and absence measured on one day cannot be separated from a pipeline that was unusually clean, or degraded, on that day.
+**Every structural figure reproduced exactly.** Not "within tolerance" — identically:
 
-What n *does* settle: the identity half is refuted by any single mixed bucket, and the log-side join is total at 122/122 with zero duplicates. Neither of those needs a second day for statistical reasons — they need one for provenance reasons.
+| reading | 2026-08-12 | 2026-08-13 |
+|---|---|---|
+| verdict (`EXISTENCE`) | FALSE | FALSE |
+| verdict guards | 11 / 11 | 11 / 11 |
+| log-surface guards | 7 / 7 | 7 / 7 |
+| log events / unparsed | 579 / 0 | 579 / 0 |
+| join: label rows / matched / unmatched / duplicate ids | 122 / 122 / 0 / 0 | 122 / 122 / 0 / 0 |
+| requests publishing a score | 61 of 122 | 61 of 122 |
+| candidate thresholds evaluable | 17 of 20 | 17 of 20 |
+| shadow denials / real denials | 30 / 31 | 30 / 31 |
+| series colliding in a mixed bucket | 57 | 57 |
+| confusion matrix at the configured threshold | tp 30, tn 30, fp 0, fn 0 | tp 30, tn 30, fp 0, fn 0 |
+| score published as | JSON **string** `"0.8000"` | JSON **string** `"0.8000"` |
 
-The replicate is three arms, ~250 gateway calls, 3 policy mutations, 2 mode flips, under $0.03, no new infrastructure. It should **re-read the closed 2026-08-12 window as well as taking a fresh one**: `evidence/…/f3/F3-10_audit_2026-08-12/` already shows a closed window re-reading to the same values, and repeating that on a later day distinguishes "the pipeline was fine" from "the pipeline is fine".
+**What differs, and why each difference is expected.** The per-arm logged sums are
+24.6 / 0.8 / 24.2 on day 1 and 24.4 / 0.8 / 24.8 on day 2, and the minimum logged score is 0.4
+against 0.6 — the scores are a property of the text and the filter, not a constant, and each day's
+sums reconcile with that day's metrics. `n_series_read` rose from 233 to 293 because other cases'
+probe policies have since published series into the namespace. And `active_golden_set` spanned two
+buckets on day 1 but one on day 2, which is exactly where the second day earned its keep.
+
+### The defect a single day could not have found (→ DEV-P4-35)
+
+On first reading, day 2 **failed** `logs_reconcile_with_metrics`: `active_golden_set` logged Σ 24.4
+over 30 values against a metric Sum of **23.6 over 29 samples**. The as-run record is archived
+unaltered at `results/phase1/archive/F3-10_log_surface_join__day2_asrun_bucket_defect_2026-08-13.json`.
+
+The disagreement was in the **reader**. A log event is stamped when the request is processed; a
+CloudWatch datapoint is bucketed by the service's own emit time, up to the publish lag later. Day
+2's window ran `1786588205.003` → `1786588260.386`, so one detection of 30 was bucketed at
+`1786588260` while all 60 log rows named `1786588200` — and **23.6 + 0.8 = 24.4**, the logged sum
+exactly. Day 1's window crossed a boundary too, but its own log rows named *both* buckets, so the
+omission never occurred. `test_the_grant_changes_nothing_on_day_1` asserts that: a zero-slack reader
+still passes day 1 on all three arms. **The first day's pass was not evidence that the reader
+attributed datapoints correctly; it was evidence that, that once, it did not need to.**
+
+The fix (`SLACK_PERIODS = 1`) has two halves, each load-bearing on a *different* arm, each pinned by
+a mutation arm driven by the published records:
+
+| mutation | 2026-08-12 | 2026-08-13 |
+|---|---|---|
+| shipped | all three arms agree | all three arms agree |
+| no grant | still passes | `active_golden_set` 23.6 / 29 vs 24.4 / 30 — **fails** |
+| grant without withholding | `active_one_per_minute` 25.0 / 31 vs 0.8 / 1 — **fails** | 25.6 / 31 vs 0.8 / 1 — **fails** |
+
+Both days were then re-derived by that one fixed instrument — a reader defect must not be measured
+as a difference between days — and day 1 reproduced its as-run figures arm for arm, which
+`test_the_fix_did_not_move_day_1` pins.
+
+### The closed-window re-read, and what it can and cannot settle
+
+`08c_window_audit.py` re-read day 1's closed window **23.6 hours** later: **56 of 56** datapoints
+present, **212 of 224** compared fields bit-identical, **0 late arrivals**, **0 changed**, **0
+vanished**, 11 / 11 guards. The 12 non-identical fields differ by ≤ **1.4e-14** (e.g. a recorded
+`23.800000000000015` re-reading as `23.8`), i.e. CloudWatch's summation order differs between reads.
+That is published as `within_tolerance_but_not_identical` with deltas rather than hidden behind the
+tolerance.
+
+What this changes is a **bound**, and only that. The absence in §6 — 61 of 122 requests publishing no
+score — was measured 120 s after the traffic (`HARVEST_SETTLE_S`, chosen against F7-6's p90 publish
+lag of 11.485 s). Re-read 23.6 h later, the same absence is bounded by the longer lag. It still
+cannot distinguish "never published" from "lost before publication"; that needs the fresh window,
+which day 2 supplied.
+
+Two of my own aggregation mistakes were caught by that instrument before anything was published, and
+both are recorded in its source: summing the four byte-identical `ConfidenceScore` dimension
+roll-ups (which quadruple-counted, reading 98.4 against a logged 24.6), and treating 10 quiet
+foreign dimension combinations — other cases' probe policies, correctly reading 0.0 — as
+disagreements. Comparison is now **per dimension combination**, which is both correct and stronger:
+every roll-up must agree independently, and all 4 do.
 
 ## 12. Cross-references
 
 * **`DEVIATIONS.md` DEV-P4-01** — the span-shape probe that reordered Phase 4. Its absolute reading is refuted here (§5); its span-level claim survives.
 * **`DEVIATIONS.md` DEV-P4-22** — counting un-evaluated requests as usable, which is why `n_evaluated` is a guard in this case rather than a note.
 * **`DEVIATIONS.md` DEV-P4-23** — the two instrument defects in §9, including the stale nine-id list still in `results/phase1/F3-10.json`.
+* **`DEVIATIONS.md` DEV-P4-35** — the bucket-attribution defect the second day exposed, its two mutation arms, and the four flags that let one instrument re-derive both days (§11).
 * **`V13_CANDIDATES.md` V13-05** — the candidate this case discharges, and whose own "spans, not metrics" parenthetical it corrects (§10). Its 10 generated sites are this case's claim group.
 * **`V13_CANDIDATES.md` V13-10** — amends §7.1's promotion-gate sentence at line 737, the same prose block as §10.2. The two candidates touch neighbouring clauses of one paragraph and must land in the same v1.3 pass.
 * **`V13_CANDIDATES.md` V13-12** — *"in LOG_ONLY it denies nothing and reports nothing"*, measured on the metric surface. §7 here measures the log surface, where LOG_ONLY reports loudly and reports as an error. Cross-reference, not a merge (§10.3).
 * **`results/FINDING-F5-4A.md` §4** — LOG_ONLY invisible to the metric instruments the document names. §7 here is the same mode failing in the opposite direction on the log surface.
 * **`results/phase1/F7-6.json`** — the p90 publish lag of 11.485 s that makes this case's 120 s settle a bound rather than a hope.
+* **`results/phase1/F3-10_window_audit.json`** — the closed-window re-read, 23.6 h after the fact: 56/56 datapoints, 212/224 fields bit-identical, 0 late arrivals. The same p90 lag is why its 12 non-identical fields (≤ 1.4e-14) are published as a summation-order observation rather than absorbed by a tolerance.
 * **F2-2 / F2-3 / F2-4** — the τ-sweep. §6's asymmetry constrains it: the sweep can only tighten from whatever threshold was configured when the traffic ran, so a sweep design that assumes both directions from one window is unsound.
 * **F1-18** — its "not measurable" framing was written under DEV-P4-01's absolute reading and must be re-examined (§10.4).
 * **F3-9** — shares `C-s7-1-prose-004`, the sealed unit whose omission is §9's second defect.

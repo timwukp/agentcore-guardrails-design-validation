@@ -20,7 +20,6 @@ to the rebuild exactly as a hand-edit of the real corpus would be.
 from __future__ import annotations
 
 import json
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -35,16 +34,18 @@ GATE_REL = Path("corpora") / "verify_corpora.py"
 # Its path is recorded in the pre-registration as a path relative to ROOT, so a copy
 # of the tree at a different depth would not find it. Resolved once here so the
 # fixture can rewrite it to an absolute path.
-COPY_EXCLUDE = shutil.ignore_patterns("__pycache__", ".pytest_cache", "*.pyc",
-                                      "evidence", ".venv*", "results")
-
 
 @pytest.fixture
-def tree(tmp_path: Path) -> Path:
-    """A working copy of the repo, with the external source path made absolute."""
+def tree(tmp_path: Path, copy_repo) -> Path:
+    """A working copy of the repo, with the external source path made absolute.
+
+    The exclusion list is `conftest.copy_repo`'s, derived from `.gitignore` in one place; the
+    hand-written list this fixture used to carry omitted `f1_config/.wheel_cache/` and so wrote
+    214 MB of pip cache per arm (DEV-P4-36). `results` is excluded per call because nothing
+    below this line reads it.
+    """
     import yaml
-    dst = tmp_path / "grx"
-    shutil.copytree(ROOT, dst, ignore=COPY_EXCLUDE)
+    dst = copy_repo(tmp_path / "grx", "results")
 
     pr_path = dst / "PREREGISTRATION.yaml"
     pr = yaml.safe_load(pr_path.read_text(encoding="utf-8"))

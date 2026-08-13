@@ -82,6 +82,12 @@ MAPPING: dict[tuple[str, str], tuple[tuple[str, ...], str]] = {
         ("bedrock-agentcore:UpdateGateway",), "any"),
     ("bedrock-agentcore-control", "create_gateway_target"): (
         ("bedrock-agentcore:CreateGatewayTarget",), "any"),
+    # Entered evidence/ on 2026-08-13 when F5-2's cleanup deleted the gateway it had created
+    # (evidence/r20260810T130945Z/f5/F5-2/0507_delete_gateway_ok.json, HTTP 202). Found by
+    # test_every_api_the_validation_has_called_is_mapped_to_an_action — at desk, which is the
+    # failure location that test exists to buy.
+    ("bedrock-agentcore-control", "delete_gateway"): (
+        ("bedrock-agentcore:DeleteGateway",), "any"),
     # The four policy calls each authorize TWO actions, and the second one is not derivable from
     # the call name. Measured on 2026-08-12: the runner's derived role already held
     # `bedrock-agentcore:CreatePolicy`, and `CreatePolicy` still failed —

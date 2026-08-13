@@ -167,11 +167,15 @@ UNRESOLVABLE = {
         "popped from sys.modules in a finally, so they cannot collide with a phase script's key. "
         "Its ONE fixed key, METRICS_MODULE_NAME, is a module-level constant and is resolved by "
         "the registration scan above; only the mutant call sites are unresolvable",
-    "infra/tests/conftest.py":
+    "infra/tests/infra_by_path.py":
         "f'_infra_{stem}' — the infra scripts start with a digit so they cannot be imported "
         "by name at all; the prefix is asserted to be collision-proof by "
         "test_the_infra_loader_prefix_cannot_collide below, so this entry's reason is checked "
-        "rather than merely written",
+        "rather than merely written. Moved out of infra/tests/conftest.py on 2026-08-13: two "
+        "test modules imported the loader with `from conftest import load_infra`, and the first "
+        "combined run to collect f1_config/tests in the same process bound `conftest` to the "
+        "WRONG directory's file — the per-directory-green/combined-red blindness this file "
+        "documents, through the one basename every tests directory shares",
 }
 
 # How many unresolvable loader calls each of those files holds. Every entry of UNRESOLVABLE
@@ -183,13 +187,13 @@ UNRESOLVABLE_CALLS = {
     "f3_efficacy/tests/test_log_surface_join.py": 1,
     "lib/tests/test_stats_mutation.py": 1,
     "lib/tests/test_f7_metric_tables.py": 2,      # one per mutation call site
-    "infra/tests/conftest.py": 1,
+    "infra/tests/infra_by_path.py": 1,
 }
 assert set(UNRESOLVABLE_CALLS) == set(UNRESOLVABLE), (
     "UNRESOLVABLE and UNRESOLVABLE_CALLS name different files; a reason without a count, or a "
     "count without a reason, is half a record")
 
-# The prefix `infra/tests/conftest.py` builds its module names with. Duplicated here on purpose:
+# The prefix `infra/tests/infra_by_path.py` builds its module names with. Duplicated here on purpose:
 # the assertion below is only meaningful if this test states the invariant independently of the
 # code under test, so a change to the prefix fails here instead of silently redefining the claim.
 INFRA_LOADER_PREFIX = "_infra_"
@@ -426,7 +430,7 @@ def test_the_check_redaction_loader_no_longer_squats_the_redact_name():
 
 
 def test_the_infra_loader_prefix_cannot_collide():
-    """`infra/tests/conftest.py`'s reason in UNRESOLVABLE, checked instead of trusted.
+    """`infra/tests/infra_by_path.py`'s reason in UNRESOLVABLE, checked instead of trusted.
 
     That entry claims the `_infra_` prefix "cannot collide". A reason written in a table is
     prose, and prose is not verified (feedback_prose_is_not_verified) — so the claim is
@@ -448,12 +452,12 @@ def test_the_infra_loader_prefix_cannot_collide():
     squatters = sorted(n for n in owned if n.startswith(INFRA_LOADER_PREFIX))
     assert not squatters, (
         f"{squatters} are importable top-level names beginning with {INFRA_LOADER_PREFIX!r}, "
-        f"which is the prefix infra/tests/conftest.py registers its by-path modules under. Its "
-        f"UNRESOLVABLE entry claims the prefix cannot collide, and it now can.")
+        f"which is the prefix infra/tests/infra_by_path.py registers its by-path modules under. "
+        f"Its UNRESOLVABLE entry claims the prefix cannot collide, and it now can.")
 
-    src = (ROOT / "infra" / "tests" / "conftest.py").read_text(encoding="utf-8")
+    src = (ROOT / "infra" / "tests" / "infra_by_path.py").read_text(encoding="utf-8")
     assert f'f"{INFRA_LOADER_PREFIX}{{stem}}"' in src, (
-        f"infra/tests/conftest.py no longer builds its module name as "
+        f"infra/tests/infra_by_path.py no longer builds its module name as "
         f"f'{INFRA_LOADER_PREFIX}{{stem}}'. Either the prefix changed — in which case "
         f"INFRA_LOADER_PREFIX here and the UNRESOLVABLE reason must change with it — or the "
         f"name became statically resolvable, in which case remove the UNRESOLVABLE entry so "

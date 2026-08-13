@@ -128,6 +128,12 @@ _tr = _parent._tr
 # files cannot disagree about which units this case answers for.
 _sealed_units = _parent._sealed_units
 
+# How far past an arm's last LOGGED bucket a metric datapoint for that arm may be bucketed. One
+# period, because the offset is a publish lag and F7-6 measured that lag's p90 at 11.485 s — a
+# fifth of one period — while the parent case's own harvest settle is 120 s. Two periods would
+# start reaching into whatever ran next; zero is the defect DEV-P4-35 records.
+SLACK_PERIODS = 1
+
 RESULT = ROOT / "results" / "phase1" / f"{PARENT_CASE}.json"
 CHECKPOINTS = ROOT / "results" / "checkpoints"
 TRIAGE = _parent.TRIAGE
@@ -179,19 +185,24 @@ def _window_from_recorded_result(result: dict[str, Any]) -> dict[str, float]:
     return {"t0": min(t0s), "t1": max(t1s), "n_arms": len(arms)}
 
 
-def _labels_from_checkpoints() -> dict[str, dict[str, Any]]:
+def _labels_from_checkpoints(suffix: str = "") -> dict[str, dict[str, Any]]:
     """`request_id` -> ground truth, for every trial of every arm.
 
     The labels come from the CHECKPOINTS, not from the published result: `results/phase1/*.json`
     is masked for distribution and carries per-arm aggregates, while the checkpoints hold the
     per-trial rows with the `request_id` the log events also carry. A row without a `request_id`
     cannot participate and is counted, not dropped silently.
+
+    `suffix` names an ARCHIVED set — `F3-10__<arm>__day1_2026-08-12_archive.json` — so an earlier
+    day's window can be re-read by the CURRENT reader. That is not a convenience: when a defect in
+    this file is fixed, the two days must be re-derived by the same instrument or the comparison
+    between them measures the fix as well as the service (DEV-P4-35).
     """
     out: dict[str, dict[str, Any]] = {}
     missing_rid = 0
     per_arm: Counter = Counter()
     for key in ARM_KEYS:
-        path = CHECKPOINTS / f"{PARENT_CASE}__{key}.json"
+        path = CHECKPOINTS / f"{PARENT_CASE}__{key}{suffix}.json"
         if not path.is_file():
             raise ConfigError(f"{path.relative_to(ROOT)} does not exist — run {PARENT_CASE} first")
         body = json.loads(path.read_text(encoding="utf-8"))
@@ -457,6 +468,42 @@ def _shadow(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def _slack_buckets(arm_key: str,
+                   log_buckets: dict[str, set[int]]) -> tuple[set[int], set[int]]:
+    """The publish-slack buckets GRANTED to one arm, and the ones WITHHELD from it.
+
+    A datapoint for this arm's requests can legitimately land in the buckets the log rows name, or
+    up to `SLACK_PERIODS` period(s) past the last of them, because the offset between the two is a
+    publish lag (DEV-P4-35).
+
+    The slack is withheld for any bucket another arm's log rows already claim. This half is not
+    defensive dressing: the three arms' metric queries OVERLAP, so `active_one_per_minute`'s own
+    series carries `log_only_golden_set`'s 30-detection datapoint, and the bucket set is the only
+    thing attributing a datapoint to an arm at all.
+
+    Both halves are load-bearing on real data, each on a different arm, and each is pinned by its
+    own mutation arm in `tests/test_publish_slack.py`:
+
+      * without the GRANT, 2026-08-13's `active_golden_set` reads 23.6 over 29 samples against a
+        logged 24.4 over 30 — the defect as measured. 2026-08-12 still passes, which is why one day
+        could not have found this.
+      * without the WITHHOLDING, `active_one_per_minute` absorbs its successor arm on BOTH days:
+        25.0 over 31 samples on 2026-08-12 and 25.6 over 31 on 2026-08-13, against a logged 0.8
+        over 1.
+
+    Split out of `_reconcile` so the withholding can be mutated independently of the grant.
+    """
+    from_logs = set(log_buckets.get(arm_key) or set())
+    granted: set[int] = set()
+    if from_logs:
+        last = max(from_logs)
+        for i in range(1, SLACK_PERIODS + 1):
+            granted.add(last + i * PERIOD_S)
+    withheld = {b for b in granted
+                if any(b in v for k, v in log_buckets.items() if k != arm_key)}
+    return granted - withheld, withheld
+
+
 def _reconcile(result: dict[str, Any], per_arm: dict[str, Any]) -> dict[str, Any]:
     """Do the per-request logged scores add up to the CloudWatch datapoints F3-10 read?
 
@@ -467,10 +514,22 @@ def _reconcile(result: dict[str, Any], per_arm: dict[str, Any]) -> dict[str, Any
     the point is whether the two recorded readings agree.
     """
     arms = result.get("arms") or {}
-    out: dict[str, Any] = {"per_arm": {}, "all_agree": None, "checked": 0}
+    out: dict[str, Any] = {"per_arm": {}, "all_agree": None, "checked": 0,
+                           "publish_slack_periods": SLACK_PERIODS,
+                           "why_publish_slack": (
+                               "a log event is stamped when the request is processed; the metric "
+                               "datapoint is bucketed by the service's own emit time, which "
+                               "follows it by up to the publish lag. The two therefore need not "
+                               "share a bucket, and on 2026-08-13 one detection of 30 was "
+                               "bucketed one period later than every log row for the same arm — "
+                               "so a bucket set taken from the log rows alone under-counted the "
+                               "metric by exactly that one sample (DEV-P4-35)")}
     agree = []
+    log_buckets = {k: set((per_arm.get(k) or {}).get("buckets") or []) for k in arms}
     for arm_key, arm in arms.items():
-        want_buckets = set((per_arm.get(arm_key) or {}).get("buckets") or [])
+        from_logs = set(log_buckets.get(arm_key) or set())
+        granted, stolen = _slack_buckets(arm_key, log_buckets)
+        want_buckets = from_logs | granted
         # `ConfidenceScore` publishes the same values under several dimension combinations. Any one
         # of them is the metric's reading; they are collapsed by (bucket -> (sum, sample_count))
         # and a combination that disagreed with its siblings would show up as more than one entry.
@@ -491,6 +550,9 @@ def _reconcile(result: dict[str, Any], per_arm: dict[str, Any]) -> dict[str, Any
               and bool(by_bucket) == bool(log_n))
         out["per_arm"][arm_key] = {
             "buckets_compared": sorted(by_bucket),
+            "buckets_from_log_rows": sorted(from_logs),
+            "buckets_added_for_publish_slack": sorted(granted),
+            "slack_buckets_withheld_because_another_arm_owns_them": sorted(stolen),
             "dimension_combinations_disagreeing": sorted(b for b, v in by_bucket.items()
                                                          if len(v) > 1),
             "metric_sum": metric_sum, "log_sum": log_sum,
@@ -561,15 +623,26 @@ def _dry_run() -> int:
 
 def main(argv: list[str] | None = None) -> int:
     ap = P.parser(PARENT_CASE, __doc__)
+    # The four flags exist for ONE purpose: re-deriving an earlier day's window with the CURRENT
+    # reader. Defaults reproduce the original behaviour exactly, so a bare invocation is unchanged
+    # (DEV-P4-35).
+    ap.add_argument("--record", default=str(RESULT),
+                    help="the F3-10 analysis record whose window and metric sums are read")
+    ap.add_argument("--checkpoint-suffix", default="",
+                    help="suffix on the per-arm checkpoint names, e.g. __day1_2026-08-12_archive")
+    ap.add_argument("--out", default=OUT_NAME, help="output file name, relative to results/phase1/")
+    ap.add_argument("--evidence-case", default=EVIDENCE_CASE,
+                    help="evidence sub-directory; a re-derivation must not renumber the original")
     args = ap.parse_args(argv)
     if args.dry_run:
         return _dry_run()
 
-    if not RESULT.is_file():
-        raise ConfigError(f"{RESULT} does not exist — run {PARENT_CASE} first")
-    result = json.loads(RESULT.read_text(encoding="utf-8"))
+    record_path = Path(args.record)
+    if not record_path.is_file():
+        raise ConfigError(f"{record_path} does not exist — run {PARENT_CASE} first")
+    result = json.loads(record_path.read_text(encoding="utf-8"))
     window = _window_from_recorded_result(result)
-    labels = _labels_from_checkpoints()
+    labels = _labels_from_checkpoints(args.checkpoint_suffix)
 
     state = T.State.load()
     run_id, region = state.run_id, state.region
@@ -582,7 +655,7 @@ def main(argv: list[str] | None = None) -> int:
     # leak on the first run; this is the fix (DEV-P4-24).
     A.account_id(fc)
     logs = fc.client("logs")
-    store = EvidenceStore(run_id, FAMILY, EVIDENCE_CASE)
+    store = EvidenceStore(run_id, FAMILY, args.evidence_case)
     store.write_environment()
 
     # The ledger is the authority on which gateway this is, exactly as the parent case resolves it.
@@ -594,7 +667,7 @@ def main(argv: list[str] | None = None) -> int:
         raise ConfigError("the main gateway is not in state.json")
     gateway_id = gw.ids["gateway_id"]
     if result.get("gateway_id") and result["gateway_id"] != gateway_id:
-        raise ConfigError(f"{RESULT.name} was written against gateway {result['gateway_id']} but "
+        raise ConfigError(f"{record_path.name} was written against gateway {result['gateway_id']} but "
                           f"the ledger's main gateway is {gateway_id}")
 
     print(f"{PARENT_CASE} log-surface read — gateway {gateway_id}, region {region}")
@@ -668,7 +741,7 @@ def main(argv: list[str] | None = None) -> int:
         ],
     }
     text = json.dumps(payload, indent=2, sort_keys=True, default=str, ensure_ascii=False) + "\n"
-    out_path = ROOT / "results" / "phase1" / OUT_NAME
+    out_path = ROOT / "results" / "phase1" / args.out
     # Masked in `results/` and unmasked in `evidence/`, the same split `P.emit` makes and for the
     # same reason (DEV-P1-13). `P.emit` itself is not used: it would write
     # `results/phase1/F3-10.json` and overwrite a recorded verdict with a read.

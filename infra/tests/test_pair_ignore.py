@@ -39,7 +39,7 @@ from __future__ import annotations
 
 import pytest
 
-from conftest import load_infra
+from infra_by_path import load_infra
 
 gw = load_infra("04_gateway")
 

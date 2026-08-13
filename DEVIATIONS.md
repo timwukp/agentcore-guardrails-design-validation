@@ -6813,6 +6813,426 @@ Three smaller consequences worth keeping:
 
 ---
 
+## DEV-P4-34 — a 403 was retried eleven times as a network problem, and the calls it made are in no evidence record
+
+**When** 2026-08-12, during F5-2's pre-registered n=120 run, on the laptop. Found while reconciling
+the case's evidence census, not by a failure. **Cost** $0 — every affected call is an unpriced
+control-plane read, and the fix is offline. **Effect on the document under test** **none**, and the
+reason is structural rather than lucky: see "what it does not touch" below. No verdict, guard,
+interval or tally moves.
+
+### What was observed
+
+F5-2's day-1 console log (`evidence/r20260810T130945Z/f5/F5-2/console__day1_2026-08-12.log`) holds
+**110** lines reading `(transport error N: AccessDeniedException; retrying)`. The evidence tree for
+the same run holds **3** `get_gateway` records. Both numbers are correct, and together they say that
+most of the run's `GetGateway` calls left no record at all.
+
+The 110 lines are **11 episodes of 10 printed retries** — `transport error 1:` appears 11 times, the
+counter takes 10 distinct values, and **0** of the 110 lines name any exception other than
+`AccessDeniedException`. The printed count is one short of the calls made:
+
+```python
+# infra/04_gateway.py:231
+transport_errors = 0
+while time.monotonic() < deadline:
+    try:
+        last = ac.get_gateway(gatewayIdentifier=gateway_id)
+    except Exception as exc:                      # noqa: BLE001
+        transport_errors += 1
+        if transport_errors > 10:
+            raise
+        print(f"    (transport error {transport_errors}: {type(exc).__name__}; retrying)")
+        sleep(3.0)
+        continue
+```
+
+The 11th failure raises before it prints, so each episode is **11 failed calls and 10 lines**, plus
+10 × 3 s of sleeping. Eleven episodes: **121 uncaptured `GetGateway` calls and 330 seconds** — 5.5
+minutes of a 50-minute run — spent retrying a permanent authorization failure.
+
+The eleven episodes are exactly the eleven `UpdateGateway` calls that were **accepted while the
+caller was the runtime role**: 2 in the `granted_mutation` arm (`_run_arm`'s settle at
+`f5_redteam/02_route3_updategateway.py:535`) and 9 in the propagation waits (3 in
+`propagation_granted`, 6 in `propagation_revoke`, at line 619). That reconciles to the record
+without a residue, which is how the count was established rather than estimated.
+
+### The cause, which is two independent things
+
+1. **`wait_ready` polls with the raw client.** Line 237 calls `ac.get_gateway(...)` directly, not
+   through `capture(...)`, so **no** poll — failed or successful — becomes an evidence record. The
+   three `get_gateway` records in F5-2's tree come from the captured call sites; the run's real
+   `GetGateway` count is at least 3 + 121 = **124**. An evidence-derived census of API calls is
+   therefore a census of *captured* calls, and this project has been reading it as both.
+2. **`except Exception` cannot tell a 403 from a socket.** F5-2 hands `wait_ready` the **runtime**
+   client, which by construction holds no `bedrock-agentcore` control-plane permission — the whole
+   premise of the case. Its `GetGateway` will be denied on the first attempt and on the eleventh.
+   Retrying it is not merely wasted; the message names the wrong cause, and "transport error" is
+   what a reader of the log would carry away.
+
+### What it does not touch, and why that is structural
+
+The authorization outcome of each attempt is decided by `_attempt`/`capture` and written to the
+checkpoint **before** the settle is attempted. When the settle fails, `_run_arm` catches it and
+writes `row["settle_error"]` — verified in the archived checkpoint, where `granted_mutation__0002`
+and `__0005` both carry `outcome: accepted`, `http_status: 202`, and
+`settle_error: "AccessDeniedException: …"` while the other three rows carry `denied_by_iam` and no
+settle error. `settle_error` enters no tally: `n_accepted`, `n_conflict`, `n_denied`, `n_unusable`
+are counted from `outcome` alone. So a settle that could never succeed cannot move a verdict, and
+the comment at line 537 already says why it is recorded rather than raised — a settle timeout is
+about the *next* attempt's `ConflictException` risk, not about this attempt's authorization.
+
+What it does affect is smaller and worth stating plainly, because both readings are ones I made:
+
+* **`retry_attempts: 0` on all 200 `update_gateway` records is true of the recorded calls and false
+  of the run.** 121 retried calls happened, on a different operation, in the same run.
+* **"244 call records" is not "244 API calls."** The finding says records, and the distinction now
+  has a number attached to it (`feedback_two_numbers_two_claims`).
+
+### What changed, and what deliberately did not
+
+**The instrument was not touched before the replicate.** F5-2's day-2 run reproduces day 1 arm for
+arm; changing `wait_ready` between the two would mean the two days ran different instruments, and
+the replication is worth more than 5.5 minutes of wall clock. The fix is therefore recorded here
+and applied after F5-2's second day, in this order:
+
+1. **Settle with the client that can read.** The settle is bookkeeping, not part of the attack
+   surface — who may call `GetGateway` is measured by the arms, not by the poll. Passing the admin
+   client removes all 121 calls and the 330 seconds with them.
+2. **A non-retryable set in `wait_ready`.** `AccessDeniedException`, `ResourceNotFoundException`
+   and `ValidationException` cannot become success by waiting; they should raise on the first
+   occurrence with their own name in the message. The `except Exception` stays for what it was for.
+3. **Capture the polls, or say in one place that they are not captured.** Whichever is chosen, the
+   census helper must stop being read as a count of API calls. This is the half that generalises:
+   every case in this project that waits on a resource inherits the same blind spot, and F5-2 only
+   noticed because its caller was *supposed* to be denied.
+
+The guard that goes with (2) is a `wait_ready` given a client that raises `AccessDeniedException`
+and a mutation that shows it can fail: with the non-retryable set removed, the same fake must be
+polled 11 times. Without that arm the test passes against the code being replaced
+(`feedback_vacuous_test_check`).
+
+### The lesson
+
+**A retry loop that catches everything converts a permission bug into a slow success story.** The
+run finished, the verdict was correct, all eleven guards passed, and the only visible symptom was
+110 lines blaming the network for an IAM denial. Nothing failed, which is why this needed a census
+to find (`feedback_cryptic_error_is_missing_guard`, inverted: here the error message was not
+cryptic, it was confidently wrong).
+
+And the second half is the one to keep: **an evidence tree records the calls it was asked to
+record.** Reading a census of it as a census of what the run did to AWS is the same mistake as
+reading a summary field as a measurement — an artifact vouching for its own completeness
+(`feedback_prose_is_not_verified`). The 121 missing calls were free and harmless. The next such gap
+may be neither.
+
+---
+
+## DEV-P4-35 — a bucket set taken from log rows alone under-counted the metric, and one day could not have found it
+
+**When** 2026-08-13, during F3-10's second-day replicate, on the laptop. Found by a guard FAILING,
+which is the way these are supposed to arrive. **Cost** under $0.01 — the fix is a reader change and
+the re-derivations are CloudWatch Logs reads. **Effect on the document under test** **none**: F3-10's
+verdict is FALSE on both days and its sealed oracle is about metrics alone, which this does not
+touch. What moves is a supplementary read's cross-surface guard, and it moves from "passed on one
+day" to "passes on two, by one instrument".
+
+### What was observed
+
+`08b_log_surface_join.py`'s `logs_reconcile_with_metrics` guard compares two independent surfaces:
+the per-request scores in APPLICATION_LOGS, and the `ConfidenceScore` datapoints F3-10 read from
+CloudWatch. Day 1 (2026-08-12) agreed on all three arms. Day 2 (2026-08-13) failed on one:
+
+| arm | logged Σ / n | metric Sum / SampleCount | agrees |
+|---|---|---|---|
+| `active_golden_set` | 24.4 / 30 | **23.6 / 29** | **no** |
+| `active_one_per_minute` | 0.8 / 1 | 0.8 / 1 | yes |
+| `log_only_golden_set` | 24.8 / 30 | 24.8 / 30 | yes |
+
+The as-run record is archived unaltered at
+`results/phase1/archive/F3-10_log_surface_join__day2_asrun_bucket_defect_2026-08-13.json`.
+
+### The cause, which is in the reader
+
+A log event is stamped when the request is **processed**. A CloudWatch datapoint is bucketed by the
+service's own **emit** time, which follows it by up to the publish lag. The two therefore need not
+share a bucket.
+
+Day 2's `active_golden_set` window ran `1786588205.003` → `1786588260.386`, crossing the minute
+boundary at `1786588260`. All 60 log rows named bucket `1786588200`; the metric published
+`(23.6, 29)` at `1786588200` and `(0.8, 1)` at `1786588260`. **23.6 + 0.8 = 24.4** — the logged sum,
+exactly. A comparison bucket set derived from the log rows alone omits the second bucket and
+therefore under-counts by exactly one sample. Same shape as `feedback_span_vs_points_offbyone`.
+
+**Day 1 passed by accident.** Its `active_golden_set` window also crossed a boundary, but its own
+log rows named *both* buckets (`1786504140`, `1786504200`), so the omitted bucket was never omitted.
+`f3_efficacy/tests/test_publish_slack.py::test_the_grant_changes_nothing_on_day_1` asserts this: a
+zero-slack reader still passes 2026-08-12 on all three arms. A single day of this case could not
+have found the defect, and that is the entry's main content.
+
+### The fix, and both halves of it
+
+`SLACK_PERIODS = 1` in `08b_log_surface_join.py`, applied by `_slack_buckets()`:
+
+1. **the grant** — a datapoint for an arm may sit up to one period past that arm's last logged
+   bucket. One period, not two: the offset is a publish lag and F7-6 measured that lag's p90 at
+   **11.485 s**, a fifth of a period, while the parent case's own harvest settle is 120 s. Two
+   periods would start reaching into whatever ran next.
+2. **the withholding** — the slack is refused for any bucket another arm's log rows already claim.
+   This is not defensive dressing. The three arms' metric queries **overlap**, so
+   `active_one_per_minute`'s own series carries `log_only_golden_set`'s thirty-detection datapoint,
+   and the bucket set is the only thing attributing a datapoint to an arm at all.
+
+Each half is load-bearing on real data, on a **different arm**, and each has its own mutation arm:
+
+| mutation | 2026-08-12 | 2026-08-13 |
+|---|---|---|
+| shipped | all three arms agree | all three arms agree |
+| `SLACK_PERIODS = 0` (no grant) | still passes | `active_golden_set` 23.6 / 29 vs 24.4 / 30 — **fails** |
+| grant without withholding | `active_one_per_minute` 25.0 / 31 vs 0.8 / 1 — **fails** | same arm, 25.6 / 31 vs 0.8 / 1 — **fails** |
+
+I first wrote the withholding arm against `active_golden_set`, predicting 25.4; it read 24.6
+unchanged, because that arm's successor bucket carries nobody's datapoint. The prediction was in the
+helper's docstring before it was in a test, which is exactly the failure mode
+`feedback_prose_is_not_verified` names, and the docstring now states the measured arm and numbers.
+
+### How the two days were re-derived
+
+A reader defect must not be measured as a difference between days. `08b` gained four flags
+(`--record`, `--checkpoint-suffix`, `--out`, `--evidence-case`) whose only purpose is re-deriving an
+earlier day's window with the **current** reader; a bare invocation is unchanged. Day 1 was re-read
+from `results/phase1/archive/F3-10__day1_2026-08-12.json` with the
+`__day1_2026-08-12_archive` checkpoints, inside CloudWatch Logs' 7-day retention, into
+`results/phase1/F3-10_log_surface_join__day1_rederived.json`.
+
+The re-derivation must and does reproduce day 1's as-run figures arm for arm — 24.6 / 0.8 / 24.2,
+`all_agree: true` — which is what
+`test_the_fix_did_not_move_day_1` pins. Had the fix moved day 1 too, the two-day agreement would be
+an artefact of the instrument rather than a replication.
+
+### What it does not touch
+
+* F3-10's verdict (FALSE, EXISTENCE) on either day, and its sealed oracle, which scopes the question
+  to CloudWatch metrics alone. This deviation is entirely inside a `SUPPLEMENTARY_READ`.
+* Any figure in `FINDING-F3-10.md` §4: those are day 1's, and day 1 does not move.
+* Any other case. `SLACK_PERIODS` is local to `08b`; no other reader compares log rows to buckets.
+
+### What to keep
+
+**A guard that passes on one day has been tested on one arrangement of a clock.** The boundary that
+day 2 crossed was the same boundary day 1 crossed; only where it fell inside the arm's own logged
+buckets differed. Nothing about the first day's pass was evidence that the reader attributed
+datapoints correctly — it was evidence that, that once, it did not need to.
+
+And the smaller one: **a fix's own rationale is unverified text until each half of it kills a
+mutant.** Both halves here are load-bearing, but not on the arm I assumed, and the assumption was
+already written down as an explanation before a single arm had run.
+
+---
+
+## DEV-P4-36 — the same unbounded scratch as DEV-P4-31, on the other host, because that fix repaired the janitor and not the mess
+
+**Case:** none directly. **Effect:** one full-gate run wrote 11.3 GB of scratch, filled the laptop's
+root volume, and killed itself; the shell became unusable for four attempts in a row and the F3-10
+day-2 gate result was lost.
+
+### What was observed
+
+`verify_phase0.sh` was re-launched after the two `lib/tests` failures were fixed. Its pytest run
+reached 86% and then emitted `E` for essentially every remaining test — not `F`, `E`: errors during
+setup, which is what `tmp_path` creation looks like when it cannot write. Then the harness itself
+stopped working:
+
+```
+ENOSPC: no space left on device,
+open '/private/tmp/claude-503/.../tasks/*.output'
+```
+
+`df` could not run either, because running it requires writing its output file. Five consecutive
+commands failed identically, so the run's outcome is not merely unknown — it is unrecoverable, and
+had to be repeated from the start.
+
+### The cause
+
+Three gates copy the whole repo into a scratch tree and mutate the copy:
+
+| site | copies per run |
+|---|---|
+| `claims/tests/test_corpus_gate.py`'s `tree` fixture | ~48, one per mutation arm |
+| `claims/tests/test_v13_candidates.py::test_the_register_on_disk_matches_a_fresh_generation` | 1 |
+| `claims/tests/test_v13_candidates.py::test_a_truncated_triage_is_fatal_not_a_smaller_register` | 1 |
+
+Each carried its **own** hand-written `shutil.ignore_patterns(...)`, and the three lists disagreed:
+the corpus gate excluded `results` and `*.pyc`, the two v13 arms excluded `.git`, and none of the
+three excluded `f1_config/.wheel_cache/` — **214 MB of pip cache**, ignored by git, read by nothing
+under test. So each copy was 236 MB of which 219 MB was the cache, and one run was 11.3 GB. Measured
+after the fact from the surviving scratch root: `pytest-of-tmwu` was 11,289,392 KB, of which the
+largest 12 arms were 236,112 KB each.
+
+`verify_phase0.sh` passes no `--basetemp`, so this landed in pytest's default root, where pytest
+retains the last three runs. The steady state was therefore about 34 GB on a volume with 15 GB free.
+
+### Why DEV-P4-31 did not prevent it
+
+DEV-P4-31 is the same defect — unbounded test scratch — diagnosed five weeks earlier, on the EC2
+runner, at 17 GB. Its remedy was a **scratch lifecycle in the runner**: a free-space floor before a
+launch, a prune of aged scratch, a job that removes its own tree on exit 0. Every one of those
+guards is real and all of them still hold.
+
+None of them could fire here. They live in `runner/`, and this run was on the laptop, which has no
+runner and therefore no janitor. The fix had made the mess survivable on one host instead of making
+the mess smaller everywhere — and the *thing that produced 236 MB per arm* was never looked at,
+because on the runner the prune made the symptom go away.
+
+**A remedy scoped to the host that showed the symptom is not a fix of the cause.** The question
+DEV-P4-31 should have asked, and did not, is why a mutation arm needs 236 MB at all.
+
+### The fix
+
+One derived list, in one module, used by all three sites:
+
+* `claims/tests/repo_copy.py` derives the exclusion basenames **from `.gitignore`** — `evidence`,
+  `.state`, `.venv`, `.venv-*`, `__pycache__`, `.pytest_cache`, `node_modules`, `.wheel_cache`,
+  `.DS_Store` — plus `*.pyc`, which `__pycache__/` does not cover for a stray file beside a source
+  (`feedback_pyc_serves_the_mutant`). Derived rather than restated, because a hand-written list is
+  what drifted three ways in the first place (`feedback_derive_from_every_producer`): the next
+  local-only tree is excluded on the day it is added to `.gitignore`, not on the day a disk fills.
+* `results/` is **not** in the shared list. It is distributable and `build_v13_candidates.py` reads
+  it; the one caller that does not need it excludes it per call — `copy_repo(dst, "results")`.
+* `claims/tests/conftest.py` exposes it as a `copy_repo` fixture, so the three sites take a
+  parameter instead of writing a list.
+
+Measured, on the same tree that produced the wedge:
+
+| | before | after |
+|---|---|---|
+| one `test_corpus_gate.py` arm | 236,112 KB | **6,652 KB** |
+| one `test_v13_candidates.py` arm | 236,112 KB | **34,276 KB** |
+| the three files' whole scratch root | — | **242,332 KB** |
+
+35× smaller per corpus-gate arm; the run that wrote 11.3 GB now writes about 0.24 GB.
+
+### Guards — `claims/tests/test_repo_copy_exclusions.py`, 11 arms
+
+| guard | assertion | how it can fail |
+|---|---|---|
+| the list is derived, not restated | `test_the_list_is_derived_from_gitignore_and_nothing_is_dropped` | every non-comment `.gitignore` entry must contribute a pattern; a floor of 6 entries against the derivation reading an empty file, which would exclude nothing and raise nothing |
+| the two trees that caused it | `test_the_trees_that_caused_the_wedge_are_excluded[.wheel_cache]`, `[.state]` | named, not counted |
+| the patterns match real directory names | `test_the_patterns_match_the_real_directory_names_and_spare_the_sources` | calls the `ignore=` callable on a listing, so `f1_config/.wheel_cache` instead of `.wheel_cache` — right in spirit, matches nothing — fails here rather than on a disk |
+| a copy is bounded above **and** below | `test_a_scratch_copy_is_bounded_above_and_below` | ceiling 80 MB and floor 5 MB, plus five named landmarks, because a size range is satisfiable by the wrong 34 MB and an emptied tree satisfies any ceiling |
+| the ceiling would have caught it | `test_the_ceiling_would_have_caught_the_defect` | `.wheel_cache`'s size is measured on disk and added to the floor; if the sum does not breach the ceiling the bound is decoration. Skips, with the reason stated, if the cache has been cleaned |
+| no site writes its own list again | `test_no_whole_repo_copy_writes_its_own_exclusion_list` | AST scan for `copytree(ROOT, …)` whose `ignore=` is not `copy_exclude(...)`. Keyed on the expression, **not** on an exempted file path, so the guard reads its own source under the same rule (`feedback_self_scanning_guard`) |
+| the scan is not vacuous | `test_the_scan_can_see_a_whole_repo_copy_at_all` | five assembled samples: hand-written `ignore=` is a hit, no `ignore=` is a hit, `copy_exclude(...)` is not, a subtree copy is not *this* scan's business — and, added afterwards, that the subtree scan does see it. The original wording of that last sample said a subtree copy "is out of scope by design", which is the sentence the second site walked through; see below |
+| the real copy still exists | `test_the_one_legitimate_whole_repo_copy_is_where_it_is_supposed_to_be` | deleting the copy would make the scan above pass loudest of all; exactly one module may hold it |
+| the scan reads this tree | `test_the_python_scan_reads_this_project_and_not_a_venv` | 70–200 files, its own file among them, no `site-packages` |
+| the mechanism is still the mechanism | `test_shutil_is_still_the_thing_being_constrained` | `ignore_patterns` must still return a callable, or every arm above tests air |
+
+### What it does not touch
+
+No verdict, no case, no finding. The exclusion changes what a **scratch copy of the repo** contains;
+every gate still runs against a tree holding `PREREGISTRATION.yaml`, `lib/`, `claims/`, `corpora/`
+and `build_v13_candidates.py`, and all 65 arms of the three files pass unchanged.
+
+### What to keep
+
+**A fix that stops the symptom on the host where it appeared has not been generalised — it has been
+localised.** DEV-P4-31 built a janitor for one host; the mess was in a shared fixture, and the
+second host had no janitor. Before closing a resource-exhaustion deviation, ask what produced the
+volume, not only what failed to remove it.
+
+And the smaller one: **a duplicated constant is a defect with a delay.** Three copies of an
+exclusion list agreed on the day they were written. The 214 MB directory was added to `.gitignore`
+later, which is the only place that knew about it — and the only place none of the three read.
+
+### The second site, found by this deviation's own guards — and missed by them
+
+Writing the AST scan above turned up a fourth per-arm copy that the scan was written not to see.
+
+`claims/tests/test_amendment_gate.py`'s `tree` fixture did:
+
+```python
+shutil.copytree(ROOT / "evidence", dst / "evidence")
+```
+
+`evidence/` is **198,452 KB in 28,716 files** — the largest tree in the repo — and the fixture is
+per arm, over **26** arms: about **4.9 GB** a run, on its own, from one file. Its docstring said
+*"Only what the gate reads is copied … Copying the whole tree would drag in .venv-oracle and the
+corpora for no benefit."* Both sentences are true about `.venv-oracle`. The tree it did copy was
+eight times larger than the one it was congratulating itself for skipping.
+
+**Why the fix above did not catch it.** The scan narrows to `copytree(ROOT, …)` — a bare `ROOT` —
+and its docstring justified the narrowing like this: *"A subtree copy … names what it takes and
+cannot inherit the whole tree's caches by accident."* The first clause is the mistake. Naming a
+source bounds what it can accidentally include; it says nothing about how big the named thing is.
+`ROOT / "evidence"` names exactly what it takes, and what it takes is 198 MB. That sentence has
+been corrected in place, in both files, rather than left standing beside the guard that now covers
+the case.
+
+This is also **the reason the 14-gate re-run has no result**: it was stopped by hand at 2.4 GB of
+scratch, on the way to a second ENOSPC, before it could confirm the fix above.
+
+**The fix.** `claims/tests/evidence_subset.py` derives, from the findings' own provenance blocks,
+the records the gate's result can depend on — the declared runs, and within them the records whose
+`case_id` a finding declares, plus `environment.json` and anything unparseable — and copies those:
+
+| | before | after |
+|---|---|---|
+| one `test_amendment_gate.py` arm | 198,452 KB / 28,716 files | **25,577 KB / 4,600 files** |
+| its 26 arms in one run | ~4.9 GB | **~0.65 GB** |
+
+Two things it deliberately does **not** do. It does not drop a record it cannot parse: the gate
+reports an unreadable record as a problem, so a fixture that dropped one would launder a real
+failure into a green control arm. And it does not trim to one case per finding, though that would
+be smaller again — `observation_days()` scopes to `case_id` precisely because a run-wide day count
+cannot fail in a project that adopts one run id for everything, and a fixture holding one case
+would have done that scoping itself and let a gate that stopped filtering pass.
+
+It also does not hardlink, which would have been cheaper still. A mutant that `write_text`s a
+hardlinked path truncates the shared inode, and `evidence/` is a local-only archive that no rerun
+reproduces.
+
+**Guards** — `claims/tests/test_amendment_evidence_subset.py` (10 arms) and 6 more in
+`test_repo_copy_exclusions.py`:
+
+| guard | assertion | how it can fail |
+|---|---|---|
+| the subset changes nothing the gate concludes | `test_the_subset_yields_the_same_observation_days_as_the_full_tree` | runs the real gate against the archive (read-only, no copy) and against a subset tree, and compares the per-finding rows and the assertion count. This is the arm that says the 8× saving cost nothing; everything else here is about size |
+| the derivation is a derivation | `test_the_manifest_moves_when_the_declared_cases_do` | narrowing the declared cases or runs must shrink the manifest, or a hand-written list would be indistinguishable |
+| what is dropped, and what is not | `test_a_record_of_an_undeclared_case_is_dropped`, `test_an_unreadable_record_is_kept_not_dropped` | the two are one line apart in the builder; each is asserted against a hand-built root so neither arm is also an arm about the real archive |
+| a lost `case_id` filter is still visible | `test_the_subset_keeps_the_sibling_cases_that_make_a_lost_case_filter_visible` | at least one run must still hold two declared cases with differing day sets |
+| bounded above **and** below | `test_a_subset_copy_is_bounded_above_and_below` | ceiling 40 MB, floor 8 MB, against a real copy |
+| the ceiling would have caught it | `test_the_ceiling_would_have_caught_the_whole_tree_copy` | `evidence/` is measured and must exceed the ceiling, or the bound is decoration |
+| what individual arms silently rely on | `test_every_declared_run_directory_exists_in_the_copy`, `test_each_declared_run_keeps_a_0001_record_the_arms_template_from` | an empty-but-present run directory is a different gate failure from an absent one, and three arms template a synthetic day-2 record out of a `0001_*.json`. The first arm is **vacuous against the real tree** — every declared run keeps records either way — so it carries a hand-built root whose declared run keeps nothing, where only the explicit `mkdir` can put the directory there (`feedback_identical_output_wrong_assertion`) |
+| every subtree copy has a measured ceiling | `test_every_subtree_copy_source_is_registered_and_bounded` | `SUBTREE_COPY_BUDGET_KB` — `lib` 10 MB, `claims` 8 MB, `corpora` 4 MB, each just above measured, because the room in a bound is the room a defect grows into. `evidence` would fail twice here: unregistered, and over every ceiling |
+| the arithmetic, not just the ceilings | `test_the_per_file_scratch_arithmetic_still_fits` | three individually reasonable ceilings copied together by a 56-arm file is not reasonable; `SUBTREE_RUN_BUDGET_KB` bounds ceilings × arms per file. 48 × 236 MB was every individual figure looking fine |
+| the regression, named | `test_nothing_copies_the_whole_evidence_tree_again` | a size bound implies it; a named pin says which site did it |
+| dynamic sources are declared, both ways | `test_every_dynamic_copy_source_is_declared_and_still_there` | a source reached through a variable cannot be measured, so it is declared with what it is; an undeclared one is a hit **and** a declaration whose file no longer holds such a copy is stale — an exemption that exempts nothing reads as diligence |
+| the subtree scan is not vacuous | `test_the_subtree_scan_can_see_the_shapes_it_has_to_separate` | five assembled samples: `ROOT / "evidence"`, a nested literal, a variable, `ROOT / name`, and a bare `ROOT` which belongs to the other scan |
+
+Eleven mutants were run, and eleven died: removing the `case_id` filter, trimming to the first
+declared case, dropping the unparseable-record branch, deleting the empty-run `mkdir`, ignoring the
+runs/cases overrides, restoring the whole-`evidence` `copytree`, unregistering `lib`, lowering its
+ceiling under its measured size, deleting and then staling a `DYNAMIC_COPY_SOURCES` entry, and
+tightening the run budget. Each died by the arm named for it, verified by reading the failed node
+ids rather than the failure count — two of the mutants kill four and five arms respectively, so
+"1 failed" would not have told me which.
+
+**12 of the 16 arms** died to at least one of those mutants. The other four are not mutation
+targets, and are listed rather than implied: `test_the_ceiling_would_have_caught_the_whole_tree_copy`
+and `test_the_budget_would_have_caught_the_evidence_copy` measure `evidence/` against the bounds —
+they fail when the bound stops biting, which no mutation of the subset builder produces;
+`test_the_subtree_scan_can_see_the_shapes_it_has_to_separate` asserts against its own assembled
+samples; and `test_the_declared_provenance_is_read_from_the_findings` is a precondition arm — it
+fails when the findings stop declaring provenance or the shared `BLOCK_RE` stops matching, neither
+of which is a defect in the code under test.
+
+**What to keep.** **A guard's stated scope is a claim, and the reasoning that narrows it is the
+part to distrust.** The narrowing here was not an oversight — it was written down, argued for in a
+docstring, and wrong in one clause. A justification is the most comfortable place for a defect to
+sit, because reviewing the guard means reading the argument for why it does not need to look.
+
+---
+
 ## Analysis-time deviations
 
 *(None yet — this section is populated during Phase 9. Each entry states the

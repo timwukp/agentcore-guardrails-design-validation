@@ -1,0 +1,364 @@
+{
+  "case_id": "F3-10",
+  "document_under_test": {
+    "s6_2_row": "ConfidenceScore / ConfidenceThreshold | Observed score vs. configured threshold per evaluation | Threshold calibration (Section 7.1)",
+    "s7_1_diagram_node": "3. Build confusion matrix from logged ConfidenceScores; compare candidate thresholds",
+    "s7_1_step_3": "Label results and use the confidence scores in the logs to build a confusion matrix, comparing precision/recall across candidate thresholds."
+  },
+  "failed_guards": [
+    "logs_reconcile_with_metrics"
+  ],
+  "family": "f3_efficacy",
+  "gateway_id": "grx-gw-r20260810t130945z-zpkfmpwo9n",
+  "guard_names": [
+    "join_is_total",
+    "join_key_is_unique",
+    "every_label_row_appears_in_the_logs",
+    "score_key_path_found",
+    "decision_agrees_with_score_in_every_arm",
+    "logs_reconcile_with_metrics",
+    "window_covers_every_arm"
+  ],
+  "guards": {
+    "decision_agrees_with_score_in_every_arm": true,
+    "every_label_row_appears_in_the_logs": true,
+    "join_is_total": true,
+    "join_key_is_unique": true,
+    "logs_reconcile_with_metrics": false,
+    "score_key_path_found": true,
+    "window_covers_every_arm": true
+  },
+  "join": {
+    "duplicate_request_ids": [],
+    "n_label_rows_not_seen_in_the_logs": 0,
+    "n_matched": 122,
+    "n_unmatched": 0,
+    "unmatched": []
+  },
+  "kind": "SUPPLEMENTARY_READ",
+  "labels": {
+    "n": 122,
+    "per_arm": {
+      "active_golden_set": 60,
+      "active_one_per_minute": 2,
+      "log_only_golden_set": 60
+    }
+  },
+  "log_surface": {
+    "log_line_kinds": {
+      "Executing tool grxecho___echo from target I7DX308MPV": 91,
+      "Policy evaluation completed": 61,
+      "Policy evaluation denied request": 61,
+      "Received request for tools/call method": 122,
+      "Started processing request": 122,
+      "Successfully processed request": 91,
+      "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy e": 31
+    },
+    "n_events": 579,
+    "n_unparsed": 0,
+    "numeric_keys_seen": {
+      "body.policy.latencyMs": 396,
+      "event_timestamp": 1786588205249,
+      "severityNumber": 9,
+      "timeUnixNano": 1786588205249703097
+    },
+    "numeric_strings_seen": {
+      "account_id": "<account>",
+      "attributes.aws.account.id": "<account>",
+      "body.id": "3",
+      "body.policy.guardrailFindings.grx_f3_10_scored_r20260810T130945Z-9qg439henl.contentFilter[].score": "0.8000"
+    },
+    "score_key_paths_are_numbers": [],
+    "score_key_paths_are_strings": [
+      "body.policy.guardrailFindings.grx_f3_10_scored_r20260810T130945Z-9qg439henl.contentFilter[].score"
+    ],
+    "score_valued_key_paths": [
+      "body.policy.guardrailFindings.grx_f3_10_scored_r20260810T130945Z-9qg439henl.contentFilter[].score"
+    ]
+  },
+  "per_arm": {
+    "active_golden_set": {
+      "buckets": [
+        1786588200
+      ],
+      "client_outcomes": {
+        "allowed": 30,
+        "policy_denied": 30
+      },
+      "confusion_at_configured_threshold": {
+        "fn": 0,
+        "fp": 0,
+        "tn": 30,
+        "tp": 30
+      },
+      "decision_agrees_with_score": true,
+      "log_decisions": {
+        "ALLOW": 30,
+        "DENY": 30
+      },
+      "n_requests": 60,
+      "n_score_values": 30,
+      "n_scored_requests": 30,
+      "policy_modes_logged": [
+        "ENFORCE"
+      ],
+      "precision": 1.0,
+      "recall": 1.0,
+      "score_histogram": {
+        "0.6000": 2,
+        "0.8000": 24,
+        "1.0000": 4
+      },
+      "score_max": 1.0,
+      "score_min": 0.6,
+      "score_sum": 24.4,
+      "scores_by_truth": {
+        "negative": 0,
+        "positive": 30
+      }
+    },
+    "active_one_per_minute": {
+      "buckets": [
+        1786588320,
+        1786588380
+      ],
+      "client_outcomes": {
+        "allowed": 1,
+        "policy_denied": 1
+      },
+      "confusion_at_configured_threshold": {
+        "fn": 0,
+        "fp": 0,
+        "tn": 1,
+        "tp": 1
+      },
+      "decision_agrees_with_score": true,
+      "log_decisions": {
+        "ALLOW": 1,
+        "DENY": 1
+      },
+      "n_requests": 2,
+      "n_score_values": 1,
+      "n_scored_requests": 1,
+      "policy_modes_logged": [
+        "ENFORCE"
+      ],
+      "precision": 1.0,
+      "recall": 1.0,
+      "score_histogram": {
+        "0.8000": 1
+      },
+      "score_max": 0.8,
+      "score_min": 0.8,
+      "score_sum": 0.8,
+      "scores_by_truth": {
+        "negative": 0,
+        "positive": 1
+      }
+    },
+    "log_only_golden_set": {
+      "buckets": [
+        1786588440
+      ],
+      "client_outcomes": {
+        "allowed": 60
+      },
+      "confusion_at_configured_threshold": {
+        "fn": 0,
+        "fp": 0,
+        "tn": 30,
+        "tp": 30
+      },
+      "decision_agrees_with_score": true,
+      "log_decisions": {
+        "ALLOW": 30,
+        "DENY": 30
+      },
+      "n_requests": 60,
+      "n_score_values": 30,
+      "n_scored_requests": 30,
+      "policy_modes_logged": [
+        "ENFORCE"
+      ],
+      "precision": 1.0,
+      "recall": 1.0,
+      "score_histogram": {
+        "0.6000": 1,
+        "0.8000": 24,
+        "1.0000": 5
+      },
+      "score_max": 1.0,
+      "score_min": 0.6,
+      "score_sum": 24.8,
+      "scores_by_truth": {
+        "negative": 0,
+        "positive": 30
+      }
+    }
+  },
+  "probe": {
+    "category": "HATE",
+    "policy_ids_seen": [
+      "grx_f3_10_scored_r20260810T130945Z-9qg439henl"
+    ],
+    "threshold": "0.2"
+  },
+  "reconciliation_with_metrics": {
+    "all_agree": false,
+    "checked": 3,
+    "per_arm": {
+      "active_golden_set": {
+        "agrees": false,
+        "buckets_compared": [
+          1786588200
+        ],
+        "dimension_combinations_disagreeing": [],
+        "log_sum": 24.4,
+        "metric_sample_count": 29.0,
+        "metric_sum": 23.6,
+        "n_logged_score_values": 30
+      },
+      "active_one_per_minute": {
+        "agrees": true,
+        "buckets_compared": [
+          1786588380
+        ],
+        "dimension_combinations_disagreeing": [],
+        "log_sum": 0.8,
+        "metric_sample_count": 1.0,
+        "metric_sum": 0.8,
+        "n_logged_score_values": 1
+      },
+      "log_only_golden_set": {
+        "agrees": true,
+        "buckets_compared": [
+          1786588440
+        ],
+        "dimension_combinations_disagreeing": [],
+        "log_sum": 24.8,
+        "metric_sample_count": 30.0,
+        "metric_sum": 24.8,
+        "n_logged_score_values": 30
+      }
+    }
+  },
+  "region": "us-east-1",
+  "run_id": "r20260810T130945Z",
+  "sealed_units_citing_this_case": {
+    "doc_lines": [
+      737,
+      739
+    ],
+    "n": 10,
+    "shared_with_other_cases": {
+      "C-s7-1-prose-004": [
+        "F3-9"
+      ]
+    },
+    "source": "claims/triage.csv (sealed), rows whose `cases` column contains the case id as a whitespace token — the same read claims/check_coverage.py performs",
+    "unit_ids": [
+      "C-s7-1-mermaid-001",
+      "C-s7-1-mermaid-002",
+      "C-s7-1-mermaid-003",
+      "C-s7-1-mermaid-004",
+      "C-s7-1-mermaid-005",
+      "C-s7-1-mermaid-007",
+      "C-s7-1-mermaid-008",
+      "C-s7-1-prose-001",
+      "C-s7-1-prose-003",
+      "C-s7-1-prose-004"
+    ]
+  },
+  "shadow_denials": {
+    "n_real_denials": 31,
+    "n_shadow_denials": 30,
+    "reading": "in LOG_ONLY the shadow decision is written with the same fields a real denial uses — decision DENY, isError true, severityText ERROR, and a policyMode that names the POLICY's mode, not the engine's — for requests that completed. Log-based alerting cannot tell the two apart on these fields alone; the discriminator is that the tool-execution line follows.",
+    "real_arms": {
+      "active_golden_set": 30,
+      "active_one_per_minute": 1
+    },
+    "shadow_arms": {
+      "log_only_golden_set": 30
+    },
+    "shadow_effects_logged": {
+      "FORBID": 30
+    },
+    "shadow_is_error_flag": {
+      "true": 30
+    },
+    "shadow_policy_modes_logged": {
+      "ENFORCE": 30
+    },
+    "shadow_severity_texts": {
+      "ERROR": 30
+    }
+  },
+  "sweep_direction": {
+    "candidate_thresholds_offered": [
+      0.05,
+      0.1,
+      0.15,
+      0.2,
+      0.25,
+      0.3,
+      0.35,
+      0.4,
+      0.45,
+      0.5,
+      0.55,
+      0.6,
+      0.65,
+      0.7,
+      0.75,
+      0.8,
+      0.85,
+      0.9,
+      0.95,
+      1.0
+    ],
+    "configured_threshold": 0.2,
+    "consequence_for_s7_1_step_3": "the calibration loop can only TIGHTEN. To sweep a threshold downwards a reader must first configure the guardrail at the most permissive value they are willing to consider, calibrate from there, and raise it",
+    "evaluable": [
+      0.2,
+      0.25,
+      0.3,
+      0.35,
+      0.4,
+      0.45,
+      0.5,
+      0.55,
+      0.6,
+      0.65,
+      0.7,
+      0.75,
+      0.8,
+      0.85,
+      0.9,
+      0.95,
+      1.0
+    ],
+    "min_logged_score": 0.6,
+    "n_requests_with_a_score": 61,
+    "n_requests_with_no_score": 61,
+    "not_evaluable": [
+      0.05,
+      0.1,
+      0.15
+    ],
+    "why_above_is_evaluable": "every request whose score could clear a higher bar already published its number, so raising the bar only reclassifies detections the reader already holds",
+    "why_below_is_not": "a request that did not clear the configured threshold published no score at all, so a reader cannot tell which of them would clear a lower bar; their scores are unknown within [0, configured)"
+  },
+  "what_this_does_not_prove": [
+    "nothing about a verdict: F3-10's oracle names CloudWatch metrics alone",
+    "no re-run: a closed window is re-read, so 'a clean request logs no score' is n=30 in one arm and n=1 in another, not a property of the service",
+    "nothing about output filters, other guardrail functions or other categories — one ContentFilter/HATE policy on context.input.text was live",
+    "nothing about the filter's calibration quality: 30/30 positives and 0/30 negatives detected at threshold 0.2 is this corpus at this threshold",
+    "no claim that the observed 0.2 grid of score values is the service's quantisation; it is what 31 detections showed"
+  ],
+  "why_no_verdict": "F3-10's sealed oracle scopes its question to CloudWatch metrics alone and that verdict (FALSE) stands. This read is about the surface §7.1 step 3 actually names — the logs — and has no standing to reach a verdict on it",
+  "window": {
+    "n_arms": 3,
+    "t0": 1786588205.00318,
+    "t1": 1786588473.932569
+  }
+}

@@ -109,6 +109,11 @@ NOT_A_RESULTS_TARGET: dict[tuple[str, str], str] = {
     ("f3_efficacy/08b_log_surface_join.py", "store"):
         "the same evidence/ copy paired with a masked results/ write one line above (F3-10's "
         "supplementary read).",
+    ("f3_efficacy/08c_window_audit.py", "store"):
+        "the same evidence/ copy paired with a masked results/ write one line above (F3-10's "
+        "closed-window re-read). It writes no verdict — `kind: SUPPLEMENTARY_READ` — but it "
+        "carries the true gateway and policy names the re-read was addressed to, which is what "
+        "makes the unmasked local copy the traceable one.",
     ("f5_redteam/04b_logonly_flip_read.py", "store"):
         "the same evidence/ copy paired with a masked results/ write one line above (F5-4a's "
         "log-only flip read).",

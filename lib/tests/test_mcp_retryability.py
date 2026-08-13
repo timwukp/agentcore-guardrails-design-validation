@@ -226,7 +226,7 @@ def test_a_transport_class_we_do_not_honour_stays_permanent():
         assert C.is_retryable(ei.value) is False
 
 
-def test_run_trial_actually_retries_a_data_plane_transport_failure():
+def test_run_trial_actually_retries_a_data_plane_transport_failure(tmp_path):
     """End to end through the real retry machinery, which is the claim that matters.
 
     The three previous tests assert the pieces; this one asserts the composition — a
@@ -247,7 +247,10 @@ def test_run_trial_actually_retries_a_data_plane_transport_failure():
             raise AssertionError("unreachable")
         return {"hit": False, "outcome": "allowed"}
 
-    cp = C.Checkpoint("F4-1", "smoke", root=Path("/tmp/grx-test-mcp-retry"))
+    # tmp_path, not a fixed /tmp path: a hard-coded root leaked one checkpoint file per run
+    # forever (found in a /tmp audit, 2026-08-13), and two concurrent suites would share —
+    # and could corrupt — the same checkpoint state.
+    cp = C.Checkpoint("F4-1", "smoke", root=tmp_path)
     got = cp.run_trial("t1", trial, base_delay=5.0, sleep=slept.append)
 
     assert len(calls) == 3
