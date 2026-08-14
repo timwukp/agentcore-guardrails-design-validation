@@ -27,6 +27,23 @@ ACCT = "0000" + "00000000"
 REGION = "us-east-1"
 BUCKET = "grx-validation-runner-test"
 
+
+def allows(doc: dict) -> list[dict]:
+    """The Allow statements only.
+
+    Every test below that asks "is X granted, and on what resource" used to iterate
+    `doc["Statement"]` directly, which was correct for as long as the document contained nothing but
+    Allows. `GrxProtectLoadBearingRoles` (2026-08-14) is the first Deny, and it broke four of those
+    tests at once by putting `iam:DeleteRole`, `iam:AttachRolePolicy` and both boundary verbs into a
+    second statement --- so `iam:AttachRolePolicy` read as granted when it is in fact only ever
+    named to forbid it, and the single-holder assertions counted two holders for one grant.
+
+    The tests were wrong rather than the policy: an Effect-blind scan cannot tell a grant from its
+    prohibition, and it fails in the dangerous direction --- a Deny added to close a hole makes the
+    hole look open, so the natural repair is to delete the Deny. Hence a helper rather than four
+    inline filters: the next Deny should not require finding all of these again."""
+    return [st for st in doc["Statement"] if st["Effect"] == "Allow"]
+
 _HAS_EVIDENCE = bool(list((ROOT / "evidence").glob("*/*/*/*.json")))
 needs_evidence = pytest.mark.skipif(
     not _HAS_EVIDENCE,
@@ -53,7 +70,7 @@ def test_a_refused_operation_is_accounted_for_without_being_granted():
     assert IP.MEASURED_NOT_GRANTED, "the mechanism is empty, so the assertions below are vacuous"
     for pair in IP.MEASURED_NOT_GRANTED:
         assert pair not in IP.MAPPING, f"{pair} is both mapped and refused — pick one"
-    granted = {a for st in IP.document(ACCT, REGION, BUCKET)["Statement"] for a in st["Action"]}
+    granted = {a for st in allows(IP.document(ACCT, REGION, BUCKET)) for a in st["Action"]}
     # Spelled from the operation name rather than hardcoded, so a second entry is covered too.
     for service, op in IP.MEASURED_NOT_GRANTED:
         action = f"{service}:{''.join(p.title() for p in op.split('_'))}"
@@ -131,6 +148,25 @@ TAGGED_CREATE_SITES: dict[tuple[str, str], tuple[str, str]] = {
         ("bedrock-agentcore-control", "bedrock-agentcore:TagResource"),
     ("f3_efficacy/00_guardrails.py", "create_guardrail"): ("bedrock", "bedrock:TagResource"),
     ("f5_redteam/03_route4_permissions_boundary.py", "create_policy"): ("iam", "iam:TagPolicy"),
+    ("f5_redteam/11_route_credential_reachability.py", "create_role"): ("iam", "iam:TagRole"),
+    ("f5_redteam/11_route_credential_reachability.py", "create_agent_runtime"):
+        ("bedrock-agentcore-control", "bedrock-agentcore:TagResource"),
+    # F5-7b's instrument diagnostic. Same two tagged creates as case 11 above, for the same reason:
+    # a runtime needs a role, and both carry the run's expiry tags so the sweeper can find them if
+    # the diagnostic dies between create and teardown — which is exactly what an instrument check
+    # is most likely to do.
+    ("f5_redteam/diag_vpc_runtime.py", "create_role"): ("iam", "iam:TagRole"),
+    ("f5_redteam/diag_vpc_runtime.py", "create_agent_runtime"):
+        ("bedrock-agentcore-control", "bedrock-agentcore:TagResource"),
+    # F5-7b itself. The tags carry more weight here than at any other site in this table: this is
+    # the only case in the project that builds a VPC, so if it dies between create and teardown the
+    # residue includes a NAT gateway billing by the hour. The expiry tags are how the sweeper
+    # finds it. Note the EC2 fixture is NOT in this table — `create_vpc`/`create_subnet` and the
+    # rest tag via `TagSpecifications`, which is a different kwarg the scan deliberately ignores;
+    # `ec2:CreateTags` covers them and is granted in MAPPING.
+    ("f5_redteam/12_vpc_egress_image_pull.py", "create_role"): ("iam", "iam:TagRole"),
+    ("f5_redteam/12_vpc_egress_image_pull.py", "create_agent_runtime"):
+        ("bedrock-agentcore-control", "bedrock-agentcore:TagResource"),
     ("f7_observability/01_tracing_mutation.py", "create_delivery"): ("logs", "logs:TagResource"),
     ("f8_regional/08_policy_engine_regions.py", "create_policy_engine"):
         ("bedrock-agentcore-control", "bedrock-agentcore:TagResource"),
@@ -271,7 +307,7 @@ def test_iam_write_actions_are_never_granted_on_a_wildcard_resource():
     # "contains grx-", so a third shape appearing later is still a red test.
     allowed_suffixes = (f"role/{IP.NAME_PREFIX}*", f"policy/{IP.NAME_PREFIX}*")
     seen_suffixes = set()
-    for st in doc["Statement"]:
+    for st in allows(doc):
         iam_actions = [a for a in st["Action"] if a.startswith("iam:")]
         if not iam_actions:
             continue
@@ -307,14 +343,14 @@ def test_the_permissions_boundary_policies_are_scoped_to_the_prefix():
     one as a BOUNDARY — the object that decides what another role may do."""
     doc = IP.document(ACCT, REGION, BUCKET)
     for action in ("iam:CreatePolicy", "iam:DeletePolicy"):
-        holders = [st for st in doc["Statement"] if action in st["Action"]]
+        holders = [st for st in allows(doc) if action in st["Action"]]
         assert len(holders) == 1, f"{action} appears in {len(holders)} statements"
         assert holders[0]["Resource"] == [f"arn:aws:iam::{ACCT}:policy/{IP.NAME_PREFIX}*"], \
             holders[0]["Resource"]
     # The boundary write must not be able to reach a role outside the prefix either: attaching a
     # boundary to someone else's role would restrict a workload this project does not own.
     for action in ("iam:PutRolePermissionsBoundary", "iam:DeleteRolePermissionsBoundary"):
-        holders = [st for st in doc["Statement"] if action in st["Action"]]
+        holders = [st for st in allows(doc) if action in st["Action"]]
         assert len(holders) == 1, action
         assert holders[0]["Resource"] == [f"arn:aws:iam::{ACCT}:role/{IP.NAME_PREFIX}*"]
 
@@ -392,18 +428,71 @@ def test_no_action_is_a_service_wildcard():
 
 def test_the_transport_cannot_destroy_its_own_audit_trail():
     """The instance uploads evidence and results. It must not be able to delete them, or a run
-    that goes wrong can erase the record of having gone wrong."""
-    for st in IP.document(ACCT, REGION, BUCKET)["Statement"]:
-        for action in st["Action"]:
-            assert not action.startswith("s3:Delete"), action
-            assert not action.startswith("s3:Put") or action == "s3:PutObject", action
+    that goes wrong can erase the record of having gone wrong.
+
+    This was a blanket ban on `s3:Delete*` anywhere in the document until the AgentCore Runtime
+    code bucket arrived (2026-08-14). That bucket holds deployment zips, and the producers that
+    upload one delete it again in their `finally` --- so the ban had to become resource-aware
+    rather than string-deep, and the honest reading of that change is that it is stronger in one
+    direction and weaker in another. Stronger: the transport bucket is now named in the assertion,
+    so a Delete scoped at `arn:aws:s3:::*` fails here where the old test would have passed it as
+    long as the action string was spelled `s3:DeleteObjectVersion`. Weaker: a Delete is now
+    permitted to exist at all, which the old test made impossible. The second half of this test is
+    what pays for that --- the Delete is pinned to ONE Sid, so acquiring a second one is a visible
+    edit to this file and not a quiet side effect of adding a scope to `iam_policy.MAPPING`."""
+    doc = IP.document(ACCT, REGION, BUCKET)
+    transport_arns = {f"arn:aws:s3:::{BUCKET}", f"arn:aws:s3:::{BUCKET}/*"}
+    delete_sids = set()
+    for st in doc["Statement"]:
+        destructive = [a for a in st["Action"]
+                       if a.startswith("s3:Delete")
+                       or (a.startswith("s3:Put") and a != "s3:PutObject")]
+        if not destructive:
+            continue
+        delete_sids.add(st["Sid"])
+        for res in st["Resource"]:
+            # `*` and a bare bucket wildcard both reach the audit trail without naming it.
+            assert res != "*", (st["Sid"], destructive)
+            assert not res.startswith("arn:aws:s3:::*"), (st["Sid"], res)
+            assert res not in transport_arns, (st["Sid"], destructive, res)
+    assert delete_sids <= {"GrxCodeBucket"}, delete_sids
+
+
+def test_the_load_bearing_roles_are_protected_by_an_explicit_deny():
+    """The two `grx-` roles that are not testbed. `iam:DeleteRole` arrived on 2026-08-14 scoped to
+    `role/grx-*`, which was fine for the verbs that came before it and not fine for this one: the
+    prefix covers the instance's own role and it covers F5-1's published oracle.
+
+    Asserted as a DENY specifically, not as a narrow Allow, because those are different guarantees.
+    An Allow narrowed to exclude these roles is undone by the next scope someone adds to `MAPPING`;
+    a Deny in the same policy cannot be, since Deny beats Allow unconditionally. The read verbs are
+    asserted STILL GRANTED in the same test, because over-denying breaks F5-1 in the other
+    direction --- that case has to read the inline policy set it makes a claim about."""
+    doc = IP.document(ACCT, REGION, BUCKET)
+    denies = [st for st in doc["Statement"] if st["Effect"] == "Deny"]
+    assert len(denies) == 1, [st["Sid"] for st in denies]
+    d = denies[0]
+    assert set(d["Resource"]) == {f"arn:aws:iam::{ACCT}:role/grx-runner-ec2",
+                                  f"arn:aws:iam::{ACCT}:role/grx-runtime-exec-*"}, d["Resource"]
+    # Every verb that could delete the role or rewrite what it may do. `PutRolePolicy` is the one
+    # that matters most and is easiest to miss: it does not remove anything, it ADDS an inline
+    # policy, and F5-1's finding is that there are none.
+    for action in ("iam:DeleteRole", "iam:PutRolePolicy", "iam:DeleteRolePolicy",
+                   "iam:AttachRolePolicy", "iam:UpdateAssumeRolePolicy",
+                   "iam:PutRolePermissionsBoundary"):
+        assert action in d["Action"], action
+    granted = {a for st in allows(doc) for a in st["Action"]}
+    for still_needed in ("iam:GetRole", "iam:ListRolePolicies", "iam:GetRolePolicy"):
+        assert still_needed in granted, (
+            f"{still_needed} is how F5-1 reads the baseline it publishes; denying the writes must "
+            f"not have taken the reads with it")
 
 
 def test_no_action_can_change_an_account_wide_setting():
     """`assert_transaction_search` ASSERTS and never enables — Transaction Search is account-wide
     and other systems depend on it. The policy makes that structural: no X-Ray write is granted,
     so a future edit to the case script cannot flip it even by accident."""
-    granted = {a for st in IP.document(ACCT, REGION, BUCKET)["Statement"] for a in st["Action"]}
+    granted = {a for st in allows(IP.document(ACCT, REGION, BUCKET)) for a in st["Action"]}
     for action in granted:
         if action.startswith("xray:"):
             assert action.startswith("xray:Get"), action

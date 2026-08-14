@@ -1,0 +1,334 @@
+{
+  "billable_calls": 0,
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F5-8",
+    "clear_here": true
+  },
+  "case_id": "F5-8",
+  "expiry": "2026-08-13T13:09:45+00:00",
+  "instrument": "One AgentCore Runtime created from the `codeConfiguration` arm of the `agentRuntimeArtifact` union: a standard-library-only HTTP handler in an S3 zip, PYTHON_3_12, serverProtocol HTTP, networkMode PUBLIC. Each InvokeAgentRuntime without a session id opens a new tool session; the handler probes eight credential channels and then calls sts:GetCallerIdentity with a hand-rolled SigV4 signature.",
+  "kind": "EXISTENCE",
+  "limitations": [
+    "one runtime, one Region, one union arm, three sessions",
+    "the channel enumeration is eight mechanisms wide; a ninth channel this project has not heard of would be invisible to it, which is why every probed channel is recorded rather than summarised into a boolean",
+    "no model was called, so this says nothing about what an agent's own reasoning would do with the credentials once it had them"
+  ],
+  "mutations": 0,
+  "oracle_text": "TRUE if sts:GetCallerIdentity from inside the session returns the execution role; FALSE if credentials are unreachable. Confirms 4.4's premise from PUBLIC evidence, removing an NDA citation",
+  "planned_n": null,
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F5-8",
+    "evidence": {
+      "detail": {
+        "credential_sources": [
+          "imds_metadata_service"
+        ],
+        "distinct_sessions": 3,
+        "execution_policy_grants_get_caller_identity": false,
+        "reading": "every tool session's sts:GetCallerIdentity returned this runtime's execution role",
+        "union_arm": "codeConfiguration (S3 zip, PYTHON_3_12) — no container image"
+      },
+      "observed": true
+    },
+    "family": "unassigned_by_seal",
+    "kind": "EXISTENCE",
+    "mutation_required": false,
+    "n_attempted": 3,
+    "n_met": true,
+    "n_usable": 3,
+    "notes": [],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [],
+    "verdict": "TRUE"
+  },
+  "region": "us-east-1",
+  "residue": {
+    "back_to_baseline": true,
+    "bucket_left_standing": "grx-runtime-code-<account>-us-east-1",
+    "deleted": [
+      "agent-runtime/grx_f58_cred_r20260810t130945z-AuEfNf9lbU",
+      "iam-role/grx-runtime-cred-r20260810T130945Z",
+      "s3-object/f5-8/r20260810T130945Z/deployment_package.zip"
+    ],
+    "not_deleted": [],
+    "why_the_bucket_stays": "it is shared provisioning for every AgentCore Runtime this project creates, it holds nothing after the object above is deleted, and re-creating it per run would need s3:CreateBucket in the runner's derived policy for no gain"
+  },
+  "run_id": "r20260810T130945Z",
+  "seconds_to_terminal": 10.1,
+  "sessions_requested": 3,
+  "sessions_usable": 3,
+  "terminal_status": "READY",
+  "trials": [
+    {
+      "all_aws_env_names": [
+        "AWS_DEFAULT_REGION",
+        "AWS_EXECUTION_ENV",
+        "AWS_REGION"
+      ],
+      "channels_probed": [
+        {
+          "channel": "environment",
+          "present": false
+        },
+        {
+          "channel": "container_credentials_endpoint",
+          "skipped": "neither FULL_URI nor RELATIVE_URI is set"
+        },
+        {
+          "address": "http://169.254.169.254",
+          "channel": "imdsv2_token",
+          "error": null,
+          "reachable": true,
+          "status": 200
+        },
+        {
+          "channel": "imds_role_listing",
+          "error": null,
+          "reachable": true,
+          "roles": [
+            "execution_role"
+          ],
+          "status": 200,
+          "used_v2_token": true
+        },
+        {
+          "channel": "imds_role_credentials",
+          "error": null,
+          "role": "execution_role",
+          "status": 200
+        },
+        {
+          "address": "http://169.254.170.2",
+          "channel": "ecs_link_local_probe",
+          "error": "URLError: <urlopen error [Errno 113] No route to host>",
+          "reachable": false,
+          "status": null
+        },
+        {
+          "channel": "web_identity_token_file",
+          "env_set": false,
+          "file_exists": false,
+          "role_arn_env_set": false
+        },
+        {
+          "channel": "shared_credentials_file",
+          "exists": false,
+          "path": "/root/.aws/credentials"
+        },
+        {
+          "channel": "shared_credentials_file",
+          "exists": false,
+          "path": "/home/agent/.aws/credentials"
+        },
+        {
+          "channel": "shared_credentials_file",
+          "exists": false,
+          "path": "/home/agentcore-runtime-user/.aws/credentials"
+        },
+        {
+          "channel": "shared_credentials_file",
+          "exists": false,
+          "path": "/app/.aws/credentials"
+        },
+        {
+          "channel": "boto3_default_chain",
+          "error": "No module named 'boto3'",
+          "importable": false
+        }
+      ],
+      "credential_source": "imds_metadata_service",
+      "reading": "assumed-role/grx-runtime-cred-r20260810T130945Z/ via 'imds_metadata_service'",
+      "request_id": "49cd1ca4-b387-4420-a95a-bf0c6dbda427",
+      "returned_execution_role": true,
+      "runtime_session_id": "07a38c91-1683-4d52-acad-1bedf4e9744d",
+      "sts_http_status": 200,
+      "trial": 0,
+      "usable": true
+    },
+    {
+      "all_aws_env_names": [
+        "AWS_DEFAULT_REGION",
+        "AWS_EXECUTION_ENV",
+        "AWS_REGION"
+      ],
+      "channels_probed": [
+        {
+          "channel": "environment",
+          "present": false
+        },
+        {
+          "channel": "container_credentials_endpoint",
+          "skipped": "neither FULL_URI nor RELATIVE_URI is set"
+        },
+        {
+          "address": "http://169.254.169.254",
+          "channel": "imdsv2_token",
+          "error": null,
+          "reachable": true,
+          "status": 200
+        },
+        {
+          "channel": "imds_role_listing",
+          "error": null,
+          "reachable": true,
+          "roles": [
+            "execution_role"
+          ],
+          "status": 200,
+          "used_v2_token": true
+        },
+        {
+          "channel": "imds_role_credentials",
+          "error": null,
+          "role": "execution_role",
+          "status": 200
+        },
+        {
+          "address": "http://169.254.170.2",
+          "channel": "ecs_link_local_probe",
+          "error": "URLError: <urlopen error [Errno 113] No route to host>",
+          "reachable": false,
+          "status": null
+        },
+        {
+          "channel": "web_identity_token_file",
+          "env_set": false,
+          "file_exists": false,
+          "role_arn_env_set": false
+        },
+        {
+          "channel": "shared_credentials_file",
+          "exists": false,
+          "path": "/root/.aws/credentials"
+        },
+        {
+          "channel": "shared_credentials_file",
+          "exists": false,
+          "path": "/home/agent/.aws/credentials"
+        },
+        {
+          "channel": "shared_credentials_file",
+          "exists": false,
+          "path": "/home/agentcore-runtime-user/.aws/credentials"
+        },
+        {
+          "channel": "shared_credentials_file",
+          "exists": false,
+          "path": "/app/.aws/credentials"
+        },
+        {
+          "channel": "boto3_default_chain",
+          "error": "No module named 'boto3'",
+          "importable": false
+        }
+      ],
+      "credential_source": "imds_metadata_service",
+      "reading": "assumed-role/grx-runtime-cred-r20260810T130945Z/ via 'imds_metadata_service'",
+      "request_id": "aa5e2821-cdcd-46c7-a3e7-24459003d266",
+      "returned_execution_role": true,
+      "runtime_session_id": "59ac5644-9496-494d-8cb1-3bc2bd5a1425",
+      "sts_http_status": 200,
+      "trial": 1,
+      "usable": true
+    },
+    {
+      "all_aws_env_names": [
+        "AWS_DEFAULT_REGION",
+        "AWS_EXECUTION_ENV",
+        "AWS_REGION"
+      ],
+      "channels_probed": [
+        {
+          "channel": "environment",
+          "present": false
+        },
+        {
+          "channel": "container_credentials_endpoint",
+          "skipped": "neither FULL_URI nor RELATIVE_URI is set"
+        },
+        {
+          "address": "http://169.254.169.254",
+          "channel": "imdsv2_token",
+          "error": null,
+          "reachable": true,
+          "status": 200
+        },
+        {
+          "channel": "imds_role_listing",
+          "error": null,
+          "reachable": true,
+          "roles": [
+            "execution_role"
+          ],
+          "status": 200,
+          "used_v2_token": true
+        },
+        {
+          "channel": "imds_role_credentials",
+          "error": null,
+          "role": "execution_role",
+          "status": 200
+        },
+        {
+          "address": "http://169.254.170.2",
+          "channel": "ecs_link_local_probe",
+          "error": "URLError: <urlopen error [Errno 113] No route to host>",
+          "reachable": false,
+          "status": null
+        },
+        {
+          "channel": "web_identity_token_file",
+          "env_set": false,
+          "file_exists": false,
+          "role_arn_env_set": false
+        },
+        {
+          "channel": "shared_credentials_file",
+          "exists": false,
+          "path": "/root/.aws/credentials"
+        },
+        {
+          "channel": "shared_credentials_file",
+          "exists": false,
+          "path": "/home/agent/.aws/credentials"
+        },
+        {
+          "channel": "shared_credentials_file",
+          "exists": false,
+          "path": "/home/agentcore-runtime-user/.aws/credentials"
+        },
+        {
+          "channel": "shared_credentials_file",
+          "exists": false,
+          "path": "/app/.aws/credentials"
+        },
+        {
+          "channel": "boto3_default_chain",
+          "error": "No module named 'boto3'",
+          "importable": false
+        }
+      ],
+      "credential_source": "imds_metadata_service",
+      "reading": "assumed-role/grx-runtime-cred-r20260810T130945Z/ via 'imds_metadata_service'",
+      "request_id": "92d4eae4-3bd1-46c0-a475-021bf7471571",
+      "returned_execution_role": true,
+      "runtime_session_id": "e8c592b0-0607-4bf2-814e-6c4243bbdbde",
+      "sts_http_status": 200,
+      "trial": 2,
+      "usable": true
+    }
+  ],
+  "verdict": "TRUE",
+  "verdict_reading": "TRUE: the execution role's credentials are reachable from inside a tool session, which is section 4.4's premise, now from public evidence",
+  "verdict_rule": "TRUE if sts:GetCallerIdentity from inside the session returns the execution role; FALSE if credentials are unreachable. Confirms 4.4's premise from PUBLIC evidence, removing an NDA citation",
+  "what_true_does_not_prove": [
+    "that the credentials carry any particular permission — this role could read one S3 prefix and write logs, and reachability says nothing about grants",
+    "that a CONTAINER-based runtime behaves the same way; this measured the codeConfiguration arm, and the container arm is an inference from the shared microVM contract rather than an observation",
+    "that sts:GetCallerIdentity was authorized — it requires no IAM permission, and the execution policy attached here deliberately omits it, so the call proves the credentials exist and STS accepts them, not that a grant allowed it"
+  ],
+  "why_this_matters_operationally": "Section 4.4 tells a reader not to put UpdateGateway, policy-engine mutation or interceptor management on an agent's execution role, and the whole force of that advice is that a jailbroken agent can assume the role and use those grants itself. The document cited an NDA'd accelerator for the mechanism. This case replaces that citation with a measurement anybody can repeat."
+}
