@@ -18,7 +18,7 @@ states wrongly
   "evidence_runs": ["r20260810T130945Z"],
   "cases": ["F5-7b"],
   "amendment_licensed": false,
-  "blocked_on": "A working invoke channel. The oracle is denominated in an IMAGE PULL, and on all three arms the only channel that could observe a pull returned a client-side botocore read timeout with http_status None, no request id, and duration_ms of 70082/70077/70073 — a fixed 70s socket timeout, identical across three different network configurations, carrying no information about whether an image was fetched. `pull_evidence()` labelled that `pull_failed` because `PULL_MARKERS` contains 'timeout'; the honest label is `ambiguous` on all three arms. Until the pull is made observable — an image that answers the AgentCore contract on :8080, or the runtime's CloudWatch log stream, which the execution role can already write — this case cannot be decided either way. Separately citable and NOT blocked: (1) a VPC-mode runtime with NO default route reached READY with an empty failureReason, so READY is not evidence of egress; (2) a VPC-mode runtime leaves a service-managed `agentic_ai` ENI attached by `amazon-aws` that outlives the runtime by more than 35 minutes and blocks subnet/SG/VPC teardown. Both are single-day and single-run.",
+  "blocked_on": "A working invoke channel. The oracle is denominated in an IMAGE PULL, and on all three arms the only channel that could observe a pull returned a client-side botocore read timeout with http_status None, no request id, and duration_ms of 70082/70077/70073 — a fixed 70s socket timeout, identical across three different network configurations, carrying no information about whether an image was fetched. `pull_evidence()` labelled that `pull_failed` because `PULL_MARKERS` contains 'timeout'; the honest label is `ambiguous` on all three arms. Until the pull is made observable — an image that answers the AgentCore contract on :8080, or the runtime's CloudWatch log stream, which the execution role can already write — this case cannot be decided either way. Separately citable and NOT blocked: (1) a VPC-mode runtime with NO default route reached READY with an empty failureReason, so READY is not evidence of egress; (2) a VPC-mode runtime leaves a service-managed `agentic_ai` ENI attached by `amazon-aws` that outlives the runtime and blocks subnet/SG/VPC teardown — measured at 25 consecutive refusals over 7,208 s, i.e. hours rather than the 35 minutes first recorded, with `ListAgentRuntimes` on 2026-08-15 confirming no `grx-*` runtime survives to be holding it. Both are single-day and single-run.",
   "note": "The published verdict is safe despite the defect: the mislabelling can only ever produce `pull_failed`, and the oracle's TRUE requires the pair (pull_failed, pull_succeeded), so the defect cannot manufacture a TRUE. It also cannot manufacture the FALSE, which needs pull_succeeded on the no-route arm. The defect can only push the case toward 'not a pair the oracle names' — i.e. toward INCONCLUSIVE. Nothing wrong was published. What is wrong is the recorded REASON, which invites the wrong repair."
 }
 -->
@@ -163,14 +163,29 @@ Both are direct API/wire observations rather than oracle outputs. Single-day, si
 2. **A VPC-mode runtime leaves a service-managed ENI that outlives it and blocks teardown.** After
    all three runtimes returned `ResourceNotFoundException`, one ENI remained:
    `InterfaceType: agentic_ai`, `Attachment.InstanceOwnerId: amazon-aws`, `AttachmentId: ela-attach-…`,
-   `DeleteOnTermination: false`. It was still `in-use` more than 35 minutes later, and
-   `delete_network_interface` returns `InvalidParameterValue: … currently in use`. An `ela-attach`
-   attachment cannot be force-detached. It blocks `DeleteSecurityGroup`, `DeleteSubnet` and
-   `DeleteVpc` behind it — the Lambda hyperplane-ENI pattern, on a new interface type.
+   `DeleteOnTermination: false`. `delete_network_interface` returns `InvalidParameterValue: …
+   currently in use`. An `ela-attach` attachment cannot be force-detached. It blocks
+   `DeleteSecurityGroup`, `DeleteSubnet` and `DeleteVpc` behind it — the Lambda hyperplane-ENI
+   pattern, on a new interface type.
+
+   **How long it actually outlives the runtime: at least 2 hours, not the 35 minutes first
+   recorded.** The `f57b-sweep` poller has now retried on a 5-minute interval for **7,208 s (25
+   consecutive attempts)** and every one returned the same `InvalidParameterValue`; the interface is
+   still `in-use`, `InterfaceType: agentic_ai`, `Attachment.InstanceOwnerId: amazon-aws`, with an
+   empty `Description`. The earlier figure was simply how long anyone had watched.
+
+   **And nothing this project left standing is holding it.** `ListAgentRuntimes` on 2026-08-15
+   returns 19 runtimes and **not one is a `grx-*`** — all three of this case's runtimes are gone, as
+   their `ResourceNotFoundException`s said. So this is not the ordinary "delete the owner first"
+   case: the service-managed interface outlives the resource that requested it, with no remaining
+   caller-visible owner to delete. That matters for triage, because the symptom is
+   indistinguishable from having forgotten to delete a runtime.
 
    **Operational consequence:** any automation that creates a VPC-mode runtime and then tears down
-   its own VPC must poll for ENI release on the service's schedule, not its own. This case's
-   `ENI_CLEAR_TIMEOUT` of 420 s was not enough.
+   its own VPC must poll for ENI release on the service's schedule, not its own — and must be
+   prepared for that schedule to be hours. This case's `ENI_CLEAR_TIMEOUT` of 420 s was not enough,
+   and neither is any timeout chosen to fit inside a test run. The right shape is a ledger entry
+   that survives the process, which is what `f57b-sweep` plus the retained ledger provides.
 
 ## 6. Safety and residue
 
