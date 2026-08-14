@@ -44,6 +44,32 @@ CALL time, which for these two callers means live, mid-run, after a policy engin
 already exist. The static arm reads every call to the helper in the tree and asserts each passes
 `case_id=`, which moves that failure to desk (the same argument
 `runner/tests/test_runner_policy.py` makes for its IAM mapping guard).
+
+THE ONE SURVIVING MUTANT, AND WHY IT IS EXPECTED TO SURVIVE
+
+The mutation run over these arms reported one survivor, M3: delete the early break on not-found in
+`delete_probe_guardrails`,
+
+    if rec.error_code == "ResourceNotFoundException":
+        break
+
+and every arm here still passes. That is correct, and it is recorded as an EQUIVALENT survivor
+rather than as a gap, on the same rule `lib/tests/test_write_guard_mutation.py` states for its inert
+rows: a mutation that provably cannot change any output is not a kill and must not be banked as one.
+The proof is two lines below the mutated one — `if rec.error_code not in DELETE_RETRY_CODES or
+attempt == DELETE_TRIES - 1: break` — and `ResourceNotFoundException` is not in
+`DELETE_RETRY_CODES`, so the loop exits on the same iteration either way. Same call count, same
+`codes` list, same row: byte-identical output, no arm can see it. An arm written to kill M3 could
+only do it by asserting on the source text, which tests the spelling of a branch instead of the
+behaviour of the teardown (`feedback_identical_output_wrong_assertion`).
+
+What the survivor does mean is that the early break is load-bearing only CONDITIONALLY: it is
+redundant exactly while not-found stays out of the retry list, and it becomes the thing preventing
+four pointless deletes and ~30 s of backoff the moment someone adds it — a plausible edit, since
+"retry the teardown until the resource is gone" reads like caution. So the real risk lives in the
+retry list, not in the break, and that is where the arm went:
+`test_not_found_is_not_in_the_retry_codes` asserts the code's absence from `DELETE_RETRY_CODES`
+alongside the one-attempt behaviour. M3 survives; the defect M3 stands in for cannot.
 """
 
 from __future__ import annotations

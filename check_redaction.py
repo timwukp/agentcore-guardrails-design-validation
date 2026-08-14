@@ -228,6 +228,84 @@ ALLOW: list[tuple[str, str, str, str]] = [
     # bucket URI whose distinguishing part is already a placeholder. All four first went in here as
     # narrow anchors, and doing so put fresh findings in the gate's OWN SOURCE — the one file that
     # must never need a waiver — exactly as the paragraphs above warn. Backed out.
+    #
+    # F5-7b raised FOURTEEN findings. Three were real and are NOT waived: the runner instance's own
+    # vpc / subnet / security-group ids, hard-coded as a deny-list in the producer. The gate was
+    # right about them, and the fix was to delete them — the producer now resolves that deny-list at
+    # runtime from the `grx-runner-sg` NAME, which is both unpublishable-by-construction and strictly
+    # safer, because a hard-coded list stops protecting anything the moment the runner is rebuilt.
+    # Recording that here because it is the outcome the paragraphs above keep arguing for: the first
+    # question a finding asks is whether the value should be in the file at all, and three times out
+    # of fourteen the answer was no.
+    #
+    # The remaining entries are the fixtures, and they are non-secret for two different reasons.
+    #
+    # The CIDRs: RFC1918 addresses of a VPC that this script CREATES AND DESTROYS inside a single
+    # run. They cannot be replaced with a documentation range — RFC 5737's 192.0.2.0/24 is not a
+    # range EC2 will accept for a VPC, so a "redacted" CIDR would be one `CreateVpc` rejects, and
+    # the constant would then describe a network that cannot exist. They cannot be omitted either:
+    # 10.61/16 is chosen specifically so it cannot collide with the runner's own 172.31/16, and
+    # `test_the_new_vpc_cannot_collide_with_the_runners_own_addressing` asserts exactly that. One
+    # entry anchored on `10.61.` covers all six lines in the one file that defines the range; a
+    # DIFFERENT private address in that same file — a real one, pasted from an instance — still
+    # fails the gate, which is the property that makes a single needle acceptable here.
+    ("f5_redteam/12_vpc_egress_image_pull.py", "private-ip", "10.61.",
+     "RFC1918 CIDRs for the VPC this case builds and tears down within one run. Chosen to be "
+     "disjoint from the runner's own 172.31/16 and asserted to be so; not a range EC2 would "
+     "accept if it were replaced by a documentation-example address, and not an address that "
+     "identifies anything once the run ends"),
+    # The fake ids: DELIBERATELY NONEXISTENT, and their nonexistence is the measurement. The
+    # diagnostic's `vpc_shape` arm passes them to `CreateAgentRuntime` to establish that VPC mode is
+    # live and validates its inputs, and the evidence FOR that is AWS's own refusal quoting them
+    # back: "The following subnets could not be found: ...". Redacting them would break the
+    # correspondence between the fixture and the archived response, which is the only thing that
+    # makes the arm readable. Anchored on the constant names, so a real id elsewhere in the file
+    # still fails.
+    ("f5_redteam/diag_vpc_runtime.py", "vpc-or-subnet-id", "FAKE_SUBNETS",
+     "structurally well-formed but deliberately nonexistent subnet ids, whose REFUSAL by EC2 is "
+     "the diagnostic's `vpc_shape` observation; they address nothing in any account"),
+    ("f5_redteam/diag_vpc_runtime.py", "vpc-or-subnet-id", "FAKE_SG",
+     "same fixture as the entry above: a deliberately nonexistent security-group id passed to "
+     "CreateAgentRuntime to show VPC mode validates its inputs"),
+    # And the archived record of that refusal. `results/` is the distributable tree, so this one is
+    # load-bearing: the finding is inside AWS's error string, quoted verbatim with its
+    # x-amzn-requestid. Anchored on the error text rather than on the ids, so the waiver survives a
+    # re-run under a new stamp while still failing on any other identifier in the file.
+    ("results/DIAG-vpc-runtime-20260814T092455Z.json", "vpc-or-subnet-id",
+     "subnets could not be found",
+     "the fake subnet ids echoed back inside EC2's own refusal message, archived as the raw "
+     "evidence for the diagnostic's `vpc_shape` arm; the same nonexistent ids as the two entries "
+     "above, and unredactable without severing the response from the request that produced it"),
+    # The write-up of that same run, and the same needle as the producer entry above for the same
+    # reason. The finding's §6 states the range in order to state WHY it was chosen — disjointness
+    # from the runner's own 172.31/16 — and a claim about non-collision that does not name either
+    # range is not a claim a reader can check. Anchored on `10.61.`, so a real private address
+    # pasted into this finding from an instance still fails the gate.
+    ("results/FINDING-F5-7B.md", "private-ip", "10.61.",
+     "the RFC1918 CIDR of a VPC created and destroyed inside one run, named in the finding so its "
+     "asserted disjointness from the runner's own addressing is checkable; addresses nothing once "
+     "the run ends"),
+    # The result file of that run: third and last instance of the same needle. The CIDR reaches it
+    # through the `instrument` string, which describes the fixture — the VPC built for this case
+    # alone, its public subnet holding a NAT gateway and its private subnet holding the runtime's
+    # ENIs — and an instrument description that will not say what address range it built is not one
+    # a reader can evaluate. (Written without quoting the range: this file is scanned by the very
+    # pattern being waived, and the paragraphs above are emphatic that the gate's own source is the
+    # one file that must never need a waiver. An earlier draft of this comment quoted it and put a
+    # finding in exactly that place.)
+    #
+    # Note what is deliberately NOT waived here. The vpc / subnet / sg / eni ids in this same file
+    # are MASKED, by `redact.register_resource_id`, not excused: they identified resources that
+    # really existed in a real account, and a placeholder costs the reader nothing because the
+    # placeholder keeps the family prefix. The CIDR is different in kind — a compile-time constant
+    # of the producer, already published by the two entries above, and chosen to be inert. That
+    # asymmetry is the point: a waiver is for a value whose redaction would destroy meaning, and
+    # everything else gets masked. Anchored on `10.61.`, so any other private address in this file
+    # still fails the gate.
+    ("results/phase1/F5-7b.json", "private-ip", "10.61.",
+     "the same run-scoped RFC1918 CIDR as the producer and finding entries above, reaching this "
+     "file through the `instrument` description of the fixture; the resource IDS in this file are "
+     "masked rather than waived"),
 ]
 
 

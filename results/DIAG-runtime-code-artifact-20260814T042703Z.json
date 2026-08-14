@@ -1,0 +1,168 @@
+{
+  "answer_q1_create_accepted": true,
+  "answer_q2_terminal_status": "READY",
+  "answer_q3_invoke_reached_handler": true,
+  "answer_q4_identity": {
+    "identity": {
+      "all_aws_env_names": [
+        "AWS_DEFAULT_REGION",
+        "AWS_EXECUTION_ENV",
+        "AWS_REGION"
+      ],
+      "channels_probed": [
+        {
+          "channel": "environment",
+          "present": false
+        },
+        {
+          "channel": "container_credentials_endpoint",
+          "skipped": "neither FULL_URI nor RELATIVE_URI is set"
+        },
+        {
+          "address": "http://169.254.169.254",
+          "channel": "imdsv2_token",
+          "error": null,
+          "reachable": true,
+          "status": 200
+        },
+        {
+          "channel": "imds_role_listing",
+          "error": null,
+          "reachable": true,
+          "roles": [
+            "execution_role"
+          ],
+          "status": 200,
+          "used_v2_token": true
+        },
+        {
+          "channel": "imds_role_credentials",
+          "error": null,
+          "role": "execution_role",
+          "status": 200
+        },
+        {
+          "address": "http://169.254.170.2",
+          "channel": "ecs_link_local_probe",
+          "error": "URLError: <urlopen error [Errno 113] No route to host>",
+          "reachable": false,
+          "status": null
+        },
+        {
+          "channel": "web_identity_token_file",
+          "env_set": false,
+          "file_exists": false,
+          "role_arn_env_set": false
+        },
+        {
+          "channel": "shared_credentials_file",
+          "exists": false,
+          "path": "/root/.aws/credentials"
+        },
+        {
+          "channel": "shared_credentials_file",
+          "exists": false,
+          "path": "/home/agent/.aws/credentials"
+        },
+        {
+          "channel": "shared_credentials_file",
+          "exists": false,
+          "path": "/home/agentcore-runtime-user/.aws/credentials"
+        },
+        {
+          "channel": "shared_credentials_file",
+          "exists": false,
+          "path": "/app/.aws/credentials"
+        },
+        {
+          "channel": "boto3_default_chain",
+          "error": "No module named 'boto3'",
+          "importable": false
+        }
+      ],
+      "credential_source": "imds_metadata_service",
+      "env_names_present": [
+        "AWS_DEFAULT_REGION",
+        "AWS_EXECUTION_ENV",
+        "AWS_REGION"
+      ],
+      "sts_http_status": 200,
+      "sts_response": "<GetCallerIdentityResponse xmlns=\"https://sts.amazonaws.com/doc/2011-06-15/\">\n  <GetCallerIdentityResult>\n    <Arn>arn:aws:sts::<account>:assumed-role/grx-diag-runtime-code-r20260810T130945Z/BedrockAgentCore-a2c1301f-767f-4d2d-b5a3-67a79fc540f0</Arn>\n    <UserId>AROAZ3LFQZKV75TRMAW2G:BedrockAgentCore-a2c1301f-767f-4d2d-b5a3-67a79fc540f0</UserId>\n    <Account><account></Account>\n  </GetCallerIdentityResult>\n  <ResponseMetadata>\n    <RequestId>54614016-36ca-4af2-803c-e706cbf6c0d1</RequestId>\n  </ResponseMetadata>\n</GetCallerIdentityResponse>\n"
+    },
+    "probe": "grx-runtime-code-artifact"
+  },
+  "collected_at": "20260814T042703Z",
+  "created": [
+    "s3-object/diag/r20260810T130945Z/deployment_package.zip",
+    "iam-role/grx-diag-runtime-code-r20260810T130945Z",
+    "agent-runtime/grx_diag_code_r20260810t130945z-JgkXbAFkiE"
+  ],
+  "deleted": [
+    "agent-runtime/grx_diag_code_r20260810t130945z-JgkXbAFkiE",
+    "iam-role/grx-diag-runtime-code-r20260810T130945Z",
+    "s3-object/diag/r20260810T130945Z/deployment_package.zip"
+  ],
+  "diagnostic": "runtime-code-artifact",
+  "failure_reason": null,
+  "invoke_request_id": "6e6516b5-1c4a-4944-bdb3-6d5fa01d523a",
+  "invoke_response_headers": {
+    "content-type": "application/json",
+    "x-amzn-bedrock-agentcore-runtime-session-id": "cb676dab-1574-4152-9887-ffe1f34e02a4",
+    "x-amzn-requestid": "6e6516b5-1c4a-4944-bdb3-6d5fa01d523a"
+  },
+  "invoke_status_code": 200,
+  "question": "does CreateAgentRuntime accept a container-free codeConfiguration here",
+  "region": "us-east-1",
+  "run_id": "r20260810T130945Z",
+  "runtime_arn": "arn:aws:bedrock-agentcore:us-east-1:<account>:runtime/grx_diag_code_r20260810t130945z-JgkXbAFkiE",
+  "runtime_version": "1",
+  "sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "seconds_to_terminal": 10.8,
+  "settle_seconds": 15,
+  "steps": [
+    {
+      "bucket": "grx-runtime-code-<account>-us-east-1",
+      "existed": true,
+      "step": "s3_bucket"
+    },
+    {
+      "bytes": 14098,
+      "key": "diag/r20260810T130945Z/deployment_package.zip",
+      "step": "upload"
+    },
+    {
+      "arn": "arn:aws:iam::<account>:role/grx-diag-runtime-code-r20260810T130945Z",
+      "name": "grx-diag-runtime-code-r20260810T130945Z",
+      "step": "iam_role"
+    },
+    {
+      "accepted": true,
+      "id": "grx_diag_code_r20260810t130945z-JgkXbAFkiE",
+      "status": "CREATING",
+      "step": "create_agent_runtime"
+    },
+    {
+      "failure": "-",
+      "seconds": 10.8,
+      "status": "READY",
+      "step": "poll"
+    },
+    {
+      "bytes": 2146,
+      "ok": true,
+      "status": 200,
+      "step": "invoke"
+    },
+    {
+      "id": "grx_diag_code_r20260810t130945z-JgkXbAFkiE",
+      "step": "delete_runtime"
+    },
+    {
+      "name": "grx-diag-runtime-code-r20260810T130945Z",
+      "step": "delete_role"
+    }
+  ]
+}
