@@ -110,7 +110,15 @@ def service_trust(account_id: str) -> dict:
     }
 
 
-def caller_trust(caller_arn: str, account_id: str) -> dict:
+# The unattended runner's role name, duplicated from `runner/provision.py:ROLE_NAME` rather than
+# imported, because `infra/` provisions the objects under test and should not depend on whichever
+# transport happens to drive it. `infra/tests/` imports both and asserts they are the same string,
+# so a rename is a red test rather than a trust failure discovered halfway through a live run.
+RUNNER_ROLE_NAME = "grx-runner-ec2"
+
+
+def caller_trust(caller_arn: str, account_id: str, *,
+                 also_trust: tuple[str, ...] = ()) -> dict:
     """Trust policy for a role the harness assumes.
 
     The caller's *exact* ARN, not the account root. `Principal: {"AWS": account}` would let
@@ -123,17 +131,38 @@ def caller_trust(caller_arn: str, account_id: str) -> dict:
     session (`arn:aws:sts::<acct>:assumed-role/Name/session`), only the role itself. Without
     this the script would work when run as an IAM user and fail with an opaque
     MalformedPolicyDocument when run from an assumed role — e.g. from CI.
+
+    `also_trust` names ADDITIONAL exact role ARNs, and it exists because the harness stopped
+    running in one place. These roles were provisioned from a laptop and trust that laptop's IAM
+    user; every case now runs on an EC2 instance as `grx-runner-ec2`, which the trust had never
+    heard of. F5-3b died on 2026-08-13 with `AccessDenied ... not authorized to perform:
+    sts:AssumeRole`, and no identity-based grant can fix that on its own — assume-role requires
+    both sides to agree, so the resource side has to name the new principal.
+
+    The invariant above is deliberately preserved: this stays a list of NAMED principals and
+    never becomes the account root, so "reachable only through a deliberate AssumeRole by the
+    harness" still holds — the set of principals that can do it grew by one role that IS the
+    harness. Widening to `{"AWS": account_id}` would have been shorter and would have quietly
+    invalidated every F5 claim about what an identity cannot do.
     """
-    principal = caller_arn
-    parts = caller_arn.split(":")
-    if len(parts) >= 6 and parts[2] == "sts" and parts[5].startswith("assumed-role/"):
-        role_name = parts[5].split("/")[1]
-        principal = f"arn:aws:iam::{account_id}:role/{role_name}"
+    def _norm(arn: str) -> str:
+        parts = arn.split(":")
+        if len(parts) >= 6 and parts[2] == "sts" and parts[5].startswith("assumed-role/"):
+            return f"arn:aws:iam::{account_id}:role/{parts[5].split('/')[1]}"
+        return arn
+
+    # Deduplicated because the runner can also BE the caller: `provision.py` is re-runnable from
+    # the instance itself, and a document naming the same principal twice is accepted by IAM and
+    # then fails `ensure_roles`' canonicalised drift comparison on the next run.
+    principals = list(dict.fromkeys([_norm(caller_arn)] + [_norm(a) for a in also_trust]))
     return {
         "Version": "2012-10-17",
         "Statement": [{
             "Effect": "Allow",
-            "Principal": {"AWS": principal},
+            # The single-principal case keeps its original scalar shape. Emitting a one-element
+            # list instead would be equally valid IAM and would make the drift check fire on
+            # every already-provisioned role, i.e. churn that looks like tampering.
+            "Principal": {"AWS": principals if len(principals) > 1 else principals[0]},
             "Action": "sts:AssumeRole",
         }],
     }
@@ -149,6 +178,10 @@ def role_specs(run_id: str, account_id: str, caller_arn: str,
     which carries ~$27k/mo of unrelated workloads.
     """
     echo_arn = f"arn:aws:lambda:{region}:{account_id}:function:grx-echo-{run_id}"
+    # Every role the harness ASSUMES must trust the unattended runner as well as the
+    # provisioning caller, because the two are different principals and the runner is the one
+    # that actually executes the cases now. See `caller_trust`'s `also_trust`.
+    runner_role_arn = f"arn:aws:iam::{account_id}:role/{RUNNER_ROLE_NAME}"
     specs: dict[str, dict] = {}
 
     # --- the gateway execution role ---------------------------------------
@@ -199,7 +232,7 @@ def role_specs(run_id: str, account_id: str, caller_arn: str,
     specs["caller"] = {
         "name": f"grx-caller-{run_id}",
         "purpose": "the principal Cedar sees; assumed by the harness for every gateway call",
-        "trust": caller_trust(caller_arn, account_id),
+        "trust": caller_trust(caller_arn, account_id, also_trust=(runner_role_arn,)),
         "inline": {
             # `bedrock-agentcore:InvokeGateway`-shaped access plus the MCP data-plane call.
             # Scoped to this run's gateways by name pattern: the account holds 6 pre-existing
@@ -243,7 +276,7 @@ def role_specs(run_id: str, account_id: str, caller_arn: str,
         "name": f"grx-attacker-{run_id}",
         "purpose": "F5-1/F5-2 attacker: can invoke, cannot UpdateGateway, cannot invoke "
                    "Lambda directly",
-        "trust": caller_trust(caller_arn, account_id),
+        "trust": caller_trust(caller_arn, account_id, also_trust=(runner_role_arn,)),
         "inline": {
             # Read + invoke only. Every F5 attack asserts a specific AccessDenied, so the
             # role must be able to *reach* the API (a network or endpoint error is not an
@@ -289,7 +322,7 @@ def role_specs(run_id: str, account_id: str, caller_arn: str,
         "trust": {
             "Version": "2012-10-17",
             "Statement": (service_trust(account_id)["Statement"]
-                          + caller_trust(caller_arn, account_id)["Statement"]),
+                          + caller_trust(caller_arn, account_id, also_trust=(runner_role_arn,))["Statement"]),
         },
         "inline": {
             "grx-runtime-exec-policy": {

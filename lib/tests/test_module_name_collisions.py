@@ -159,6 +159,16 @@ UNRESOLVABLE = {
         "08b subject itself uses, and 08b's own loader passes the module-level constant "
         "PARENT_MODULE_NAME, which the registration scan above does resolve and does check for "
         "collisions against lib/",
+    "f5_redteam/tests/test_injection_tool_response.py":
+        "_load(path, name) helper — same shape as the f3 and f8 ones, with the literal at each of "
+        "its two call sites. The two keys it registers, 'grx_f5_05_injection_tool_response' and "
+        "'grx_echo_handler_under_test', were grepped repo-wide on 2026-08-14 and each appears in "
+        "this file only, so neither can be the name another script means",
+    "f8_regional/tests/test_policy_engine_regions.py":
+        "_load(stem, name) helper — the same shape as test_f8_helpers.py in the same directory. Its "
+        "one key, 'f8_pe_regions', was grepped repo-wide on 2026-08-14 and appears in this file "
+        "only. Note it does NOT carry the grx_ prefix the f5 keys use; that is a naming "
+        "inconsistency and not a collision, since no other loader registers it",
     "lib/tests/test_stats_mutation.py":
         "f'_mutant_{name}' — generated per mutant, and prefixed so it cannot collide",
     "lib/tests/test_f7_metric_tables.py":
@@ -185,6 +195,11 @@ UNRESOLVABLE_CALLS = {
     "f8_regional/tests/test_f8_helpers.py": 1,
     "f3_efficacy/tests/test_score_label_join.py": 1,
     "f3_efficacy/tests/test_log_surface_join.py": 1,
+    # 1, not 2: this file loads two subjects (the script and the echo handler), but both go through
+    # the single `spec_from_file_location` inside `_load`, and it is LOADER CALLS that are counted
+    # here. The f7 entry below is 2 because its mutation harness calls the loader directly twice.
+    "f5_redteam/tests/test_injection_tool_response.py": 1,
+    "f8_regional/tests/test_policy_engine_regions.py": 1,
     "lib/tests/test_stats_mutation.py": 1,
     "lib/tests/test_f7_metric_tables.py": 2,      # one per mutation call site
     "infra/tests/infra_by_path.py": 1,
@@ -270,9 +285,17 @@ def test_the_scan_reads_the_project_tree_and_not_the_venvs():
     inverse — a scan that reads too much is just as blind).
     """
     files = _py_files()
-    assert 70 <= len(files) <= 200, (
-        f"{len(files)} .py files scanned; expected the project tree (78 at the time of "
-        "writing). Far above that range means a venv or vendored tree is being read.")
+    # The ceiling exists to catch ONE failure: a venv or vendored tree leaking back into the scan.
+    # `.venv-oracle` alone holds 2,466 .py files, so any ceiling well under a thousand detects that
+    # with room to spare. It was 200 against a tree of 78, and on 2026-08-14 the project reached 206
+    # and the gate went red — on legitimate growth, having caught nothing. A bound set just above the
+    # current count goes red every time a test file is added, which teaches whoever hits it to raise
+    # the number without reading why it is there; that is strictly worse than a loose bound, because
+    # the tripwire is eventually bumped past the leak it was meant to catch. Set with a real margin
+    # instead, and it fails only for the reason in the docstring.
+    assert 70 <= len(files) <= 900, (
+        f"{len(files)} .py files scanned; the project tree held 206 on 2026-08-14 and a venv holds "
+        f"~2,466. A count in the thousands means a venv or vendored tree is being read.")
     assert not [p for p in files if "site-packages" in p.parts], \
         "site-packages reached the scan; the venv exclusion is broken again"
 

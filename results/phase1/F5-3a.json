@@ -1,0 +1,236 @@
+{
+  "authoring": {
+    "accepted": true,
+    "break_glass_form": "ArnNotLike on aws:PrincipalArn (deny everyone EXCEPT this role)",
+    "break_glass_principal": "arn:aws:iam::<account>:role/grx-breakglass-r20260810T130945Z",
+    "document": {
+      "Statement": [
+        {
+          "Action": [
+            "bedrock-agentcore:UpdateGateway",
+            "bedrock-agentcore:UpdateGatewayTarget"
+          ],
+          "Condition": {
+            "ArnNotLike": {
+              "aws:PrincipalArn": "arn:aws:iam::<account>:role/grx-breakglass-r20260810T130945Z"
+            }
+          },
+          "Effect": "Deny",
+          "Resource": "*",
+          "Sid": "DenyRoute4ExceptBreakGlass"
+        }
+      ],
+      "Version": "2012-10-17"
+    },
+    "error_code": "",
+    "error_message": "",
+    "evidence": "evidence/r20260810T130945Z/f5_redteam/F5-3a/0003_create_policy_ok.json",
+    "http_status": 200,
+    "request_id": "27246424-8901-48cb-8709-ca7048de563a"
+  },
+  "blockers": {
+    "blockers": [
+      "verdict is INCONCLUSIVE, which supports no amendment: RECORDED and INCONCLUSIVE are findings about what was observed, not about what the document got wrong"
+    ],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F5-3a",
+    "clear_here": false
+  },
+  "case_id": "F5-3a",
+  "expiry": "2026-08-13T13:09:45+00:00",
+  "kind": "EXISTENCE",
+  "limitations": [
+    "The empty OU means this case observes authoring and attachment STRUCTURE only. ListPoliciesForTarget reports direct attachments, so an SCP on a parent is expected not to be listed on a child even though it applies — no inheritance conclusion is drawn from that read.",
+    "The break-glass role ARN is constructed, not created. CreatePolicy does not require the principal to exist, so acceptance says nothing about whether that role resolves.",
+    "Read against {'boto3': '1.43.67', 'botocore': '1.43.67'}. If a later SDK adds SERVICE_CONTROL_POLICY to the effective-policy enum, the sealed oracle becomes executable and this record expires."
+  ],
+  "oracle_text": "TRUE if DescribeEffectivePolicy shows the deny on a fresh child OU with a break-glass exception; FALSE if the policy does not propagate",
+  "organization": {
+    "feature_set": "ALL",
+    "inventory_after": {
+      "ou_ids": [
+        "ou-sztp-6arwgtvt",
+        "ou-sztp-92659078"
+      ],
+      "ou_names": [
+        "DevOps",
+        "production"
+      ],
+      "root_id": "r-sztp",
+      "scp_enabled_on_root": true,
+      "scp_ids": [
+        "p-FullAWSAccess",
+        "p-fncjq4mj",
+        "p-l25v75fh"
+      ],
+      "scp_names": [
+        "FullAWSAccess",
+        "devOpsOnly",
+        "productionOnly"
+      ]
+    },
+    "inventory_before": {
+      "ou_ids": [
+        "ou-sztp-6arwgtvt",
+        "ou-sztp-92659078"
+      ],
+      "ou_names": [
+        "DevOps",
+        "production"
+      ],
+      "root_id": "r-sztp",
+      "scp_enabled_on_root": true,
+      "scp_ids": [
+        "p-FullAWSAccess",
+        "p-fncjq4mj",
+        "p-l25v75fh"
+      ],
+      "scp_names": [
+        "FullAWSAccess",
+        "devOpsOnly",
+        "productionOnly"
+      ]
+    },
+    "is_management_account": true,
+    "protected_ous": [
+      "production",
+      "DevOps"
+    ],
+    "protected_policies": [
+      "FullAWSAccess",
+      "devOpsOnly",
+      "productionOnly"
+    ],
+    "root_id": "r-sztp",
+    "scp_enabled_on_root": true
+  },
+  "planned_n": null,
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F5-3a",
+    "evidence": {
+      "detail": {
+        "attached": true,
+        "authoring_accepted": true,
+        "instrument_absent": "DescribeEffectivePolicy/SERVICE_CONTROL_POLICY",
+        "sdk": {
+          "boto3": "1.43.67",
+          "botocore": "1.43.67"
+        }
+      },
+      "measured": false,
+      "reason": "the pre-registered instrument does not cover SCPs: DescribeEffectivePolicy's PolicyType enum has 11 members and SERVICE_CONTROL_POLICY is not among them, while CreatePolicy's has 13 and does include it (difference: ['SERVICE_CONTROL_POLICY', 'RESOURCE_CONTROL_POLICY']). The service was asked anyway and answered 'InvalidInputException'. No substitute call is reported under this oracle's name.",
+      "why_not_recorded": "RECORDED is a sealed property of the case, meaning the pre-registration declared the outcome unknown and both answers are findings. This case's sealed kind is EXISTENCE: it made a prediction, and the prediction was not tested"
+    },
+    "family": "unassigned_by_seal",
+    "kind": "EXISTENCE",
+    "mutation_required": false,
+    "n_attempted": 0,
+    "n_met": true,
+    "n_usable": 0,
+    "notes": [
+      "not measured: the pre-registered instrument does not cover SCPs: DescribeEffectivePolicy's PolicyType enum has 11 members and SERVICE_CONTROL_POLICY is not among them, while CreatePolicy's has 13 and does include it (difference: ['SERVICE_CONTROL_POLICY', 'RESOURCE_CONTROL_POLICY']). The service was asked anyway and answered 'InvalidInputException'. No substitute call is reported under this oracle's name."
+    ],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [],
+    "verdict": "INCONCLUSIVE"
+  },
+  "region": "us-east-1",
+  "residue": {
+    "clean": true,
+    "inventory_unchanged": true,
+    "n_created": 3,
+    "n_delete_attempted": 3,
+    "nested_ou_deleted": true,
+    "never_attempted": [],
+    "surviving": []
+  },
+  "run_id": "r20260810T130945Z",
+  "service_answer_to_the_preregistered_call": {
+    "accepted": false,
+    "error_code": "InvalidInputException",
+    "error_message": "You specified an invalid policy type.",
+    "evidence": "evidence/r20260810T130945Z/f5_redteam/F5-3a/0005_describe_effective_policy_err.json",
+    "http_status": 400,
+    "reading": "a request id means the service answered; no request id on a failure means botocore refused to send it, which is a fact about the SDK and not about AWS",
+    "rejected_client_side_by_botocore": false,
+    "request_id": "02cd0d54-ef04-453f-87ef-88eefd40a23b"
+  },
+  "shape_finding": {
+    "create_policy_enum": [
+      "SERVICE_CONTROL_POLICY",
+      "RESOURCE_CONTROL_POLICY",
+      "TAG_POLICY",
+      "BACKUP_POLICY",
+      "AISERVICES_OPT_OUT_POLICY",
+      "CHATBOT_POLICY",
+      "DECLARATIVE_POLICY_EC2",
+      "SECURITYHUB_POLICY",
+      "INSPECTOR_POLICY",
+      "UPGRADE_ROLLOUT_POLICY",
+      "BEDROCK_POLICY",
+      "S3_POLICY",
+      "NETWORK_SECURITY_DIRECTOR_POLICY"
+    ],
+    "describe_effective_policy_enum": [
+      "TAG_POLICY",
+      "BACKUP_POLICY",
+      "AISERVICES_OPT_OUT_POLICY",
+      "CHATBOT_POLICY",
+      "DECLARATIVE_POLICY_EC2",
+      "SECURITYHUB_POLICY",
+      "INSPECTOR_POLICY",
+      "UPGRADE_ROLLOUT_POLICY",
+      "BEDROCK_POLICY",
+      "S3_POLICY",
+      "NETWORK_SECURITY_DIRECTOR_POLICY"
+    ],
+    "in_create_but_not_in_describe_effective": [
+      "SERVICE_CONTROL_POLICY",
+      "RESOURCE_CONTROL_POLICY"
+    ],
+    "reading": "DescribeEffectivePolicy accepts 11 policy types and CreatePolicy accepts 13. The difference is ['SERVICE_CONTROL_POLICY', 'RESOURCE_CONTROL_POLICY'], i.e. exactly the authorization policies. An SCP's effect is an intersection evaluated per request, per principal and per action, so there is no single document that is 'the effective SCP' for a target — which is a coherent reason for the omission rather than a gap.",
+    "scp_supported_by_describe_effective_policy": false,
+    "sdk": {
+      "boto3": "1.43.67",
+      "botocore": "1.43.67"
+    }
+  },
+  "status": "SEALED ORACLE NOT EVALUABLE. Reported as such rather than as a verdict. The authoring half below is an UNPLANNED mechanism observation in the shape F1-11 established: it spends no alpha and carries no pre-registered verdict.",
+  "structure": {
+    "attached_to_fresh_ou": [
+      {
+        "Id": "p-FullAWSAccess",
+        "Name": "FullAWSAccess"
+      },
+      {
+        "Id": "p-mxyfw4g3",
+        "Name": "grx-f53a-deny-r20260810T130945Z"
+      }
+    ],
+    "attached_to_nested_child": [
+      {
+        "Id": "p-FullAWSAccess",
+        "Name": "FullAWSAccess"
+      }
+    ],
+    "attached_to_root": [
+      {
+        "Id": "p-FullAWSAccess",
+        "Name": "FullAWSAccess"
+      }
+    ],
+    "instrument": "ListPoliciesForTarget",
+    "is_not_the_sealed_instrument": "ListPoliciesForTarget reports which policies are ATTACHED to a target. It is not DescribeEffectivePolicy and does not report an evaluated effect, so it cannot settle the sealed oracle and is not offered as doing so.",
+    "our_policy_leaked_to_root": false,
+    "our_policy_listed_on_nested_child": false,
+    "our_policy_on_fresh_ou": true,
+    "reading": "ListPoliciesForTarget reports DIRECT attachments, so an SCP attached to a parent OU is expected NOT to appear on the child even though it does apply to it. A False on the nested child is therefore not evidence against inheritance — which is precisely why this cannot stand in for an effective-policy read, and why no verdict is derived from it."
+  },
+  "verdict": "INCONCLUSIVE",
+  "verdict_reading": "Neither TRUE nor FALSE. What IS established: an SCP denying the Route 4 actions with a break-glass exception was accepted by CreatePolicy and attached to a fresh empty OU. That is the authoring half of the case's own title. The propagation half needs an instrument the API does not offer for this policy type.",
+  "verdict_rule": "EXISTENCE, and it CANNOT be evaluated. The sealed oracle reads 'TRUE if DescribeEffectivePolicy shows the deny on a fresh child OU'. That operation does not accept SERVICE_CONTROL_POLICY, so the condition has no truth value here. Recorded via oracle.not_measured with the shape evidence, because a TRUE derived from a different call would be a verdict about a different claim.",
+  "what_true_does_not_prove": "There is no TRUE here to qualify. The authoring observation proves only that the organization ACCEPTED the document — not that the deny would be enforced against any principal, not that the break-glass exception evaluates the way it reads, and not that an account moved into the OU would be constrained. Enforcement from inside a member account is the separate sealed case F5-3c and nothing here anticipates its result. The OU was deliberately EMPTY, so this case has no evidence about effect on real principals at all.",
+  "why_this_matters_operationally": "Route 4 in the document is an SCP-based control, and an operator asked to prove it is in force will reach for DescribeEffectivePolicy because that is what the name suggests. They will get an error, and the reason is structural rather than a misconfiguration they can fix: an SCP has no single effective document. Verifying an SCP control means enumerating attachments up the OU tree and reasoning about the intersection, or testing behaviour from inside a member account. Any runbook that says 'confirm with DescribeEffectivePolicy' cannot be followed."
+}

@@ -268,6 +268,23 @@ _ARN_ACCOUNT_FIELD = re.compile(
     r"\barn:aws[a-z-]*:[^:\s]*:[^:\s]*:([^:\s]*):")
 _ARN_TEMPLATE_FIELD = re.compile(r"\{[A-Za-z_][A-Za-z0-9_.\[\]'\"]*\}|<[a-z_-]+>")
 
+# AWS's RESERVED documentation-example account IDs. These appear verbatim throughout the AWS
+# documentation precisely so that examples can be well-formed without naming anyone's account, and
+# AWS does not issue them to customers — so unlike every other 12-digit token, the VALUE itself
+# proves it is not an identifier.
+#
+# Derived rather than listed per file, for the reason the ALLOW block above argues at length: this
+# is a property of the notation, not a fact about a file. On 2026-08-14 fifteen findings across five
+# test files were all one of these three values, and waiving them individually would have meant five
+# more path anchors that say nothing a reader could not read off the value. The set is checked by
+# EXACT equality, so any other 12-digit number — including a real account — is still reported.
+#
+# Deliberately NOT written here: this project's own account ID. Naming it in order to assert it is
+# absent from this set would put a finding in the gate's own source, which is the one file that must
+# never need a waiver. It was checked outside the gate instead, and each of these three is a
+# published AWS example rather than an account this organization can reach.
+AWS_DOC_EXAMPLE_ACCOUNTS = frozenset({"111122223333", "123456789012", "999988887777"})
+
 # The same two placeholder spellings, used by the `s3-uri` branch to ask "is what follows this
 # match a placeholder?" rather than "is this field one?". Anchored with `.match(line, pos)` so it
 # must sit IMMEDIATELY after the URI — a placeholder later on the line excuses nothing.
@@ -356,6 +373,14 @@ def allowed(path: Path, name: str, line: str) -> str | None:
                 # field read. (This branch replaced two per-file ALLOW entries whose narrow
                 # anchors had to spell the ARNs out, creating findings in this very file.)
                 kinds.add("absent")
+            elif acct in AWS_DOC_EXAMPLE_ACCOUNTS:
+                # A complete, well-formed ARN whose account field is one of AWS's reserved
+                # documentation examples. These have to stay well-formed: the offline fakes that
+                # carry them exist to return what the real service would return, and several
+                # assertions are on ARN SHAPE, so a placeholder would make the fake produce a value
+                # the service could never emit and the test would assert against a shape that does
+                # not exist.
+                kinds.add("doc-example")
             elif acct == "aws":
                 # AWS's own account position: `iam::aws:policy/...` names an AWS-MANAGED policy,
                 # published in AWS's documentation and byte-identical in every account on earth.
@@ -371,13 +396,15 @@ def allowed(path: Path, name: str, line: str) -> str | None:
                 kinds.add("wildcard")
             else:
                 return None
-        if kinds and kinds <= {"template", "wildcard", "absent", "aws-owned"}:
+        if kinds and kinds <= {"template", "wildcard", "absent", "aws-owned", "doc-example"}:
             return ("the account field of every ARN on this line is a run-time format "
                     "placeholder ({identifier}), an exact `*` wildcard, empty (a service such "
-                    "as S3 whose ARN grammar has no account segment), or the literal `aws` (an "
-                    "AWS-managed resource) — i.e. this line contains no account identifier. A "
-                    "real account id is 12 digits and matches none of those four shapes, so it "
-                    "would still be reported here and by the aws-account-id pattern")
+                    "as S3 whose ARN grammar has no account segment), the literal `aws` (an "
+                    "AWS-managed resource), or one of AWS's reserved documentation-example "
+                    "account IDs — i.e. this line contains no account identifier. A real "
+                    "account id is 12 digits and is matched by exact equality against the "
+                    "example set, so it would still be reported here and by the "
+                    "aws-account-id pattern")
         return (f"every ARN on this line has its account field masked to "
                 f"{_redact.ACCOUNT_PLACEHOLDER} (lib/redact.py) or is a run-time format "
                 f"placeholder; partition, Region and resource id are not redaction targets")
@@ -413,6 +440,19 @@ def allowed(path: Path, name: str, line: str) -> str | None:
         toks = re.findall(r"\b\d{12}\b", line)
         why: set[str] = set()
         for tok in toks:
+            # AWS's reserved documentation examples are excused FIRST, ahead of the ARN-position
+            # guard below, and that ordering is the whole point rather than an oversight. The guard
+            # refuses to excuse a token in an ARN's account field because the excuses beneath it are
+            # circumstantial — "it also appears in a corpus", "it is also part of a UUID" — and
+            # circumstance does not survive being in the one position where 12 digits mean an
+            # account. This excuse is not circumstantial: the value is reserved by AWS and cannot be
+            # a real account in any position, so an ARN carrying it carries no identifier. Exact
+            # equality against three constants, so nothing else takes this branch.
+            if tok in AWS_DOC_EXAMPLE_ACCOUNTS:
+                why.add("one of AWS's reserved documentation-example account IDs, which AWS "
+                        "publishes for use in examples and does not issue to customers — the "
+                        "value itself proves it is not an identifier")
+                continue
             # Never excuse a token that sits in the account field of an ARN, whatever else it
             # matches. That is the one position where a 12-digit number IS an account ID, and a
             # corpus fixture that happened to equal one would otherwise waive a real leak.

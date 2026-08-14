@@ -1,0 +1,388 @@
+{
+  "case_id": "F10-3",
+  "cell": "untagged",
+  "done": {
+    "pair-r0-a74d556bca59": {
+      "action": "NONE",
+      "action_reason": "No action.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/s5vk53hdnahz",
+        "guardrailId": "s5vk53hdnahz",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "blocks_present": [
+        "appliedGuardrailDetails",
+        "contentPolicy",
+        "invocationMetrics"
+      ],
+      "client_duration_ms": 292.74303,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 6659,
+          "total": 6659
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/r20260813T145248Z/f10/F10-3-untagged/0001_apply_guardrail_ok.json",
+      "grounding": [],
+      "guardrail_latency_ms": 208,
+      "hit": false,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 6659,
+          "total": 6659
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 7,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 0,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "pair-r0-a74d556bca59",
+      "label": "rag-pair",
+      "n_blocks": 2,
+      "pii_actions": {},
+      "pii_detected": [],
+      "request_id": "a30150d6-2a32-4471-9403-2a805fd8f875",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "rep0",
+      "surface": "rag-6500+159",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 7,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 0,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    },
+    "pair-r1-305c80c16147": {
+      "action": "NONE",
+      "action_reason": "No action.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/s5vk53hdnahz",
+        "guardrailId": "s5vk53hdnahz",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "blocks_present": [
+        "appliedGuardrailDetails",
+        "contentPolicy",
+        "invocationMetrics"
+      ],
+      "client_duration_ms": 304.931442,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 6659,
+          "total": 6659
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/r20260813T145248Z/f10/F10-3-untagged/0002_apply_guardrail_ok.json",
+      "grounding": [],
+      "guardrail_latency_ms": 231,
+      "hit": false,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 6659,
+          "total": 6659
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 7,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 0,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "pair-r1-305c80c16147",
+      "label": "rag-pair",
+      "n_blocks": 2,
+      "pii_actions": {},
+      "pii_detected": [],
+      "request_id": "d1639236-03a3-45bb-811f-92bab0292a9f",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "rep1",
+      "surface": "rag-6500+159",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 7,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 0,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    },
+    "pair-r2-ffe09cb20b5b": {
+      "action": "NONE",
+      "action_reason": "No action.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/s5vk53hdnahz",
+        "guardrailId": "s5vk53hdnahz",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "blocks_present": [
+        "appliedGuardrailDetails",
+        "contentPolicy",
+        "invocationMetrics"
+      ],
+      "client_duration_ms": 264.760718,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 6659,
+          "total": 6659
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/r20260813T145248Z/f10/F10-3-untagged/0003_apply_guardrail_ok.json",
+      "grounding": [],
+      "guardrail_latency_ms": 186,
+      "hit": false,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 6659,
+          "total": 6659
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 7,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 0,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "pair-r2-ffe09cb20b5b",
+      "label": "rag-pair",
+      "n_blocks": 2,
+      "pii_actions": {},
+      "pii_detected": [],
+      "request_id": "cbbf42f3-667c-4c9f-a1d4-233cae0a6a70",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "rep2",
+      "surface": "rag-6500+159",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 7,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 0,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    },
+    "pair-r3-380cd7df890a": {
+      "action": "NONE",
+      "action_reason": "No action.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/s5vk53hdnahz",
+        "guardrailId": "s5vk53hdnahz",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "blocks_present": [
+        "appliedGuardrailDetails",
+        "contentPolicy",
+        "invocationMetrics"
+      ],
+      "client_duration_ms": 236.743439,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 6659,
+          "total": 6659
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/r20260813T145248Z/f10/F10-3-untagged/0004_apply_guardrail_ok.json",
+      "grounding": [],
+      "guardrail_latency_ms": 160,
+      "hit": false,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 6659,
+          "total": 6659
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 7,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 0,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "pair-r3-380cd7df890a",
+      "label": "rag-pair",
+      "n_blocks": 2,
+      "pii_actions": {},
+      "pii_detected": [],
+      "request_id": "57a12158-4a4c-4038-841e-3947bb4f2541",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "rep3",
+      "surface": "rag-6500+159",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 7,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 0,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    },
+    "pair-r4-d68ec1910552": {
+      "action": "NONE",
+      "action_reason": "No action.",
+      "applied_details": {
+        "guardrailArn": "arn:aws:bedrock:us-east-1:<account>:guardrail/s5vk53hdnahz",
+        "guardrailId": "s5vk53hdnahz",
+        "guardrailOrigin": [
+          "REQUEST"
+        ],
+        "guardrailOwnership": "SELF",
+        "guardrailVersion": "DRAFT"
+      },
+      "attempts": 1,
+      "blocked_types": [],
+      "blocks_present": [
+        "appliedGuardrailDetails",
+        "contentPolicy",
+        "invocationMetrics"
+      ],
+      "client_duration_ms": 212.227261,
+      "confidences": {},
+      "coverage": {
+        "textCharacters": {
+          "guarded": 6659,
+          "total": 6659
+        }
+      },
+      "detected_types": [],
+      "evidence": "evidence/r20260813T145248Z/f10/F10-3-untagged/0005_apply_guardrail_ok.json",
+      "grounding": [],
+      "guardrail_latency_ms": 121,
+      "hit": false,
+      "invocation_coverage": {
+        "textCharacters": {
+          "guarded": 6659,
+          "total": 6659
+        }
+      },
+      "invocation_usage": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 7,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 0,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "item_id": "pair-r4-d68ec1910552",
+      "label": "rag-pair",
+      "n_blocks": 2,
+      "pii_actions": {},
+      "pii_detected": [],
+      "request_id": "a7230e50-6113-40d7-bd31-e8d830b2ed90",
+      "resembles": "",
+      "retry_delay_s": 0.0,
+      "slot": "rep4",
+      "surface": "rag-6500+159",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 7,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 0,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 0
+      },
+      "topics_detected": [],
+      "words_detected": []
+    }
+  },
+  "failed": {},
+  "meta": {
+    "arm": "untagged",
+    "case_id": "F10-3",
+    "corpus": "constructed:rag-pair",
+    "guardrail_version": "DRAFT",
+    "is_smoke": false,
+    "output_scope": "FULL",
+    "planned_n": 5,
+    "qualifiers": [],
+    "region": "us-east-1",
+    "run_id": "r20260813T145248Z",
+    "sdk": "1.43.67",
+    "source": "INPUT"
+  },
+  "n_done": 5,
+  "n_failed": 0
+}

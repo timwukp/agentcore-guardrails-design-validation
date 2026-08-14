@@ -1,0 +1,445 @@
+{
+  "ambient_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "aws_calls": 27,
+  "billable_calls": 0,
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F8-1",
+    "clear_here": true
+  },
+  "case_id": "F8-1",
+  "deviations": [
+    "the seal names the 5 available Regions and the probe WIDTH (9) but not which unavailable Regions fill it; the 4 others ['us-west-2', 'eu-central-1', 'sa-east-1', 'ap-south-1'] are lib/awsclients.py's choice, not the seal's — a deviation for DEVIATIONS.md",
+    "seal_named_unsupported_not_probed: the seal explicitly names ['ap-southeast-1'] as NOT supported and the probe set does not include it/them, so the seal's own negative example is untested by this run"
+  ],
+  "environment_region_hints": {},
+  "error_taxonomy": {
+    "access_denied": "never supports: an IAM gap reads exactly like unavailability (CreatePolicyEngine/DeletePolicyEngine are both mapped in runner/iam_policy.py, checked at writing)",
+    "endpoint_unresolvable": "supports only with a same-run round trip elsewhere as the network control; labelled weaker",
+    "feature_not_available": "supports the failure branch: service-side, names the absence",
+    "throttled": "never supports: the control plane answered busy, not absent",
+    "unclassified": "never supports; forces INCONCLUSIVE with the error named"
+  },
+  "expiry": "a statement about a ROLLOUT, and rollouts move in one direction: a Region joining the list flips its probe from refusal to success. Dated by this run's timestamps in the evidence records; a later success in a probed-unavailable Region belongs in AWS-BEHAVIOR-CHANGES.md, and re-running this script is how it is detected",
+  "instrument": "one CreatePolicyEngine per Region on an explicitly region-pinned bedrock-agentcore-control client, deleted in a finally; List* is deliberately NOT used, because the sealed oracle records that List* returns 200 everywhere",
+  "is_smoke": false,
+  "kind": "EXISTENCE",
+  "mismatches": [
+    {
+      "basis": "mutation succeeded",
+      "outcome": "created",
+      "predicted_available": false,
+      "region": "us-west-2"
+    },
+    {
+      "basis": "mutation succeeded",
+      "outcome": "created",
+      "predicted_available": false,
+      "region": "eu-central-1"
+    },
+    {
+      "basis": "mutation succeeded",
+      "outcome": "created",
+      "predicted_available": false,
+      "region": "sa-east-1"
+    },
+    {
+      "basis": "mutation succeeded",
+      "outcome": "created",
+      "predicted_available": false,
+      "region": "ap-south-1"
+    }
+  ],
+  "mutations": 18,
+  "n_basis": "n = Regions whose probe completed — real mutations against a live service, one trial per Region of the conjunction. NOT F1-4's deliberate n=0: that counts validator runs that send nothing, and copying it here would erase nine live trials from the denominator",
+  "oracle_text": "TRUE if a policy-engine MUTATION succeeds in the 5 listed Regions and fails in the others with a distinguishable error; FALSE on any mismatch. Control-plane List* returns 200 everywhere, so only mutations can settle this",
+  "per_region": [
+    {
+      "engine_id": "grx_pe_f81_us_east_1_r20260810T130945Z-rjb8od_68j",
+      "engine_name": "grx_pe_f81_us_east_1_r20260810T130945Z",
+      "evidence": "evidence/r20260810T130945Z/f8/F8-1/0001_create_policy_engine_ok.json",
+      "http_status": 202,
+      "outcome": "created",
+      "predicted_available": true,
+      "region": "us-east-1",
+      "region_pin": {
+        "endpoint": "https://bedrock-agentcore-control.us-east-1.amazonaws.com",
+        "intended": "us-east-1",
+        "resolved": "us-east-1"
+      },
+      "request_id": "8dac1ba4-8d63-4b92-9c7b-523373973354"
+    },
+    {
+      "engine_id": "grx_pe_f81_eu_west_2_r20260810T130945Z-ehgz_vmhyf",
+      "engine_name": "grx_pe_f81_eu_west_2_r20260810T130945Z",
+      "evidence": "evidence/r20260810T130945Z/f8/F8-1/0002_create_policy_engine_ok.json",
+      "http_status": 202,
+      "outcome": "created",
+      "predicted_available": true,
+      "region": "eu-west-2",
+      "region_pin": {
+        "endpoint": "https://bedrock-agentcore-control.eu-west-2.amazonaws.com",
+        "intended": "eu-west-2",
+        "resolved": "eu-west-2"
+      },
+      "request_id": "cd0722a7-5057-4ab9-b005-7c734ff3586a"
+    },
+    {
+      "engine_id": "grx_pe_f81_eu_north_1_r20260810T130945Z-qakrac1b3_",
+      "engine_name": "grx_pe_f81_eu_north_1_r20260810T130945Z",
+      "evidence": "evidence/r20260810T130945Z/f8/F8-1/0003_create_policy_engine_ok.json",
+      "http_status": 202,
+      "outcome": "created",
+      "predicted_available": true,
+      "region": "eu-north-1",
+      "region_pin": {
+        "endpoint": "https://bedrock-agentcore-control.eu-north-1.amazonaws.com",
+        "intended": "eu-north-1",
+        "resolved": "eu-north-1"
+      },
+      "request_id": "a738cd4a-60b3-4334-a1eb-3ec4b1d7373a"
+    },
+    {
+      "engine_id": "grx_pe_f81_ap_southeast_2_r20260810T130945Z-rh060ossgm",
+      "engine_name": "grx_pe_f81_ap_southeast_2_r20260810T130945Z",
+      "evidence": "evidence/r20260810T130945Z/f8/F8-1/0004_create_policy_engine_ok.json",
+      "http_status": 202,
+      "outcome": "created",
+      "predicted_available": true,
+      "region": "ap-southeast-2",
+      "region_pin": {
+        "endpoint": "https://bedrock-agentcore-control.ap-southeast-2.amazonaws.com",
+        "intended": "ap-southeast-2",
+        "resolved": "ap-southeast-2"
+      },
+      "request_id": "60503e9a-c474-4bf3-8e80-1d604e6e58c7"
+    },
+    {
+      "engine_id": "grx_pe_f81_ap_northeast_1_r20260810T130945Z-7zy3_dokmt",
+      "engine_name": "grx_pe_f81_ap_northeast_1_r20260810T130945Z",
+      "evidence": "evidence/r20260810T130945Z/f8/F8-1/0005_create_policy_engine_ok.json",
+      "http_status": 202,
+      "outcome": "created",
+      "predicted_available": true,
+      "region": "ap-northeast-1",
+      "region_pin": {
+        "endpoint": "https://bedrock-agentcore-control.ap-northeast-1.amazonaws.com",
+        "intended": "ap-northeast-1",
+        "resolved": "ap-northeast-1"
+      },
+      "request_id": "ba74831f-1349-413f-aa2d-ef2f82c407df"
+    },
+    {
+      "engine_id": "grx_pe_f81_us_west_2_r20260810T130945Z-zp7nnj4oo3",
+      "engine_name": "grx_pe_f81_us_west_2_r20260810T130945Z",
+      "evidence": "evidence/r20260810T130945Z/f8/F8-1/0006_create_policy_engine_ok.json",
+      "http_status": 202,
+      "outcome": "created",
+      "predicted_available": false,
+      "region": "us-west-2",
+      "region_pin": {
+        "endpoint": "https://bedrock-agentcore-control.us-west-2.amazonaws.com",
+        "intended": "us-west-2",
+        "resolved": "us-west-2"
+      },
+      "request_id": "a68629c3-7dd3-48c1-a466-0556132b74eb"
+    },
+    {
+      "engine_id": "grx_pe_f81_eu_central_1_r20260810T130945Z-x2gxc6lhdm",
+      "engine_name": "grx_pe_f81_eu_central_1_r20260810T130945Z",
+      "evidence": "evidence/r20260810T130945Z/f8/F8-1/0007_create_policy_engine_ok.json",
+      "http_status": 202,
+      "outcome": "created",
+      "predicted_available": false,
+      "region": "eu-central-1",
+      "region_pin": {
+        "endpoint": "https://bedrock-agentcore-control.eu-central-1.amazonaws.com",
+        "intended": "eu-central-1",
+        "resolved": "eu-central-1"
+      },
+      "request_id": "fb0aada3-cdbd-404b-9945-3d4ebe071f5e"
+    },
+    {
+      "engine_id": "grx_pe_f81_sa_east_1_r20260810T130945Z-0gz2vjzwqq",
+      "engine_name": "grx_pe_f81_sa_east_1_r20260810T130945Z",
+      "evidence": "evidence/r20260810T130945Z/f8/F8-1/0008_create_policy_engine_ok.json",
+      "http_status": 202,
+      "outcome": "created",
+      "predicted_available": false,
+      "region": "sa-east-1",
+      "region_pin": {
+        "endpoint": "https://bedrock-agentcore-control.sa-east-1.amazonaws.com",
+        "intended": "sa-east-1",
+        "resolved": "sa-east-1"
+      },
+      "request_id": "8f5d0fd6-7ad6-4d28-9884-87b36cc06c59"
+    },
+    {
+      "engine_id": "grx_pe_f81_ap_south_1_r20260810T130945Z-cgl17es_k6",
+      "engine_name": "grx_pe_f81_ap_south_1_r20260810T130945Z",
+      "evidence": "evidence/r20260810T130945Z/f8/F8-1/0009_create_policy_engine_ok.json",
+      "http_status": 202,
+      "outcome": "created",
+      "predicted_available": false,
+      "region": "ap-south-1",
+      "region_pin": {
+        "endpoint": "https://bedrock-agentcore-control.ap-south-1.amazonaws.com",
+        "intended": "ap-south-1",
+        "resolved": "ap-south-1"
+      },
+      "request_id": "4aab8c80-3502-4f65-bc7f-7937f95492a1"
+    }
+  ],
+  "planned_n": null,
+  "planned_n_honored": {
+    "mutation_is_mandatory": false,
+    "planned_n": null,
+    "reading": "both read from the seal at run time. planned_n is None (the binding names no sample-size cell), so n asserts no shortfall; mutation_is_mandatory is False, and nothing here overrides evaluate()'s downgrade rule should the seal ever change"
+  },
+  "probe_plan": {
+    "deviation": "the seal names the 5 available Regions and the probe WIDTH (9) but not which unavailable Regions fill it; the 4 others ['us-west-2', 'eu-central-1', 'sa-east-1', 'ap-south-1'] are lib/awsclients.py's choice, not the seal's — a deviation for DEVIATIONS.md",
+    "regions": [
+      "us-east-1",
+      "eu-west-2",
+      "eu-north-1",
+      "ap-southeast-2",
+      "ap-northeast-1",
+      "us-west-2",
+      "eu-central-1",
+      "sa-east-1",
+      "ap-south-1"
+    ],
+    "unsupported_probed": [
+      "us-west-2",
+      "eu-central-1",
+      "sa-east-1",
+      "ap-south-1"
+    ]
+  },
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F8-1",
+    "evidence": {
+      "detail": {
+        "n_ambiguous": 0,
+        "n_mismatch": 4,
+        "n_predicted_available": 5,
+        "n_regions_intended": 9,
+        "n_regions_probed": 9,
+        "n_supporting": 5,
+        "network_control_ok": true,
+        "outcomes_by_region": {
+          "ap-northeast-1": "created",
+          "ap-south-1": "created",
+          "ap-southeast-2": "created",
+          "eu-central-1": "created",
+          "eu-north-1": "created",
+          "eu-west-2": "created",
+          "sa-east-1": "created",
+          "us-east-1": "created",
+          "us-west-2": "created"
+        }
+      },
+      "observed": false
+    },
+    "family": "descriptive_no_test",
+    "kind": "EXISTENCE",
+    "mutation_required": false,
+    "n_attempted": 9,
+    "n_met": true,
+    "n_usable": 9,
+    "notes": [],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [
+      5.0
+    ],
+    "verdict": "FALSE"
+  },
+  "region_provenance": {
+    "display_name_map": "botocore endpoints data (aws partition)",
+    "provenance": "parsed from claims/triage.csv row C-s1-quote-001 (bound artifact, sha256-pinned in PREREGISTRATION.yaml), display names mapped to codes via the endpoints data shipped in the pinned botocore; count checked against the sealed title and binding; result checked equal to awsclients.GUARDRAILS_IN_POLICY_SUPPORTED",
+    "regions": [
+      "us-east-1",
+      "eu-west-2",
+      "eu-north-1",
+      "ap-southeast-2",
+      "ap-northeast-1"
+    ],
+    "seal_named_unsupported": [
+      "ap-southeast-1"
+    ],
+    "sealed_carrier": "C-s1-quote-001",
+    "sealed_count": 5
+  },
+  "residue": {
+    "clean": true,
+    "n_created": 9,
+    "n_delete_attempted": 9,
+    "n_deleted": 9,
+    "never_attempted": [],
+    "surviving": [],
+    "why_two_lists": "an engine whose delete was never ATTEMPTED contributes no deletion row, so a residue computed from the deletions alone reports zero survivors for exactly the case where one exists; created-vs-deleted is compared instead"
+  },
+  "run_id": "r20260810T130945Z",
+  "supports": [
+    {
+      "basis": "mutation succeeded",
+      "outcome": "created",
+      "predicted_available": true,
+      "region": "us-east-1"
+    },
+    {
+      "basis": "mutation succeeded",
+      "outcome": "created",
+      "predicted_available": true,
+      "region": "eu-west-2"
+    },
+    {
+      "basis": "mutation succeeded",
+      "outcome": "created",
+      "predicted_available": true,
+      "region": "eu-north-1"
+    },
+    {
+      "basis": "mutation succeeded",
+      "outcome": "created",
+      "predicted_available": true,
+      "region": "ap-southeast-2"
+    },
+    {
+      "basis": "mutation succeeded",
+      "outcome": "created",
+      "predicted_available": true,
+      "region": "ap-northeast-1"
+    }
+  ],
+  "teardown": [
+    {
+      "delete_ok": true,
+      "deleted": true,
+      "engine_id": "grx_pe_f81_us_east_1_r20260810T130945Z-rjb8od_68j",
+      "error_code": null,
+      "evidence": "evidence/r20260810T130945Z/f8/F8-1/0010_delete_policy_engine_ok.json",
+      "name": "grx_pe_f81_us_east_1_r20260810T130945Z",
+      "region": "us-east-1",
+      "request_id": "8dfc0227-e33f-4194-9b7a-3bc4044bcf0b",
+      "status_before_delete": "ACTIVE",
+      "verified_gone": true,
+      "verify_evidence": "evidence/r20260810T130945Z/f8/F8-1/0011_get_policy_engine_ok.json"
+    },
+    {
+      "delete_ok": true,
+      "deleted": true,
+      "engine_id": "grx_pe_f81_eu_west_2_r20260810T130945Z-ehgz_vmhyf",
+      "error_code": null,
+      "evidence": "evidence/r20260810T130945Z/f8/F8-1/0012_delete_policy_engine_ok.json",
+      "name": "grx_pe_f81_eu_west_2_r20260810T130945Z",
+      "region": "eu-west-2",
+      "request_id": "ba9af2fb-59a3-4fde-a23f-6c0f321690c5",
+      "status_before_delete": "ACTIVE",
+      "verified_gone": true,
+      "verify_evidence": "evidence/r20260810T130945Z/f8/F8-1/0013_get_policy_engine_ok.json"
+    },
+    {
+      "delete_ok": true,
+      "deleted": true,
+      "engine_id": "grx_pe_f81_eu_north_1_r20260810T130945Z-qakrac1b3_",
+      "error_code": null,
+      "evidence": "evidence/r20260810T130945Z/f8/F8-1/0014_delete_policy_engine_ok.json",
+      "name": "grx_pe_f81_eu_north_1_r20260810T130945Z",
+      "region": "eu-north-1",
+      "request_id": "2f4bcb55-d260-4b5b-a977-e7f529f59893",
+      "status_before_delete": "ACTIVE",
+      "verified_gone": true,
+      "verify_evidence": "evidence/r20260810T130945Z/f8/F8-1/0015_get_policy_engine_ok.json"
+    },
+    {
+      "delete_ok": true,
+      "deleted": true,
+      "engine_id": "grx_pe_f81_ap_southeast_2_r20260810T130945Z-rh060ossgm",
+      "error_code": null,
+      "evidence": "evidence/r20260810T130945Z/f8/F8-1/0016_delete_policy_engine_ok.json",
+      "name": "grx_pe_f81_ap_southeast_2_r20260810T130945Z",
+      "region": "ap-southeast-2",
+      "request_id": "5b553e68-ed83-4d21-bb98-dcad35fddd5a",
+      "status_before_delete": "ACTIVE",
+      "verified_gone": true,
+      "verify_evidence": "evidence/r20260810T130945Z/f8/F8-1/0017_get_policy_engine_ok.json"
+    },
+    {
+      "delete_ok": true,
+      "deleted": true,
+      "engine_id": "grx_pe_f81_ap_northeast_1_r20260810T130945Z-7zy3_dokmt",
+      "error_code": null,
+      "evidence": "evidence/r20260810T130945Z/f8/F8-1/0018_delete_policy_engine_ok.json",
+      "name": "grx_pe_f81_ap_northeast_1_r20260810T130945Z",
+      "region": "ap-northeast-1",
+      "request_id": "c2bae962-ceb9-4fe8-a70e-3a03c75e5d3f",
+      "status_before_delete": "ACTIVE",
+      "verified_gone": true,
+      "verify_evidence": "evidence/r20260810T130945Z/f8/F8-1/0019_get_policy_engine_ok.json"
+    },
+    {
+      "delete_ok": true,
+      "deleted": true,
+      "engine_id": "grx_pe_f81_us_west_2_r20260810T130945Z-zp7nnj4oo3",
+      "error_code": null,
+      "evidence": "evidence/r20260810T130945Z/f8/F8-1/0020_delete_policy_engine_ok.json",
+      "name": "grx_pe_f81_us_west_2_r20260810T130945Z",
+      "region": "us-west-2",
+      "request_id": "a038e941-b5c2-4e31-a3d9-ae811d2ee0f0",
+      "status_before_delete": "ACTIVE",
+      "verified_gone": true,
+      "verify_evidence": "evidence/r20260810T130945Z/f8/F8-1/0021_get_policy_engine_ok.json"
+    },
+    {
+      "delete_ok": true,
+      "deleted": true,
+      "engine_id": "grx_pe_f81_eu_central_1_r20260810T130945Z-x2gxc6lhdm",
+      "error_code": null,
+      "evidence": "evidence/r20260810T130945Z/f8/F8-1/0022_delete_policy_engine_ok.json",
+      "name": "grx_pe_f81_eu_central_1_r20260810T130945Z",
+      "region": "eu-central-1",
+      "request_id": "3ea286a1-738f-4dd8-b7f9-a3e41bcd7353",
+      "status_before_delete": "ACTIVE",
+      "verified_gone": true,
+      "verify_evidence": "evidence/r20260810T130945Z/f8/F8-1/0023_get_policy_engine_ok.json"
+    },
+    {
+      "delete_ok": true,
+      "deleted": true,
+      "engine_id": "grx_pe_f81_sa_east_1_r20260810T130945Z-0gz2vjzwqq",
+      "error_code": null,
+      "evidence": "evidence/r20260810T130945Z/f8/F8-1/0024_delete_policy_engine_ok.json",
+      "name": "grx_pe_f81_sa_east_1_r20260810T130945Z",
+      "region": "sa-east-1",
+      "request_id": "46ce0b07-7491-4ff4-accf-cf79f63bb0e3",
+      "status_before_delete": "ACTIVE",
+      "verified_gone": true,
+      "verify_evidence": "evidence/r20260810T130945Z/f8/F8-1/0025_get_policy_engine_ok.json"
+    },
+    {
+      "delete_ok": true,
+      "deleted": true,
+      "engine_id": "grx_pe_f81_ap_south_1_r20260810T130945Z-cgl17es_k6",
+      "error_code": null,
+      "evidence": "evidence/r20260810T130945Z/f8/F8-1/0026_delete_policy_engine_ok.json",
+      "name": "grx_pe_f81_ap_south_1_r20260810T130945Z",
+      "region": "ap-south-1",
+      "request_id": "33d88789-7036-4a80-bbda-706efcaa17d2",
+      "status_before_delete": "ACTIVE",
+      "verified_gone": true,
+      "verify_evidence": "evidence/r20260810T130945Z/f8/F8-1/0027_get_policy_engine_ok.json"
+    }
+  ],
+  "verdict": "FALSE",
+  "verdict_reading": "FALSE: at least one Region contradicts the sealed list — see mismatches. Decided by mutations, not List*: a List* 200 in an absent Region is a 200 about nothing, which is the sealed oracle's own second sentence",
+  "verdict_rule": "FALSE on any mismatch, literally per the seal: one engine created where the document says unavailable, or one service-side feature_not_available where it says available, decides the case even if other Regions are ambiguous. TRUE only if every one of the intended Regions is decisive in the supporting direction — a successful mutation in each of the 5, and a distinguishable (service-side, or endpoint-corroborated) refusal in each of the others. Ambiguity anywhere without a mismatch is INCONCLUSIVE",
+  "what_true_does_not_prove": "that the 5-region list is COMPLETE against all ~34 commercial Regions — only 4 non-listed Regions were probed, and their membership is a harness choice, not the seal's; notably the seal's own named-unsupported Region (ap-southeast-1) is outside the default probe set. Nor anything about the feature WORKING in the 5: CreatePolicyEngine succeeding is the control plane accepting a mutation, not a policy evaluating a request — F4's truth table is where enforcement is measured. Nor that the list holds tomorrow: regional rollout is the most time-dependent claim in the document",
+  "why_this_matters_operationally": "a reader who deploys AgentCore Gateway policy guardrails in a Region where the engine cannot be created ships a gateway with no policy hop at all, and the document's own §8 checklist item (sealed row C-s8-checkitem-003) tells them to confirm exactly this before designing a deployment"
+}

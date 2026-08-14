@@ -258,6 +258,9 @@ def _state() -> dict:
 
     Repairs and SAYS SO, rather than repairing quietly: how often the clobber wins is the number
     that decides whether this transport should stop depending on the instance role at all.
+
+    AND THEN WAITS FOR THE REPAIR TO BE TRUE ON THE INSTANCE, which is the part that was missing
+    until 2026-08-14 and cost a fourth live round of F1-19/24/25. See `_await_instance_identity`.
     """
     if not PV.STATE_PATH.is_file():
         raise SystemExit(f"{PV.STATE_PATH.relative_to(ROOT)} is missing — "
@@ -266,7 +269,93 @@ def _state() -> dict:
     ec2 = boto3.client("ec2", region_name=st["region"])
     if repaired := PV.ensure_instance_profile(ec2, st["instance_id"]):
         print(f"! {repaired}")
+        _await_instance_identity(st, ec2)
     return st
+
+
+# How long to wait for a replaced instance profile to become the identity the instance actually
+# presents. Two minutes was not enough in one observed case; five is the ceiling before this stops
+# looking like propagation and starts looking like a different problem worth a human.
+IDENTITY_WAIT_S = 300
+
+
+def _await_instance_identity(st: dict, ec2) -> None:
+    """Block until the instance's OWN credentials are `grx-runner-ec2`, or fail loudly.
+
+    WHY THIS EXISTS — a repair that reports success before it is true
+    ----------------------------------------------------------------
+    `PV.ensure_instance_profile()` calls `replace_iam_instance_profile_association` and returns its
+    message immediately. That call is ASYNCHRONOUS: it returns with the association in state
+    `associating`, and the instance keeps serving the OLD role from IMDS until the swap lands and
+    its credential cache turns over. Every caller here treated the returned message as "the
+    instance is now grx-runner-ec2".
+
+    On 2026-08-14 `sync.py push` did exactly that. It printed the repair, uploaded 985 files, and
+    in the same breath told the instance to fetch them — which the instance attempted with the
+    QuickSetup role that had just been replaced, and got:
+
+        fatal error: An error occurred (403) when calling the HeadObject operation: Forbidden
+
+    The identical symptom the guard was written to eliminate, now produced BY the guard. That is
+    worth stating plainly rather than filing as a timing nit: the previous fix converted "the
+    profile is wrong" into "the profile is wrong for the next ~minute", which is a smaller window
+    and a strictly more confusing failure, because the operator has just read a line saying it was
+    repaired. A repair that is announced before it is effective is worse than no repair, since it
+    spends the operator's trust on a claim that is not yet true.
+
+    WHY IT ASKS THE INSTANCE AND NOT THE CONTROL PLANE
+    -------------------------------------------------
+    `describe_iam_instance_profile_associations` reporting `associated` is necessary and NOT
+    sufficient — it is a statement about the association, and the thing that must be true is about
+    the credentials IMDS hands to a `boto3` client inside the job. So both are polled, in order,
+    and the second is the one that decides: `aws sts get-caller-identity`, run on the instance,
+    must name the role. This is the same distinction as verifying an upload by reading the object
+    back instead of trusting the 200 — ask the component that will do the work, in the words it
+    will use.
+
+    Raises rather than returning a flag. There is no useful degraded mode: every caller of
+    `_state()` is about to make the instance touch S3, and doing that with the wrong identity is
+    how the 403 above happened. A push that cannot confirm the identity must not proceed to launch
+    a job against it.
+    """
+    iid = st["instance_id"]
+    deadline = time.monotonic() + IDENTITY_WAIT_S
+    print(f"  waiting for the instance to actually present {PV.ROLE_NAME!r} "
+          f"(the replace is asynchronous; up to {IDENTITY_WAIT_S}s)", flush=True)
+    # phase 1 — the association leaves `associating`. Cheap, and a hard prerequisite: IMDS cannot
+    # serve a role whose association has not landed.
+    assoc_state = "unknown"
+    while time.monotonic() < deadline:
+        live = [a for a in ec2.describe_iam_instance_profile_associations(
+                    Filters=[{"Name": "instance-id", "Values": [iid]}])
+                ["IamInstanceProfileAssociations"] if a["State"] in ("associating", "associated")]
+        current = live[0]["IamInstanceProfile"]["Arn"].split("/")[-1] if live else None
+        assoc_state = live[0]["State"] if live else "none"
+        if current == PV.PROFILE_NAME and assoc_state == "associated":
+            break
+        time.sleep(5)
+    else:
+        raise SystemExit(
+            f"the instance profile association is still {assoc_state!r} after {IDENTITY_WAIT_S}s. "
+            f"Nothing has been launched. Re-run when it settles, or check whether the hourly "
+            f"AWS-AttachIAMToInstance association is fighting this one in a loop.")
+    print(f"  association is `associated` with {PV.PROFILE_NAME!r} "
+          f"(control plane); now asking the instance", flush=True)
+    # phase 2 — the instance says so itself. This is the assertion that matters.
+    last = ""
+    while time.monotonic() < deadline:
+        rc, out, err = _run_on_instance(
+            st, "aws sts get-caller-identity --query Arn --output text", timeout_s=60)
+        last = (out or err).strip()
+        if rc == 0 and f"assumed-role/{PV.ROLE_NAME}/" in last:
+            print(f"  instance now presents {PV.ROLE_NAME!r} — proceeding", flush=True)
+            return
+        time.sleep(10)
+    raise SystemExit(
+        f"after {IDENTITY_WAIT_S}s the instance still presents {last!r}, not "
+        f"assumed-role/{PV.ROLE_NAME}/{iid}. Nothing has been launched and nothing has been "
+        f"attributed to a run. Any S3 access from the instance right now would fail with a 403 "
+        f"that looks like a bucket-policy problem and is not one.")
 
 
 def _skip(rel: str, patterns: tuple[str, ...]) -> bool:

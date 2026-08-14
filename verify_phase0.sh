@@ -170,10 +170,21 @@ run_tests() {
   # argument is right — but a hand-written list is a CLAIM about what exists, and nothing checked
   # it. claims/tests/test_verify_phase0_gates_every_test_directory.py now does: a 12th directory
   # fails there, not silently here.
-  for spec in "claims/tests:412" "lib/tests:587" "f5_redteam/tests:327" \
-              "f2_determinism/tests:30" "f3_efficacy/tests:268" \
-              "f8_regional/tests:80" "f10_billing/tests:35" "infra/tests:61" \
-              "runner/tests:55" "f9_failsecure/tests:48" "f1_config/tests:11"; do
+  # Re-baselined against the measured counts on 2026-08-14. Every floor here had drifted below what
+  # its directory actually collects, and the gap had stopped being a rounding error: the f5_redteam
+  # floor of 327 sat under 720 collected, so more than half that directory could have been deleted
+  # and this gate would have printed a pass. f1_config was 11 against 170, lib 587 against 882,
+  # f9_failsecure 48 against 106, f10_billing 35 against 80.
+  #
+  # That is the failure this list exists to prevent, arriving through the list itself. A floor is
+  # only a floor while it is close to the count; each bump above is recorded one file at a time,
+  # which is the right discipline and is also why they fell behind — arms were added faster than
+  # the floors were raised (test_runner_trust.py 17, test_rate_limits.py 8, test_probe_guardrail.py
+  # 17, and the four tagged-create arms in runner/tests, over two days).
+  for spec in "claims/tests:423" "lib/tests:882" "f5_redteam/tests:720" \
+              "f2_determinism/tests:34" "f3_efficacy/tests:268" \
+              "f8_regional/tests:152" "f10_billing/tests:80" "infra/tests:79" \
+              "runner/tests:80" "f9_failsecure/tests:106" "f1_config/tests:170"; do
     dir="${spec%%:*}"; floor="${spec##*:}"
     if [ ! -d "$dir" ]; then
       echo "FATAL: $dir does not exist — its tests cannot be reported as passing" >&2

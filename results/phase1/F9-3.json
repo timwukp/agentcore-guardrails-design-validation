@@ -1,0 +1,653 @@
+{
+  "aws_calls": 492,
+  "billable_calls": 492,
+  "billable_text_units": 492,
+  "blockers": {
+    "blockers": [
+      "verdict is INCONCLUSIVE, which supports no amendment: RECORDED and INCONCLUSIVE are findings about what was observed, not about what the document got wrong"
+    ],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F9-3",
+    "clear_here": false
+  },
+  "bounds": {
+    "n_burst_max": 480,
+    "n_control": 12,
+    "n_total_max": 492,
+    "offered_load_deadline_s": 5.0,
+    "why_bounded_by_constants": "the 100 rps ApplyGuardrail ceiling is ACCOUNT-level per Region, so the burst can throttle unrelated callers in an account carrying ~$27k/mo of other traffic. A loop that ran until a throttle appeared would have no bound at all",
+    "workers": 96
+  },
+  "buckets_definition": {
+    "evaluated": "HTTP 200 carrying a real verdict: the wordPolicy block reported the configured term and the action is the one the control established",
+    "observable_failure": "rec.ok is False — a ThrottlingException, a 429, a timeout: any failure the CALLER can see. Throttles are counted as a named subset",
+    "silent_pass": "HTTP 200, action NONE, and NO wordPolicy block, on text the control proved this guardrail intervenes on. The content went through unevaluated",
+    "unclassified": "anything else. Loud and fatal to the verdict rather than folded into whichever neighbouring bucket looks close",
+    "why_the_empty_assessments_list_is_not_the_test": "assessments[] is never empty even at action=NONE — it carries appliedGuardrailDetails and invocationMetrics regardless — so 'no assessment' here means 'no wordPolicy block'. Classifying on the empty list would put every silent pass into EVALUATED"
+  },
+  "burst_arm": {
+    "arm": "burst",
+    "deadline_s": 5.0,
+    "limiter_waits_delta": {},
+    "n_planned": 480,
+    "n_skipped_after_deadline": 0,
+    "paced_through_limiter": false,
+    "rate": {
+      "achieved_rps": 182.23396566071386,
+      "basis": "requests sent / (last response end - first request start), measured",
+      "documented_rps_ceiling": 100.0,
+      "latency_ms_max": 1277.094443000351,
+      "latency_ms_p50": 262.323137999374,
+      "n_sent": 480,
+      "over_documented_ceiling": true,
+      "wall_s": 2.633976593000625
+    },
+    "tally": {
+      "actions_seen": [
+        "GUARDRAIL_INTERVENED"
+      ],
+      "buckets": {
+        "evaluated": 480,
+        "observable_failure": 0,
+        "silent_pass": 0,
+        "unclassified": 0
+      },
+      "evaluated_rate": {
+        "hi": 1.0,
+        "level": 0.95,
+        "lo": 0.9920605009127221,
+        "method": "wilson",
+        "n": 480,
+        "point": 1.0,
+        "x": 480
+      },
+      "failure_codes": [],
+      "n": 480,
+      "n_observable_failures_not_throttles": 0,
+      "n_throttled": 0,
+      "silent_pass_rate": {
+        "hi": 0.007939499087277936,
+        "level": 0.95,
+        "lo": 0.0,
+        "method": "wilson",
+        "n": 480,
+        "point": 0.0,
+        "x": 0
+      },
+      "throttle_rate": {
+        "hi": 0.007939499087277936,
+        "level": 0.95,
+        "lo": 0.0,
+        "method": "wilson",
+        "n": 480,
+        "point": 0.0,
+        "x": 0
+      }
+    },
+    "why_unpaced": "the sealed method is 'drive ApplyGuardrail past its 100 rps quota'. Every other arm in this repo calls lim.wait so it never throttles; this one must, so it does not call it. RATE_LIMITS is not edited and the shared limiter is not patched — limiter_waits_delta shows it was not consulted",
+    "workers": 96
+  },
+  "case_id": "F9-3",
+  "concurrency": {
+    "evidence_store_is_subclassed_not_patched": "EvidenceStore.add does a non-atomic `self._seq += 1` and then writes <seq>_<op>.json, so two threads can take the same sequence number and one record silently overwrites the other. Serialised in a LOCAL SUBCLASS (ConcurrentEvidenceStore) rather than by patching the shared class, and the lock covers the file write only — taken after the network call has returned, so it does not pace the burst",
+    "max_pool_connections": 96,
+    "why_the_pool_was_widened": "botocore's default max_pool_connections is 10. 96 threads sharing 10 connections offer ~10/latency ~= 24 rps against this project's p50 ApplyGuardrail latency — a quarter of the ceiling — so the burst would report zero throttles while every thread looked busy. Widened on THIS client only, by merging onto the factory's Config; the factory's cached client, which every other case uses, is untouched",
+    "workers": 96
+  },
+  "control_arm": {
+    "arm": "control",
+    "limiter_waits_delta": {},
+    "paced_through_limiter": true,
+    "rate": {
+      "achieved_rps": 5.374338193750381,
+      "basis": "requests sent / (last response end - first request start), measured",
+      "documented_rps_ceiling": 100.0,
+      "latency_ms_max": 772.2899259997575,
+      "latency_ms_p50": 115.22470700037957,
+      "n_sent": 12,
+      "over_documented_ceiling": false,
+      "wall_s": 2.2328330609998375
+    },
+    "tally": {
+      "actions_seen": [
+        "GUARDRAIL_INTERVENED"
+      ],
+      "buckets": {
+        "evaluated": 12,
+        "observable_failure": 0,
+        "silent_pass": 0,
+        "unclassified": 0
+      },
+      "evaluated_rate": {
+        "hi": 1.0,
+        "level": 0.95,
+        "lo": 0.7575059933447592,
+        "method": "wilson",
+        "n": 12,
+        "point": 1.0,
+        "x": 12
+      },
+      "failure_codes": [],
+      "n": 12,
+      "n_observable_failures_not_throttles": 0,
+      "n_throttled": 0,
+      "silent_pass_rate": {
+        "hi": 0.24249400665524085,
+        "level": 0.95,
+        "lo": 0.0,
+        "method": "wilson",
+        "n": 12,
+        "point": 0.0,
+        "x": 0
+      },
+      "throttle_rate": {
+        "hi": 0.24249400665524085,
+        "level": 0.95,
+        "lo": 0.0,
+        "method": "wilson",
+        "n": 12,
+        "point": 0.0,
+        "x": 0
+      }
+    }
+  },
+  "cost_basis": "one text unit per call at $0.00015/unit — the VERIFIED content-policy rate from cost_model.yaml, used as an UPPER BOUND because USE1-Guardrail-WordPolicyUnitsConsumed exists on the bill (results/FINDING-P0-PRICING.md) with no verified price. A five-decimal figure from memory is how this project's cost model was once wrong by 5x",
+  "creates_nothing": "no guardrail, policy, gateway or role. The subject is the provisioner's existing `words` guardrail used read-only through ApplyGuardrail, so residue is zero by construction — and it is still computed from the created-vs-deleted two lists in a finally, so an edit that does create something inherits the teardown",
+  "decision": {
+    "control_evaluated": 12,
+    "control_throttled": 0,
+    "inconclusive_because": [
+      "0 of 480 burst requests were throttled at an ACHIEVED 182.2 rps against a documented 100.0 rps ceiling (pool=96, p50 latency 262 ms). A run that was never throttled proves nothing about throttling: '0 silent passes' is vacuously true of a question that was never put, so this is NOT a TRUE",
+      "the rate mutation did not invert: control throttles=0, burst throttles=0. If both arms behave the same way, the burst's cleanliness is not attributable to the rate manipulation"
+    ],
+    "mutation_inverted": false,
+    "n_evaluated": 480,
+    "n_observable_failures": 0,
+    "n_silent_pass": 0,
+    "n_throttled": 0,
+    "n_unclassified": 0,
+    "observed": false,
+    "rule": "FALSE if any burst response was a silent pass; TRUE if none was AND the burst was throttled at least once AND no response was unclassified AND the rate mutation inverted; INCONCLUSIVE otherwise",
+    "verdict_path": "inconclusive"
+  },
+  "estimated_cost_usd_upper_bound": 0.07379999999999999,
+  "expiry": "a statement about one account, one Region and one day. Service quotas and their enforcement change without notice and can be raised on request, so this observation dates from its run and a change belongs in AWS-BEHAVIOR-CHANGES.md rather than silently replacing it",
+  "guardrail": {
+    "guardrail_id": "bb8eo7hr35og",
+    "key": "words",
+    "purpose": "custom word list, exact-match claim (F3-6); F8-7 language scope",
+    "read_only": true,
+    "version": "DRAFT",
+    "why_a_word_filter": "the control must be DETERMINISTIC. An exact-match custom word either appears or it does not; a content filter has a confidence threshold to land the wrong side of, and a control that intervened on 11 of 12 trials would refuse this case for a reason unrelated to throttling"
+  },
+  "instrument": {
+    "blocks_per_call": 1,
+    "operation": "ApplyGuardrail",
+    "output_scope": "FULL",
+    "policy_block_read": "wordPolicy",
+    "sdk": {
+      "boto3": "1.43.67",
+      "botocore": "1.43.67"
+    },
+    "source": "INPUT"
+  },
+  "is_smoke": false,
+  "kind": "EXISTENCE",
+  "limiter_bypass": {
+    "audit": {
+      "burst_waits_delta": {},
+      "control_waits_delta": {},
+      "reading": "the control's ApplyGuardrail entry moves and the burst's must be absent. A future edit that accidentally paced the burst appears here as a non-zero delta beside a zero throttle count"
+    },
+    "documented_rps": 100.0,
+    "how": "the burst arm does not call lim.wait. RATE_LIMITS is not edited, awsclients._LIMITER is not patched, and no shared object is mutated: pacing in this platform is opt-in per call site, so declining to opt in is the entire mechanism",
+    "operation": "ApplyGuardrail",
+    "provenance": "aws_documented",
+    "why_legitimate_here": "F9-3's sealed method is 'drive ApplyGuardrail past its 100 rps quota'. The ceiling is aws_documented, so exceeding it measures the SERVICE; six entries in RATE_LIMITS are self_imposed guesses and bursting past one of those would have measured our own caution",
+    "why_nowhere_else": "every other case wants the opposite. A throttle inside an F2-5 determinism arm would add an invisible multi-second tail to one trial's wall clock and be published as a latency observation, and phase1.run_arms is sequential for the same reason"
+  },
+  "mutation": {
+    "burst_arm": "480 requests, 96 threads, unpaced; expects throttles to appear",
+    "burst_throttled": 0,
+    "control_arm": "12 requests, serial, paced through the limiter; expects 0 throttles and 100% intervention",
+    "control_throttled": 0,
+    "inverted": false,
+    "sealed_as_mandatory": false,
+    "treatment": "request rate",
+    "why_recorded_anyway": "the seal does not make this case's mutation mandatory, so oracle.evaluate does not consult it. Without it, a clean burst is indistinguishable from a burst that never loaded the service: the control is what makes the rate manipulation the thing that changed"
+  },
+  "mutations": 0,
+  "n_rows_total": 492,
+  "no_claim_row": "O.family_of('F9-3') is 'unassigned_by_seal': the seal assigns this case no triaged document claim row. Recorded rather than omitted, because a case that answers no claim must be visible as such",
+  "oracle_text": "TRUE if throttled requests are denied or error rather than passing unevaluated; FALSE if a throttle silently allows content through",
+  "planned_n": null,
+  "probe": {
+    "chars": 27,
+    "expected_action": "GUARDRAIL_INTERVENED",
+    "expected_word": "moonquake",
+    "text": "the moonquake note is filed",
+    "why_not_a_literal": "phase1.configured_words reads the provisioned list. A term typed here that disagreed with the guardrail would produce a control that never intervenes, and the case would refuse for the wrong reason",
+    "words_from_manifest": [
+      "moonquake",
+      "zorbify",
+      "quaxlinate"
+    ]
+  },
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F9-3",
+    "evidence": {
+      "detail": {
+        "achieved_rps": 182.23396566071386,
+        "buckets": {
+          "evaluated": 480,
+          "observable_failure": 0,
+          "silent_pass": 0,
+          "unclassified": 0
+        },
+        "documented_rps": 100.0,
+        "mutation_inverted": false
+      },
+      "measured": false,
+      "reason": "0 of 480 burst requests were throttled at an ACHIEVED 182.2 rps against a documented 100.0 rps ceiling (pool=96, p50 latency 262 ms). A run that was never throttled proves nothing about throttling: '0 silent passes' is vacuously true of a question that was never put, so this is NOT a TRUE; the rate mutation did not invert: control throttles=0, burst throttles=0. If both arms behave the same way, the burst's cleanliness is not attributable to the rate manipulation",
+      "why_not_recorded": "RECORDED is a sealed property of the case, meaning the pre-registration declared the outcome unknown and both answers are findings. This case's sealed kind is EXISTENCE: it made a prediction, and the prediction was not tested"
+    },
+    "family": "unassigned_by_seal",
+    "kind": "EXISTENCE",
+    "mutation_required": false,
+    "n_attempted": 0,
+    "n_met": true,
+    "n_usable": 0,
+    "notes": [
+      "not measured: 0 of 480 burst requests were throttled at an ACHIEVED 182.2 rps against a documented 100.0 rps ceiling (pool=96, p50 latency 262 ms). A run that was never throttled proves nothing about throttling: '0 silent passes' is vacuously true of a question that was never put, so this is NOT a TRUE; the rate mutation did not invert: control throttles=0, burst throttles=0. If both arms behave the same way, the burst's cleanliness is not attributable to the rate manipulation"
+    ],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [],
+    "verdict": "INCONCLUSIVE"
+  },
+  "residue": {
+    "clean": true,
+    "n_created": 0,
+    "n_delete_attempted": 0,
+    "n_deleted": 0,
+    "never_attempted": [],
+    "surviving": [],
+    "why_two_lists": "a probe whose delete was never ATTEMPTED contributes no row to `deletions`, so a residue computed from that list alone would report zero survivors for exactly the case where one exists"
+  },
+  "retry_config_asserted_before_first_request": {
+    "connect_timeout": 10,
+    "effective_total_attempts": 1,
+    "max_attempts": null,
+    "max_pool_connections": 96,
+    "mode": "standard",
+    "read_timeout": 70,
+    "total_max_attempts": 1
+  },
+  "rows_evaluated_sample": [
+    {
+      "action": "GUARDRAIL_INTERVENED",
+      "arm": "burst",
+      "blocks_present": [
+        "appliedGuardrailDetails",
+        "invocationMetrics",
+        "wordPolicy"
+      ],
+      "bucket": "evaluated",
+      "duration_ms": 126.891519,
+      "error_class": null,
+      "error_code": null,
+      "evidence": "evidence/r20260810T130945Z/f9/F9-3/0013_apply_guardrail_ok.json",
+      "expected_word_reported": true,
+      "http_status": 200,
+      "ok": true,
+      "policy_block_present": true,
+      "reading": "a real verdict: the word policy reported the configured term and the action is the one the control established",
+      "request_id": "2067c739-a4e3-4d54-af5c-ad4ae149c3f5",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 0,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 1
+      },
+      "throttled": false,
+      "words_detected": [
+        "moonquake"
+      ]
+    },
+    {
+      "action": "GUARDRAIL_INTERVENED",
+      "arm": "burst",
+      "blocks_present": [
+        "appliedGuardrailDetails",
+        "invocationMetrics",
+        "wordPolicy"
+      ],
+      "bucket": "evaluated",
+      "duration_ms": 151.389904,
+      "error_class": null,
+      "error_code": null,
+      "evidence": "evidence/r20260810T130945Z/f9/F9-3/0014_apply_guardrail_ok.json",
+      "expected_word_reported": true,
+      "http_status": 200,
+      "ok": true,
+      "policy_block_present": true,
+      "reading": "a real verdict: the word policy reported the configured term and the action is the one the control established",
+      "request_id": "02d9f4a4-944c-4ac5-8eee-5547d9fec86c",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 0,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 1
+      },
+      "throttled": false,
+      "words_detected": [
+        "moonquake"
+      ]
+    },
+    {
+      "action": "GUARDRAIL_INTERVENED",
+      "arm": "burst",
+      "blocks_present": [
+        "appliedGuardrailDetails",
+        "invocationMetrics",
+        "wordPolicy"
+      ],
+      "bucket": "evaluated",
+      "duration_ms": 176.975555,
+      "error_class": null,
+      "error_code": null,
+      "evidence": "evidence/r20260810T130945Z/f9/F9-3/0015_apply_guardrail_ok.json",
+      "expected_word_reported": true,
+      "http_status": 200,
+      "ok": true,
+      "policy_block_present": true,
+      "reading": "a real verdict: the word policy reported the configured term and the action is the one the control established",
+      "request_id": "ddeafeed-b052-4f8d-9223-353bce196332",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 0,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 1
+      },
+      "throttled": false,
+      "words_detected": [
+        "moonquake"
+      ]
+    },
+    {
+      "action": "GUARDRAIL_INTERVENED",
+      "arm": "burst",
+      "blocks_present": [
+        "appliedGuardrailDetails",
+        "invocationMetrics",
+        "wordPolicy"
+      ],
+      "bucket": "evaluated",
+      "duration_ms": 198.75364,
+      "error_class": null,
+      "error_code": null,
+      "evidence": "evidence/r20260810T130945Z/f9/F9-3/0016_apply_guardrail_ok.json",
+      "expected_word_reported": true,
+      "http_status": 200,
+      "ok": true,
+      "policy_block_present": true,
+      "reading": "a real verdict: the word policy reported the configured term and the action is the one the control established",
+      "request_id": "afae5d0f-fc98-4aaa-be88-30970a45a361",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 0,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 1
+      },
+      "throttled": false,
+      "words_detected": [
+        "moonquake"
+      ]
+    },
+    {
+      "action": "GUARDRAIL_INTERVENED",
+      "arm": "burst",
+      "blocks_present": [
+        "appliedGuardrailDetails",
+        "invocationMetrics",
+        "wordPolicy"
+      ],
+      "bucket": "evaluated",
+      "duration_ms": 212.269782,
+      "error_class": null,
+      "error_code": null,
+      "evidence": "evidence/r20260810T130945Z/f9/F9-3/0017_apply_guardrail_ok.json",
+      "expected_word_reported": true,
+      "http_status": 200,
+      "ok": true,
+      "policy_block_present": true,
+      "reading": "a real verdict: the word policy reported the configured term and the action is the one the control established",
+      "request_id": "2f1031f1-f4a9-4694-802e-e1884c812ec1",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 0,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 1
+      },
+      "throttled": false,
+      "words_detected": [
+        "moonquake"
+      ]
+    },
+    {
+      "action": "GUARDRAIL_INTERVENED",
+      "arm": "burst",
+      "blocks_present": [
+        "appliedGuardrailDetails",
+        "invocationMetrics",
+        "wordPolicy"
+      ],
+      "bucket": "evaluated",
+      "duration_ms": 169.745602,
+      "error_class": null,
+      "error_code": null,
+      "evidence": "evidence/r20260810T130945Z/f9/F9-3/0018_apply_guardrail_ok.json",
+      "expected_word_reported": true,
+      "http_status": 200,
+      "ok": true,
+      "policy_block_present": true,
+      "reading": "a real verdict: the word policy reported the configured term and the action is the one the control established",
+      "request_id": "fe3e3107-d918-4f97-8b9d-5ffa80d6ddf0",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 0,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 1
+      },
+      "throttled": false,
+      "words_detected": [
+        "moonquake"
+      ]
+    },
+    {
+      "action": "GUARDRAIL_INTERVENED",
+      "arm": "burst",
+      "blocks_present": [
+        "appliedGuardrailDetails",
+        "invocationMetrics",
+        "wordPolicy"
+      ],
+      "bucket": "evaluated",
+      "duration_ms": 142.102872,
+      "error_class": null,
+      "error_code": null,
+      "evidence": "evidence/r20260810T130945Z/f9/F9-3/0019_apply_guardrail_ok.json",
+      "expected_word_reported": true,
+      "http_status": 200,
+      "ok": true,
+      "policy_block_present": true,
+      "reading": "a real verdict: the word policy reported the configured term and the action is the one the control established",
+      "request_id": "33729183-0b28-4992-b45c-8d9417de1d75",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 0,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 1
+      },
+      "throttled": false,
+      "words_detected": [
+        "moonquake"
+      ]
+    },
+    {
+      "action": "GUARDRAIL_INTERVENED",
+      "arm": "burst",
+      "blocks_present": [
+        "appliedGuardrailDetails",
+        "invocationMetrics",
+        "wordPolicy"
+      ],
+      "bucket": "evaluated",
+      "duration_ms": 240.71842,
+      "error_class": null,
+      "error_code": null,
+      "evidence": "evidence/r20260810T130945Z/f9/F9-3/0020_apply_guardrail_ok.json",
+      "expected_word_reported": true,
+      "http_status": 200,
+      "ok": true,
+      "policy_block_present": true,
+      "reading": "a real verdict: the word policy reported the configured term and the action is the one the control established",
+      "request_id": "ae8bc59e-700f-4918-a309-d4800b9737ff",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 0,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 1
+      },
+      "throttled": false,
+      "words_detected": [
+        "moonquake"
+      ]
+    },
+    {
+      "action": "GUARDRAIL_INTERVENED",
+      "arm": "burst",
+      "blocks_present": [
+        "appliedGuardrailDetails",
+        "invocationMetrics",
+        "wordPolicy"
+      ],
+      "bucket": "evaluated",
+      "duration_ms": 210.821365,
+      "error_class": null,
+      "error_code": null,
+      "evidence": "evidence/r20260810T130945Z/f9/F9-3/0021_apply_guardrail_ok.json",
+      "expected_word_reported": true,
+      "http_status": 200,
+      "ok": true,
+      "policy_block_present": true,
+      "reading": "a real verdict: the word policy reported the configured term and the action is the one the control established",
+      "request_id": "c906efbe-7fc8-47cb-b0a5-08c2abad770c",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 0,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 1
+      },
+      "throttled": false,
+      "words_detected": [
+        "moonquake"
+      ]
+    },
+    {
+      "action": "GUARDRAIL_INTERVENED",
+      "arm": "burst",
+      "blocks_present": [
+        "appliedGuardrailDetails",
+        "invocationMetrics",
+        "wordPolicy"
+      ],
+      "bucket": "evaluated",
+      "duration_ms": 259.620023,
+      "error_class": null,
+      "error_code": null,
+      "evidence": "evidence/r20260810T130945Z/f9/F9-3/0022_apply_guardrail_ok.json",
+      "expected_word_reported": true,
+      "http_status": 200,
+      "ok": true,
+      "policy_block_present": true,
+      "reading": "a real verdict: the word policy reported the configured term and the action is the one the control established",
+      "request_id": "01d4edd8-9259-4f23-b936-8d54a6ed2365",
+      "text_units": {
+        "automatedReasoningPolicies": 0,
+        "automatedReasoningPolicyUnits": 0,
+        "contentPolicyImageUnits": 0,
+        "contentPolicyUnits": 0,
+        "contextualGroundingPolicyUnits": 0,
+        "sensitiveInformationPolicyFreeUnits": 0,
+        "sensitiveInformationPolicyUnits": 0,
+        "topicPolicyUnits": 0,
+        "wordPolicyUnits": 1
+      },
+      "throttled": false,
+      "words_detected": [
+        "moonquake"
+      ]
+    }
+  ],
+  "rows_interesting": [],
+  "run_id": "r20260810T130945Z",
+  "second_retry_layer_avoided": "checkpoint.RETRY_CODES contains ThrottlingException and arms.run_arm retries through it with linear backoff. Right for every arm whose throttle is an accident; fatal to the one arm whose throttle IS the measurement. This case therefore calls evidence.capture directly and does not use run_arm",
+  "verdict": "INCONCLUSIVE",
+  "verdict_reading": "480 of 480 burst responses carried a real verdict, 0 were observable failures (0 of them throttles), and 0 were silent passes, at an ACHIEVED 182.2 rps against a documented 100.0 rps ceiling. The question was not put: 0 of 480 burst requests were throttled at an ACHIEVED 182.2 rps against a documented 100.0 rps ceiling (pool=96, p50 latency 262 ms). A run that was never throttled proves nothing about throttling: '0 silent passes' is vacuously true of a question that was never put, so this is NOT a TRUE; the rate mutation did not invert: control throttles=0, burst throttles=0. If both arms behave the same way, the burst's cleanliness is not attributable to the rate manipulation",
+  "verdict_rule": "FALSE if any burst response was a silent pass; TRUE if none was AND the burst was throttled at least once AND no response was unclassified AND the rate mutation inverted; INCONCLUSIVE otherwise",
+  "what_true_does_not_prove": [
+    "that an APPLICATION using this API fails closed. This measures what ApplyGuardrail returns to its caller. Whether the caller then treats the exception as a block, or logs it and forwards the content anyway, is a property of the integration and is invisible from here",
+    "anything about the gateway data path or InvokeGuardrailChecks. Both are different transports with their own quotas, and neither is exercised",
+    "anything about sustained load. The offered load was bounded to 5.0s because the ceiling is account-level and this account carries unrelated traffic; a longer burst could behave differently, and this run says nothing about it",
+    "that the 100 rps figure is correct. The achieved rate is measured and reported, but this design detects a throttle — it does not locate the threshold, which would need a rate ladder"
+  ],
+  "why_the_retry_assertion_exists": "botocore's standard/adaptive retry re-drives a throttled request until it succeeds, so a throttled run would report zero throttles and this case would conclude nothing while every number looked right. The setting is INHERITED from lib/awsclients.ClientFactory._config (total_max_attempts=1) by merging onto its Config rather than restated here — a copy could not detect a drift in the original — and it is asserted before the first request, not after",
+  "why_this_matters_operationally": "fail-secure is the whole reason a guardrail is in the request path. If a throttle returned 200 with no assessment, every caller that checks `action` would read the response as clean and forward unevaluated content — a bypass that appears under LOAD, which is exactly when it matters and exactly when nobody is reading logs. The operational consequence of TRUE is the opposite and just as concrete: at 100 rps the guardrail becomes an availability dependency, so the integration needs an explicit throttle path (queue, shed, or deny) rather than a try/except that logs and continues"
+}

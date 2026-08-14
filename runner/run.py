@@ -87,6 +87,13 @@ MIN_FREE_MB = 12288
 # Long enough that yesterday's failure is still readable, short enough that two failures cannot
 # add up to a wedged instance before anyone looks.
 PRUNE_DAYS = 2
+# How long the identity guard waits for IMDS to stop serving the role the hourly association had
+# attached. Measured: the profile re-attachment is immediate, and a fresh `sts:GetCallerIdentity` on
+# the instance reported the correct role within about 100 seconds of the repair on 2026-08-13. Twelve
+# attempts at ten seconds is ~120 s, which is that observation plus headroom rather than a round
+# guess. Erring long costs a launch two minutes; erring short spends a case's run.
+IDENTITY_TRIES = 12
+IDENTITY_SLEEP_S = 10
 # How long a job's log may go unwritten before `--jobs` stops calling it RUNNING. The offline suite
 # finishes in about sixteen minutes and prints as it goes; the longest single case measured is an
 # F4 cell at roughly nine. 45 minutes is therefore silence no live job of this project produces,
@@ -142,6 +149,68 @@ def _wait(ssm, cid: str, iid: str, poll: int = 5, limit: int = 720) -> int:
             return inv.get("ResponseCode", 1) if inv["Status"] != "Success" else 0
         time.sleep(poll)
     raise SystemExit(f"still running after {poll * limit}s; use --detach for long work")
+
+
+def identity_guard_commands(role_name: str, *, tries: int, sleep_s: int) -> list[str]:
+    """Wait until the instance actually presents `role_name`, and refuse the launch if it never does.
+
+    `PV.ensure_instance_profile()` re-attaches the least-privilege profile that the hourly
+    account-wide `AWS-AttachIAMToInstance` association keeps replacing. Re-attaching is not the same
+    as taking effect: the profile association changes immediately, but IMDS keeps serving the OLD
+    role's credentials for a while afterwards, and every `aws` and `boto3` call on the instance is a
+    fresh process reading IMDS. So a job launched in the seconds after a repair runs as the role that
+    was just removed.
+
+    That is not a hypothetical. F1-6 ran on 2026-08-13 at 14:17 UTC, one second after `sync.py push`
+    printed the re-attachment, and all eight of its `CreateGuardrail` probes came back
+    `AccessDeniedException` — on a role whose inline policy grants `bedrock:CreateGuardrail` on `*`
+    with no condition. The case's own confound classifier caught it and correctly recorded
+    INCONCLUSIVE rather than scoring an access error as the claim holding, so no false verdict was
+    published. But the run was still spent, and a suite of cases launched the same way would each
+    have burned a run to discover the same thing.
+
+    Why this WAITS rather than merely refusing: refusing would be correct and useless. The condition
+    clears by itself within a minute or two, and every launch path on this runner is initiated by a
+    laptop command that has just called `ensure_instance_profile` — so the moment a repair happens is
+    exactly the moment a launch is about to happen. Polling here makes the runner self-healing on the
+    only path that matters, which is the same argument `ensure_instance_profile` makes for repairing
+    rather than refusing.
+
+    The match requires a TRAILING SLASH after the role name (`assumed-role/grx-runner-ec2/`) because
+    an assumed-role ARN ends with the session name. Without it, a differently-privileged role whose
+    name merely begins with the expected one — `grx-runner-ec2-readonly` is the kind of thing that
+    gets created next to it — would satisfy the guard, and the guard exists precisely to catch a
+    substituted identity.
+
+    A failed `sts` call is treated as a non-match rather than an error to propagate, because the
+    reason it fails is usually that there are no credentials yet, which is the very state being
+    waited out. It must never read as a pass: a guard that cannot run must not report clean
+    (feedback_guard_tool_exit_codes).
+
+    Returned as a list of separate SSM commands, and the refusal is `exit 6` — the invocation's exit
+    status rather than a line of output a caller may not read, matching `disk_guard_commands`'s
+    `exit 4`. Built here rather than inline in `main()` so a test can RUN the generated shell against
+    a stub `aws`; asserting on the text of a shell fragment proves only that the text was written.
+    """
+    return [
+        f'seen=""; ok=""',
+        f"for i in $(seq 1 {tries}); do "
+        f'arn=$(aws sts get-caller-identity --query Arn --output text 2>/dev/null) || arn=""; '
+        f'[ -n "$arn" ] || arn="NO-CREDENTIALS"; '
+        f'seen="$arn"; '
+        f'case "$arn" in *assumed-role/{role_name}/*) ok="$arn"; break ;; esac; '
+        f'echo "identity is $arn, waiting for {role_name} '
+        f'(attempt $i/{tries})"; sleep {sleep_s}; done',
+        f'if [ -z "$ok" ]; then '
+        f'echo "REFUSING to start: the instance presents $seen, not {role_name}, after '
+        f'{tries} attempt(s) over ~{tries * sleep_s}s. An hourly account-wide '
+        f'AWS-AttachIAMToInstance association replaces this instance profile, and IMDS serves the '
+        f'old role for a short while after it is re-attached. A case run under the wrong role gets '
+        f'AccessDeniedException on calls its own role permits, which its confound classifier will '
+        f'record as INCONCLUSIVE — a spent run, not a verdict. Re-run the laptop command to repair '
+        f'the profile, then launch again."; exit 6; fi',
+        f'echo "identity confirmed: $ok"',
+    ]
 
 
 def disk_guard_commands(tmpdir: str, logs: str, label: str,
@@ -316,6 +385,16 @@ def main() -> int:
             f"exit 3; fi; echo \"label {label} is free\""]), iid)
         if rc:
             return rc
+
+    # Identity BEFORE disk: both refuse the launch, but a wrong-role launch spends a case's run and
+    # publishes an INCONCLUSIVE that says nothing about the document, whereas a full volume refuses
+    # before anything runs. Check the one that can waste measurement first.
+    rc = _wait(ssm, _send(ssm, iid,
+                          identity_guard_commands(PV.ROLE_NAME,
+                                                  tries=IDENTITY_TRIES,
+                                                  sleep_s=IDENTITY_SLEEP_S)), iid)
+    if rc:
+        return rc
 
     rc = _wait(ssm, _send(ssm, iid,
                           disk_guard_commands(TMPDIR, LOGS, label,

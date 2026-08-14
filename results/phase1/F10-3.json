@@ -1,0 +1,368 @@
+{
+  "billable_calls": 10,
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F10-3",
+    "clear_here": true
+  },
+  "case_id": "F10-3",
+  "cost_estimate": {
+    "arithmetic": "worst case (claim FALSE, both arms bill the full prompt): 5 pairs x 2 x 7 units = 70 units x $0.00015 = $0.0105; if the claim is TRUE: 5 x 8 = 40 units = $0.0060",
+    "expected_units_if_claim_true": 40,
+    "expected_usd_if_claim_true": 0.005999999999999999,
+    "n_pairs": 5,
+    "price_source": "cost_model.yaml prices.guardrail_text_unit (Pricing API, USE1-Guardrail-ContentPolicyUnitsConsumed, verified 2026-08-09)",
+    "price_usd_per_unit": 0.00015,
+    "worst_case_units": 70,
+    "worst_case_usd": 0.010499999999999999
+  },
+  "descriptive_sign_test": {
+    "n_pairs": 5,
+    "p_one_sided_greater": 1.0,
+    "status": "DESCRIPTIVE ONLY, deliberately NOT on the Observation: the sealed kind is EXISTENCE (consumes a boolean), and family_of(F10-3) is 'unassigned_by_seal' — a p-value on the record would arrive at apply_family_corrections as an uncorrected p under no declared correction",
+    "test": "exact binomial (sign) test over pair directions, lib/stats.exact_binom_test",
+    "x_fewer": 0
+  },
+  "design": {
+    "arm_order": "tagged arm fully, then untagged arm. A service-side billing change in the minutes between the arms is a residual confound; it is named here rather than mitigated because the quantity is a deterministic unit count, not a latency",
+    "manipulation_check": {
+      "ok": true,
+      "qualified_block_is_the_query": true,
+      "tagged_qualifiers": [
+        [],
+        [
+          "guard_content"
+        ]
+      ],
+      "tagged_qualifies_exactly_one_block": true,
+      "texts_identical": true,
+      "untagged_has_no_qualifiers": true,
+      "untagged_qualifiers": [
+        [],
+        []
+      ]
+    },
+    "n_pairs_planned": 5,
+    "no_power_claim": "planned_n(F10-3) is None — the seal names no n. 5 pairs catch a transient; the quantity is a deterministic unit count with an engineered >= 3-unit separation, so one disagreeing pair refutes 'fewer on every pair'",
+    "rounding_guard": {
+      "arithmetic": "units_if_identical = ceil(6659/1000) = 7; units_if_tagging_works = ceil(159/1000) = 1; predicted delta = 6 units >= 3; boundary distances 341 and 159 chars >= 100",
+      "boundary_margin_chars": 100,
+      "chars_per_unit": 1000,
+      "context_chars": 6500,
+      "delta_ok": true,
+      "distance_guarded_to_boundary": 159,
+      "distance_total_to_boundary": 341,
+      "guarded_margin_ok": true,
+      "min_delta_units": 3,
+      "ok": true,
+      "predicted_delta_units": 6,
+      "query_chars": 159,
+      "sent_chars_total": 6659,
+      "total_margin_ok": true,
+      "units_if_identical": 7,
+      "units_if_tagging_works": 1
+    }
+  },
+  "guardrail": {
+    "guardrail_id": "s5vk53hdnahz",
+    "key": "billing",
+    "purpose": "content filters at MEDIUM with every action NONE — F10-2's text-unit length ladder (evaluation without intervention)",
+    "why_this_guardrail": "content filters only with every action NONE: contentPolicyUnits is the only counter that can move (usage breadth is recorded per row regardless), and no intervention can turn the two arms into different treatments"
+  },
+  "instrument": {
+    "blocks_per_call": 2,
+    "operation": "ApplyGuardrail",
+    "output_scope": "FULL",
+    "sdk": {
+      "boto3": "1.43.67",
+      "botocore": "1.43.67"
+    },
+    "sdk_model_check": {
+      "counter_in_usage_shape": true,
+      "coverage_members": [
+        "guarded",
+        "total"
+      ],
+      "guard_content_in_enum": true,
+      "has_qualifiers_member": true,
+      "ok": true,
+      "qualifier_enum": [
+        "grounding_source",
+        "query",
+        "guard_content"
+      ],
+      "sdk": {
+        "boto3": "1.43.67",
+        "botocore": "1.43.67"
+      },
+      "text_block_members": [
+        "text",
+        "qualifiers"
+      ],
+      "usage_members": [
+        "topicPolicyUnits",
+        "contentPolicyUnits",
+        "wordPolicyUnits",
+        "sensitiveInformationPolicyUnits",
+        "sensitiveInformationPolicyFreeUnits",
+        "contextualGroundingPolicyUnits",
+        "contentPolicyImageUnits",
+        "automatedReasoningPolicyUnits",
+        "automatedReasoningPolicies"
+      ]
+    },
+    "source": "INPUT"
+  },
+  "instrument_faults": {
+    "all_counters_zero": false,
+    "coverage_total_vs_sent": [],
+    "incoherent_coverage": [],
+    "interventions": [],
+    "missing_counter": [],
+    "missing_coverage": [],
+    "n_coverage_total_mismatch": 0,
+    "n_incoherent_coverage": 0,
+    "n_interventions": 0,
+    "n_missing_counter": 0,
+    "n_missing_coverage": 0,
+    "n_unpaired": 0,
+    "n_untagged_partial_coverage": 0,
+    "n_wrong_block_count": 0,
+    "sound": true,
+    "unpaired_rows": [],
+    "untagged_partial_coverage": [],
+    "why_untagged_partial_is_a_fault": "an untagged request the service under-covered means the baseline arm did not evaluate everything it was sent, so a tagged-vs-untagged delta would partly measure the service's own shortfall; on the TAGGED arm guarded < total is the prediction, not a fault",
+    "wrong_block_count": []
+  },
+  "is_smoke": false,
+  "kind": "EXISTENCE",
+  "mutations": 0,
+  "oracle_text": "TRUE if tagged evaluation of a RAG-shaped prompt bills fewer text units than untagged; FALSE if identical",
+  "planned_n": null,
+  "reconciliation": {
+    "breakdown_broken_pairs": [],
+    "disagreeing_pairs": [],
+    "n_breakdown_broken": 0,
+    "n_disagreeing_pairs": 0,
+    "n_fewer": 0,
+    "n_identical": 5,
+    "n_inverted": 0,
+    "n_mechanism_worked": 0,
+    "n_pairs": 5,
+    "n_usage_comparable": 5,
+    "pairs": [
+      {
+        "coverage_comparable": true,
+        "item_id": "pair-r0-a74d556bca59",
+        "mechanism_and_usage_agree": true,
+        "mechanism_says_tagging_worked": false,
+        "predicted_units_if_identical": 7,
+        "predicted_units_if_tagging_works": 1,
+        "request_ids": {
+          "tagged": "b24a45d3-02a7-41af-a102-fc33f903de30",
+          "untagged": "a30150d6-2a32-4471-9403-2a805fd8f875"
+        },
+        "sent_chars": 6659,
+        "tagged_coverage": {
+          "guarded": 6659,
+          "total": 6659
+        },
+        "tagged_units": 7,
+        "tagged_units_match_guarded": true,
+        "untagged_coverage": {
+          "guarded": 6659,
+          "total": 6659
+        },
+        "untagged_units": 7,
+        "untagged_units_match_guarded": true,
+        "usage_comparable": true,
+        "usage_delta_units": 0,
+        "usage_identical": true,
+        "usage_inverted": false,
+        "usage_says_fewer": false
+      },
+      {
+        "coverage_comparable": true,
+        "item_id": "pair-r1-305c80c16147",
+        "mechanism_and_usage_agree": true,
+        "mechanism_says_tagging_worked": false,
+        "predicted_units_if_identical": 7,
+        "predicted_units_if_tagging_works": 1,
+        "request_ids": {
+          "tagged": "c32ea640-aeb9-4d58-bcbb-b905e0c1d7df",
+          "untagged": "d1639236-03a3-45bb-811f-92bab0292a9f"
+        },
+        "sent_chars": 6659,
+        "tagged_coverage": {
+          "guarded": 6659,
+          "total": 6659
+        },
+        "tagged_units": 7,
+        "tagged_units_match_guarded": true,
+        "untagged_coverage": {
+          "guarded": 6659,
+          "total": 6659
+        },
+        "untagged_units": 7,
+        "untagged_units_match_guarded": true,
+        "usage_comparable": true,
+        "usage_delta_units": 0,
+        "usage_identical": true,
+        "usage_inverted": false,
+        "usage_says_fewer": false
+      },
+      {
+        "coverage_comparable": true,
+        "item_id": "pair-r2-ffe09cb20b5b",
+        "mechanism_and_usage_agree": true,
+        "mechanism_says_tagging_worked": false,
+        "predicted_units_if_identical": 7,
+        "predicted_units_if_tagging_works": 1,
+        "request_ids": {
+          "tagged": "a52c075e-1197-4398-95c2-6f212530576f",
+          "untagged": "cbbf42f3-667c-4c9f-a1d4-233cae0a6a70"
+        },
+        "sent_chars": 6659,
+        "tagged_coverage": {
+          "guarded": 6659,
+          "total": 6659
+        },
+        "tagged_units": 7,
+        "tagged_units_match_guarded": true,
+        "untagged_coverage": {
+          "guarded": 6659,
+          "total": 6659
+        },
+        "untagged_units": 7,
+        "untagged_units_match_guarded": true,
+        "usage_comparable": true,
+        "usage_delta_units": 0,
+        "usage_identical": true,
+        "usage_inverted": false,
+        "usage_says_fewer": false
+      },
+      {
+        "coverage_comparable": true,
+        "item_id": "pair-r3-380cd7df890a",
+        "mechanism_and_usage_agree": true,
+        "mechanism_says_tagging_worked": false,
+        "predicted_units_if_identical": 7,
+        "predicted_units_if_tagging_works": 1,
+        "request_ids": {
+          "tagged": "a40118c4-bd8e-4f38-b11f-fe2b6888e5f9",
+          "untagged": "57a12158-4a4c-4038-841e-3947bb4f2541"
+        },
+        "sent_chars": 6659,
+        "tagged_coverage": {
+          "guarded": 6659,
+          "total": 6659
+        },
+        "tagged_units": 7,
+        "tagged_units_match_guarded": true,
+        "untagged_coverage": {
+          "guarded": 6659,
+          "total": 6659
+        },
+        "untagged_units": 7,
+        "untagged_units_match_guarded": true,
+        "usage_comparable": true,
+        "usage_delta_units": 0,
+        "usage_identical": true,
+        "usage_inverted": false,
+        "usage_says_fewer": false
+      },
+      {
+        "coverage_comparable": true,
+        "item_id": "pair-r4-d68ec1910552",
+        "mechanism_and_usage_agree": true,
+        "mechanism_says_tagging_worked": false,
+        "predicted_units_if_identical": 7,
+        "predicted_units_if_tagging_works": 1,
+        "request_ids": {
+          "tagged": "3036b1da-fbbf-4156-afdd-ef33026f8632",
+          "untagged": "a7230e50-6113-40d7-bd31-e8d830b2ed90"
+        },
+        "sent_chars": 6659,
+        "tagged_coverage": {
+          "guarded": 6659,
+          "total": 6659
+        },
+        "tagged_units": 7,
+        "tagged_units_match_guarded": true,
+        "untagged_coverage": {
+          "guarded": 6659,
+          "total": 6659
+        },
+        "untagged_units": 7,
+        "untagged_units_match_guarded": true,
+        "usage_comparable": true,
+        "usage_delta_units": 0,
+        "usage_identical": true,
+        "usage_inverted": false,
+        "usage_says_fewer": false
+      }
+    ],
+    "result_class": "identical_on_every_pair",
+    "why_not_collapsed": "usage is the claim (the sealed oracle names the billed quantity) and coverage is the mechanism; a pair where they point in different directions is a finding about the API's self-consistency and is listed here, not folded into either number"
+  },
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F10-3",
+    "evidence": {
+      "detail": {
+        "n_disagreeing_pairs": 0,
+        "n_fewer": 0,
+        "n_identical": 5,
+        "n_inverted": 0,
+        "n_mechanism_worked": 0,
+        "n_pairs": 5,
+        "result_class": "identical_on_every_pair"
+      },
+      "observed": false
+    },
+    "family": "unassigned_by_seal",
+    "kind": "EXISTENCE",
+    "mutation_required": false,
+    "n_attempted": 5,
+    "n_met": true,
+    "n_usable": 5,
+    "notes": [],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [],
+    "verdict": "FALSE"
+  },
+  "run_id": "r20260813T145248Z",
+  "seal_notes": {
+    "alpha": 0.05,
+    "consequence": "class S with no sealed family: an uncorrected single hypothesis at the nominal alpha, per DEVIATIONS.md/DEV-P1-3",
+    "declared_seal_gap": true,
+    "family": "unassigned_by_seal",
+    "kind": "EXISTENCE",
+    "sealed_branches": "the prose names 'fewer' (TRUE) and 'identical' (FALSE); a mixed or inverted outcome is outside both named branches — it is FALSE on the sealed boolean ('bills fewer' did not hold) and flagged as outside_sealed_branches rather than misfiled under 'identical'",
+    "why_obs_existence": "the sealed binding is EXISTENCE, so oracle._decide _need()s observed_bool; an obs_paired observation (improved/p_value) would make evaluate raise on the sealed branch. The offline suite pins both facts"
+  },
+  "sibling_cases_not_decided_here": {
+    "F10-1": {
+      "claim": "input-blocked requests incur no model-inference charge",
+      "why_not_here": "F10-1 is a Cost-Explorer/tagged-spend question about model inference under Converse/InvokeModel, with a ~24h billing-data lag. This script invokes no model and reads no billing-side instrument; nothing here bears on F10-1 in either direction"
+    },
+    "F10-2": {
+      "claim": "TextUnitCount scales as ceil(L/1000) and matches itself",
+      "why_not_here": "published separately from a length ladder; this case REUSES its quantum and filler and holds the length fixed while manipulating only the qualifiers"
+    }
+  },
+  "verdict": "FALSE",
+  "verdict_detail": {
+    "observed": false,
+    "outside_sealed_branches": false,
+    "result_class": "identical_on_every_pair",
+    "rule": "TRUE iff tagged < untagged on EVERY usable pair; 'identical on every pair' is the sealed FALSE branch; a mixed/inverted outcome is FALSE on the sealed boolean and flagged as outside the two named branches",
+    "sealed_false_branch_identical": true,
+    "sealed_true_branch": false
+  },
+  "what_true_does_not_prove": {
+    "no_invoice_was_read": "TRUE says the API reported consuming fewer units for the tagged request. No Cost Explorer, CUR or invoice figure is read; the dollar estimate above is a projection from the verified unit price, not a billing-side measurement (the same limit F10-2 states, for the same noise-floor reasons)"
+  }
+}
