@@ -1,0 +1,47 @@
+{
+  "answer_q1_create_accepted": false,
+  "collected_at": "20260814T041605Z",
+  "create_error": "ValidationException: An error occurred (ValidationException) when calling the CreateAgentRuntime operation (reached max retries: 0): Access denied when trying to retrieve zip file from S3. Check if you have sufficient permissions on the object",
+  "created": [
+    "s3-object/diag/r20260810T130945Z/deployment_package.zip",
+    "iam-role/grx-diag-runtime-code-r20260810T130945Z"
+  ],
+  "deleted": [
+    "iam-role/grx-diag-runtime-code-r20260810T130945Z",
+    "s3-object/diag/r20260810T130945Z/deployment_package.zip"
+  ],
+  "diagnostic": "runtime-code-artifact",
+  "question": "does CreateAgentRuntime accept a container-free codeConfiguration here",
+  "region": "us-east-1",
+  "run_id": "r20260810T130945Z",
+  "sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "steps": [
+    {
+      "bucket": "grx-runtime-code-<account>-us-east-1",
+      "existed": true,
+      "step": "s3_bucket"
+    },
+    {
+      "bytes": 14098,
+      "key": "diag/r20260810T130945Z/deployment_package.zip",
+      "step": "upload"
+    },
+    {
+      "arn": "arn:aws:iam::<account>:role/grx-diag-runtime-code-r20260810T130945Z",
+      "name": "grx-diag-runtime-code-r20260810T130945Z",
+      "step": "iam_role"
+    },
+    {
+      "accepted": false,
+      "error": "ValidationException",
+      "step": "create_agent_runtime"
+    },
+    {
+      "name": "grx-diag-runtime-code-r20260810T130945Z",
+      "step": "delete_role"
+    }
+  ]
+}

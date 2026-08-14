@@ -398,3 +398,102 @@ def test_the_published_f3_10_result_carries_no_partial_account_id():
     text = p.read_text(encoding="utf-8")
     for k in range(4, 13):
         assert ACCT[:k] not in text, f"{k} leading digits of the account id are published"
+
+
+# ------------------------------------------------------------------ ephemeral infrastructure ids
+# Added 2026-08-14, after F5-7b published 31 VPC-family ids from a correctly-masked write. The
+# fixtures here are invented ids in the right SHAPE — nothing in this file needs a real one, and a
+# test file is the last place to write one down.
+
+# Assembled rather than written out, so that no id-shaped LITERAL exists in this file. They have to
+# be hex to be accepted by `register_resource_id` — that is the shape under test — which means a
+# literal here would trip `check_redaction.py`'s `vpc-or-subnet-id` pattern and need a waiver. The
+# repo's own rule is that the first question a finding asks is whether the value should be in the
+# file at all, and for an invented fixture the answer is that it need not be there in that form.
+# (`f5_redteam/diag_vpc_runtime.py` keeps its fake ids as literals and IS waived, correctly: AWS
+# echoes those back inside an archived error string, so the literal is load-bearing there. Nothing
+# echoes these.)
+FAKE_IDS = tuple(f"{family}-0{digit * 15}" for family, digit in
+                 (("vpc", "a"), ("subnet", "b"), ("subnet", "c"), ("sg", "d"), ("eni", "e")))
+
+
+@pytest.fixture(autouse=True)
+def _clean_resource_registry():
+    """No test may see another's registrations: the placeholders are numbered per family."""
+    R.reset_resource_ids()
+    yield
+    R.reset_resource_ids()
+
+
+def test_a_registered_id_is_masked_and_an_unregistered_one_is_not():
+    """Registry-gated, exactly like the account rule, and fail-OPEN for the same reason.
+
+    The unregistered half is the load-bearing half: `resolve_forbidden()` prints the RUNNER's own
+    VPC and every subnet and security group in it, so a human can confirm the deny-list resolved to
+    the right network. Masking those would turn a safety printout into an unreadable one.
+    """
+    R.register_resource_id(FAKE_IDS[0])
+    out = R.mask_text(f"built {FAKE_IDS[0]} beside runner {FAKE_IDS[3]}")
+    assert FAKE_IDS[0] not in out
+    assert FAKE_IDS[3] in out, "an unregistered id must stay readable"
+
+
+def test_the_placeholder_keeps_the_family_and_distinguishes_members_of_it():
+    """Two subnets must not collapse to one token: a two-subnet topology has to stay legible."""
+    a = R.register_resource_id(FAKE_IDS[1])
+    b = R.register_resource_id(FAKE_IDS[2])
+    assert a != b, "two subnets collapsed to the same placeholder"
+    assert a.startswith("subnet-") and b.startswith("subnet-")
+    assert R.register_resource_id(FAKE_IDS[1]) == a, "registration must be idempotent"
+
+
+def test_masking_registered_ids_is_idempotent():
+    for rid in FAKE_IDS:
+        R.register_resource_id(rid)
+    once = R.mask_text("residue: " + ", ".join(FAKE_IDS))
+    assert R.mask_text(once) == once
+    for rid in FAKE_IDS:
+        assert rid not in once
+
+
+def test_the_masked_form_passes_the_redaction_gates_own_pattern():
+    """The placeholder must not itself trip the gate, or a masked file would need a waiver."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "_gate", Path(__file__).resolve().parents[2] / "check_redaction.py")
+    gate = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gate)
+    pattern = gate.PATTERNS_BY_NAME["vpc-or-subnet-id"]
+    for rid in FAKE_IDS:
+        assert pattern.search(rid), f"fixture {rid} is not in the shape the gate looks for"
+        R.register_resource_id(rid)
+        assert not pattern.search(R.mask_text(rid)), (
+            f"the placeholder for {rid} still matches the gate's own pattern, so a fully masked "
+            f"file would need a waiver in order to ship")
+
+
+def test_registration_refuses_anything_that_is_not_an_infrastructure_id():
+    """A registry that accepted arbitrary strings could be used to mask evidence.
+
+    Two of these need a word. The ARN carries a well-formed id in its resource segment and must
+    still be refused, because `_RESOURCE_ID` is anchored — masking a whole ARN on the strength of
+    its tail would take the account segment with it and hide it behind a placeholder that claims to
+    be a VPC id. Its tail is kept at seven hex digits, one below the pattern's minimum, so that this
+    file contains no id-shaped literal for the redaction gate to find; the anchors are what does the
+    refusing, so the tail's length is not what the test turns on. The account-id-shaped string is
+    one of the three literals the repo designates safe (`111122223333`) — an earlier draft of this
+    test used the project's REAL account id here, which the gate caught, and which is the whole
+    reason `check_redaction.py` reads bytes instead of trusting that a file about redaction is
+    redacted.
+    """
+    for bad in ("", "not-an-id", "vpc-zzzz", "arn:aws:ec2:us-east-1:111122223333:vpc/vpc-0abc123",
+                "111122223333", "subnet-0aaa"):
+        with pytest.raises(ValueError):
+            R.register_resource_id(bad)
+
+
+def test_mask_walks_structures_not_just_strings():
+    """`mask()` is what `Checkpoint.save()` uses; the registry has to reach nested leaves and keys."""
+    R.register_resource_id(FAKE_IDS[0])
+    got = R.mask({FAKE_IDS[0]: [{"vpc": FAKE_IDS[0]}]})
+    assert FAKE_IDS[0] not in json.dumps(got)

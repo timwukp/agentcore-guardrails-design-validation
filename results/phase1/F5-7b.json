@@ -1,0 +1,493 @@
+{
+  "arms": {
+    "no_nat_route": {
+      "arm": "no_nat_route",
+      "created": true,
+      "failure_reason": "",
+      "image": "public.ecr.aws/nginx/nginx:stable",
+      "invoke": {
+        "body": "",
+        "duration_ms": 70082.358569,
+        "error_code": "",
+        "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fgrx_f57b_noroute_r20260810t130945z-3mYHW26mMo/invocations\"",
+        "http_status": null,
+        "ok": false,
+        "request_id": "",
+        "step_label": "pull",
+        "step_why": "names the fetch itself: ['timeout']"
+      },
+      "network_mode": "VPC",
+      "runtime_arn_recorded": true,
+      "runtime_id": "grx_f57b_noroute_r20260810t130945z-3mYHW26mMo",
+      "runtime_name": "grx_f57b_noroute_r20260810t130945z",
+      "seconds_to_terminal": 261.9,
+      "security_groups": [
+        "sg-<redacted-1>"
+      ],
+      "step_label": "no_reason_given",
+      "step_why": "the service returned no failureReason at all",
+      "subnets": [
+        "subnet-<redacted-1>"
+      ],
+      "terminal_status": "READY"
+    },
+    "route_removed_again": {
+      "arm": "route_removed_again",
+      "created": true,
+      "failure_reason": "",
+      "image": "public.ecr.aws/nginx/nginx:stable",
+      "invoke": {
+        "body": "",
+        "duration_ms": 70073.474289,
+        "error_code": "",
+        "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fgrx_f57b_restored_r20260810t130945z-mvw2EvGpLX/invocations\"",
+        "http_status": null,
+        "ok": false,
+        "request_id": "",
+        "step_label": "pull",
+        "step_why": "names the fetch itself: ['timeout']"
+      },
+      "network_mode": "VPC",
+      "runtime_arn_recorded": true,
+      "runtime_id": "grx_f57b_restored_r20260810t130945z-mvw2EvGpLX",
+      "runtime_name": "grx_f57b_restored_r20260810t130945z",
+      "seconds_to_terminal": 20.2,
+      "security_groups": [
+        "sg-<redacted-1>"
+      ],
+      "step_label": "no_reason_given",
+      "step_why": "the service returned no failureReason at all",
+      "subnets": [
+        "subnet-<redacted-1>"
+      ],
+      "terminal_status": "READY"
+    },
+    "with_nat_route": {
+      "arm": "with_nat_route",
+      "created": true,
+      "failure_reason": "",
+      "image": "public.ecr.aws/nginx/nginx:stable",
+      "invoke": {
+        "body": "",
+        "duration_ms": 70077.305758,
+        "error_code": "",
+        "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fgrx_f57b_route_r20260810t130945z-OYSQfuDM4P/invocations\"",
+        "http_status": null,
+        "ok": false,
+        "request_id": "",
+        "step_label": "pull",
+        "step_why": "names the fetch itself: ['timeout']"
+      },
+      "network_mode": "VPC",
+      "runtime_arn_recorded": true,
+      "runtime_id": "grx_f57b_route_r20260810t130945z-OYSQfuDM4P",
+      "runtime_name": "grx_f57b_route_r20260810t130945z",
+      "seconds_to_terminal": 20.2,
+      "security_groups": [
+        "sg-<redacted-1>"
+      ],
+      "step_label": "no_reason_given",
+      "step_why": "the service returned no failureReason at all",
+      "subnets": [
+        "subnet-<redacted-1>"
+      ],
+      "terminal_status": "READY"
+    }
+  },
+  "billable_calls": 0,
+  "blockers": {
+    "blockers": [
+      "verdict is INCONCLUSIVE, which supports no amendment: RECORDED and INCONCLUSIVE are findings about what was observed, not about what the document got wrong",
+      "the mandatory mutation arm did not run, or did not invert"
+    ],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F5-7b",
+    "clear_here": false
+  },
+  "case_id": "F5-7b",
+  "expiry": "2026-08-13T13:09:45+00:00",
+  "instrument": "A VPC built for this case alone: 10.61.0.0/16, a public subnet holding a NAT gateway and a private subnet holding the runtime's ENIs, each subnet on its own explicitly associated route table. Three VPC-mode AgentCore Runtimes created in sequence from the same public image (public.ecr.aws/nginx/nginx:stable) and the same execution role, differing only in whether the private route table carried 0.0.0.0/0 -> the NAT gateway. Every arm measured on BOTH channels: the create-time terminal status with its failureReason, and an actual InvokeAgentRuntime.",
+  "kind": "EXISTENCE",
+  "limitations": [
+    "one Region, one AZ, one image, one arm per condition — planned_n is None for this case, so n=1 is the pre-registered denominator and not a shortfall",
+    "the private subnet had no VPC endpoints at all, so this measures the absence of ANY egress path and not the absence of a NAT gateway specifically",
+    "single calendar day: under PREREGISTRATION.yaml's reproduction_before_amendment rule a day-2 replication is required before the document is amended on this result"
+  ],
+  "mutation": {
+    "applied": true,
+    "inverse_reverified": true,
+    "restored": true,
+    "rule": "PREREGISTRATION.yaml restore_verification, whose applies_to names F5-7b: restore, then RE-RUN the blocking assertion",
+    "what": "ec2:CreateRoute 0.0.0.0/0 -> the NAT gateway on the private route table, and its inverse ec2:DeleteRoute"
+  },
+  "mutations": 2,
+  "network_and_restore": {
+    "default_route_gone": true,
+    "eni_clear_seconds": 422.6,
+    "eni_left_in_private_subnet": "1",
+    "nat_delete_seconds": 60.2,
+    "nat_delete_state": "deleted",
+    "network": {
+      "assoc_private": "rtbassoc-0dc232d57da7b7b76",
+      "assoc_public": "rtbassoc-04239b524375b19c8",
+      "az": "us-east-1a",
+      "eip_alloc": "eipalloc-<redacted-1>",
+      "igw_id": "igw-<redacted-1>",
+      "nat_id": "nat-<redacted-1>",
+      "nat_seconds": 105.3,
+      "nat_state": "available",
+      "rtb_private": "rtb-<redacted-2>",
+      "rtb_public": "rtb-<redacted-1>",
+      "sg_id": "sg-<redacted-1>",
+      "subnet_private": "subnet-<redacted-1>",
+      "subnet_public": "subnet-<redacted-2>",
+      "vpc_id": "vpc-<redacted-1>"
+    },
+    "private_routes_after_restore": [
+      {
+        "DestinationCidrBlock": "10.61.0.0/16",
+        "GatewayId": "local",
+        "State": "active"
+      }
+    ]
+  },
+  "oracle_text": "TRUE if a VPC-mode runtime without a NAT route fails image pull and succeeds with one; FALSE if egress is reachable either way",
+  "planned_n": null,
+  "pull_evidence": {
+    "no_nat_route": {
+      "label": "ambiguous",
+      "why": "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any other step. With this image a successful pull produces the same silence as a failed one — nginx serves :80 and AgentCore's contract is :8080 — so this arm does not distinguish a fetched image from an unfetched one: Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fg"
+    },
+    "route_removed_again": {
+      "label": "ambiguous",
+      "why": "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any other step. With this image a successful pull produces the same silence as a failed one — nginx serves :80 and AgentCore's contract is :8080 — so this arm does not distinguish a fetched image from an unfetched one: Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fg"
+    },
+    "with_nat_route": {
+      "label": "ambiguous",
+      "why": "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any other step. With this image a successful pull produces the same silence as a failed one — nginx serves :80 and AgentCore's contract is :8080 — so this arm does not distinguish a fetched image from an unfetched one: Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fg"
+    }
+  },
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F5-7b",
+    "evidence": {
+      "detail": {
+        "arms": {
+          "no_nat_route": {
+            "arm": "no_nat_route",
+            "created": true,
+            "failure_reason": "",
+            "image": "public.ecr.aws/nginx/nginx:stable",
+            "invoke": {
+              "body": "",
+              "duration_ms": 70082.358569,
+              "error_code": "",
+              "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fgrx_f57b_noroute_r20260810t130945z-3mYHW26mMo/invocations\"",
+              "http_status": null,
+              "ok": false,
+              "request_id": "",
+              "step_label": "pull",
+              "step_why": "names the fetch itself: ['timeout']"
+            },
+            "network_mode": "VPC",
+            "runtime_arn_recorded": true,
+            "runtime_id": "grx_f57b_noroute_r20260810t130945z-3mYHW26mMo",
+            "runtime_name": "grx_f57b_noroute_r20260810t130945z",
+            "seconds_to_terminal": 261.9,
+            "security_groups": [
+              "sg-<redacted-1>"
+            ],
+            "step_label": "no_reason_given",
+            "step_why": "the service returned no failureReason at all",
+            "subnets": [
+              "subnet-<redacted-1>"
+            ],
+            "terminal_status": "READY"
+          },
+          "route_removed_again": {
+            "arm": "route_removed_again",
+            "created": true,
+            "failure_reason": "",
+            "image": "public.ecr.aws/nginx/nginx:stable",
+            "invoke": {
+              "body": "",
+              "duration_ms": 70073.474289,
+              "error_code": "",
+              "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fgrx_f57b_restored_r20260810t130945z-mvw2EvGpLX/invocations\"",
+              "http_status": null,
+              "ok": false,
+              "request_id": "",
+              "step_label": "pull",
+              "step_why": "names the fetch itself: ['timeout']"
+            },
+            "network_mode": "VPC",
+            "runtime_arn_recorded": true,
+            "runtime_id": "grx_f57b_restored_r20260810t130945z-mvw2EvGpLX",
+            "runtime_name": "grx_f57b_restored_r20260810t130945z",
+            "seconds_to_terminal": 20.2,
+            "security_groups": [
+              "sg-<redacted-1>"
+            ],
+            "step_label": "no_reason_given",
+            "step_why": "the service returned no failureReason at all",
+            "subnets": [
+              "subnet-<redacted-1>"
+            ],
+            "terminal_status": "READY"
+          },
+          "with_nat_route": {
+            "arm": "with_nat_route",
+            "created": true,
+            "failure_reason": "",
+            "image": "public.ecr.aws/nginx/nginx:stable",
+            "invoke": {
+              "body": "",
+              "duration_ms": 70077.305758,
+              "error_code": "",
+              "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fgrx_f57b_route_r20260810t130945z-OYSQfuDM4P/invocations\"",
+              "http_status": null,
+              "ok": false,
+              "request_id": "",
+              "step_label": "pull",
+              "step_why": "names the fetch itself: ['timeout']"
+            },
+            "network_mode": "VPC",
+            "runtime_arn_recorded": true,
+            "runtime_id": "grx_f57b_route_r20260810t130945z-OYSQfuDM4P",
+            "runtime_name": "grx_f57b_route_r20260810t130945z",
+            "seconds_to_terminal": 20.2,
+            "security_groups": [
+              "sg-<redacted-1>"
+            ],
+            "step_label": "no_reason_given",
+            "step_why": "the service returned no failureReason at all",
+            "subnets": [
+              "subnet-<redacted-1>"
+            ],
+            "terminal_status": "READY"
+          }
+        },
+        "evidence": {
+          "no_nat_route": [
+            "ambiguous",
+            "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any other step. With this image a successful pull produces the same silence as a failed one — nginx serves :80 and AgentCore's contract is :8080 — so this arm does not distinguish a fetched image from an unfetched one: Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fg"
+          ],
+          "route_removed_again": [
+            "ambiguous",
+            "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any other step. With this image a successful pull produces the same silence as a failed one — nginx serves :80 and AgentCore's contract is :8080 — so this arm does not distinguish a fetched image from an unfetched one: Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fg"
+          ],
+          "with_nat_route": [
+            "ambiguous",
+            "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any other step. With this image a successful pull produces the same silence as a failed one — nginx serves :80 and AgentCore's contract is :8080 — so this arm does not distinguish a fetched image from an unfetched one: Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fg"
+          ]
+        },
+        "report": {
+          "default_route_gone": true,
+          "eni_clear_seconds": 422.6,
+          "eni_left_in_private_subnet": "1",
+          "nat_delete_seconds": 60.2,
+          "nat_delete_state": "deleted",
+          "network": {
+            "assoc_private": "rtbassoc-0dc232d57da7b7b76",
+            "assoc_public": "rtbassoc-04239b524375b19c8",
+            "az": "us-east-1a",
+            "eip_alloc": "eipalloc-<redacted-1>",
+            "igw_id": "igw-<redacted-1>",
+            "nat_id": "nat-<redacted-1>",
+            "nat_seconds": 105.3,
+            "nat_state": "available",
+            "rtb_private": "rtb-<redacted-2>",
+            "rtb_public": "rtb-<redacted-1>",
+            "sg_id": "sg-<redacted-1>",
+            "subnet_private": "subnet-<redacted-1>",
+            "subnet_public": "subnet-<redacted-2>",
+            "vpc_id": "vpc-<redacted-1>"
+          },
+          "private_routes_after_restore": [
+            {
+              "DestinationCidrBlock": "10.61.0.0/16",
+              "GatewayId": "local",
+              "State": "active"
+            }
+          ]
+        },
+        "signatures": {
+          "no_nat_route": {
+            "create": {
+              "channel": "terminal",
+              "code": "READY",
+              "text": ""
+            },
+            "invoke": {
+              "channel": "invoke_error",
+              "code": "",
+              "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fgrx_f57b_noroute_r20260810t130945z-3mYHW26mMo/invocations\""
+            }
+          },
+          "route_removed_again": {
+            "create": {
+              "channel": "terminal",
+              "code": "READY",
+              "text": ""
+            },
+            "invoke": {
+              "channel": "invoke_error",
+              "code": "",
+              "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fgrx_f57b_restored_r20260810t130945z-mvw2EvGpLX/invocations\""
+            }
+          },
+          "with_nat_route": {
+            "create": {
+              "channel": "terminal",
+              "code": "READY",
+              "text": ""
+            },
+            "invoke": {
+              "channel": "invoke_error",
+              "code": "",
+              "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fgrx_f57b_route_r20260810t130945z-OYSQfuDM4P/invocations\""
+            }
+          }
+        },
+        "why_no_route": "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any other step. With this image a successful pull produces the same silence as a failed one — nginx serves :80 and AgentCore's contract is :8080 — so this arm does not distinguish a fetched image from an unfetched one: Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fg",
+        "why_with_route": "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any other step. With this image a successful pull produces the same silence as a failed one — nginx serves :80 and AgentCore's contract is :8080 — so this arm does not distinguish a fetched image from an unfetched one: Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fg"
+      },
+      "measured": false,
+      "reason": "neither channel distinguished the fetch on at least one arm (no_nat_route=ambiguous, with_nat_route=ambiguous). The oracle is denominated in the image pull, and an observation that does not locate the pull cannot answer it in either direction.",
+      "why_not_recorded": "RECORDED is a sealed property of the case, meaning the pre-registration declared the outcome unknown and both answers are findings. This case's sealed kind is EXISTENCE: it made a prediction, and the prediction was not tested"
+    },
+    "family": "unassigned_by_seal",
+    "kind": "EXISTENCE",
+    "mutation_inverted": null,
+    "mutation_required": true,
+    "n_attempted": 0,
+    "n_met": true,
+    "n_usable": 0,
+    "notes": [
+      "not measured: neither channel distinguished the fetch on at least one arm (no_nat_route=ambiguous, with_nat_route=ambiguous). The oracle is denominated in the image pull, and an observation that does not locate the pull cannot answer it in either direction."
+    ],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [],
+    "verdict": "INCONCLUSIVE"
+  },
+  "rederived": {
+    "audit_trail": "the first scoring is archived unchanged at evidence/.../F5-7b/analysis.json; this write used store=None so it could not touch it",
+    "changed": "the READING of the archived arms, not the observation",
+    "instrument_fix": [
+      "PULL_MARKERS no longer contains 'timeout' or 'timed out' — words a client-side socket error matches and a service-supplied failureReason does not need",
+      "pull_evidence() now returns `ambiguous` BY CONSTRUCTION when an invoke carries no HTTP status and no request id, before either marker list is consulted",
+      "the branch table moved out of main() into decide(), so this re-scoring ran the producer's own code rather than a transcription of it"
+    ],
+    "of": "r20260810T130945Z",
+    "on": "2026-08-14",
+    "original_labels": {
+      "no_nat_route": "pull_failed",
+      "route_removed_again": "pull_failed",
+      "with_nat_route": "pull_failed"
+    },
+    "original_verdict": "INCONCLUSIVE",
+    "rederived_labels": {
+      "no_nat_route": "ambiguous",
+      "route_removed_again": "ambiguous",
+      "with_nat_route": "ambiguous"
+    },
+    "rederived_verdict": "INCONCLUSIVE",
+    "still_owed": "a run with a working invoke channel, or the runtime's CloudWatch log stream, before this case has been measured at all. See results/FINDING-F5-7B.md section 4.",
+    "what_was_not_re-measured": "everything. No AWS resource was created, no arm was re-run, and the arms, signatures, network report and residue in this file are the archived ones byte for byte. Only pull_evidence, verdict_reading and the record were recomputed.",
+    "why": "The first scoring labelled all three arms `pull_failed` on the strength of a client-side botocore socket timeout, because PULL_MARKERS contained 'timeout'/'timed out' and bucket_failure() was written to read a SERVICE-supplied failureReason. The three invokes returned 70082 / 70077 / 70073 ms — a 9 ms spread over three independent calls, which is a constant read as a measurement. An invoke that received no HTTP status and no request id cannot name the fetch or any other step, and with this image (nginx serves :80, AgentCore's contract is :8080) a SUCCESSFUL pull produces the same silence as a failed one. So the arms are `ambiguous`, and the verdict is reached through the instrument branch rather than the pair table.",
+    "why_the_published_verdict_was_nevertheless_safe": "The mislabelling could only ever emit `pull_failed`. The oracle's TRUE requires the pair (pull_failed, pull_succeeded) and its FALSE requires pull_succeeded on the no-route arm, so the defect could not manufacture either verdict — it could only push toward INCONCLUSIVE, which is where the case already sat. Nothing wrong was published. What was wrong was the recorded REASON, and the repair it invited: 'the arms produced a pair the oracle does not name' points a future reader at the pair table, and relaxing the pair table would convert a silent instrument failure into a published FALSE about a third party's networking."
+  },
+  "region": "us-east-1",
+  "residue": {
+    "back_to_baseline": false,
+    "deleted": [
+      "ec2-rtb-assoc/f57b_assoc_public",
+      "ec2-rtb-assoc/f57b_assoc_private",
+      "ec2-rtb/f57b_rtb_public",
+      "ec2-rtb/f57b_rtb_private",
+      "ec2-natgw/f57b_natgw",
+      "ec2-eip/f57b_eip",
+      "ec2-igw/f57b_igw",
+      "ec2-subnet/f57b_subnet_public",
+      "iam-role/f57b_runtime_exec"
+    ],
+    "not_deleted": [
+      {
+        "error": "InvalidParameterValue: Network interface 'eni-<redacted-1>' is currently in use.",
+        "resource": "eni/eni-<redacted-1>"
+      },
+      {
+        "error": "DependencyViolation: resource sg-<redacted-1> has a dependent object",
+        "params": {
+          "GroupId": "sg-<redacted-1>"
+        },
+        "resource": "ec2-sg/f57b_sg"
+      },
+      {
+        "error": "DependencyViolation: The subnet 'subnet-<redacted-1>' has dependencies and cannot be deleted.",
+        "params": {
+          "SubnetId": "subnet-<redacted-1>"
+        },
+        "resource": "ec2-subnet/f57b_subnet_private"
+      },
+      {
+        "error": "DependencyViolation: The vpc 'vpc-<redacted-1>' has dependencies and cannot be deleted.",
+        "params": {
+          "VpcId": "vpc-<redacted-1>"
+        },
+        "resource": "ec2-vpc/f57b_vpc"
+      }
+    ],
+    "note": "Everything this case created is created and deleted here. The NAT gateway is the only item that would keep billing, so its delete is polled to state `deleted` rather than trusted to return 200 — the restore_verification discipline applied to a teardown."
+  },
+  "run_id": "r20260810T130945Z",
+  "signatures": {
+    "no_nat_route": {
+      "create": {
+        "channel": "terminal",
+        "code": "READY",
+        "text": ""
+      },
+      "invoke": {
+        "channel": "invoke_error",
+        "code": "",
+        "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fgrx_f57b_noroute_r20260810t130945z-3mYHW26mMo/invocations\""
+      }
+    },
+    "route_removed_again": {
+      "create": {
+        "channel": "terminal",
+        "code": "READY",
+        "text": ""
+      },
+      "invoke": {
+        "channel": "invoke_error",
+        "code": "",
+        "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fgrx_f57b_restored_r20260810t130945z-mvw2EvGpLX/invocations\""
+      }
+    },
+    "with_nat_route": {
+      "create": {
+        "channel": "terminal",
+        "code": "READY",
+        "text": ""
+      },
+      "invoke": {
+        "channel": "invoke_error",
+        "code": "",
+        "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fgrx_f57b_route_r20260810t130945z-OYSQfuDM4P/invocations\""
+      }
+    }
+  },
+  "verdict": "INCONCLUSIVE",
+  "verdict_reading": "see `record.notes`",
+  "verdict_rule": "TRUE if a VPC-mode runtime without a NAT route fails image pull and succeeds with one; FALSE if egress is reachable either way",
+  "what_true_does_not_prove": [
+    "that the runtime WORKS in a VPC — the image serves :80 and AgentCore's contract is POST /invocations and GET /ping on :8080, so no arm here produced a functioning runtime and none was needed: the comparison is differential",
+    "that a NAT gateway is the only way to supply the route — a VPC endpoint or an internet gateway on the private subnet would also carry the fetch, and this case measured one arrangement rather than enumerating them",
+    "anything about a CONTAINER image held in a private ECR repository, which needs an additional grant and, in a VPC with no route, an endpoint of its own",
+    "that the pull is the FIRST thing to fail without egress — it is the thing the seal names, and other steps may also fail; the arms are labelled by which step the service itself named, not by which step failed earliest"
+  ],
+  "why_this_matters_operationally": "The document's VPC guidance tells a reader that a private-subnet runtime needs a NAT route or an equivalent, which is advice with a cost attached: a NAT gateway bills hourly. Whether it is actually REQUIRED, and what the failure looks like when it is absent, is the difference between provisioning one on evidence and provisioning one on caution."
+}

@@ -1,0 +1,89 @@
+{
+  "answer_q1_create_accepted": true,
+  "answer_q2_terminal_status": "READY",
+  "answer_q3_invoke_reached_handler": true,
+  "answer_q4_identity": {
+    "identity": {
+      "all_aws_env_names": [
+        "AWS_DEFAULT_REGION",
+        "AWS_EXECUTION_ENV",
+        "AWS_REGION"
+      ],
+      "credential_source": "none_found",
+      "env_names_present": [
+        "AWS_DEFAULT_REGION",
+        "AWS_EXECUTION_ENV",
+        "AWS_REGION"
+      ],
+      "error": "no usable credentials were discoverable from inside the runtime"
+    },
+    "probe": "grx-runtime-code-artifact"
+  },
+  "collected_at": "20260814T032523Z",
+  "created": [
+    "s3-object/diag/r20260810T130945Z/deployment_package.zip",
+    "iam-role/grx-diag-runtime-code-r20260810T130945Z",
+    "agent-runtime/grx_diag_code_r20260810t130945z-E57tpiEqO0"
+  ],
+  "deleted": [
+    "agent-runtime/grx_diag_code_r20260810t130945z-E57tpiEqO0",
+    "iam-role/grx-diag-runtime-code-r20260810T130945Z",
+    "s3-object/diag/r20260810T130945Z/deployment_package.zip"
+  ],
+  "diagnostic": "runtime-code-artifact",
+  "failure_reason": null,
+  "invoke_status_code": 200,
+  "question": "does CreateAgentRuntime accept a container-free codeConfiguration here",
+  "region": "us-east-1",
+  "run_id": "r20260810T130945Z",
+  "runtime_arn": "arn:aws:bedrock-agentcore:us-east-1:<account>:runtime/grx_diag_code_r20260810t130945z-E57tpiEqO0",
+  "runtime_version": "1",
+  "sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "seconds_to_terminal": 10.8,
+  "steps": [
+    {
+      "bucket": "grx-runtime-code-<account>-us-east-1",
+      "existed": true,
+      "step": "s3_bucket"
+    },
+    {
+      "bytes": 6291,
+      "key": "diag/r20260810T130945Z/deployment_package.zip",
+      "step": "upload"
+    },
+    {
+      "arn": "arn:aws:iam::<account>:role/grx-diag-runtime-code-r20260810T130945Z",
+      "name": "grx-diag-runtime-code-r20260810T130945Z",
+      "step": "iam_role"
+    },
+    {
+      "accepted": true,
+      "id": "grx_diag_code_r20260810t130945z-E57tpiEqO0",
+      "status": "CREATING",
+      "step": "create_agent_runtime"
+    },
+    {
+      "failure": "-",
+      "seconds": 10.8,
+      "status": "READY",
+      "step": "poll"
+    },
+    {
+      "bytes": 323,
+      "ok": true,
+      "status": 200,
+      "step": "invoke"
+    },
+    {
+      "id": "grx_diag_code_r20260810t130945z-E57tpiEqO0",
+      "step": "delete_runtime"
+    },
+    {
+      "name": "grx-diag-runtime-code-r20260810T130945Z",
+      "step": "delete_role"
+    }
+  ]
+}

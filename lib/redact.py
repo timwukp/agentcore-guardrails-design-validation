@@ -47,6 +47,19 @@ redaction findings *inside the module whose job is to prevent them* — the same
 shift the Region into the account slot and silently re-label every trial's serving
 Region — turning a redaction fix into a data corruption. Verified by test: masking is
 idempotent and leaves `region_of` and `partition_of` unchanged.
+
+A second class of identifier, added later and for a measured reason
+------------------------------------------------------------------
+The account ID was the only thing this module masked until 2026-08-14, when F5-7b — the
+first and only case in the project that BUILDS A VPC — wrote 31 VPC-family ids into
+`results/phase1/F5-7b.json`. `phase1.emit()` had masked that file correctly all along;
+the masker simply had no rule for the class. See `register_resource_id`, which is opt-in
+per producer, so no case that does not create infrastructure is affected by it at all.
+
+The lesson generalises past this module: a test that asserts a write is *wrapped* in a
+masker (`lib/tests/test_results_writes_are_masked.py`) and a gate that reads the *bytes*
+(`check_redaction.py`) do not overlap, and what lives in the gap is precisely "an
+identifier shape the masker does not cover". The gate has to stay the backstop.
 """
 
 from __future__ import annotations
@@ -161,6 +174,87 @@ def known_account_ids() -> frozenset[str]:
     return frozenset(_KNOWN)
 
 
+# ---------------------------------------------------------------------------------------------
+# ephemeral infrastructure ids
+# ---------------------------------------------------------------------------------------------
+# The id families this registry accepts. Deliberately WIDER than the redaction gate's
+# `vpc-or-subnet-id` pattern, which covers only vpc/subnet/sg/eni: a producer that creates an
+# internet gateway, a NAT gateway, a route table and an Elastic IP discloses those ids in exactly
+# the same way, and masking only the four the gate happens to check is tuning the fix to the
+# tripwire rather than to the disclosure. `ela-attach` is here because an AgentCore VPC runtime's
+# ENI carries a service-owned attachment id (measured 2026-08-14, F5-7b §5).
+_RESOURCE_ID = re.compile(
+    r"^(vpc|subnet|sg|eni|igw|nat|rtb|eipalloc|acl|ela-attach)-[0-9a-f]{8,17}$")
+
+# The placeholder KEEPS THE FAMILY PREFIX and numbers within it, for the same reason
+# `ACCOUNT_PLACEHOLDER` keeps the ARN's six-colon shape: the evidence has to stay readable. A
+# residue block saying `DependencyViolation: The subnet <redacted-2> has dependencies` still tells
+# a reader which resource kind blocked the teardown and that it was the second subnet registered,
+# which is the whole content of the observation. Collapsing every id to one opaque token would
+# make a two-subnet topology indistinguishable from a one-subnet one.
+#
+# Contains no hex, so masking is idempotent: a second pass finds no registered id to replace.
+_KNOWN_RESOURCES: dict[str, str] = {}
+_RESOURCE_COUNTS: dict[str, int] = {}
+
+
+def register_resource_id(resource_id: str) -> str:
+    """Teach the mask one ephemeral infrastructure id, and return its placeholder.
+
+    Why a registry, and why this is not a shape-based pattern
+    --------------------------------------------------------
+    Measured 2026-08-14: `results/phase1/F5-7b.json` shipped **31 unredacted identifiers** — a
+    VPC, two subnets, a security group and an ENI — and `phase1.emit()` had masked it correctly
+    the whole time. The leak was not a missing mask call. It was that `mask_text` had no rule for
+    this class of value, because until F5-7b no case in the project had ever created an EC2
+    network resource. `lib/tests/test_results_writes_are_masked.py` passed, because it asserts the
+    write is WRAPPED in a masker; the gate failed, because it reads the bytes. The gap between
+    those two is exactly "a class of identifier the masker does not know about", and this function
+    is the general form of the fix rather than a hand-edit of one file.
+
+    Registry-gated, not shape-based, and the reason is the mirror of `register_account_id`'s. A
+    shape rule like `\\b(?:vpc|subnet)-[0-9a-f]{8,17}\\b` would be safe from corpus collisions —
+    no PII fixture looks like that — but it would also mask ids this process never created,
+    including the runner's OWN network ids, which several scripts print deliberately so that a
+    human can confirm the deny-list resolved to the right VPC (`resolve_forbidden()`). Masking
+    those would turn a safety printout into an unreadable one. Only ids a producer registers —
+    i.e. ids it created and is responsible for destroying — are masked.
+
+    Unregistered is fail-OPEN, exactly as for accounts, which is why the gate stays the backstop:
+    the gate is what caught this, and a registry that silently covered nothing would look
+    identical to one that worked.
+    """
+    if not _RESOURCE_ID.match(resource_id or ""):
+        raise ValueError(
+            f"not an ephemeral infrastructure id: {resource_id!r}. Expected one of "
+            f"vpc/subnet/sg/eni/igw/nat/rtb/eipalloc/acl/ela-attach followed by 8-17 hex digits. "
+            f"Registering an arbitrary string would let a caller mask anything, including "
+            f"evidence.")
+    if resource_id in _KNOWN_RESOURCES:
+        return _KNOWN_RESOURCES[resource_id]
+    kind = resource_id.rsplit("-", 1)[0]
+    _RESOURCE_COUNTS[kind] = _RESOURCE_COUNTS.get(kind, 0) + 1
+    placeholder = f"{kind}-<redacted-{_RESOURCE_COUNTS[kind]}>"
+    _KNOWN_RESOURCES[resource_id] = placeholder
+    return placeholder
+
+
+def known_resource_ids() -> dict[str, str]:
+    """The registered ephemeral ids and their placeholders. For tests and for reporting."""
+    return dict(_KNOWN_RESOURCES)
+
+
+def reset_resource_ids() -> None:
+    """Forget every registered ephemeral id.
+
+    For tests only. Account registration has no equivalent because an account ID is a property of
+    the whole process, while these ids belong to one run of one case and a test that registers a
+    fixture must not leak it into the next test's assertions.
+    """
+    _KNOWN_RESOURCES.clear()
+    _RESOURCE_COUNTS.clear()
+
+
 def mask_text(s: str) -> str:
     """Replace the account field of every ARN in `s`, and every registered account ID.
 
@@ -216,6 +310,14 @@ def mask_text(s: str) -> str:
             if out.endswith(head) and not out[:-k][-1:].isdigit():
                 out = out[:-k] + ACCOUNT_PLACEHOLDER
                 break
+    # Registered ephemeral infrastructure ids. Longest first, so that if one registered id is ever
+    # a prefix of another the longer substitution happens before the shorter one can strand a tail
+    # — the same ordering rule, and for the same reason, as the truncated-account loop above.
+    # Plain `str.replace` rather than a regex: these are complete ids, and the placeholder carries
+    # no hex, so there is nothing for a second pass to match.
+    for rid, placeholder in sorted(_KNOWN_RESOURCES.items(), key=lambda kv: -len(kv[0])):
+        if rid in out:
+            out = out.replace(rid, placeholder)
     return out
 
 
