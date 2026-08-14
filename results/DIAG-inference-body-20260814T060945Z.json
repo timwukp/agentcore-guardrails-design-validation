@@ -1,0 +1,93 @@
+{
+  "label": "DIAG-inference-body",
+  "run_id": "r20260810T130945Z",
+  "region": "us-east-1",
+  "started_utc": "2026-08-14T06:09:18Z",
+  "path": "/inference/v1/messages",
+  "endpoint": "https://bedrock-runtime.us-east-1.amazonaws.com",
+  "candidates": [
+    {
+      "status": 400,
+      "body": "{\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"Model ID contains invalid characters.\"}}",
+      "body_bytes": 107,
+      "elapsed_s": 0.054,
+      "request_id": "f1808892-6e5c-4a34-8b55-6a1f91036762",
+      "candidate": "failed_original",
+      "model": "anthropic.claude-3-5-haiku-20241022-v1:0",
+      "bucket": "other"
+    },
+    {
+      "status": 404,
+      "body": "{\"error\":{\"type\":\"not_found_error\",\"message\":\"Model 'anthropic.claude-3-5-haiku-20241022-v1' not found on any target.\"},\"type\":\"error\"}",
+      "body_bytes": 135,
+      "elapsed_s": 0.086,
+      "request_id": "4600e636-f0fa-4636-af83-6efccb8b64a9",
+      "candidate": "no_version_suffix",
+      "model": "anthropic.claude-3-5-haiku-20241022-v1",
+      "bucket": "other"
+    },
+    {
+      "status": 404,
+      "body": "{\"error\":{\"type\":\"not_found_error\",\"message\":\"Model 'anthropic.claude-3-5-haiku-20241022-v1.0' not found on any target.\"},\"type\":\"error\"}",
+      "body_bytes": 137,
+      "elapsed_s": 0.05,
+      "request_id": "79ae42cf-21dc-4537-8e4c-e7ccee6665eb",
+      "candidate": "colon_as_dot",
+      "model": "anthropic.claude-3-5-haiku-20241022-v1.0",
+      "bucket": "other"
+    },
+    {
+      "status": 404,
+      "body": "{\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"Model 'claude-3-5-haiku-20241022' not found on any target.\"}}",
+      "body_bytes": 122,
+      "elapsed_s": 0.044,
+      "request_id": "36a8b041-c977-415e-8033-d26ad9ecccd9",
+      "candidate": "bare_anthropic_name",
+      "model": "claude-3-5-haiku-20241022",
+      "bucket": "other"
+    },
+    {
+      "status": 400,
+      "body": "{\"error\":{\"type\":\"invalid_request_error\",\"message\":\"Model ID contains invalid characters.\"},\"type\":\"error\"}",
+      "body_bytes": 107,
+      "elapsed_s": 0.035,
+      "request_id": "c128d472-f499-4e8e-b1c0-6f59c606fe9b",
+      "candidate": "cross_region_prefix",
+      "model": "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+      "bucket": "other"
+    },
+    {
+      "status": 400,
+      "body": "{\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"Missing required field 'model' in request body\"}}",
+      "body_bytes": 116,
+      "elapsed_s": 0.038,
+      "request_id": "5bc41290-7e67-409b-8449-45c54aacbcf7",
+      "candidate": "model_field_absent",
+      "model": null,
+      "bucket": "other"
+    }
+  ],
+  "notes": [
+    "NEGATIVE CONTROL BROKE: the model id that produced the false FALSE no longer gets a front-door rejection, so the model id was not the cause and the F1-15 re-run must not assume it was",
+    "no candidate got past the gateway's front-door validation, so F1-15's inference arm cannot yet be given a request that is eligible to be denied; the arm must be reported as not measured rather than as a bypass"
+  ],
+  "gateway": {
+    "id": "grx-gw-infbody-r20260810t130945z-g5maqxixu3",
+    "status": "READY",
+    "url": "https://grx-gw-infbody-r20260810t130945z-g5maqxixu3.gateway.bedrock-agentcore.us-east-1.amazonaws.com/mcp"
+  },
+  "target": {
+    "id": "BQZEX9QVVF",
+    "status": "READY"
+  },
+  "buckets": {
+    "failed_original": "other",
+    "no_version_suffix": "other",
+    "colon_as_dot": "other",
+    "bare_anthropic_name": "other",
+    "cross_region_prefix": "other",
+    "model_field_absent": "other"
+  },
+  "passed_validation": [],
+  "ended_utc": "2026-08-14T06:09:45Z"
+}

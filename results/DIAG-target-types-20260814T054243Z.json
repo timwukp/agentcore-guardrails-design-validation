@@ -1,0 +1,189 @@
+{
+  "arms": [
+    {
+      "claim_surface": "MCP target: POST /mcp, JSON-RPC tools/call",
+      "config": {
+        "mcp": {
+          "lambda": {
+            "lambdaArn": "arn:aws:lambda:us-east-1:<account>:function:grx-echo-r20260810T130945Z",
+            "toolSchema": {
+              "inlinePayload": [
+                {
+                  "description": "Returns the supplied text verbatim. Deterministic.",
+                  "inputSchema": {
+                    "properties": {
+                      "amount": {
+                        "description": "an amount, for Cedar numeric conditions",
+                        "type": "number"
+                      },
+                      "text": {
+                        "description": "text to return unchanged",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "text"
+                    ],
+                    "type": "object"
+                  },
+                  "name": "echo"
+                },
+                {
+                  "description": "Returns a canned payload selected by key. Deterministic.",
+                  "inputSchema": {
+                    "properties": {
+                      "key": {
+                        "description": "one of: benign, kib, short",
+                        "type": "string"
+                      }
+                    },
+                    "required": [],
+                    "type": "object"
+                  },
+                  "name": "fixed"
+                },
+                {
+                  "description": "Sleeps for the requested milliseconds and reports the measured sleep.",
+                  "inputSchema": {
+                    "properties": {
+                      "ms": {
+                        "description": "milliseconds to sleep, 0-5000",
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "ms"
+                    ],
+                    "type": "object"
+                  },
+                  "name": "delay"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "create_ok": true,
+      "expect": "ACCEPTED \u2014 positive control, the shape infra/05_target.py already creates",
+      "label": "mcp_lambda",
+      "seconds_to_terminal": 5.2,
+      "status": "READY",
+      "status_reasons": [],
+      "target_id": "WRATNV6W84",
+      "target_name": "grxmcplambda"
+    },
+    {
+      "claim_surface": "HTTP runtime target: POST /<target>/invocations",
+      "config": {
+        "http": {
+          "agentcoreRuntime": {
+            "arn": "arn:aws:bedrock-agentcore:us-east-1:<account>:runtime/grx_f115probe_absent-zzzzzzzzzz"
+          }
+        }
+      },
+      "create_ok": false,
+      "error_code": "ValidationException",
+      "error_message": "HTTP target configuration is not supported for gateways with MCP protocol type. Provide an MCP-compatible target configuration and retry the request.",
+      "expect": "either a not-found on the ARN (arm accepted) or a validation error naming the arm/protocol (arm refused) \u2014 the message decides U1",
+      "label": "http_agentcore_runtime",
+      "target_name": "grxhttpagentcoreruntime"
+    },
+    {
+      "claim_surface": "HTTP inference target: POST /inference",
+      "config": {
+        "inference": {
+          "provider": {
+            "endpoint": "https://bedrock-runtime.us-east-1.amazonaws.com"
+          }
+        }
+      },
+      "create_ok": true,
+      "expect": "unknown; U3 asks whether any pattern-valid HTTPS endpoint is accepted",
+      "label": "inference_provider",
+      "seconds_to_terminal": 5.2,
+      "status": "READY",
+      "status_reasons": [],
+      "target_id": "5MEDAZWT0N",
+      "target_name": "grxinferenceprovider"
+    }
+  ],
+  "clone_has_policy_engine": true,
+  "clone_members": [
+    "authorizerType",
+    "description",
+    "exceptionLevel",
+    "name",
+    "policyEngineConfiguration",
+    "protocolConfiguration",
+    "protocolType",
+    "roleArn",
+    "tags"
+  ],
+  "cloned_from": {
+    "gateway_id": "grx-gw-r20260810t130945z-zpkfmpwo9n",
+    "logical": "main"
+  },
+  "ended_utc": "2026-08-14T05:42:43Z",
+  "fake_runtime_arn": "arn:aws:bedrock-agentcore:us-east-1:<account>:runtime/grx_f115probe_absent-zzzzzzzzzz",
+  "gateway": {
+    "base_url_derived": "https://grx-gw-f115probe-r20260810t130945z-svqszfw7v5.gateway.bedrock-agentcore.us-east-1.amazonaws.com",
+    "id": "grx-gw-f115probe-r20260810t130945z-svqszfw7v5",
+    "seconds_to_terminal": 5.1,
+    "status": "READY",
+    "url": "https://grx-gw-f115probe-r20260810t130945z-svqszfw7v5.gateway.bedrock-agentcore.us-east-1.amazonaws.com/mcp",
+    "url_ended_with_mcp": true
+  },
+  "inference_endpoint": "https://bedrock-runtime.us-east-1.amazonaws.com",
+  "label": "DIAG-target-types",
+  "notes": [],
+  "paths": [
+    {
+      "body_bytes": 99,
+      "body_head": "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-32600,\"message\":\"Missing required Mcp-Session-Id header\"}}",
+      "elapsed_s": 0.047,
+      "label": "mcp",
+      "path": "/mcp",
+      "status": 400,
+      "url": "https://grx-gw-f115probe-r20260810t130945z-svqszfw7v5.gateway.bedrock-agentcore.us-east-1.amazonaws.com/mcp",
+      "why": "control: the path the ledger's gateway_url already carries"
+    },
+    {
+      "body_bytes": 89,
+      "body_head": "{\"success\":false,\"error\":\"Http operation is not supported for gateway protocol type MCP\"}",
+      "elapsed_s": 0.01,
+      "label": "inference",
+      "path": "/inference",
+      "status": 400,
+      "url": "https://grx-gw-f115probe-r20260810t130945z-svqszfw7v5.gateway.bedrock-agentcore.us-east-1.amazonaws.com/inference",
+      "why": "the claim's inference surface, verbatim"
+    },
+    {
+      "body_bytes": 116,
+      "body_head": "{\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"Missing required field 'model' in request body\"}}",
+      "elapsed_s": 0.041,
+      "label": "inference_v1_messages",
+      "path": "/inference/v1/messages",
+      "status": 400,
+      "url": "https://grx-gw-f115probe-r20260810t130945z-svqszfw7v5.gateway.bedrock-agentcore.us-east-1.amazonaws.com/inference/v1/messages",
+      "why": "the shape's own operations[].path example, in case /inference is a prefix"
+    },
+    {
+      "body_bytes": 89,
+      "body_head": "{\"success\":false,\"error\":\"Http operation is not supported for gateway protocol type MCP\"}",
+      "elapsed_s": 0.01,
+      "label": "v1_messages",
+      "path": "/v1/messages",
+      "status": 400,
+      "url": "https://grx-gw-f115probe-r20260810t130945z-svqszfw7v5.gateway.bedrock-agentcore.us-east-1.amazonaws.com/v1/messages",
+      "why": "the same example at the root, in case the gateway serves it unprefixed"
+    }
+  ],
+  "questions": {
+    "U1": "does CreateGatewayTarget accept http.* / inference.* on an MCP gateway",
+    "U2": "which invocation paths does the gateway actually serve",
+    "U3": "does inference.provider.endpoint accept any pattern-valid HTTPS URL"
+  },
+  "region": "us-east-1",
+  "run_id": "r20260810T130945Z",
+  "started_utc": "2026-08-14T05:42:27Z"
+}

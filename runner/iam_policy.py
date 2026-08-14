@@ -47,6 +47,13 @@ ROOT = Path(__file__).resolve().parent.parent
 # this comment.
 NAME_PREFIX = "grx-"
 
+# The stem of the AgentCore Runtime deployment-package bucket. A stem and not a name: the bucket is
+# `<NAME_PREFIX><stem>-<account>-<region>`, and the two identifiers that would make it a name are
+# still arguments to `statements()`, so the rule in the module docstring holds. The producer that
+# creates the bucket composes it by the same rule, and if the two ever disagree the symptom is an
+# AccessDenied on PutObject naming a bucket that is not in the policy — which is legible.
+CODE_BUCKET_STEM = "runtime-code"
+
 # The gateway log groups AgentCore vends into. F7's whole instrument is a namespace-wide read of
 # a SHARED namespace, so the read side cannot be narrowed to our own groups without changing what
 # F7 measures — that is why `logs:FilterLogEvents` and `logs:DescribeLogGroups` are granted on
@@ -123,12 +130,100 @@ MAPPING: dict[tuple[str, str], tuple[tuple[str, ...], str]] = {
         ("bedrock-agentcore:UpdateGateway",), "any"),
     ("bedrock-agentcore-control", "create_gateway_target"): (
         ("bedrock-agentcore:CreateGatewayTarget",), "any"),
+    # Added 2026-08-14 for F1-15, and it is worth saying why it was missing for so long rather than
+    # just adding it. `delete_gateway_target` has existed in this repo since `infra/05_target.py`,
+    # but only as the `delete_op` STRING on a ledger record — `infra/` creates the two `grxecho`
+    # targets and leaves them standing for the life of the testbed, so no run has ever replayed that
+    # string and no evidence file names the operation. `unmapped_operations()` therefore had nothing
+    # to flag, and the grant's absence was invisible in exactly the way a derivation from observed
+    # calls is blind to a call nobody has made yet.
+    #
+    # F1-15 is the first case that creates gateway targets of its own and must remove them in the
+    # same run: it adds one target per `targetConfiguration` arm to `gateway/main`, and leaving those
+    # behind is not a leak of something inert. Extra targets on `main` advertise extra tools, and
+    # `main` is the ENFORCE half of the pair `nopolicy` is the latency baseline for, so residue there
+    # is contamination of the testbed every later F4/F6 run reads. The read half of this family
+    # (`ListGatewayTargets`, `GetGatewayTarget`) is already granted below in RUNNER_EXTRAS, for a
+    # different reason — the SERVICE performs those on the caller's behalf while a policy settles —
+    # so this entry completes a family that was two-thirds present.
+    ("bedrock-agentcore-control", "delete_gateway_target"): (
+        ("bedrock-agentcore:DeleteGatewayTarget",), "any"),
     # Entered evidence/ on 2026-08-13 when F5-2's cleanup deleted the gateway it had created
     # (evidence/r20260810T130945Z/f5/F5-2/0507_delete_gateway_ok.json, HTTP 202). Found by
     # test_every_api_the_validation_has_called_is_mapped_to_an_action — at desk, which is the
     # failure location that test exists to buy.
     ("bedrock-agentcore-control", "delete_gateway"): (
         ("bedrock-agentcore:DeleteGateway",), "any"),
+
+    # ---- AgentCore Runtime. Added 2026-08-14 for F5-8, whose sealed method is "minimal runtime
+    # whose handler calls GetCallerIdentity", and for F1-15's `http.agentcoreRuntime` target.
+    #
+    # These were absent until now because the recorded plan of record held that a Runtime needed a
+    # linux/arm64 CONTAINER image, and therefore a Graviton builder, and was therefore out of reach.
+    # That premise read only one arm of a union: `agentRuntimeArtifact` also accepts
+    # `codeConfiguration` — an S3 zip plus PYTHON_3_12 plus an entry point — which was measured on
+    # 2026-08-14 to reach READY in 10.8 seconds and serve an HTTP 200 with no container anywhere.
+    #
+    # Scope is `any`, matching `create_gateway` above, and for two reasons. A create has no resource
+    # to be scoped to; and a Runtime's name cannot carry `NAME_PREFIX`. The API constrains the name
+    # to `[a-zA-Z][a-zA-Z0-9_]*` — no hyphens — so this project's runtimes are `grx_*` while every
+    # prefix-bound scope in `statements()` is bound to `grx-*`. A scope written against `grx-*`
+    # would match none of them and deny every call while looking narrow, which is worse than `*`
+    # labelled as `*`.
+    #
+    # `CreateAgentRuntime` needs TWO actions, and the second one is not derivable from the API
+    # surface. Creating a runtime implicitly creates its DEFAULT endpoint, and IAM authorizes that
+    # implicit step separately: the first EC2 run of F5-8 with only `CreateAgentRuntime` granted
+    # came back with
+    #
+    #     not authorized to perform: bedrock-agentcore:CreateAgentRuntimeEndpoint on resource:
+    #     arn:aws:bedrock-agentcore:<region>:<account>:runtime/*   (request id fb914e1b-...)
+    #
+    # There is no `create_agent_runtime_endpoint` call anywhere in this tree, so nothing in
+    # `evidence/` will ever name it and `unmapped_operations()` cannot find it. It is recorded here
+    # against the operation that actually needs it, with the AccessDenied that proved it, because
+    # the alternative is re-discovering it from a five-minute round trip on the instance.
+    #
+    # A third one appeared behind the second: a runtime also gets a WORKLOAD IDENTITY, created
+    # implicitly under `workload-identity-directory/default/workload-identity/*`, and the caller is
+    # authorized for that too (request id 14f4f1e4-53d9-42e4-b3ec-a4a309a7e0cb). So one
+    # `CreateAgentRuntime` call needs at least four distinct permissions across three services, and
+    # AWS does not publish the list --- `runtime-permissions.html` answers the caller question with
+    # "attach BedrockAgentCoreFullAccess", and enumerates least privilege only for the EXECUTION
+    # role, which is a different principal solving a different problem. A least-privilege caller
+    # policy for this API therefore cannot be derived from documentation; it can only be measured,
+    # one 403 at a time, which is what the request ids in these comments are.
+    ("bedrock-agentcore-control", "create_agent_runtime"): (
+        ("bedrock-agentcore:CreateAgentRuntime",
+         "bedrock-agentcore:CreateAgentRuntimeEndpoint",
+         "bedrock-agentcore:CreateWorkloadIdentity"), "any"),
+    ("bedrock-agentcore-control", "get_agent_runtime"): (
+        ("bedrock-agentcore:GetAgentRuntime",), "any"),
+    # The delete side carries the symmetric endpoint action, and unlike the create side that is
+    # ANTICIPATED rather than observed — no run has yet reached a successful delete to prove it is
+    # needed. It is granted anyway because the cost of being wrong is asymmetric: a superfluous
+    # action on a `*` scope that already carries DeleteAgentRuntime widens nothing meaningful, while
+    # a missing one denies TEARDOWN, and a denied teardown leaks a READY runtime that bills until
+    # someone notices. If the evidence shows `delete_agent_runtime` succeeding, this stays as the
+    # cheaper side of that trade; it is labelled so a reader does not mistake it for a measurement.
+    ("bedrock-agentcore-control", "delete_agent_runtime"): (
+        ("bedrock-agentcore:DeleteAgentRuntime",
+         "bedrock-agentcore:DeleteAgentRuntimeEndpoint",
+         "bedrock-agentcore:DeleteWorkloadIdentity"), "any"),
+    ("bedrock-agentcore", "invoke_agent_runtime"): (
+        ("bedrock-agentcore:InvokeAgentRuntime",), "any"),
+
+    # ---- the deployment-package bucket, on its own scope.
+    # A Runtime under `codeConfiguration` reads its code from S3, so the runner has to be able to
+    # put a zip there. This is NOT the runner's transport bucket: `GrxRunnerTransport` at the foot
+    # of `statements()` is scoped to the one bucket that carries the tarball in and the results and
+    # evidence out, and widening it to cover a second bucket would also widen `s3:GetObject` over
+    # the audit trail. A separate scope keeps `PutObject` and `DeleteObject` off the archive, which
+    # is the property that statement's own comment claims for it.
+    ("s3", "head_bucket"): (("s3:ListBucket",), "code_bucket"),
+    ("s3", "put_object"): (("s3:PutObject",), "code_bucket"),
+    ("s3", "delete_object"): (("s3:DeleteObject",), "code_bucket"),
+
     # The four policy calls each authorize TWO actions, and the second one is not derivable from
     # the call name. Measured on 2026-08-12: the runner's derived role already held
     # `bedrock-agentcore:CreatePolicy`, and `CreatePolicy` still failed —
@@ -175,6 +270,14 @@ MAPPING: dict[tuple[str, str], tuple[tuple[str, ...], str]] = {
          "bedrock-agentcore:TagResource"), "any"),                          # inferred
     ("bedrock-agentcore-control", "delete_policy_engine"): (
         ("bedrock-agentcore:DeletePolicyEngine",), "any"),
+    # MEASURED, and only visible from the instance. `unmapped_operations()` reads `evidence/`, which
+    # is local-only in BOTH directions: the laptop's tree and the instance's tree hold different
+    # subsets, so the audit's answer depends on where it runs. It was empty on the laptop and named
+    # this pair on the instance — where the live rounds actually happened. Worth stating plainly
+    # because `runner/provision.py:406` hard-gates on that audit: a gap the laptop cannot see would
+    # block the next provision, and only there.
+    ("bedrock-agentcore-control", "get_policy_engine"): (
+        ("bedrock-agentcore:GetPolicyEngine",), "any"),
     # ---- Natural-language policy authoring. F1-19's B arm is the only caller in the project.
     #
     # MEASURED 2026-08-14, and it cost a live round:
@@ -259,6 +362,14 @@ MAPPING: dict[tuple[str, str], tuple[tuple[str, ...], str]] = {
     ("iam", "put_role_policy"): (("iam:PutRolePolicy",), "role"),
     ("iam", "list_role_policies"): (("iam:ListRolePolicies",), "role"),
     ("iam", "delete_role_policy"): (("iam:DeleteRolePolicy",), "role"),
+    # Absent until 2026-08-14, and the reason it went unnoticed is worth stating: `iam:CreateRole`
+    # has been granted since the first EC2 run, but every case that created a role before F5-8 left
+    # it for `infra/` to delete from the laptop, so `delete_role` had never appeared in `evidence/`
+    # and `unmapped_operations()` had nothing to flag. F5-8 is the first case that creates and
+    # deletes its own execution role inside one run, and it found the gap the only way this gap can
+    # be found — an AccessDenied in the `finally`, AFTER the inline policy had already been deleted,
+    # leaving a stripped role standing. That ordering is why this is a grant and not a teardown fix.
+    ("iam", "delete_role"): (("iam:DeleteRole",), "role"),
     ("iam", "get_role"): (("iam:GetRole",), "role"),
     ("iam", "get_role_policy"): (("iam:GetRolePolicy",), "role"),
 
@@ -318,6 +429,82 @@ MAPPING: dict[tuple[str, str], tuple[tuple[str, ...], str]] = {
     # ---- EC2: one read, for the PrivateLink surface F5-7 probes.
     ("ec2", "describe_vpc_endpoint_services"): (("ec2:DescribeVpcEndpointServices",), "any"),
 
+    # ---- EC2: F5-7b's own network. The only case in this project that builds a VPC.
+    #
+    # READ THE BLAST RADIUS BEFORE THE LIST. Every entry below lands on the `any` scope, i.e.
+    # `Resource: ["*"]`, because EC2 creates have nothing to scope to: `CreateVpc` names no
+    # resource, and the id it returns is what everything after it would be scoped by. So this
+    # block grants `ec2:DeleteVpc`, `ec2:DeleteSubnet`, `ec2:DeleteRoute` and
+    # `ec2:DeleteSecurityGroup` account-wide — including over the VPC, the subnet and the security
+    # group the runner instance itself lives in. Those ids are deliberately NOT written here: the
+    # producer resolves them at runtime from the `grx-runner-sg` NAME, so the deny-list cannot go
+    # stale silently if the runner is ever rebuilt, and no real network id enters a published file.
+    #
+    # That is the sharpest self-inflicted hazard in this policy. A teardown bug that deleted the
+    # runner's own route or security group would sever SSM, and the instance is reachable ONLY by
+    # SSM — there is no key pair and no public ingress. The loss would not be one case; it would
+    # be the ability to run or clean up anything at all, including whatever the bug leaked.
+    #
+    # IAM cannot express the guard, for the same reason the module docstring gives for the six
+    # pre-existing gateways: there is no way to say "every VPC except this one". So the guard
+    # lives in the producer, and it is two guards rather than one, because a single check is a
+    # single point of failure for an irreversible action:
+    #   1. a deny-list holding the runner's own VPC, EVERY subnet in it and EVERY security group in
+    #      it — resolved from the SG name before the first create, asserted before every destructive
+    #      EC2 call, ABORTING rather than skipping, and refusing every id if it is empty so that an
+    #      unresolved list fails closed instead of reading as "nothing is forbidden";
+    #   2. every delete addressed by an id read back FROM THE LEDGER, never by a describe filter
+    #      — a filter that matches too much is how the wrong VPC gets deleted, and a resource
+    #      this run did not record is not a resource this run may remove.
+    # `f5_redteam/tests/` pins both, because this failure mode is unreviewable after the fact.
+    #
+    # `ec2:CreateTags` rides along on each create for the same reason `iam:TagRole` and
+    # `lambda:TagResource` do: every create below passes `TagSpecifications`, and a tagged create
+    # without the tagging action fails the CREATE rather than the tagging. That class is caught at
+    # desk by `test_every_tagged_create_also_grants_the_tagging_action`.
+    #
+    # `DeleteNetworkInterface` is the one entry that is INFERRED rather than measured. AgentCore
+    # VPC mode attaches ENIs into the supplied subnets via a service-linked role
+    # (`EXCLUSION_REGISTER.md:83-85`), and a subnet holding an ENI cannot be deleted. If the
+    # service reclaims its own ENIs promptly this grant is never used; if it does not, the
+    # alternative is a leaked VPC and a leaked NAT gateway that bills by the hour. An unused
+    # grant is the cheaper error, and it is labelled so a reviewer can see which way it went.
+    ("ec2", "describe_availability_zones"): (("ec2:DescribeAvailabilityZones",), "any"),
+    ("ec2", "create_vpc"): (("ec2:CreateVpc", "ec2:CreateTags"), "any"),
+    ("ec2", "describe_vpcs"): (("ec2:DescribeVpcs",), "any"),
+    ("ec2", "delete_vpc"): (("ec2:DeleteVpc",), "any"),
+    ("ec2", "create_subnet"): (("ec2:CreateSubnet", "ec2:CreateTags"), "any"),
+    ("ec2", "describe_subnets"): (("ec2:DescribeSubnets",), "any"),
+    ("ec2", "delete_subnet"): (("ec2:DeleteSubnet",), "any"),
+    ("ec2", "create_security_group"): (("ec2:CreateSecurityGroup", "ec2:CreateTags"), "any"),
+    ("ec2", "describe_security_groups"): (("ec2:DescribeSecurityGroups",), "any"),
+    ("ec2", "delete_security_group"): (("ec2:DeleteSecurityGroup",), "any"),
+    ("ec2", "create_internet_gateway"): (
+        ("ec2:CreateInternetGateway", "ec2:CreateTags"), "any"),
+    ("ec2", "attach_internet_gateway"): (("ec2:AttachInternetGateway",), "any"),
+    ("ec2", "detach_internet_gateway"): (("ec2:DetachInternetGateway",), "any"),
+    ("ec2", "delete_internet_gateway"): (("ec2:DeleteInternetGateway",), "any"),
+    ("ec2", "allocate_address"): (("ec2:AllocateAddress", "ec2:CreateTags"), "any"),
+    ("ec2", "release_address"): (("ec2:ReleaseAddress",), "any"),
+    ("ec2", "describe_addresses"): (("ec2:DescribeAddresses",), "any"),
+    ("ec2", "create_nat_gateway"): (("ec2:CreateNatGateway", "ec2:CreateTags"), "any"),
+    ("ec2", "describe_nat_gateways"): (("ec2:DescribeNatGateways",), "any"),
+    ("ec2", "delete_nat_gateway"): (("ec2:DeleteNatGateway",), "any"),
+    ("ec2", "create_route_table"): (("ec2:CreateRouteTable", "ec2:CreateTags"), "any"),
+    ("ec2", "describe_route_tables"): (("ec2:DescribeRouteTables",), "any"),
+    ("ec2", "associate_route_table"): (("ec2:AssociateRouteTable",), "any"),
+    ("ec2", "disassociate_route_table"): (("ec2:DisassociateRouteTable",), "any"),
+    ("ec2", "delete_route_table"): (("ec2:DeleteRouteTable",), "any"),
+    # THE MUTATION AND ITS INVERSE. `mutation_is_mandatory("F5-7b")` is True, so both of these are
+    # load-bearing: the case is NOT answered by observing a VPC that never had a route. It is
+    # answered by adding the route, re-observing, then removing it and re-verifying the original
+    # observation (PREREGISTRATION.yaml `restore_verification`: a restore is not assumed to have
+    # worked because the API returned 200).
+    ("ec2", "create_route"): (("ec2:CreateRoute",), "any"),
+    ("ec2", "delete_route"): (("ec2:DeleteRoute",), "any"),
+    ("ec2", "describe_network_interfaces"): (("ec2:DescribeNetworkInterfaces",), "any"),
+    ("ec2", "delete_network_interface"): (("ec2:DeleteNetworkInterface",), "any"),   # inferred
+
     # ---- Organizations: F5-3a only, and the blast radius is why these are enumerated one by one
     # rather than granted as `organizations:*`.
     #
@@ -361,7 +548,8 @@ MAPPING: dict[tuple[str, str], tuple[tuple[str, ...], str]] = {
 RUNNER_EXTRAS: dict[str, str] = {
     "sts:GetCallerIdentity": "lib/awsclients.account_id() — the one place the account is resolved",
     "iam:GetRole": "the case scripts read back a role they created before waiting on propagation",
-    "iam:PassRole": "CreateGateway and CreateFunction hand a grx- execution role to the service",
+    "iam:PassRole": "CreateGateway, CreateFunction and CreateAgentRuntime each hand a grx- "
+                    "execution role to the service",
     "bedrock-agentcore:ListGateways": "state.json reconciliation before a resumed run reuses a "
                                       "gateway, so a stale id fails loudly instead of silently "
                                       "creating a second one",
@@ -448,6 +636,23 @@ RUNNER_EXTRAS: dict[str, str] = {
     "sts:AssumeRole": "F5-3b runs AS grx-attacker/grx-caller to measure what a boundaried identity "
                       "cannot do; assumed in ClientFactory.session(), outside capture(), and "
                       "listed in ROLE_SCOPED_EXTRAS so it cannot reach a non-grx- role",
+    # Measured 2026-08-14, and it is not the permission it looks like. CreateAgentRuntime under
+    # `codeConfiguration` checks that the CALLER can read the zip, not only that the execution role
+    # can --- a confused-deputy guard, and the right design: without it, anyone able to pass a role
+    # could make the service fetch an object they cannot read themselves. Nothing in this repo calls
+    # `get_object` against the code bucket, so no evidence file will ever name it and
+    # `unmapped_operations()` cannot find it; it belongs to the same implicit-permission class as the
+    # tagged creates. It cost five runs to locate because the service reports it as
+    #     ValidationException: Access denied when trying to retrieve zip file from S3.
+    #     Check if you have sufficient permissions on the object
+    # which names the object and not the caller, so every check went to the object, the execution
+    # role, the bucket's ownership and encryption settings, and the IAM propagation delay --- all of
+    # which were correct. What isolated it: the SAME role and the SAME uploaded zip that the instance
+    # was refused for were accepted immediately when CreateAgentRuntime was called by an
+    # administrator instead, which leaves only the caller as the variable.
+    "s3:GetObject": "CreateAgentRuntime with a codeConfiguration artifact verifies that the CALLER "
+                    "can read the deployment zip, not just the execution role it is passed; scoped "
+                    "to the code bucket by CODE_BUCKET_SCOPED_EXTRAS so it cannot read the account",
 }
 
 # RUNNER_EXTRAS land on the `any` scope, i.e. `Resource: ["*"]`. These three must not: each one is
@@ -456,6 +661,11 @@ RUNNER_EXTRAS: dict[str, str] = {
 # `runner/tests/` asserts the move happened for every member of this tuple rather than trusting
 # that the two lines below stayed in sync with it.
 ROLE_SCOPED_EXTRAS = ("iam:PassRole", "iam:GetRole", "sts:AssumeRole")
+
+# Same mechanism, different scope. `s3:GetObject` must reach the code bucket and NOTHING else --- on
+# `*` it would read every object in the account, and this module's whole claim is that it does not do
+# that. It is kept off the `any` scope the same way the three above are.
+CODE_BUCKET_SCOPED_EXTRAS = ("s3:GetObject",)
 
 # Operations that ARE in the evidence tree and are deliberately NOT granted to the instance, with
 # the reason each is refused. Adding a MAPPING entry satisfies the audit and GRANTS; this satisfies
@@ -546,6 +756,15 @@ def statements(account_id: str, region: str, bucket: str) -> list[dict]:
             f"arn:aws:logs:{region}:{account_id}:log-group:{VENDED_LOG_PREFIX}*",
             f"arn:aws:logs:{region}:{account_id}:log-group:{VENDED_LOG_PREFIX}*:*",
         ],
+        # The AgentCore Runtime deployment-package bucket, named by the same rule the producer
+        # names it by. Both ARN shapes are present because the three actions on this scope split
+        # across them: `s3:ListBucket` is authorized against the BUCKET (that is what HeadBucket
+        # checks), while PutObject and DeleteObject are authorized against the OBJECT. A scope
+        # carrying only one shape would deny half its own actions.
+        "code_bucket": [
+            f"arn:aws:s3:::{NAME_PREFIX}{CODE_BUCKET_STEM}-{account_id}-{region}",
+            f"arn:aws:s3:::{NAME_PREFIX}{CODE_BUCKET_STEM}-{account_id}-{region}/*",
+        ],
     }
     # PassRole, GetRole and AssumeRole belong on the role scope, not on `*`: PassRole on `*` is the
     # escalation this whole file exists to avoid, and AssumeRole on `*` is the same escalation by a
@@ -568,11 +787,20 @@ def statements(account_id: str, region: str, bucket: str) -> list[dict]:
     by_scope["any"] -= set(ROLE_SCOPED_EXTRAS)
     by_scope["role"] |= set(ROLE_SCOPED_EXTRAS)
 
+    # `s3:GetObject` onto the code bucket, by the same declared-first rule.
+    undeclared_cb = [a for a in CODE_BUCKET_SCOPED_EXTRAS if a not in declared]
+    if undeclared_cb:
+        raise RuntimeError(
+            f"CODE_BUCKET_SCOPED_EXTRAS names {undeclared_cb}, which nothing declares. Add it to "
+            f"RUNNER_EXTRAS with a written reason, or to MAPPING with the call that needs it.")
+    by_scope["any"] -= set(CODE_BUCKET_SCOPED_EXTRAS)
+    by_scope.setdefault("code_bucket", set()).update(CODE_BUCKET_SCOPED_EXTRAS)
+
     # The emitted order is a literal tuple, so a MAPPING entry naming a scope that is not in it —
     # a typo, or a new scope added to MAPPING and forgotten here — would be silently DROPPED and the
     # resulting policy would deny those calls while looking complete. Adding the `policy` scope on
     # 2026-08-13 is what made this reachable: before it, all four scopes were as old as the file.
-    emitted = ("any", "role", "policy", "function", "log_group")
+    emitted = ("any", "role", "policy", "function", "log_group", "code_bucket")
     orphans = sorted(set(by_scope) - set(emitted))
     if orphans:
         raise RuntimeError(
@@ -587,7 +815,36 @@ def statements(account_id: str, region: str, bucket: str) -> list[dict]:
             "Effect": "Allow",
             "Action": sorted(by_scope[scope]),
             "Resource": resources[scope]}
-           for scope in ("any", "role", "policy", "function", "log_group") if by_scope.get(scope)]
+           for scope in emitted if by_scope.get(scope)]
+
+    # The first Deny in this file, added 2026-08-14 with `iam:DeleteRole`. Every IAM grant here is
+    # scoped to `role/grx-*`, which was a sufficient boundary while the granted verbs were
+    # Create/Put/Get — but `grx-*` contains two roles that are not testbed, and for them a delete or
+    # a policy write is not a cleanup, it is damage to something already published:
+    #
+    #   grx-runner-ec2        the instance's OWN role. Deleting it ends the run that deleted it and
+    #                         every run after, and re-provisioning is a laptop operation, so a
+    #                         detached job that did this would strand the instance unreachable.
+    #   grx-runtime-exec-*    F5-1's published oracle. That case's finding IS the emptiness of this
+    #                         role's inline policy set; `infra/01_iam.py --ensure` refuses to run on
+    #                         drift and `f5_redteam/01_route1_direct_invoke.py` asserts the exact
+    #                         baseline at startup. A PutRolePolicy here does not break a test, it
+    #                         retroactively falsifies a verdict that has already been published --
+    #                         and it would do so silently, because the policy would look like setup.
+    #
+    # An explicit Deny and not a narrower Allow, because Deny wins over every Allow in the same
+    # policy: a future scope added to MAPPING cannot widen its way past this, which is the property
+    # a comment asking people to be careful does not have. The READ verbs stay allowed on purpose --
+    # F5-1 has to be able to `list_role_policies` on the role it is making a claim about.
+    out.append({
+        "Sid": "GrxProtectLoadBearingRoles",
+        "Effect": "Deny",
+        "Action": ["iam:DeleteRole", "iam:PutRolePolicy", "iam:DeleteRolePolicy",
+                   "iam:AttachRolePolicy", "iam:UpdateAssumeRolePolicy",
+                   "iam:PutRolePermissionsBoundary"],
+        "Resource": [f"arn:aws:iam::{account_id}:role/grx-runner-ec2",
+                     f"arn:aws:iam::{account_id}:role/grx-runtime-exec-*"],
+    })
 
     # The runner's own transport: the code tarball in, results and evidence out. Scoped to the
     # one bucket, and deliberately without `s3:DeleteBucket*` or any bucket-policy write, so a

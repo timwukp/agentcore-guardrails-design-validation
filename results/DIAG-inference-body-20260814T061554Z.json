@@ -1,0 +1,116 @@
+{
+  "label": "DIAG-inference-body",
+  "run_id": "r20260810T130945Z",
+  "region": "us-east-1",
+  "started_utc": "2026-08-14T06:15:27Z",
+  "path": "/inference/v1/messages",
+  "endpoint": "https://bedrock-runtime.us-east-1.amazonaws.com",
+  "candidates": [
+    {
+      "status": 200,
+      "body": "{\"Output\":{\"__type\":\"com.amazon.coral.service#UnknownOperationException\"},\"Version\":\"1.0\"}",
+      "body_bytes": 90,
+      "elapsed_s": 0.163,
+      "request_id": "f8003bef-1c6f-402d-9512-5d055e5a5cce, 53566d45-a10d-4328-bf32-7ff89952ab58",
+      "candidate": "glob_match_dotted",
+      "model": "anthropic.claude-3-5-haiku-20241022-v1",
+      "bucket": "ok"
+    },
+    {
+      "status": 200,
+      "body": "{\"Output\":{\"__type\":\"com.amazon.coral.service#UnknownOperationException\"},\"Version\":\"1.0\"}",
+      "body_bytes": 90,
+      "elapsed_s": 0.132,
+      "request_id": "148b0b11-4a4c-40e9-9af7-d7e44bd800fd, 014d04f5-5256-4b73-a89d-3cac8dee0e2e",
+      "candidate": "glob_match_bare",
+      "model": "claude-3-5-haiku-20241022",
+      "bucket": "ok"
+    },
+    {
+      "status": 200,
+      "body": "{\"Output\":{\"__type\":\"com.amazon.coral.service#UnknownOperationException\"},\"Version\":\"1.0\"}",
+      "body_bytes": 90,
+      "elapsed_s": 0.163,
+      "request_id": "992fd31b-6cca-4f27-9c74-5490f5602f20, 7d74757f-6668-432c-acc1-091ecbd2bfc1",
+      "candidate": "bedrock_id_no_colon",
+      "model": "anthropic.claude-3-5-haiku-20241022-v1.0",
+      "bucket": "ok"
+    },
+    {
+      "status": 400,
+      "body": "{\"error\":{\"type\":\"invalid_request_error\",\"message\":\"Model ID contains invalid characters.\"},\"type\":\"error\"}",
+      "body_bytes": 107,
+      "elapsed_s": 0.037,
+      "request_id": "7b8d18f2-19f0-4ae0-8afc-4da6ab57f932",
+      "candidate": "colon_still_rejected",
+      "model": "anthropic.claude-3-5-haiku-20241022-v1:0",
+      "bucket": "front_door_reject"
+    },
+    {
+      "status": 404,
+      "body": "{\"error\":{\"type\":\"not_found_error\",\"message\":\"Model 'openai.gpt-4o-mini' not found on any target.\"},\"type\":\"error\"}",
+      "body_bytes": 115,
+      "elapsed_s": 0.038,
+      "request_id": "a1b1a934-3905-4e25-acb3-391c70787159",
+      "candidate": "unmatched_model",
+      "model": "openai.gpt-4o-mini",
+      "bucket": "no_route"
+    },
+    {
+      "status": 400,
+      "body": "{\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"Missing required field 'model' in request body\"}}",
+      "body_bytes": 116,
+      "elapsed_s": 0.036,
+      "request_id": "38363692-ec14-4975-ab1d-14a93887ee3e",
+      "candidate": "model_field_absent",
+      "model": null,
+      "bucket": "front_door_reject"
+    }
+  ],
+  "notes": [
+    "F1-15's inference arm can be given an eligible request: use model anthropic.claude-3-5-haiku-20241022-v1 with the target configuration recorded under `target.config`"
+  ],
+  "gateway": {
+    "id": "grx-gw-infbody-r20260810t130945z-lmjdm9kkb4",
+    "status": "READY",
+    "url": "https://grx-gw-infbody-r20260810t130945z-lmjdm9kkb4.gateway.bedrock-agentcore.us-east-1.amazonaws.com/mcp"
+  },
+  "target": {
+    "id": "AR6TQO4VAV",
+    "status": "READY",
+    "config": {
+      "inference": {
+        "provider": {
+          "endpoint": "https://bedrock-runtime.us-east-1.amazonaws.com",
+          "operations": [
+            {
+              "path": "/v1/messages",
+              "models": [
+                {
+                  "model": "anthropic.claude-*"
+                },
+                {
+                  "model": "claude-*"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  "buckets": {
+    "glob_match_dotted": "ok",
+    "glob_match_bare": "ok",
+    "bedrock_id_no_colon": "ok",
+    "colon_still_rejected": "front_door_reject",
+    "unmatched_model": "no_route",
+    "model_field_absent": "front_door_reject"
+  },
+  "eligible_for_f115": [
+    "glob_match_dotted",
+    "glob_match_bare",
+    "bedrock_id_no_colon"
+  ],
+  "ended_utc": "2026-08-14T06:15:54Z"
+}

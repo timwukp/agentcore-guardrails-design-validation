@@ -1,0 +1,274 @@
+{
+  "arms": {
+    "http_runtime": {
+      "claim_surface": "HTTP runtime target: POST /<target>/invocations",
+      "config": {
+        "http": {
+          "agentcoreRuntime": {
+            "arn": "arn:aws:bedrock-agentcore:us-east-1:<account>:runtime/grx_f115_absent-zzzzzzzzzz"
+          }
+        }
+      },
+      "constructible": false,
+      "error_code": "ValidationException",
+      "error_message": "HTTP target configuration is not supported for gateways with MCP protocol type. Provide an MCP-compatible target configuration and retry the request.",
+      "target_name": "grxhttpruntime"
+    },
+    "inference": {
+      "claim_surface": "HTTP inference target: POST /inference",
+      "config": {
+        "inference": {
+          "provider": {
+            "endpoint": "https://bedrock-runtime.us-east-1.amazonaws.com",
+            "operations": [
+              {
+                "models": [
+                  {
+                    "model": "anthropic.claude-*"
+                  },
+                  {
+                    "model": "claude-*"
+                  }
+                ],
+                "path": "/v1/messages"
+              }
+            ]
+          }
+        }
+      },
+      "constructible": true,
+      "seconds_to_terminal": 5.2,
+      "status": "READY",
+      "target_id": "AVW2XPJTWH",
+      "target_name": "grxinference"
+    },
+    "mcp": {
+      "claim_surface": "MCP target: POST /mcp, JSON-RPC tools/call",
+      "config": {
+        "mcp": {
+          "lambda": {
+            "lambdaArn": "arn:aws:lambda:us-east-1:<account>:function:grx-echo-r20260810T130945Z",
+            "toolSchema": {
+              "inlinePayload": [
+                {
+                  "description": "Returns the supplied text verbatim. Deterministic.",
+                  "inputSchema": {
+                    "properties": {
+                      "amount": {
+                        "description": "an amount, for Cedar numeric conditions",
+                        "type": "number"
+                      },
+                      "text": {
+                        "description": "text to return unchanged",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "text"
+                    ],
+                    "type": "object"
+                  },
+                  "name": "echo"
+                },
+                {
+                  "description": "Returns a canned payload selected by key. Deterministic.",
+                  "inputSchema": {
+                    "properties": {
+                      "key": {
+                        "description": "one of: benign, kib, short",
+                        "type": "string"
+                      }
+                    },
+                    "required": [],
+                    "type": "object"
+                  },
+                  "name": "fixed"
+                },
+                {
+                  "description": "Sleeps for the requested milliseconds and reports the measured sleep.",
+                  "inputSchema": {
+                    "properties": {
+                      "ms": {
+                        "description": "milliseconds to sleep, 0-5000",
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "ms"
+                    ],
+                    "type": "object"
+                  },
+                  "name": "delay"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "constructible": true,
+      "seconds_to_terminal": 5.2,
+      "status": "READY",
+      "target_id": "VOO0GMMTYQ",
+      "target_name": "grxecho"
+    }
+  },
+  "baseline": {
+    "inference": {
+      "body_bytes": 90,
+      "body_head": "{\"Output\":{\"__type\":\"com.amazon.coral.service#UnknownOperationException\"},\"Version\":\"1.0\"}",
+      "classification": "allowed",
+      "elapsed_s": 0.174,
+      "model": "anthropic.claude-3-5-haiku-20241022-v1",
+      "path": "/inference/v1/messages",
+      "status": 200
+    },
+    "mcp": {
+      "action_id": "grxecho___echo",
+      "advertised": [
+        "grxecho___delay",
+        "grxecho___echo",
+        "grxecho___fixed"
+      ],
+      "authorize_exception": false,
+      "default_deny": false,
+      "duration_ms": 680.1,
+      "http_status": 200,
+      "is_error": false,
+      "jsonrpc_error": null,
+      "list_is_error": false,
+      "list_jsonrpc_error": null,
+      "list_outcome": "allowed",
+      "listed": true,
+      "outcome": "allowed",
+      "text_head": "{\"tool\":\"echo\",\"context\":{\"bedrockAgentCoreMessageVersion\":\"1.0\",\"bedrockAgentCoreAwsRequestId\":\"5e70941b-ca6f-430c-bb8d-7e42bb8579a6\",\"bedrockAgentCoreMcpMessageId\":\"3\",\"bedrockAgentCoreGatewayId\":\"grx-gw-f115-r20260810t130945z-akqkwrtmbw\",\"bedrockAgentCoreTargetId\":\"VOO0GMMTYQ\",\"bedrockAgentCoreToolName\":\"grxecho___echo\"},\"mode\":\"echo\",\"text\":\"F1-15 target type coverage\",\"amount\":100,\"amount_type\":\"int\",\"text_len\":26,\"text_sha256\":\"357fd58c5824b6e460f3d8dfd2e8420e7acf5fc6ab8ba50bcb1ff21b624faca0\"}",
+      "unclassified": false
+    }
+  },
+  "blockers": {
+    "blockers": [
+      "verdict is INCONCLUSIVE, which supports no amendment: RECORDED and INCONCLUSIVE are findings about what was observed, not about what the document got wrong"
+    ],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F1-15",
+    "clear_here": false
+  },
+  "case": "F1-15",
+  "case_id": "F1-15",
+  "claim": "C-s4-1-bullet-007",
+  "definition_member": "policy",
+  "diagnostic": "results/DIAG-target-types-20260814T054243Z.json",
+  "ended_utc": "2026-08-14T06:20:40Z",
+  "forbid_created": true,
+  "forbid_statement": "forbid (principal, action, resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-f115-r20260810t130945z-akqkwrtmbw\");",
+  "forbid_status": {
+    "reasons": [],
+    "seconds_to_terminal": 5.1,
+    "status": "ACTIVE"
+  },
+  "gateway": {
+    "arn": "arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-f115-r20260810t130945z-akqkwrtmbw",
+    "id": "grx-gw-f115-r20260810t130945z-akqkwrtmbw",
+    "seconds_to_terminal": 5.1,
+    "status": "READY",
+    "url": "https://grx-gw-f115-r20260810t130945z-akqkwrtmbw.gateway.bedrock-agentcore.us-east-1.amazonaws.com/mcp"
+  },
+  "gateway_protocol_type_enum": [
+    "MCP"
+  ],
+  "inconclusive_reason": "the oracle quantifies over three target types and one of them cannot be built at this API version: CreateGatewayTarget refuses every `http.*` configuration on a gateway whose protocolType is MCP, and MCP is the only member of CreateGateway's protocolType enum. Evaluated on ['mcp', 'inference']; unconstructible: ['http_runtime']; not eligible to be interpreted: none. Not FALSE — a target type that cannot carry a request cannot bypass evaluation of one, and an arm whose baseline never reached the engine witnesses nothing; not TRUE — that is not the conjunction the seal names, and reading `all three` as `all that exist` would decide a different quantity.",
+  "inference_model": "anthropic.claude-3-5-haiku-20241022-v1",
+  "kind": "EXISTENCE",
+  "notes": [],
+  "oracle_text": "TRUE if a policy engine attaches and evaluates on all three target types; FALSE if any target type bypasses policy evaluation",
+  "per_type": {
+    "http_runtime": "unconstructible",
+    "inference": "evaluated",
+    "mcp": "evaluated"
+  },
+  "per_type_reason": {
+    "http_runtime": "the target could not be created: ValidationException",
+    "inference": "the call was denied by policy under a live forbid and allowed without it",
+    "mcp": "the call was denied by policy under a live forbid and allowed without it"
+  },
+  "planned_n": null,
+  "policy_engine_id": "grx_pe_r20260810T130945Z-t6hqadrspf",
+  "policy_engine_mode": "ENFORCE",
+  "policy_settle_seconds": 20,
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F1-15",
+    "evidence": {
+      "detail": {
+        "claim": "C-s4-1-bullet-007",
+        "forbid_statement": "forbid (principal, action, resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-f115-r20260810t130945z-akqkwrtmbw\");",
+        "forbid_status": "ACTIVE",
+        "inference_model": "anthropic.claude-3-5-haiku-20241022-v1",
+        "inference_path": "/inference/v1/messages",
+        "per_type": {
+          "http_runtime": "unconstructible",
+          "inference": "evaluated",
+          "mcp": "evaluated"
+        },
+        "per_type_reason": {
+          "http_runtime": "the target could not be created: ValidationException",
+          "inference": "the call was denied by policy under a live forbid and allowed without it",
+          "mcp": "the call was denied by policy under a live forbid and allowed without it"
+        },
+        "protocol_type_enum": [
+          "MCP"
+        ]
+      },
+      "measured": false,
+      "reason": "the oracle quantifies over three target types and one of them cannot be built at this API version: CreateGatewayTarget refuses every `http.*` configuration on a gateway whose protocolType is MCP, and MCP is the only member of CreateGateway's protocolType enum. Evaluated on ['mcp', 'inference']; unconstructible: ['http_runtime']; not eligible to be interpreted: none. Not FALSE — a target type that cannot carry a request cannot bypass evaluation of one, and an arm whose baseline never reached the engine witnesses nothing; not TRUE — that is not the conjunction the seal names, and reading `all three` as `all that exist` would decide a different quantity.",
+      "why_not_recorded": "RECORDED is a sealed property of the case, meaning the pre-registration declared the outcome unknown and both answers are findings. This case's sealed kind is EXISTENCE: it made a prediction, and the prediction was not tested"
+    },
+    "family": "descriptive_no_test",
+    "kind": "EXISTENCE",
+    "mutation_required": false,
+    "n_attempted": 0,
+    "n_met": true,
+    "n_usable": 0,
+    "notes": [
+      "not measured: the oracle quantifies over three target types and one of them cannot be built at this API version: CreateGatewayTarget refuses every `http.*` configuration on a gateway whose protocolType is MCP, and MCP is the only member of CreateGateway's protocolType enum. Evaluated on ['mcp', 'inference']; unconstructible: ['http_runtime']; not eligible to be interpreted: none. Not FALSE — a target type that cannot carry a request cannot bypass evaluation of one, and an arm whose baseline never reached the engine witnesses nothing; not TRUE — that is not the conjunction the seal names, and reading `all three` as `all that exist` would decide a different quantity."
+    ],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [],
+    "verdict": "INCONCLUSIVE"
+  },
+  "region": "us-east-1",
+  "run_id": "r20260810T130945Z",
+  "started_utc": "2026-08-14T06:19:56Z",
+  "under_forbid": {
+    "inference": {
+      "body_bytes": 217,
+      "body_head": "{\"error\":{\"type\":\"permission_error\",\"message\":\"Request Denied: Gateway Target request not allowed due to policy enforcement [Policy evaluation denied due to grx_pol_f115_r20260810T130945Z-c6uzptoe5j]\"},\"type\":\"error\"}",
+      "classification": "policy_denied",
+      "elapsed_s": 0.122,
+      "model": "anthropic.claude-3-5-haiku-20241022-v1",
+      "path": "/inference/v1/messages",
+      "status": 403
+    },
+    "mcp": {
+      "action_id": "grxecho___echo",
+      "advertised": [],
+      "authorize_exception": false,
+      "default_deny": false,
+      "duration_ms": 202.4,
+      "http_status": 200,
+      "is_error": null,
+      "jsonrpc_error": {
+        "code": -32002,
+        "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_pol_f115_r20260810T130945Z-c6uzptoe5j]"
+      },
+      "list_is_error": false,
+      "list_jsonrpc_error": null,
+      "list_outcome": "allowed",
+      "listed": false,
+      "outcome": "policy_denied",
+      "text_head": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_pol_f115_r20260810T130945Z-c6uzptoe5j]",
+      "unclassified": false
+    }
+  },
+  "verdict": "INCONCLUSIVE"
+}
