@@ -1,0 +1,241 @@
+{
+  "case_id": "F3-11",
+  "kind": "SUPPLEMENTARY_READ",
+  "payload": {
+    "alpha": 0.05,
+    "ambient_sdk": {
+      "baseline": {
+        "boto3": "1.43.67",
+        "botocore": "1.43.67"
+      },
+      "now": {
+        "boto3": "1.43.67",
+        "botocore": "1.43.67"
+      }
+    },
+    "baseline_collected_at": "2026-08-11T16:53:03+00:00",
+    "baseline_snapshot": "F3-11_snapshot_20260811T165037Z.json",
+    "completion_by_day_and_stratum": [
+      {
+        "completion": 1.0,
+        "day": "20260811T165037Z",
+        "stratum": "benign"
+      },
+      {
+        "completion": 1.0,
+        "day": "20260811T165037Z",
+        "stratum": "content_filter"
+      },
+      {
+        "completion": 1.0,
+        "day": "20260811T165037Z",
+        "stratum": "hard_negatives"
+      },
+      {
+        "completion": 1.0,
+        "day": "20260811T165037Z",
+        "stratum": "pii"
+      },
+      {
+        "completion": 1.0,
+        "day": "20260811T165037Z",
+        "stratum": "prompt_attack"
+      },
+      {
+        "completion": 1.0,
+        "day": "20260814T031052Z",
+        "stratum": "content_filter"
+      },
+      {
+        "completion": 1.0,
+        "day": "20260814T031052Z",
+        "stratum": "prompt_attack"
+      },
+      {
+        "completion": 1.0,
+        "day": "20260814T031052Z",
+        "stratum": "pii"
+      },
+      {
+        "completion": 1.0,
+        "day": "20260814T031052Z",
+        "stratum": "benign"
+      },
+      {
+        "completion": 1.0,
+        "day": "20260814T031052Z",
+        "stratum": "hard_negatives"
+      }
+    ],
+    "configuration_differences": [],
+    "guard_detail": {
+      "baseline_exists": {
+        "snapshot": "F3-11_snapshot_20260811T165037Z.json"
+      },
+      "both_days_complete": {
+        "test": "every stratum on both days is >= 95% usable",
+        "why": "a stratum that half-failed on one day contributes a biased subset of pairs, and the items that fail are not a random sample of the set",
+        "worst": 1.0
+      },
+      "interval_elapsed": {
+        "interval_days": 2.4297,
+        "test": "at least 1.0 day between the two collections",
+        "why": "'behaviour today equals behaviour today' is not a measurement. This is the one case in the project whose instrument IS elapsed time, which is why DEV-P4-02's procedural waiver does not reach it"
+      },
+      "items_are_identical": {
+        "dropped": {},
+        "test": "every baseline item id is present on the re-run day and vice versa",
+        "why": "McNemar is a test on PAIRS. An item present on one day only is not a pair, and silently dropping it would let a corpus edit read as drift"
+      },
+      "same_configuration": {
+        "differences": [],
+        "test": "guardrail id, version, source, corpus files and fingerprint fields are identical across the two days",
+        "why": "a difference between two days is evidence of a MODEL update only if everything we control is unchanged. Read from the snapshots, not from today's manifest, so a re-provisioned guardrail is caught"
+      }
+    },
+    "guard_names": [
+      "baseline_exists",
+      "same_configuration",
+      "items_are_identical",
+      "both_days_complete",
+      "interval_elapsed"
+    ],
+    "guards": {
+      "baseline_exists": true,
+      "both_days_complete": true,
+      "interval_elapsed": true,
+      "items_are_identical": true,
+      "same_configuration": true
+    },
+    "ids_dropped_per_stratum": {},
+    "interval_days": 2.4297,
+    "is_smoke": false,
+    "n_derivation": "no pre-registered cell covers F3-11 (sealed binding cell=None; DEV-P1-1), so n is derived from what a null result must be able to state: the rule of three's 95% one-sided upper bound on the per-item drift rate is 3/n, and n=300 puts that bound at 1% \u2014 the rate at which a 100-item regression suite of the kind the document recommends would be expected to show one failure. Not borrowed from F6-8's 200, which is a latency design decision",
+    "n_paired": 300,
+    "now_collected_at": "2026-08-14T03:11:49+00:00",
+    "now_snapshot": "F3-11_snapshot_20260814T031052Z.json",
+    "null_result_bounds": {
+      "drift_rate_upper_95_one_sided": 0.00994,
+      "n_pairs": 300,
+      "power_against_1_percent": 0.951,
+      "power_against_5_percent": 1.0,
+      "why": "zero discordant pairs has no p-value worth quoting, so the null result is reported as a bound and a power instead. This is the number a reader would act on: 'we did not detect drift, and drift is at most this common'"
+    },
+    "per_stratum": {
+      "benign": {
+        "examples_of_change": [],
+        "n_fingerprint_changed": 0,
+        "n_gained": 0,
+        "n_lost": 0,
+        "n_only_baseline": 0,
+        "n_only_now": 0,
+        "n_paired": 40
+      },
+      "content_filter": {
+        "examples_of_change": [],
+        "n_fingerprint_changed": 0,
+        "n_gained": 0,
+        "n_lost": 0,
+        "n_only_baseline": 0,
+        "n_only_now": 0,
+        "n_paired": 100
+      },
+      "hard_negatives": {
+        "examples_of_change": [],
+        "n_fingerprint_changed": 0,
+        "n_gained": 0,
+        "n_lost": 0,
+        "n_only_baseline": 0,
+        "n_only_now": 0,
+        "n_paired": 36
+      },
+      "pii": {
+        "examples_of_change": [],
+        "n_fingerprint_changed": 0,
+        "n_gained": 0,
+        "n_lost": 0,
+        "n_only_baseline": 0,
+        "n_only_now": 0,
+        "n_paired": 64
+      },
+      "prompt_attack": {
+        "examples_of_change": [],
+        "n_fingerprint_changed": 0,
+        "n_gained": 0,
+        "n_lost": 0,
+        "n_only_baseline": 0,
+        "n_only_now": 0,
+        "n_paired": 60
+      }
+    },
+    "planned_n": 300,
+    "primary": {
+      "direction_note": "n_lost is the operationally alarming direction \u2014 items caught on day 0 and missed later. It is reported whatever the verdict, because a reader's regression suite is what would have caught it",
+      "instrument": "per-item `hit`, paired by corpus item id",
+      "mcnemar_p_two_sided": 1.0,
+      "mcnemar_statistic": 0.0,
+      "n_discordant": 0,
+      "n_gained": 0,
+      "n_lost": 0,
+      "why_two_sided": "the sealed binding's note says the direction is not predicted; a one-sided test would smuggle in a prediction the document does not make"
+    },
+    "prose_instrument": {
+      "agrees_with_sealed_test": true,
+      "ci_excludes_zero": false,
+      "governs_the_verdict": false,
+      "instrument": "paired bootstrap CI on the MEAN of (day-0 hit) - (re-run hit) over the same pairs the sealed test uses",
+      "paired_bootstrap_ci": "0 [0, 0] (n=300, paired-bootstrap(B=10000,seed=20260809), 95%)",
+      "quoted_from_prereg": "differs from baseline by more than the paired-bootstrap CI",
+      "rate_day0": 0.626667,
+      "rate_now": 0.626667,
+      "why_recorded_anyway": "the sealed kind is PAIRED_IMPROVEMENT and needs `improved` and a p-value, which a CI is not. Reporting only one of the two would leave the other unverifiable from the record"
+    },
+    "region": "us-east-1",
+    "replication_offsets_days": [
+      7,
+      30
+    ],
+    "run_id": "r20260814T031052Z",
+    "secondary_fingerprint": {
+      "exploratory": true,
+      "fields": [
+        "action",
+        "action_reason",
+        "detected_types",
+        "blocked_types",
+        "confidences",
+        "pii_detected",
+        "pii_actions",
+        "topics_detected",
+        "words_detected",
+        "blocks_present"
+      ],
+      "n_changed": 0,
+      "n_compared": 300,
+      "rate_ci": "0 [0, 0.01264] (n=300, wilson, 95%)",
+      "why_not_scored": "more sensitive than the primary \u2014 a confidence enum moving from MEDIUM to HIGH is drift with `hit` unchanged \u2014 but scoring the smallest of three p-values is p-hacking. Recorded, never scored"
+    },
+    "secondary_grounding": {
+      "exploratory": true,
+      "n_pairs": 0,
+      "why_not_scored": "the only NUMERIC signal available (DEV-P4-01: no other surface publishes a per-trial score), and therefore the most sensitive instrument here \u2014 but it covers one filter, and the claim is about the underlying models generally"
+    },
+    "what_false_does_not_prove": "a FALSE bounds the DRIFT RATE over this interval, on this set, in this configuration. It does not refute the document's antecedent \u2014 that AWS auto-updates the underlying models \u2014 because that is a statement about AWS's release process and no black-box measurement from outside can reach it. The amendment a FALSE supports is about the recommended CADENCE, not the mechanism"
+  },
+  "sealed_oracle": "TRUE if the +7d or +30d re-run differs from baseline by more than the paired-bootstrap CI; FALSE if within CI",
+  "status": "NOT A VERDICT. F3-11's sealed oracle is denominated in the +7d/+30d re-run; this pairing is over a shorter interval and decides nothing.",
+  "still_due": [
+    {
+      "command": "python3 f3_efficacy/07_model_drift.py --compare",
+      "due_on": "2026-08-18",
+      "offset_days": 7
+    },
+    {
+      "command": "python3 f3_efficacy/07_model_drift.py --compare",
+      "due_on": "2026-09-10",
+      "offset_days": 30
+    }
+  ],
+  "verdict_would_have_been": "FALSE",
+  "why_that_is_recorded_and_not_published": "so a reader can see that the early read was not suppressed for being inconvenient. It is excluded because of its INTERVAL, which was fixed before the numbers were known, and not because of its result"
+}
