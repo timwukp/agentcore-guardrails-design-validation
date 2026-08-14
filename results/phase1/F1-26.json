@@ -1,0 +1,308 @@
+{
+  "ambient_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "arm_trials": {},
+  "arms": {},
+  "billable_calls": 36,
+  "blockers": {
+    "blockers": [
+      "verdict is INCONCLUSIVE, which supports no amendment: RECORDED and INCONCLUSIVE are findings about what was observed, not about what the document got wrong"
+    ],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F1-26",
+    "clear_here": false
+  },
+  "case_id": "F1-26",
+  "converse_pacing": {
+    "provenance": "none",
+    "seconds": 1.0,
+    "why_not_the_limiter": "awsclients.RATE_LIMITS has no `Converse` entry and RateLimiter.wait returns 0.0 for an unknown operation, so lim.wait('Converse') would read as rate limiting while doing nothing — the defect awsclients records for CreateGuardrail and InvokeGateway. This sleep is ours and says so"
+  },
+  "deletions": [],
+  "expiry": "the SDK-shape half is dated by botocore 1.43.67 — a release that adds a reasoning or tool placement to ApplyGuardrail's content union, or a fourth GuardrailContentQualifier, changes what is measurable and belongs in AWS-BEHAVIOR-CHANGES.md. The behavioural half is dated by the run: guardrail evaluation scope is a service property AWS may extend without an API change, so a TRUE here expires the moment the coverage numbers change",
+  "filler": {
+    "filler_followup": "Thanks. Continue with the summary.",
+    "filler_user": "Summarise the maintenance log for last night.",
+    "ok": true,
+    "problems": []
+  },
+  "instrument": "CreateGuardrail (this script's own sacrificial guardrails) -> GetGuardrail read-back of every configured element and of the tier -> ApplyGuardrail (source=INPUT, outputScope=FULL) and/or Converse (guardrailConfig with trace=enabled) -> DeleteGuardrail in a finally. outputScope=FULL because INTERVENTIONS returns only what fired, and a scope claim needs to tell a policy that was evaluated and found nothing from one that was not evaluated",
+  "is_smoke": false,
+  "kind": "EXISTENCE",
+  "model_id": "us.amazon.nova-micro-v1:0",
+  "mutation": {
+    "inverted": false,
+    "tiers_where_inverted": [],
+    "variable": "the LANGUAGE of the configured term, held on one guardrail",
+    "why": "the EN positive control and the non-EN/FR/ES terms sit in the SAME wordPolicyConfig on the SAME guardrail, so language is the only thing that differs between the cell that blocks and the cell that does not. An un-inverted mutation means the policy fired for nothing, which is the `indeterminate` disposition rather than a verdict"
+  },
+  "mutations": 4,
+  "n_trials": 0,
+  "no_power_claim": "planned_n(F1-26) is None, so n_met is vacuous. This is not a rate: it is a conjunction over deterministic cells, and one firing cell in the wrong place falsifies the claim regardless of how many did not",
+  "oracle_text": "TRUE if a non-EN/FR/ES word filter is rejected or provably inert on both tiers; FALSE if it blocks correctly",
+  "per_tier": {
+    "CLASSIC": {
+      "control_only_accepted": false,
+      "control_only_error_code": "ThrottlingException",
+      "control_only_evidence": "evidence/r20260810T130945Z/f1/F1-26/0002_create_guardrail_err.json",
+      "control_only_request_id": "148c6626-c0d5-4e43-b286-b697e4d03278",
+      "create_accepted": false,
+      "create_error_code": "ValidationException",
+      "create_error_message": "At least one content filter strength must be set to not NONE.",
+      "create_evidence": "evidence/r20260810T130945Z/f1/F1-26/0001_create_guardrail_err.json",
+      "create_request_id": "845c8178-8741-435a-afaa-f1c54f9e534d",
+      "disposition": "indeterminate",
+      "guardrail_id": null,
+      "satisfies_claim": false,
+      "tier": "CLASSIC",
+      "why": "CreateGuardrail refused the word policy, and the supported-language-only control was also refused, so the refusal is not attributable to the non-EN/FR/ES words. A rejection of unknown cause establishes neither disjunct"
+    },
+    "STANDARD": {
+      "control_only_accepted": false,
+      "control_only_error_code": "ValidationException",
+      "control_only_evidence": "evidence/r20260810T130945Z/f1/F1-26/0004_create_guardrail_err.json",
+      "control_only_request_id": "bb3ff0d8-12a2-4a5e-a09c-b6d9fd1253d4",
+      "create_accepted": false,
+      "create_error_code": "ValidationException",
+      "create_error_message": "At least one content filter strength must be set to not NONE.",
+      "create_evidence": "evidence/r20260810T130945Z/f1/F1-26/0003_create_guardrail_err.json",
+      "create_request_id": "cb621628-3cee-464d-91fb-716f8468b609",
+      "disposition": "indeterminate",
+      "guardrail_id": null,
+      "satisfies_claim": false,
+      "tier": "STANDARD",
+      "why": "CreateGuardrail refused the word policy, and the supported-language-only control was also refused, so the refusal is not attributable to the non-EN/FR/ES words. A rejection of unknown cause establishes neither disjunct"
+    }
+  },
+  "planned_n": null,
+  "planned_operations": {
+    "ApplyGuardrail": 36
+  },
+  "planned_text_blocks": 36,
+  "reading": {
+    "dispositions": {
+      "CLASSIC": "indeterminate",
+      "STANDARD": "indeterminate"
+    },
+    "n_provably_inert": 0,
+    "n_rejected": 0,
+    "n_tiers": 2,
+    "observed": null,
+    "per_tier_why": {
+      "CLASSIC": "CreateGuardrail refused the word policy, and the supported-language-only control was also refused, so the refusal is not attributable to the non-EN/FR/ES words. A rejection of unknown cause establishes neither disjunct",
+      "STANDARD": "CreateGuardrail refused the word policy, and the supported-language-only control was also refused, so the refusal is not attributable to the non-EN/FR/ES words. A rejection of unknown cause establishes neither disjunct"
+    },
+    "tiers_blocking": [],
+    "tiers_indeterminate": [
+      "CLASSIC",
+      "STANDARD"
+    ],
+    "tiers_satisfying_claim": [],
+    "why": "['CLASSIC', 'STANDARD'] produced neither disjunct and no block: CLASSIC: CreateGuardrail refused the word policy, and the supported-language-only control was also refused, so the refusal is not attributable to the non-EN/FR/ES words. A rejection of unknown cause establishes neither disjunct; STANDARD: CreateGuardrail refused the word policy, and the supported-language-only control was also refused, so the refusal is not attributable to the non-EN/FR/ES words. A rejection of unknown cause establishes neither disjunct"
+  },
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F1-26",
+    "evidence": {
+      "detail": {
+        "dispositions": {
+          "CLASSIC": "indeterminate",
+          "STANDARD": "indeterminate"
+        },
+        "per_tier_why": {
+          "CLASSIC": "CreateGuardrail refused the word policy, and the supported-language-only control was also refused, so the refusal is not attributable to the non-EN/FR/ES words. A rejection of unknown cause establishes neither disjunct",
+          "STANDARD": "CreateGuardrail refused the word policy, and the supported-language-only control was also refused, so the refusal is not attributable to the non-EN/FR/ES words. A rejection of unknown cause establishes neither disjunct"
+        }
+      },
+      "measured": false,
+      "reason": "['CLASSIC', 'STANDARD'] produced neither disjunct and no block: CLASSIC: CreateGuardrail refused the word policy, and the supported-language-only control was also refused, so the refusal is not attributable to the non-EN/FR/ES words. A rejection of unknown cause establishes neither disjunct; STANDARD: CreateGuardrail refused the word policy, and the supported-language-only control was also refused, so the refusal is not attributable to the non-EN/FR/ES words. A rejection of unknown cause establishes neither disjunct",
+      "why_not_recorded": "RECORDED is a sealed property of the case, meaning the pre-registration declared the outcome unknown and both answers are findings. This case's sealed kind is EXISTENCE: it made a prediction, and the prediction was not tested"
+    },
+    "family": "descriptive_no_test",
+    "kind": "EXISTENCE",
+    "mutation_required": false,
+    "n_attempted": 0,
+    "n_met": true,
+    "n_usable": 0,
+    "notes": [
+      "not measured: ['CLASSIC', 'STANDARD'] produced neither disjunct and no block: CLASSIC: CreateGuardrail refused the word policy, and the supported-language-only control was also refused, so the refusal is not attributable to the non-EN/FR/ES words. A rejection of unknown cause establishes neither disjunct; STANDARD: CreateGuardrail refused the word policy, and the supported-language-only control was also refused, so the refusal is not attributable to the non-EN/FR/ES words. A rejection of unknown cause establishes neither disjunct"
+    ],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [],
+    "verdict": "INCONCLUSIVE"
+  },
+  "region": "us-east-1",
+  "residue": {
+    "clean": true,
+    "n_created": 0,
+    "n_delete_attempted": 0,
+    "n_deleted": 0,
+    "never_attempted": [],
+    "surviving": [],
+    "why_two_lists": "a probe whose delete was never ATTEMPTED contributes no row to `deletions`, so a residue computed from that list alone would report zero survivors for exactly the case where one exists"
+  },
+  "resources_not_touched": "the 6 READY gateways, the 3 DRAFT guardrails, the 2 abandoned policy engines, gateway/nopolicy (F6's paired baseline) and every harness_* / uitestagent_* resource. The guardrail manifest results/phase1_guardrails.json is neither read nor written",
+  "run_id": "r20260810T130945Z",
+  "sdk_shape_facts": {
+    "apply_guardrail_content_block_is_union": true,
+    "apply_guardrail_content_block_members": [
+      "image",
+      "text"
+    ],
+    "apply_guardrail_text_block_members": [
+      "qualifiers",
+      "text"
+    ],
+    "converse_content_block_is_union": true,
+    "converse_content_block_members": [
+      "audio",
+      "cachePoint",
+      "citationsContent",
+      "document",
+      "guardContent",
+      "image",
+      "reasoningContent",
+      "searchResult",
+      "text",
+      "toolAddition",
+      "toolRemoval",
+      "toolResult",
+      "toolUse",
+      "video"
+    ],
+    "converse_guard_content_qualifier_enum": [
+      "grounding_source",
+      "query",
+      "guard_content"
+    ],
+    "converse_reasoning_content_members": [
+      "reasoningText",
+      "redactedContent"
+    ],
+    "converse_reasoning_content_present": true,
+    "converse_reasoning_text_members": [
+      "signature",
+      "text"
+    ],
+    "converse_tool_result_content_members": [
+      "document",
+      "image",
+      "json",
+      "searchResult",
+      "text",
+      "video"
+    ],
+    "converse_tool_use_members": [
+      "input",
+      "name",
+      "toolUseId",
+      "type"
+    ],
+    "create_guardrail_content_policy_members": [
+      "filtersConfig",
+      "tierConfig"
+    ],
+    "create_guardrail_members": [
+      "automatedReasoningPolicyConfig",
+      "blockedInputMessaging",
+      "blockedOutputsMessaging",
+      "clientRequestToken",
+      "contentPolicyConfig",
+      "contextualGroundingPolicyConfig",
+      "crossRegionConfig",
+      "description",
+      "kmsKeyId",
+      "name",
+      "sensitiveInformationPolicyConfig",
+      "tags",
+      "topicPolicyConfig",
+      "wordPolicyConfig"
+    ],
+    "create_guardrail_word_policy_members": [
+      "managedWordListsConfig",
+      "wordsConfig"
+    ],
+    "cross_region_config_is_top_level": true,
+    "cross_region_config_members": [
+      "guardrailProfileIdentifier"
+    ],
+    "f1_27_reasoning_is_sendable": {
+      "caveat": "constructible is not accepted: ParamValidator checks required members and union arity, not what the SERVICE will take. A ValidationException on the reasoning arm means the mechanism is not SENDABLE and is recorded as such — it is not evidence that the text was not intervened",
+      "method_executable": true,
+      "not_on_apply_guardrail": "ApplyGuardrail's content block union is ['image', 'text'] and its qualifiers enum is ['grounding_source', 'query', 'guard_content'] — neither offers a reasoning placement, so this case is answerable on Converse only",
+      "shape": [
+        "reasoningText",
+        "redactedContent"
+      ],
+      "where": "ConverseRequest.messages[].content[] resolves to the SAME ContentBlock shape as ConverseOutput.message.content[], so reasoningContent is not output-only in the model"
+    },
+    "f1_28_tool_use_is_sendable": {
+      "method_executable_on_apply_guardrail": false,
+      "method_executable_on_converse": true,
+      "tool_result_content_shape": [
+        "document",
+        "image",
+        "json",
+        "searchResult",
+        "text",
+        "video"
+      ],
+      "tool_use_shape": [
+        "input",
+        "name",
+        "toolUseId",
+        "type"
+      ],
+      "two_readings_probed": "'tool_use output parameters' (the sealed title) and 'a tool_use parameter' (the sealed oracle) are not obviously the same place. Both are probed: the arguments the assistant emits (toolUse.input, a Document) and the JSON a tool returns (toolResult.content[].json)",
+      "why_not_on_apply_guardrail": "ApplyGuardrail's content block union is ['image', 'text']: there is no tool block. Its GuardrailTextBlock.qualifiers is a list over ['grounding_source', 'query', 'guard_content'] — the enum the whole method hinges on — and none of the three values names tool content. So the 'paired ApplyGuardrail … with PII in tool_use' half of the sealed method CANNOT BE CONSTRUCTED. ApplyGuardrail appears here as the text-arm control only, and the tool arm is on Converse"
+    },
+    "guardrail_content_qualifier_enum": [
+      "grounding_source",
+      "query",
+      "guard_content"
+    ],
+    "read_from": "botocore's bundled service models for bedrock and bedrock-runtime, via awsclients.service_model — no client is built, so no credential is resolved and no socket is opened",
+    "sdk": {
+      "boto3": "1.43.67",
+      "botocore": "1.43.67"
+    }
+  },
+  "sibling_case": {
+    "case_id": "F8-7",
+    "difference": "F8-7's sealed text says only 'inert', so a rejected create is INCONCLUSIVE there. F1-26's disjunction covers that branch. Two cases over one grid, and each record names the other",
+    "oracle": "TRUE if non-EN/FR/ES word filters are inert on both tiers; FALSE if effective"
+  },
+  "trials_per_paired_arm": 3,
+  "verdict": "INCONCLUSIVE",
+  "verdict_reading": "['CLASSIC', 'STANDARD'] produced neither disjunct and no block: CLASSIC: CreateGuardrail refused the word policy, and the supported-language-only control was also refused, so the refusal is not attributable to the non-EN/FR/ES words. A rejection of unknown cause establishes neither disjunct; STANDARD: CreateGuardrail refused the word policy, and the supported-language-only control was also refused, so the refusal is not attributable to the non-EN/FR/ES words. A rejection of unknown cause establishes neither disjunct",
+  "verdict_rule": "TRUE iff EVERY tier satisfies the sealed DISJUNCTION 'rejected or provably inert'. Rejected means CreateGuardrail refused the non-EN/FR/ES word policy AND a supported-language-only control was accepted on the same tier, so the refusal is attributable to the words. Provably inert means the non-EN/FR/ES terms did not block WHILE the 'moonquake' EN term on the same wordPolicyConfig of the same guardrail did. FALSE as soon as one non-EN/FR/ES cell blocks. Anything else is INCONCLUSIVE with the tier named",
+  "vocabulary": {
+    "listed": [
+      "moonquake",
+      "réveillon",
+      "cumpleaños",
+      "月震観測",
+      "颱風警報",
+      "달지진관측",
+      "Mondbebenmessung"
+    ],
+    "max_term_len": 16,
+    "n_listed_supported": 3,
+    "n_listed_unsupported": 4,
+    "ok": true,
+    "positive_control": "moonquake",
+    "problems": [],
+    "sdk_max_term_len": 100,
+    "unlisted": [
+      "quaxlinate",
+      "地層下陷"
+    ]
+  },
+  "what_true_does_not_prove": "that the MANAGED word list (managedWordListsConfig, enum ['PROFANITY'] and nothing else) has the same language boundary. That is a claim about a lexicon AWS supplies and it is not tested here: it would need profanity we authored and labelled ourselves, one annotator, no kappa (DEVIATIONS.md/DEV-P1-9). It also proves nothing about languages outside the probed set, and nothing about whether the boundary is LANGUAGE or SCRIPT — the accented supported terms and the Latin-script German term are in the payload so a reader can see which",
+  "why_rejected_and_inert_are_not_collapsed": "they are facts at different layers with different consequences for a reader. REJECTED means a reader following the document cannot even create the configuration and finds out at the API. PROVABLY INERT means the create succeeds, the console shows a configured word filter, and nothing is protected — which is strictly more dangerous, and is invisible without a probe. A boolean roll-up would publish one sentence for both",
+  "why_the_positive_control_is_mandatory": "an inertness claim confirmed by silence has two explanations and they are indistinguishable without it: the language is unsupported, or the filter fires for nothing (a term the create dropped, a typo, the wrong assessment field read). The control makes the second explanation testable, and a run where it does not fire is recorded as `indeterminate` rather than as a verdict (feedback_probe_must_reach_the_code)",
+  "why_this_matters_operationally": "a word filter is the control a reader reaches for when they need a specific term blocked — a product codename, an internal hostname. If it is configurable and inert outside three languages, then every non-EN/FR/ES deployment has a filter in its console that blocks nothing, with no error anywhere to say so. That is the difference between a documented limitation and a silent one"
+}

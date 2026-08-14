@@ -288,10 +288,31 @@ def test_the_documented_ceilings_are_the_ones_recorded():
     assert A.rate_limit_for("InvokeGuardrailChecks") == 25.0, "1500 rpm = 25 rps"
 
 
+# A name that is deliberately NOT a real AWS operation, used as the "no entry in RATE_LIMITS"
+# example by the two tests below.
+#
+# It used to be `GetCallerIdentity`, and that broke: pacing entries were added for 19 more
+# operations and `GetCallerIdentity` was among them, so both tests started failing while the
+# property they assert — an unknown key means no ceiling and no recorded wait — was still
+# perfectly true. Anchoring a test on a real operation name that happens to be unpaced today is
+# the same anti-pattern as an exact-fit numeric ceiling: legitimate growth turns it red, and
+# whoever fixes it under time pressure reaches for the edit that makes it green rather than
+# asking what the test was for. The property is about the ABSENCE of a key, so the example
+# should be a name no future entry can claim.
+UNPACED_SENTINEL = "GrxNotARealAwsOperation"
+
+
+def test_the_unpaced_sentinel_really_has_no_entry():
+    """Guards the two tests below against passing vacuously — and against the reverse of the
+    failure that prompted this change. If somebody ever adds this key, this arm names the
+    problem instead of letting the other two silently invert their meaning."""
+    assert UNPACED_SENTINEL not in A.RATE_LIMITS
+
+
 def test_an_unlimited_operation_returns_none_not_zero():
     """None means "this harness enforces no ceiling", which is not "the API has none". A
     0.0 would read as unlimited and divide by zero on the way there."""
-    assert A.rate_limit_for("GetCallerIdentity") is None
+    assert A.rate_limit_for(UNPACED_SENTINEL) is None
 
 
 def test_the_gateway_data_plane_is_paced_and_is_labelled_as_ours():
@@ -378,9 +399,9 @@ def test_cumulative_waits_are_recorded_for_the_evidence():
 
 def test_an_unlimited_operation_records_no_wait():
     lim = A.RateLimiter()
-    lim.wait("GetCallerIdentity", now=1000.0, sleep=lambda _s: None)
-    lim.wait("GetCallerIdentity", now=1000.0, sleep=lambda _s: None)
-    assert "GetCallerIdentity" not in lim.waits
+    lim.wait(UNPACED_SENTINEL, now=1000.0, sleep=lambda _s: None)
+    lim.wait(UNPACED_SENTINEL, now=1000.0, sleep=lambda _s: None)
+    assert UNPACED_SENTINEL not in lim.waits
 
 
 def test_the_process_wide_limiter_is_shared():

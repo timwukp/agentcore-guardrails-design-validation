@@ -154,7 +154,28 @@ def action_id(target_name: str, tool_name: str) -> str:
 
 
 def action_ref(target_name: str, tool_name: str) -> str:
+    """The action ENTITY reference alone: `AgentCore::Action::"target___tool"`.
+
+    This is not a scope clause. Passing it into `statement(action=...)` produces
+    `forbid (principal, AgentCore::Action::"t___x", resource == ...)`, which the parser refuses
+    with `unexpected token ':', expected name at line 1, column 30` — the column being the second
+    colon of `AgentCore::`, i.e. it read `AgentCore` as the scope variable name and then found a
+    `:` where the clause should have ended. Use `action_eq()` for a scope. The reference on its
+    own is still the right thing inside a condition or a log line, which is why both exist.
+    """
     return f'{ENTITY_ACTION}::"{action_id(target_name, tool_name)}"'
+
+
+def action_eq(target_name: str, tool_name: str) -> str:
+    """The action SCOPE clause: `action == AgentCore::Action::"target___tool"`.
+
+    Exists because `gateway_resource()` returns a full `resource == ...` clause while
+    `action_ref()` returns a bare entity reference, and that asymmetry cost F1-19/24/25 a third
+    live round on 2026-08-14: the scope was assembled from one of each, so the resource slot was
+    a clause and the action slot was not. Both slots now have a helper that returns a clause, so
+    the two can be used symmetrically and `check_statement` can insist on it.
+    """
+    return f"action == {action_ref(target_name, tool_name)}"
 
 
 def guardrail_condition(function: str, categories: list[str] | tuple[str, ...],
@@ -215,8 +236,8 @@ def guardrail_condition(function: str, categories: list[str] | tuple[str, ...],
     return f"{call}{access}.{comparator}({decimal_literal(threshold)})"
 
 
-def statement(effect: str, *, principal: str = "principal", action: str = "action",
-             resource: str = "resource", when: str | None = None,
+def statement(effect: str, *, resource: str, principal: str = "principal",
+             action: str = "action", when: str | None = None,
              unless: str | None = None, when_guardrails: str | None = None,
              unless_guardrails: str | None = None) -> str:
     """Assemble a complete Cedar statement, with the documented mixing rule enforced.
@@ -226,6 +247,31 @@ def statement(effect: str, *, principal: str = "principal", action: str = "actio
     condition. A statement carrying both is rejected here so the failure is a local
     `ValueError` in a dry run rather than a `CREATE_FAILED` policy that a later arm reads as a
     deny.
+
+    `resource` is REQUIRED and deliberately has no default. It used to default to the bare
+    token `"resource"`, and that default cost F1-19, F1-24 and F1-25 a whole live round: the
+    API refuses an unconstrained resource outright with
+
+        "When parsing the policy statement, a wildcard resource was detected. To avoid
+         unexpected behavior changes, please constrain the resource either to a specific
+         AgentCore::Gateway resource or to the AgentCore::Gateway resource type."
+
+    so the default was not a lenient starting point, it was the one value guaranteed to
+    produce an invalid statement. Every one of the 22 other call sites in the repo already
+    passed `resource=`; only `f1_config/04_policy_grammar.py`'s three took the default, and
+    all nine of its arms came back INCONCLUSIVE because of it.
+
+    The same reasoning `guardrail_condition`'s `threshold` gives for having no default applies
+    here and is why this is a signature change rather than a better default: a default would
+    make these cases measure this module's choice instead of the document's. The document's own
+    §3.1 example writes `resource is AgentCore::Gateway` (see `gateway_resource(None)`), so
+    there IS a faithful value to pass — callers should pass it explicitly, and a caller that
+    forgets now fails with a TypeError at desk instead of a 400 on the instance.
+
+    Note that a constrained resource is necessary but not sufficient: F5-5 reached
+    `CREATE_FAILED` with a properly scoped resource because a guardrails provider's context
+    field-path argument must be declared on every action the rule applies to. That constraint
+    is a separate one and is not checkable from here.
     """
     if effect not in EFFECTS:
         raise ValueError(f"unknown effect {effect!r}; known: {EFFECTS}")
@@ -256,6 +302,48 @@ def gateway_resource(gateway_arn: str | None) -> str:
     if gateway_arn:
         return f'resource == {ENTITY_GATEWAY}::"{gateway_arn}"'
     return f"resource is {ENTITY_GATEWAY}"
+
+
+# `CreatePolicy`'s `definition` is a UNION, and which arm you send decides which grammar the
+# body is parsed with. The extended guardrails grammar — `when guardrails { ... }`,
+# `BedrockGuardrails::*` providers, the `suppressOutput` effect — exists ONLY under
+# `definition.policy`. Under `definition.cedar` the service parses base Cedar, where
+# `guardrails` is genuinely an unexpected token, and returns
+#
+#     "When parsing the policy statement, the following errors occurred:
+#      * unexpected token `guardrails`"
+#
+# That message is CORRECT for the request it answers. Read without the union member in view it
+# says "guardrails-in-policy is unsupported", which would be a spectacular false finding against
+# a document built on the construct — and it cost F1-19/F1-24/F1-25 a second live round on
+# 2026-08-14 before `f1_config/diag_resource_form.py` attributed it. F4-0's calibration matrix
+# had recorded the same fact on 2026-08-11 and was not consulted.
+#
+# These two helpers exist so the member is a NAMED decision at every send site rather than a
+# two-character difference inside a dict literal that no reviewer reads twice.
+GUARDRAILS_DEFINITION_MEMBER = "policy"
+BASE_DEFINITION_MEMBER = "cedar"
+
+
+def policy_definition(statement: str) -> dict[str, dict[str, str]]:
+    """The `definition` for a body that may use the extended guardrails grammar.
+
+    Use this for anything carrying `when guardrails`, a `BedrockGuardrails::` provider or the
+    `suppressOutput` effect. It is also safe for a plain body: the `policy` member accepts base
+    Cedar too (F4-0's `policy.narrow_permit` and `policy.no_condition` cells), so when in doubt
+    this is the member to send.
+    """
+    return {GUARDRAILS_DEFINITION_MEMBER: {"statement": statement}}
+
+
+def base_definition(statement: str) -> dict[str, dict[str, str]]:
+    """The `definition` for a base-Cedar body, which is what `cedar` means.
+
+    Correct only for a statement with NO guardrails construct in it — the baseline permit, a
+    plain scope, a standard `when`. A guardrails body sent here is rejected at token level with
+    a message that names the token and not the mistake.
+    """
+    return {BASE_DEFINITION_MEMBER: {"statement": statement}}
 
 
 def baseline_permit() -> str:
@@ -291,6 +379,51 @@ def principal_eq_role(account_id: str, role_name: str) -> str:
     return f'principal == {ENTITY_IAM}::"{assumed_role_principal(account_id, role_name)}"'
 
 
+_HEAD_RE = re.compile(r"\s*(\w+)\s*\((?P<scope>[^)]*)\)")
+
+
+def _scope_problems(text: str) -> list[str]:
+    """The three scope slots, each of which must be a CLAUSE and not a bare entity reference.
+
+    Added on 2026-08-14 after the third failed live round of F1-19/24/25. The statement was
+
+        forbid (principal, AgentCore::Action::"grxecho___echo", resource == AgentCore::Gateway::"…")
+
+    and the service answered `unexpected token ':', expected name at line 1, column 30`. Column 30
+    is the second colon of `AgentCore::`: the parser took `AgentCore` for the scope variable name
+    and then found a `:` where the slot should have ended. The cause was that `gateway_resource()`
+    returns a full `resource == …` clause while `action_ref()` returns a bare entity reference, and
+    a scope built from one of each looks symmetric in the source and is not.
+
+    Three rounds of this case have now been lost to a malformed statement HEAD — a bare `resource`
+    token, a type-form resource, and now a prefix-less action — while every guard in this repo was
+    watching the CONDITIONS. That is what this function is for. It is not a parser: it knows the
+    three slots by name and asks only whether each one is a clause.
+    """
+    problems: list[str] = []
+    m = _HEAD_RE.match(text)
+    if not m:
+        return ["no `effect (principal, action, resource)` head found"]
+    scope = m.group("scope")
+    for kw in ("principal", "action", "resource"):
+        if not re.search(rf"\b{kw}\b", scope):
+            problems.append(f"the scope is missing its `{kw}` slot: {scope!r}")
+    # An entity reference in a slot with no operator in front of it: the exact 2026-08-14 defect.
+    for kw, entity, ops in (("action", ENTITY_ACTION, "==|in"),
+                            ("resource", ENTITY_GATEWAY, "==|in|is"),
+                            ("principal", ENTITY_IAM, "==|in|is")):
+        if f'{entity}::"' not in scope and f"{entity} " not in scope:
+            continue
+        if not re.search(rf"\b{kw}\s*({ops})\s", scope):
+            problems.append(
+                f"the `{kw}` slot names {entity} but has no scope operator in front of it. A "
+                f"slot must be a CLAUSE (`{kw} == {entity}::\"…\"`), not a bare entity "
+                f"reference — the parser reads the bare form as a variable name and reports "
+                f"`unexpected token ':', expected name`. Use "
+                f"{'action_eq()' if kw == 'action' else kw + '_eq…()/gateway_resource()'}")
+    return problems
+
+
 def check_statement(text: str) -> list[str]:
     """Local lint. Returns a list of problems; empty means "nothing detectable offline".
 
@@ -303,6 +436,7 @@ def check_statement(text: str) -> list[str]:
     problems: list[str] = []
     if not text.rstrip().endswith(";"):
         problems.append("statement must end with `;`")
+    problems.extend(_scope_problems(text))
     if "when guardrails" in text and re.search(r"when\s*\{", text):
         problems.append("mixes `when {...}` with `when guardrails {...}` (documented as "
                         "unsupported: the guardrails block replaces the standard condition)")

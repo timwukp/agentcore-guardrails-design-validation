@@ -11,6 +11,16 @@ evidence/
 # runner's SOURCE is tracked; only its resolved ids are not.
 runner/.state/
 
+# NOT the sanctioned staging path — `runner/sync.py pull` writes to `runner/.state/incoming/<stamp>/`,
+# which the entry above already covers. This entry exists because on 2026-08-13 two pulls were done
+# by hand with `aws s3 sync` into `runner/.staging/<stamp>/` instead, to fetch three case files
+# quickly; the two stamps then sat there at 55 MB after their contents were merged into `results/`,
+# and a scratch copy reached 90,562 KB against an 80,000 KB ceiling. The ceiling caught it, which is
+# DEV-P4-36's guard doing its job; the stamps have been moved under `runner/.state/incoming/` and the
+# directory is gone. The line stays so that the next hurried `aws s3 sync` costs a wasted 55 MB
+# instead of a red gate, and so that a path used as local-only is finally said to be local-only.
+runner/.staging/
+
 # Environments and caches
 .venv/
 .venv-*/

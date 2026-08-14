@@ -44,6 +44,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 import dataclasses
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -268,8 +269,8 @@ class ProbeGuardrail:
     detail: dict[str, Any] = field(default_factory=dict)
 
 
-def create_probe_guardrail(client, store, lim, *, label: str, name: str, config: dict,
-                           tags: Sequence[dict], description: str,
+def create_probe_guardrail(client, store, lim, *, case_id: str, label: str, name: str,
+                           config: dict, tags: Sequence[dict], description: str,
                            **detail: Any) -> ProbeGuardrail:
     """One CreateGuardrail whose ERROR IS THE DATA.
 
@@ -282,6 +283,17 @@ def create_probe_guardrail(client, store, lim, *, label: str, name: str, config:
     and is on a different field from the one F8-5 is probing, so a long description would
     fail the create for a reason that has nothing to do with the boundary under test — and
     the result would read as the boundary holding.
+
+    `case_id` is a PARAMETER and not a module global. It was neither when `_detail` was
+    added to the return: the body read a bare `case_id`, Python resolved it against the
+    module globals, and there is no such global — so every call raised
+    `NameError: name 'case_id' is not defined` before reaching a single AWS API. The
+    published F8-5 and F8-7 records predate that edit (`evidence/smoke20260810T0305Z/f8/`,
+    4 `create_guardrail` records each), which is the only reason the regression stayed
+    invisible: nothing had called the helper since, and no test called it at all. Found
+    2026-08-13 while writing F1-6, which needs it. `_detail`'s own docstring says it exists
+    to make a wrong spelling fatal at the call site rather than three arms later; adding it
+    here made every call fatal instead, and an untested helper is where that hides.
     """
     lim.wait("CreateGuardrail")
     rec = capture(store, "create_guardrail", client,
@@ -300,6 +312,26 @@ def create_probe_guardrail(client, store, lim, *, label: str, name: str, config:
         evidence=rec.path, detail=_detail(case_id, detail))
 
 
+# A throttled delete is unrecoverable residue, which is why these exist. `DeleteGuardrail` is
+# already paced at 2 rps in `awsclients.RATE_LIMITS`, and it was STILL throttled twice on
+# 2026-08-13 — F1-6 leaked `ciac1nyzdgig` and F1-26/27/28 leaked `n6qc81db51qk`, each on its
+# case's very last call. Pacing lowers the probability of a throttle and cannot remove it, because
+# the quota is the account's and this project is not its only user. A single-attempt delete
+# therefore converts somebody else's traffic into our residue: rc=2, a case whose measurement was
+# fine reported as a failed run, and a guardrail left for a human to find.
+#
+# Retrying is safe in a way most retries are not: DELETE is idempotent, so the worst case of one
+# retry too many is a `ResourceNotFoundException` — which is itself the desired end state and is
+# recorded as such. Every attempt goes through `capture`, so the evidence tree holds one record per
+# try and the audit shows the retry rather than hiding it behind a success.
+DELETE_TRIES = 5
+DELETE_BACKOFF_S = 2.0
+DELETE_RETRY_CODES = ("ThrottlingException", "TooManyRequestsException",
+                      # A guardrail still settling from its own create refuses to be deleted, and
+                      # that clears on its own exactly like a throttle does.
+                      "ConflictException")
+
+
 def delete_probe_guardrails(client, store, lim,
                             probes: Sequence[ProbeGuardrail]) -> list[dict[str, Any]]:
     """Delete every probe that created something. Report per id, never as a bool.
@@ -310,17 +342,41 @@ def delete_probe_guardrails(client, store, lim,
 
     Every probe is attempted even if an earlier delete raised: stopping at the first
     failure would leave the rest behind for a reason unrelated to them.
+
+    Each delete is retried on the codes that clear by waiting (see `DELETE_RETRY_CODES`),
+    with the attempt count and every intermediate code kept in the row. A teardown that
+    succeeded on the third try is not the same event as one that succeeded on the first,
+    and the difference is the thing that predicts the next leak.
     """
     out: list[dict[str, Any]] = []
     for p in probes:
         if not p.guardrail_id:
             continue
-        lim.wait("DeleteGuardrail")
-        rec = capture(store, "delete_guardrail", client,
-                      guardrailIdentifier=p.guardrail_id)
+        codes: list[str] = []
+        rec = None
+        for attempt in range(DELETE_TRIES):
+            lim.wait("DeleteGuardrail")
+            rec = capture(store, "delete_guardrail", client,
+                          guardrailIdentifier=p.guardrail_id)
+            if rec.ok:
+                break
+            codes.append(rec.error_code or "unknown")
+            # Already gone is the outcome this function exists to produce. It is reported under
+            # its own name rather than as `deleted: True` alone, because a NotFound could also
+            # mean the id was wrong — and the two are indistinguishable from here, so the record
+            # says which one AWS actually answered and lets the reader judge.
+            if rec.error_code == "ResourceNotFoundException":
+                break
+            if rec.error_code not in DELETE_RETRY_CODES or attempt == DELETE_TRIES - 1:
+                break
+            time.sleep(DELETE_BACKOFF_S * (2 ** attempt))
+        gone = bool(rec.ok) or rec.error_code == "ResourceNotFoundException"
         out.append({"label": p.label, "name": p.name, "guardrail_id": p.guardrail_id,
-                    "deleted": rec.ok, "error_code": rec.error_code or None,
-                    "request_id": rec.request_id})
+                    "deleted": gone, "error_code": rec.error_code or None,
+                    "request_id": rec.request_id,
+                    "attempts": len(codes) + (1 if rec.ok else 0),
+                    "attempt_error_codes": codes,
+                    "already_gone": (not rec.ok) and rec.error_code == "ResourceNotFoundException"})
     return out
 
 

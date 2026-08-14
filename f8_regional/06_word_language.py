@@ -522,6 +522,7 @@ def main(argv: list[str] | None = None) -> int:                     # noqa: C901
         for tier in TIERS:
             p = P.create_probe_guardrail(
                 client, store, lim,
+                case_id=CASE,
                 label=f"words-{tier.lower()}",
                 name=f"grx-gr-f8-7-{tier.lower()}-{run_id}",
                 description=f"F8-7 word-filter x language probe, tier {tier}",
@@ -538,6 +539,7 @@ def main(argv: list[str] | None = None) -> int:                     # noqa: C901
                       file=sys.stderr)
                 c = P.create_probe_guardrail(
                     client, store, lim,
+                    case_id=CASE,
                     label=f"control-only-{tier.lower()}",
                     name=f"grx-gr-f8-7-ctl-{tier.lower()}-{run_id}",
                     description=f"F8-7 attribution probe: supported-language terms only, "

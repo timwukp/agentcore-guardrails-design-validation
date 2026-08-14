@@ -175,6 +175,7 @@ def run_probe(client, store, lim, probe: dict, *, tags: list[dict],
     """
     return P.create_probe_guardrail(
         client, store, lim,
+        case_id=CASE,
         label=probe["label"],
         name=f"grx-gr-f8-5-{probe['label']}-{run_id}",
         description=f"F8-5 boundary probe: {probe['tier']} {probe['length']} chars",

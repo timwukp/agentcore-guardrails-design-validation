@@ -1,0 +1,196 @@
+{
+  "ambient_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "arms": [
+    {
+      "built_by": "hand",
+      "case_id": "F1-19",
+      "classification": {
+        "error_code": "",
+        "matched_finding_tokens": [],
+        "matched_grammar_tokens": [
+          "unexpected",
+          "expected",
+          "guardrail",
+          "decimal"
+        ],
+        "outcome": "REJECTED_GRAMMAR",
+        "reasons": [
+          "for policy `grx_f119_omit_r20260810T130945Z_ayaecyznd1_0`, unexpected type: expected Bool but saw {HATE: {confidenceScore: decimal,},INSULTS: {confidenceScore: decimal,},MISCONDUCT: {confidenceScore: decimal,},SEXUAL: {confidenceScore: decimal,},VIOLENCE: {confidenceScore: decimal,},}\nfor policy `grx_f119_omit_r20260810T130945Z_ayaecyznd1_0`, unexpected type: expected Bool but saw {HATE: {confidenceScore: decimal,},INSULTS: {confidenceScore: decimal,},MISCONDUCT: {confidenceScore: decimal,},SEXUAL: {confidenceScore: decimal,},VIOLENCE: {confidenceScore: decimal,},} at line 3, column 5:\n2 when guardrails {\n3     BedrockGuardrails::ContentFilter([\"HATE\"], [context.input.text])\n4 };\n"
+        ],
+        "why": "CREATE_FAILED with parser vocabulary in statusReasons"
+      },
+      "enforcement_mode": "LOG_ONLY",
+      "engine_id": "grx_pe_r20260810T130945Z-t6hqadrspf",
+      "error_code": "",
+      "error_message": "",
+      "http_ok": true,
+      "http_status": 202,
+      "label": "A_no_threshold",
+      "local_lint": [
+        "a hand-written guardrail policy must state its threshold explicitly; the 0.2/0.4/0.2 defaults apply only to the natural-language authoring service"
+      ],
+      "local_lint_reading": "EXPECTED findings confirming the local guard would refuse this string, i.e. the bypass was necessary",
+      "outcome": "REJECTED_GRAMMAR",
+      "policy_id": "grx_f119_omit_r20260810T130945Z-ayaecyznd1",
+      "policy_name": "grx_f119_omit_r20260810T130945Z",
+      "predict": "rejected",
+      "request_id": "e1f8c875-1290-482d-867f-c279b4957c5e",
+      "statement": "forbid (principal, action == AgentCore::Action::\"grxecho___echo\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n\")\nwhen guardrails {\n    BedrockGuardrails::ContentFilter([\"HATE\"], [context.input.text])\n};",
+      "status_reasons": [
+        "for policy `grx_f119_omit_r20260810T130945Z_ayaecyznd1_0`, unexpected type: expected Bool but saw {HATE: {confidenceScore: decimal,},INSULTS: {confidenceScore: decimal,},MISCONDUCT: {confidenceScore: decimal,},SEXUAL: {confidenceScore: decimal,},VIOLENCE: {confidenceScore: decimal,},}\nfor policy `grx_f119_omit_r20260810T130945Z_ayaecyznd1_0`, unexpected type: expected Bool but saw {HATE: {confidenceScore: decimal,},INSULTS: {confidenceScore: decimal,},MISCONDUCT: {confidenceScore: decimal,},SEXUAL: {confidenceScore: decimal,},VIOLENCE: {confidenceScore: decimal,},} at line 3, column 5:\n2 when guardrails {\n3     BedrockGuardrails::ContentFilter([\"HATE\"], [context.input.text])\n4 };\n"
+      ],
+      "terminal_status": "CREATE_FAILED",
+      "timed_out": false,
+      "validation_mode": "IGNORE_ALL_FINDINGS",
+      "why_this_arm": "hand-written when guardrails block whose condition has NO comparator and NO threshold — the exact omission the sealed TRUE branch predicts is rejected"
+    },
+    {
+      "built_by": "helpers",
+      "case_id": "F1-19",
+      "classification": {
+        "error_code": "",
+        "matched_finding_tokens": [],
+        "matched_grammar_tokens": [],
+        "outcome": "ACCEPTED",
+        "reasons": [],
+        "why": "settled ACTIVE"
+      },
+      "enforcement_mode": "LOG_ONLY",
+      "engine_id": "grx_pe_r20260810T130945Z-t6hqadrspf",
+      "error_code": "",
+      "error_message": "",
+      "http_ok": true,
+      "http_status": 202,
+      "label": "A_control_with_threshold",
+      "local_lint": [],
+      "local_lint_reading": "clean, as a control must be",
+      "outcome": "ACCEPTED",
+      "policy_id": "grx_f119_ctrl_r20260810T130945Z-448hexhc7c",
+      "policy_name": "grx_f119_ctrl_r20260810T130945Z",
+      "predict": "accepted",
+      "request_id": "83c75f69-adfe-4fd9-9f84-c464a1c759cb",
+      "statement": "forbid (principal, action == AgentCore::Action::\"grxecho___echo\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n\")\nwhen guardrails {\n    BedrockGuardrails::ContentFilter([\"HATE\"], [context.input.text])[\"HATE\"].confidenceScore.greaterThan(decimal(\"0.2\"))\n};",
+      "status_reasons": [],
+      "terminal_status": "ACTIVE",
+      "timed_out": false,
+      "validation_mode": "IGNORE_ALL_FINDINGS",
+      "why_this_arm": "the SAME statement with an explicit decimal(\"0.2\"): without an accepted control, 'rejected' is uninformative — the create might fail for any reason"
+    }
+  ],
+  "billable_calls": 0,
+  "blockers": {
+    "blockers": [
+      "verdict is INCONCLUSIVE, which supports no amendment: RECORDED and INCONCLUSIVE are findings about what was observed, not about what the document got wrong"
+    ],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F1-19",
+    "clear_here": false
+  },
+  "bypass_statement": "arms predicted REJECTED are hand-assembled, deliberately bypassing cedar.statement()/guardrail_condition(), whose guards encode the very rules under test; every arm predicted ACCEPTED is helper-built and passed cedar.check_statement before any call was spent, and bypass_partition_problems() aborts the run if the partition is violated. The sacrificial subject carries the malformation under test itself — the lesson of f1_config/04_update_revalidation.py's 'WHY F4'S PROBE COULD NOT HAVE CAUGHT THIS': a sacrificial subject must be sacrificial IN THE PROPERTY UNDER TEST, not merely disposable",
+  "case_id": "F1-19",
+  "dc1_defence": "every CreatePolicy arm sends validationMode=IGNORE_ALL_FINDINGS, because a grammar probe asks whether the BODY PARSES and an 'Overly Permissive' finding is a semantic judgement about a body that parsed (DC-1 / F1-3, and F1-11's proof that omitting the mode fails even the baseline statement). Every statement is also a forbid with an unconstrained scope, which cannot be overly permissive — two independent reasons the DC-1 class is out of reach. The residual risk is classified, not assumed away: a failure whose reasons carry the finding vocabulary is scored VALIDATION_FINDING and never as a rejection, and an unmatched failure is UNCLASSIFIED, never TRUE",
+  "enforcement_mode_choice": "enforcementMode=LOG_ONLY on every arm: grammar acceptance is a property of the body and the validator, not of the mode, and a transiently-ACTIVE forbid on the shared engine would change the live ENFORCE gateway's deny behaviour for the seconds it exists",
+  "expiry": "a service-validator behaviour plus a generation-service behaviour; either could change without an SDK bump. A change is an AWS-BEHAVIOR-CHANGES.md entry",
+  "instrument": "sacrificial CreatePolicy arms against the existing baseline policy engine, each polled to a terminal status (infra/03_policy_engine.wait_status) and CLASSIFIED by error code and statusReasons text; plus, for F1-19, one StartPolicyGeneration polled to the generation's own terminal alphabet and read back through ListPolicyGenerationAssets",
+  "is_smoke": false,
+  "kind": "EXISTENCE",
+  "mutation_mandatory_per_seal": false,
+  "nl_generation": {
+    "asset_findings": [
+      {
+        "description": "Non-translatable: cannot be expressed in Dogwood",
+        "fragment": "Block any tool call whose output contains hate speech.",
+        "type": "INVALID"
+      },
+      {
+        "description": "Non-translatable: cannot be expressed in Dogwood",
+        "fragment": "Block any tool call whose input attempts a prompt attack.",
+        "type": "INVALID"
+      }
+    ],
+    "defaults_check": {
+      "calls_per_function": {},
+      "defaults_source": "lib/cedar.py AUTHORING_DEFAULTS — the single home of the documented 0.2/0.4/0.2 numbers, not retyped here",
+      "expected_defaults": {
+        "ContentFilter": "0.2",
+        "PromptAttack": "0.4",
+        "SensitiveInformation": "0.2"
+      },
+      "matched": null,
+      "measurable": false,
+      "n_statements": 0,
+      "service_declined_to_translate": true,
+      "thresholds_per_function": {},
+      "unknown_functions": [],
+      "why": "the generation settled GENERATED and emitted 0 statement(s): the service reported 2 of 2 finding(s) as INVALID, e.g. 'Non-translatable: cannot be expressed in Dogwood' for the fragment 'Block any tool call whose output contains hate speech.'. So there is no generated threshold to compare against the documented defaults, and the reason is the service's, not ours"
+    },
+    "findings": null,
+    "generated_statements": [],
+    "generation_id": "grx_f119_gen_r20260810T130945Z_20260814T005425Z-kflaigd57a",
+    "n_assets": 2,
+    "prompt": "Block any tool call whose output contains hate speech. Also block any tool call whose input attempts a prompt attack.",
+    "prompt_names_no_number": true,
+    "request_id": "3bef9925-8974-4020-a72c-98d2260933be",
+    "started": true,
+    "status": "GENERATED",
+    "status_reasons": [],
+    "status_sequence": [
+      "GENERATING",
+      "GENERATING",
+      "GENERATED"
+    ]
+  },
+  "oracle_text": "TRUE if hand-written Cedar omitting a threshold is REJECTED while NL authoring fills the documented defaults; FALSE if hand-written policies silently receive defaults",
+  "pairing": {
+    "measurable": false,
+    "observed": null,
+    "why": "the hand-written half rejected as predicted, but the NL authoring half could not be read to a comparable answer (the generation settled GENERATED and emitted 0 statement(s): the service reported 2 of 2 finding(s) as INVALID, e.g. 'Non-translatable: cannot be expressed in Dogwood' for the fragment 'Block any tool call whose output contains hate speech.'. So there is no generated threshold to compare against the documented defaults, and the reason is the service's, not ours); a missing half is not a refutation, so this is not-measured rather than FALSE"
+  },
+  "planned_n": null,
+  "policy_engine_id": "grx_pe_r20260810T130945Z-t6hqadrspf",
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F1-19",
+    "evidence": {
+      "detail": {
+        "arm_outcomes": {
+          "A_control_with_threshold": "ACCEPTED",
+          "A_no_threshold": "REJECTED_GRAMMAR"
+        }
+      },
+      "measured": false,
+      "reason": "the hand-written half rejected as predicted, but the NL authoring half could not be read to a comparable answer (the generation settled GENERATED and emitted 0 statement(s): the service reported 2 of 2 finding(s) as INVALID, e.g. 'Non-translatable: cannot be expressed in Dogwood' for the fragment 'Block any tool call whose output contains hate speech.'. So there is no generated threshold to compare against the documented defaults, and the reason is the service's, not ours); a missing half is not a refutation, so this is not-measured rather than FALSE",
+      "why_not_recorded": "RECORDED is a sealed property of the case, meaning the pre-registration declared the outcome unknown and both answers are findings. This case's sealed kind is EXISTENCE: it made a prediction, and the prediction was not tested"
+    },
+    "family": "descriptive_no_test",
+    "kind": "EXISTENCE",
+    "mutation_required": false,
+    "n_attempted": 0,
+    "n_met": true,
+    "n_usable": 0,
+    "notes": [
+      "not measured: the hand-written half rejected as predicted, but the NL authoring half could not be read to a comparable answer (the generation settled GENERATED and emitted 0 statement(s): the service reported 2 of 2 finding(s) as INVALID, e.g. 'Non-translatable: cannot be expressed in Dogwood' for the fragment 'Block any tool call whose output contains hate speech.'. So there is no generated threshold to compare against the documented defaults, and the reason is the service's, not ours); a missing half is not a refutation, so this is not-measured rather than FALSE"
+    ],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [],
+    "verdict": "INCONCLUSIVE"
+  },
+  "region": "us-east-1",
+  "residue": {
+    "basis": "the state.json ledger: create_arm records every policy before polling and delete_arm_policies drops it only on a successful delete, so a row still present IS a survivor — including one whose delete was never attempted (the two-list reasoning, with the ledger as the created-list)",
+    "clean": true,
+    "survivors_in_ledger": []
+  },
+  "run_id": "r20260810T130945Z",
+  "stored_readback_of_accepted_no_threshold_arm": null,
+  "text_units": 0,
+  "verdict": "INCONCLUSIVE",
+  "verdict_reading": "the hand-written half rejected as predicted, but the NL authoring half could not be read to a comparable answer (the generation settled GENERATED and emitted 0 statement(s): the service reported 2 of 2 finding(s) as INVALID, e.g. 'Non-translatable: cannot be expressed in Dogwood' for the fragment 'Block any tool call whose output contains hate speech.'. So there is no generated threshold to compare against the documented defaults, and the reason is the service's, not ours); a missing half is not a refutation, so this is not-measured rather than FALSE",
+  "verdict_rule": "TRUE iff BOTH halves hold: (1) the hand-written arm omitting a threshold is REJECTED_GRAMMAR while its explicit-threshold control is ACCEPTED — the control is part of the rule, not a sanity check — and (2) the generated Cedar from StartPolicyGeneration carries exactly the documented defaults from cedar.AUTHORING_DEFAULTS. FALSE iff the hand-written arm is ACCEPTED (with the stored body read back for a silently-inserted default), or the generated thresholds disagree with the documented defaults. A generation that cannot be driven to a terminal, readable state is NOT-MEASURED — a missing half is not a refutation",
+  "what_true_does_not_prove": "Nor does it hold for output-path guardrails. Every arm here uses `context.input.text`, because a policy with an authorization effect that references `context.output.*` is refused outright by the service (\"Use 'context.input.*' data paths\"), so the input path is the only one on which these cases could be measured at all; output-path guardrails go through the `suppressOutput` effect, which is F1-17's subject. That aside: that the defaults are 0.2/0.4/0.6 for the three functions the TITLE names — the comparison is against cedar.AUTHORING_DEFAULTS (ContentFilter 0.2, PromptAttack 0.4, SensitiveInformation 0.2) and only for the functions this one generation actually emitted; a function the generation did not produce was not compared. Nor that every NL prompt gets defaults: n=1 prompt, chosen to name no number. Nor anything about what the thresholds DO at evaluation time — that is F1-18/F3's subject",
+  "why_this_matters_operationally": "a reader who hand-writes Cedar expecting the documented defaults to apply ships a policy that is rejected (or worse, silently thresholdless if FALSE); a reader must know the defaults belong to the authoring service alone. cedar.guardrail_condition's no-default-threshold design rests on this case being TRUE"
+}

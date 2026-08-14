@@ -399,18 +399,26 @@ def _detach(monkeypatch, capsys, outcomes, argv=("--detach", "--label", "suite-0
     return rc, ssm, capsys.readouterr()
 
 
-# Invocation order on the detach path: 0 label check, 1 disk guard, 2 launch, 3 confirmation.
-_LAUNCH, _CONFIRM = 2, 3
+# Invocation order on the detach path: 0 label check, 1 identity guard, 2 disk guard, 3 launch,
+# 4 confirmation.
+#
+# The identity guard was inserted at index 1 on 2026-08-13 and shifted everything after it, which
+# broke four arms in this file at once. Named as a constant rather than left as a bare literal per
+# call site so the next inserted guard is a one-line change here instead of a scavenger hunt — and
+# the arms that can be written against CONTENT rather than position now are, because a positional
+# index into a sequence that grows is a claim about a stranger's future edit.
+_IDENTITY, _DISK, _LAUNCH, _CONFIRM = 1, 2, 3, 4
+_N_DETACH_INVOCATIONS = 5
 
 
 def test_a_clean_detach_reports_success_once(monkeypatch, capsys):
     rc, ssm, cap = _detach(monkeypatch, capsys, {})
     assert rc == 0, cap.err
     assert "detached as 'suite-07'" in cap.out, cap.out
-    assert len(ssm.sent) == 4, (
-        f"expected label check, disk guard, launch and confirmation; got {len(ssm.sent)} "
-        f"invocation(s). If the confirmation is gone, the detach is being reported from the "
-        f"launch's own status again")
+    assert len(ssm.sent) == _N_DETACH_INVOCATIONS, (
+        f"expected label check, identity guard, disk guard, launch and confirmation; got "
+        f"{len(ssm.sent)} invocation(s). If the confirmation is gone, the detach is being reported "
+        f"from the launch's own status again")
 
 
 def test_a_launch_error_is_not_reported_as_a_detach(monkeypatch, capsys):
@@ -447,9 +455,10 @@ def test_a_confirmed_job_under_a_failed_launch_reports_both(monkeypatch, capsys)
 
 def test_the_disk_guards_refusal_stops_the_launch(monkeypatch, capsys):
     """Exit 4 from the guard must mean no launch invocation is sent at all."""
-    rc, ssm, cap = _detach(monkeypatch, capsys, {1: ("Failed", 4, "REFUSING to start suite-07")})
+    rc, ssm, cap = _detach(monkeypatch, capsys,
+                           {_DISK: ("Failed", 4, "REFUSING to start suite-07")})
     assert rc == 4, f"{rc}: {cap.out}{cap.err}"
-    assert len(ssm.sent) == 2, (
+    assert len(ssm.sent) == _DISK + 1, (
         f"the suite was launched anyway — {len(ssm.sent)} invocations sent after a refusal")
     assert "detached as" not in cap.out, cap.out
 
@@ -469,7 +478,9 @@ def test_the_guards_are_wired_into_the_detach_path_and_not_merely_defined(monkey
     functions but stops calling them fails here.
     """
     _, ssm, _ = _detach(monkeypatch, capsys, {})
-    guard = "\n".join(ssm.sent[1])
+    # Located by content: this arm exists to prove the guard is REACHED, so pinning it to an index
+    # would make it fail for the unrelated reason that somebody added a guard above it.
+    guard = next(t for t in ("\n".join(c) for c in ssm.sent) if "free under" in t)
     assert "REFUSING to start suite-07" in guard and f"-mtime +{RUN.PRUNE_DAYS}" in guard, guard
     assert str(RUN.MIN_FREE_MB) in guard, guard
     launch = "\n".join(ssm.sent[_LAUNCH])

@@ -1,0 +1,1520 @@
+{
+  "action_id": "grxecho___echo",
+  "ambient_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "blockers": {
+    "blockers": [
+      "verdict is RECORDED, which supports no amendment: RECORDED and INCONCLUSIVE are findings about what was observed, not about what the document got wrong"
+    ],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F5-4b",
+    "clear_here": false
+  },
+  "captured_document": {
+    "n_statements": 3,
+    "normalised": "{\"Statement\": [{\"Action\": \"bedrock-agentcore:*\", \"Effect\": \"Allow\", \"Resource\": \"*\", \"Sid\": \"AgentCoreAsDocumented\"}, {\"Action\": \"bedrock:InvokeGuardrailChecks\", \"Effect\": \"Allow\", \"Resource\": \"*\", \"Sid\": \"InvokeGuardrailChecks\"}, {\"Action\": \"lambda:InvokeFunction\", \"Effect\": \"Allow\", \"Resource\": [\"arn:aws:lambda:us-east-1:<account>:function:grx-echo-r20260810T130945Z\", \"arn:aws:lambda:us-east-1:<account>:function:grx-echo-r20260810T130945Z:*\"], \"Sid\": \"HarnessLambdaTargetNotFromTheDocument\"}], \"Version\": \"2012-10-17\"}",
+    "policy_name": "grx-gw-exec-policy",
+    "read_from": "iam:GetRolePolicy (live)",
+    "role_name": "grx-gw-exec-r20260810T130945Z",
+    "sha256": "b29fd3e329ba94da3d1c12fca4991cdd14c1bdfec88dd03cbdce55de759e0fa4",
+    "sids": [
+      "AgentCoreAsDocumented",
+      "InvokeGuardrailChecks",
+      "HarnessLambdaTargetNotFromTheDocument"
+    ],
+    "why_the_whole_document": "the restore puts back this captured object, never a document assembled from infra/01_iam.py's spec: a spec-built restore writes what the spec says rather than what was there, and the two differ exactly when something else has changed the role"
+  },
+  "case_id": "F5-4b",
+  "data_plane_stabilisation": {
+    "post_removal": {
+      "confirmations_required": 3,
+      "consecutive_confirmations": 3,
+      "decision": "DENY",
+      "decisions_seen": [
+        "DENY",
+        "DENY",
+        "DENY"
+      ],
+      "max_wait_s": 90,
+      "phase": "post-removal",
+      "seconds": 11.4,
+      "stabilised": true,
+      "why_symmetric": "this loop waits for STABILITY, not for a named decision. A loop that waited for DENY would manufacture fail-closed by patience, and one that waited for ALLOW would manufacture fail-open"
+    },
+    "post_restore": {
+      "confirmations_required": 3,
+      "consecutive_confirmations": 3,
+      "decision": "DENY",
+      "decisions_seen": [
+        "DENY",
+        "DENY",
+        "DENY"
+      ],
+      "max_wait_s": 90,
+      "phase": "post-restore",
+      "seconds": 12.4,
+      "stabilised": true,
+      "why_symmetric": "this loop waits for STABILITY, not for a named decision. A loop that waited for DENY would manufacture fail-closed by patience, and one that waited for ALLOW would manufacture fail-open"
+    }
+  },
+  "expiry": "a live behavioural measurement, dated by botocore 1.43.67 and by the run date. Its subject is undocumented service behaviour with no contract behind it, so it can change without notice and without a release note — this is the class of result AWS-BEHAVIOR-CHANGES.md exists for. Re-run before quoting it in a runbook, and re-run in particular if the engine gains a configurable failure posture, which would make the question a setting rather than a behaviour",
+  "finding": {
+    "controls": {
+      "pre_benign": "ALLOW",
+      "pre_violating": "DENY"
+    },
+    "finding": "FAIL_CLOSED_DENY_WHEN_EVALUATION_CANNOT_RUN",
+    "measurement": {
+      "post_benign": "DENY",
+      "post_violating_new": "DENY",
+      "post_violating_same": "DENY"
+    },
+    "per_leg": {
+      "post_benign": "DENY",
+      "post_violating_new": "DENY",
+      "post_violating_same": "DENY",
+      "pre_benign": "ALLOW",
+      "pre_violating": "DENY",
+      "restored_violating": "DENY"
+    },
+    "publishable": true,
+    "why": "with guardrail evaluation impossible the engine denied the violating request AND the benign one. Denying the benign request is what makes this attributable: the engine stopped discriminating by content, which is what 'cannot evaluate' should look like, rather than continuing to evaluate and denying for the ordinary reason"
+  },
+  "findings_possible": [
+    "FAIL_CLOSED_DENY_WHEN_EVALUATION_CANNOT_RUN",
+    "FAIL_OPEN_ALLOW_WHEN_EVALUATION_CANNOT_RUN",
+    "REMOVAL_NOT_OBSERVABLE_AT_THE_REQUEST_PATH",
+    "SPLIT_OR_INCOHERENT_LEGS",
+    "CONTROLS_DID_NOT_BRACKET_THE_MEASUREMENT"
+  ],
+  "forbid": {
+    "lint": [],
+    "policy_id": "grx_f54b_block_r20260810T130945Z-lc1tuyumhe",
+    "policy_name": "grx_f54b_block_r20260810T130945Z",
+    "statement": "forbid (principal, action == AgentCore::Action::\"grxecho___echo\", resource == AgentCore::Gateway::\"arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n\")\nwhen guardrails {\n    BedrockGuardrails::ContentFilter([\"HATE\"], [context.input.text])[\"HATE\"].confidenceScore.greaterThan(decimal(\"0.2\"))\n};",
+    "status": "ACTIVE"
+  },
+  "forbid_deletion": {
+    "attempts": 1,
+    "deleted": true,
+    "errors": []
+  },
+  "gateway_execution_role": "grx-gw-exec-r20260810T130945Z",
+  "gateway_id": "grx-gw-r20260810t130945z-zpkfmpwo9n",
+  "guards": {
+    "blocking_was_reasserted_after_the_restore": true,
+    "controls_bracketed_the_measurement": true,
+    "document_was_restored_and_verified_byte_for_byte_after_normalisation": true,
+    "engine_was_quiet_at_start": true,
+    "every_window_leg_reached_the_gateway": true,
+    "forbid_was_active_before_any_leg_ran": true,
+    "post_removal_violating_legs_agreed": true,
+    "probe_policy_was_deleted": true,
+    "removal_was_confirmed_by_iam_before_the_window_legs": true,
+    "role_carried_exactly_its_shipped_document": true,
+    "window_stayed_within_its_bound": true
+  },
+  "guards_failed": [],
+  "iam_propagation": {
+    "removal": {
+      "channels": "iam:GetRolePolicy (the stored document) AND iam:SimulatePrincipalPolicy (IAM's evaluation). Both must agree, because the document changes on the write while the evaluation is the eventually-consistent half the gateway actually depends on",
+      "confirmations_required": 3,
+      "consecutive_confirmations": 3,
+      "max_wait_s": 90,
+      "phase": "removal",
+      "reached": true,
+      "rounds": [
+        {
+          "at_s": 0.1,
+          "decisions": [
+            "implicitDeny"
+          ],
+          "present_in_document": false,
+          "sids": [
+            "AgentCoreAsDocumented",
+            "HarnessLambdaTargetNotFromTheDocument"
+          ],
+          "simulated_allowed": false
+        },
+        {
+          "at_s": 5.2,
+          "decisions": [
+            "implicitDeny"
+          ],
+          "present_in_document": false,
+          "sids": [
+            "AgentCoreAsDocumented",
+            "HarnessLambdaTargetNotFromTheDocument"
+          ],
+          "simulated_allowed": false
+        },
+        {
+          "at_s": 10.3,
+          "decisions": [
+            "implicitDeny"
+          ],
+          "present_in_document": false,
+          "sids": [
+            "AgentCoreAsDocumented",
+            "HarnessLambdaTargetNotFromTheDocument"
+          ],
+          "simulated_allowed": false
+        }
+      ],
+      "seconds": 10.3,
+      "simulation_caveat": "SimulatePrincipalPolicy is not an authorization event and cannot see a Forward Access Session's cached credentials. It is the best channel available for a role this harness cannot assume; its limits are why the benign leg exists as an independent disambiguator",
+      "wanted_present": false
+    },
+    "restore": {
+      "channels": "iam:GetRolePolicy (the stored document) AND iam:SimulatePrincipalPolicy (IAM's evaluation). Both must agree, because the document changes on the write while the evaluation is the eventually-consistent half the gateway actually depends on",
+      "confirmations_required": 3,
+      "consecutive_confirmations": 3,
+      "max_wait_s": 900,
+      "phase": "restore",
+      "reached": true,
+      "rounds": [
+        {
+          "at_s": 0.1,
+          "decisions": [
+            "allowed"
+          ],
+          "present_in_document": true,
+          "sids": [
+            "AgentCoreAsDocumented",
+            "InvokeGuardrailChecks",
+            "HarnessLambdaTargetNotFromTheDocument"
+          ],
+          "simulated_allowed": true
+        },
+        {
+          "at_s": 5.3,
+          "decisions": [
+            "allowed"
+          ],
+          "present_in_document": true,
+          "sids": [
+            "AgentCoreAsDocumented",
+            "InvokeGuardrailChecks",
+            "HarnessLambdaTargetNotFromTheDocument"
+          ],
+          "simulated_allowed": true
+        },
+        {
+          "at_s": 10.4,
+          "decisions": [
+            "allowed"
+          ],
+          "present_in_document": true,
+          "sids": [
+            "AgentCoreAsDocumented",
+            "InvokeGuardrailChecks",
+            "HarnessLambdaTargetNotFromTheDocument"
+          ],
+          "simulated_allowed": true
+        }
+      ],
+      "seconds": 10.4,
+      "simulation_caveat": "SimulatePrincipalPolicy is not an authorization event and cannot see a Forward Access Session's cached credentials. It is the best channel available for a role this harness cannot assume; its limits are why the benign leg exists as an independent disambiguator",
+      "wanted_present": true
+    }
+  },
+  "inline_policy_edited": "grx-gw-exec-policy",
+  "instrument": "5 MCP tools/call requests per leg through gateway grx-gw-r20260810t130945z-zpkfmpwo9n, against a guardrail-bearing forbid on engine grx_pe_r20260810T130945Z-t6hqadrspf, with bedrock:InvokeGuardrailChecks present and then absent from grx-gw-exec-r20260810T130945Z's grx-gw-exec-policy",
+  "is_smoke": false,
+  "items": {
+    "benign": {
+      "id": "428e12963d2d",
+      "label": "CLEAN"
+    },
+    "violating_repeated": {
+      "id": "e4542f4e415c",
+      "label": "HATE"
+    },
+    "violating_unseen": {
+      "id": "ecad8f288e74",
+      "label": "HATE"
+    },
+    "why_ids_not_text": "the corpus text is not copied into results/: the items are identified by their corpus ids and the corpus is on disk"
+  },
+  "kind": "RECORDED",
+  "leg_rows": {
+    "post_benign": [
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 162.456,
+          "http_status": 200,
+          "is_error": null,
+          "jsonrpc_error": {
+            "code": -32002,
+            "message": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation"
+          },
+          "outcome": "policy_denied",
+          "request_id": "9e1159f7-c910-4080-84eb-c435ecaed659",
+          "session_id": "ee2d3402-3953-4680-b3f2-c79fc2073595",
+          "text": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": true,
+        "http_status": 200,
+        "i": 1,
+        "outcome": "policy_denied",
+        "ran": false,
+        "unclassified": false
+      },
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 170.777,
+          "http_status": 200,
+          "is_error": null,
+          "jsonrpc_error": {
+            "code": -32002,
+            "message": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation"
+          },
+          "outcome": "policy_denied",
+          "request_id": "689cac58-8068-493b-bce3-b745cf07e583",
+          "session_id": "ee2d3402-3953-4680-b3f2-c79fc2073595",
+          "text": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": true,
+        "http_status": 200,
+        "i": 2,
+        "outcome": "policy_denied",
+        "ran": false,
+        "unclassified": false
+      },
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 197.033,
+          "http_status": 200,
+          "is_error": null,
+          "jsonrpc_error": {
+            "code": -32002,
+            "message": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation"
+          },
+          "outcome": "policy_denied",
+          "request_id": "50575dec-aba5-4d2d-93ff-43f23faaa864",
+          "session_id": "ee2d3402-3953-4680-b3f2-c79fc2073595",
+          "text": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": true,
+        "http_status": 200,
+        "i": 3,
+        "outcome": "policy_denied",
+        "ran": false,
+        "unclassified": false
+      },
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 163.087,
+          "http_status": 200,
+          "is_error": null,
+          "jsonrpc_error": {
+            "code": -32002,
+            "message": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation"
+          },
+          "outcome": "policy_denied",
+          "request_id": "38e3044e-695f-496f-a399-c5333a138347",
+          "session_id": "ee2d3402-3953-4680-b3f2-c79fc2073595",
+          "text": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": true,
+        "http_status": 200,
+        "i": 4,
+        "outcome": "policy_denied",
+        "ran": false,
+        "unclassified": false
+      },
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 175.327,
+          "http_status": 200,
+          "is_error": null,
+          "jsonrpc_error": {
+            "code": -32002,
+            "message": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation"
+          },
+          "outcome": "policy_denied",
+          "request_id": "e0f3e4a9-360e-4952-aced-e3c0f4ad0068",
+          "session_id": "ee2d3402-3953-4680-b3f2-c79fc2073595",
+          "text": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": true,
+        "http_status": 200,
+        "i": 5,
+        "outcome": "policy_denied",
+        "ran": false,
+        "unclassified": false
+      }
+    ],
+    "post_violating_new": [
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 159.033,
+          "http_status": 200,
+          "is_error": null,
+          "jsonrpc_error": {
+            "code": -32002,
+            "message": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation"
+          },
+          "outcome": "policy_denied",
+          "request_id": "0227016c-6897-40fb-ace5-2b801e4ec5a4",
+          "session_id": "c18f22f0-0fb5-47a8-8b86-d1295d0116bd",
+          "text": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": true,
+        "http_status": 200,
+        "i": 1,
+        "outcome": "policy_denied",
+        "ran": false,
+        "unclassified": false
+      },
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 229.903,
+          "http_status": 200,
+          "is_error": null,
+          "jsonrpc_error": {
+            "code": -32002,
+            "message": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation"
+          },
+          "outcome": "policy_denied",
+          "request_id": "b2144bac-ade4-4fb7-b219-c51dad9676ec",
+          "session_id": "c18f22f0-0fb5-47a8-8b86-d1295d0116bd",
+          "text": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": true,
+        "http_status": 200,
+        "i": 2,
+        "outcome": "policy_denied",
+        "ran": false,
+        "unclassified": false
+      },
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 218.207,
+          "http_status": 200,
+          "is_error": null,
+          "jsonrpc_error": {
+            "code": -32002,
+            "message": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation"
+          },
+          "outcome": "policy_denied",
+          "request_id": "bd75cfb2-e413-4a4b-86f2-be6e4d3da0a3",
+          "session_id": "c18f22f0-0fb5-47a8-8b86-d1295d0116bd",
+          "text": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": true,
+        "http_status": 200,
+        "i": 3,
+        "outcome": "policy_denied",
+        "ran": false,
+        "unclassified": false
+      },
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 210.766,
+          "http_status": 200,
+          "is_error": null,
+          "jsonrpc_error": {
+            "code": -32002,
+            "message": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation"
+          },
+          "outcome": "policy_denied",
+          "request_id": "853d20fb-3eac-4cb0-8e22-ab588bb10f38",
+          "session_id": "c18f22f0-0fb5-47a8-8b86-d1295d0116bd",
+          "text": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": true,
+        "http_status": 200,
+        "i": 4,
+        "outcome": "policy_denied",
+        "ran": false,
+        "unclassified": false
+      },
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 173.034,
+          "http_status": 200,
+          "is_error": null,
+          "jsonrpc_error": {
+            "code": -32002,
+            "message": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation"
+          },
+          "outcome": "policy_denied",
+          "request_id": "0ec2174f-ab2b-46ba-904b-e560ca12a76c",
+          "session_id": "c18f22f0-0fb5-47a8-8b86-d1295d0116bd",
+          "text": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": true,
+        "http_status": 200,
+        "i": 5,
+        "outcome": "policy_denied",
+        "ran": false,
+        "unclassified": false
+      }
+    ],
+    "post_violating_same": [
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 177.545,
+          "http_status": 200,
+          "is_error": null,
+          "jsonrpc_error": {
+            "code": -32002,
+            "message": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation"
+          },
+          "outcome": "policy_denied",
+          "request_id": "4244da2f-60e7-4366-8bea-0b0fca18efae",
+          "session_id": "64d17cfe-d6c2-4d47-b0d4-8e739510283b",
+          "text": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": true,
+        "http_status": 200,
+        "i": 1,
+        "outcome": "policy_denied",
+        "ran": false,
+        "unclassified": false
+      },
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 183.669,
+          "http_status": 200,
+          "is_error": null,
+          "jsonrpc_error": {
+            "code": -32002,
+            "message": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation"
+          },
+          "outcome": "policy_denied",
+          "request_id": "d9ef7c69-312e-4c2c-bbae-eab6ae1072f1",
+          "session_id": "64d17cfe-d6c2-4d47-b0d4-8e739510283b",
+          "text": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": true,
+        "http_status": 200,
+        "i": 2,
+        "outcome": "policy_denied",
+        "ran": false,
+        "unclassified": false
+      },
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 244.353,
+          "http_status": 200,
+          "is_error": null,
+          "jsonrpc_error": {
+            "code": -32002,
+            "message": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation"
+          },
+          "outcome": "policy_denied",
+          "request_id": "73f2ee94-76fe-479f-aed3-ea1782654996",
+          "session_id": "64d17cfe-d6c2-4d47-b0d4-8e739510283b",
+          "text": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": true,
+        "http_status": 200,
+        "i": 3,
+        "outcome": "policy_denied",
+        "ran": false,
+        "unclassified": false
+      },
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 198.759,
+          "http_status": 200,
+          "is_error": null,
+          "jsonrpc_error": {
+            "code": -32002,
+            "message": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation"
+          },
+          "outcome": "policy_denied",
+          "request_id": "3301ff9c-dc85-4818-afc4-64bf0fce2e35",
+          "session_id": "64d17cfe-d6c2-4d47-b0d4-8e739510283b",
+          "text": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": true,
+        "http_status": 200,
+        "i": 4,
+        "outcome": "policy_denied",
+        "ran": false,
+        "unclassified": false
+      },
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 210.328,
+          "http_status": 200,
+          "is_error": null,
+          "jsonrpc_error": {
+            "code": -32002,
+            "message": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation"
+          },
+          "outcome": "policy_denied",
+          "request_id": "3270a7cb-6288-4d6d-83ff-47b08e975321",
+          "session_id": "64d17cfe-d6c2-4d47-b0d4-8e739510283b",
+          "text": "Tool Execution Denied: Insufficient Permissions for Policy Evaluation",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": true,
+        "http_status": 200,
+        "i": 5,
+        "outcome": "policy_denied",
+        "ran": false,
+        "unclassified": false
+      }
+    ],
+    "pre_benign": [
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 1100.288,
+          "http_status": 200,
+          "is_error": false,
+          "jsonrpc_error": null,
+          "outcome": "allowed",
+          "request_id": "75772f98-28b9-4924-bd57-3ff94fb7c9be",
+          "session_id": "fb454c7f-1492-4ab6-97b7-611e338335be",
+          "text": "{\"tool\":\"echo\",\"context\":{\"bedrockAgentCoreMessageVersion\":\"1.0\",\"bedrockAgentCoreAwsRequestId\":\"75772f98-28b9-4924-bd57-3ff94fb7c9be\",\"bedrockAgentCoreMcpMessageId\":\"2\",\"bedrockAgentCoreGatewayId\":\"grx-gw-r20260810t130945z-zpkfmpwo9n\",\"bedrockAgentCoreTargetId\":\"I7DX308MPV\",\"bedrockAgentCoreToolName\":\"grxecho___echo\"},\"mode\":\"echo\",\"text\":\"Summarise the quarterly revenue figures in the attached spreadsheet.\",\"amount\":null,\"amount_type\":\"NoneType\",\"text_len\":68,\"text_sha256\":\"5dfc3cc186db70ddf5df603870eb4ba50c5cb9af848758408416cfce32a1c649\"}",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": false,
+        "http_status": 200,
+        "i": 1,
+        "outcome": "allowed",
+        "ran": true,
+        "unclassified": false
+      },
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 818.724,
+          "http_status": 200,
+          "is_error": false,
+          "jsonrpc_error": null,
+          "outcome": "allowed",
+          "request_id": "c3f02c45-b1cf-424c-ae6a-0f743a4639b2",
+          "session_id": "fb454c7f-1492-4ab6-97b7-611e338335be",
+          "text": "{\"tool\":\"echo\",\"context\":{\"bedrockAgentCoreMessageVersion\":\"1.0\",\"bedrockAgentCoreAwsRequestId\":\"c3f02c45-b1cf-424c-ae6a-0f743a4639b2\",\"bedrockAgentCoreMcpMessageId\":\"3\",\"bedrockAgentCoreGatewayId\":\"grx-gw-r20260810t130945z-zpkfmpwo9n\",\"bedrockAgentCoreTargetId\":\"I7DX308MPV\",\"bedrockAgentCoreToolName\":\"grxecho___echo\"},\"mode\":\"echo\",\"text\":\"Summarise the quarterly revenue figures in the attached spreadsheet.\",\"amount\":null,\"amount_type\":\"NoneType\",\"text_len\":68,\"text_sha256\":\"5dfc3cc186db70ddf5df603870eb4ba50c5cb9af848758408416cfce32a1c649\"}",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": false,
+        "http_status": 200,
+        "i": 2,
+        "outcome": "allowed",
+        "ran": true,
+        "unclassified": false
+      },
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 541.151,
+          "http_status": 200,
+          "is_error": false,
+          "jsonrpc_error": null,
+          "outcome": "allowed",
+          "request_id": "5cc03d20-b5e0-447d-8cbe-b0b0b0523bcf",
+          "session_id": "fb454c7f-1492-4ab6-97b7-611e338335be",
+          "text": "{\"tool\":\"echo\",\"context\":{\"bedrockAgentCoreMessageVersion\":\"1.0\",\"bedrockAgentCoreAwsRequestId\":\"5cc03d20-b5e0-447d-8cbe-b0b0b0523bcf\",\"bedrockAgentCoreMcpMessageId\":\"4\",\"bedrockAgentCoreGatewayId\":\"grx-gw-r20260810t130945z-zpkfmpwo9n\",\"bedrockAgentCoreTargetId\":\"I7DX308MPV\",\"bedrockAgentCoreToolName\":\"grxecho___echo\"},\"mode\":\"echo\",\"text\":\"Summarise the quarterly revenue figures in the attached spreadsheet.\",\"amount\":null,\"amount_type\":\"NoneType\",\"text_len\":68,\"text_sha256\":\"5dfc3cc186db70ddf5df603870eb4ba50c5cb9af848758408416cfce32a1c649\"}",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": false,
+        "http_status": 200,
+        "i": 3,
+        "outcome": "allowed",
+        "ran": true,
+        "unclassified": false
+      },
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 721.54,
+          "http_status": 200,
+          "is_error": false,
+          "jsonrpc_error": null,
+          "outcome": "allowed",
+          "request_id": "f964d6ce-f07c-4507-8944-bedff2885c85",
+          "session_id": "fb454c7f-1492-4ab6-97b7-611e338335be",
+          "text": "{\"tool\":\"echo\",\"context\":{\"bedrockAgentCoreMessageVersion\":\"1.0\",\"bedrockAgentCoreAwsRequestId\":\"f964d6ce-f07c-4507-8944-bedff2885c85\",\"bedrockAgentCoreMcpMessageId\":\"5\",\"bedrockAgentCoreGatewayId\":\"grx-gw-r20260810t130945z-zpkfmpwo9n\",\"bedrockAgentCoreTargetId\":\"I7DX308MPV\",\"bedrockAgentCoreToolName\":\"grxecho___echo\"},\"mode\":\"echo\",\"text\":\"Summarise the quarterly revenue figures in the attached spreadsheet.\",\"amount\":null,\"amount_type\":\"NoneType\",\"text_len\":68,\"text_sha256\":\"5dfc3cc186db70ddf5df603870eb4ba50c5cb9af848758408416cfce32a1c649\"}",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": false,
+        "http_status": 200,
+        "i": 4,
+        "outcome": "allowed",
+        "ran": true,
+        "unclassified": false
+      },
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 628.377,
+          "http_status": 200,
+          "is_error": false,
+          "jsonrpc_error": null,
+          "outcome": "allowed",
+          "request_id": "5efd491b-837f-4f5d-ac25-e2fb592ff6c2",
+          "session_id": "fb454c7f-1492-4ab6-97b7-611e338335be",
+          "text": "{\"tool\":\"echo\",\"context\":{\"bedrockAgentCoreMessageVersion\":\"1.0\",\"bedrockAgentCoreAwsRequestId\":\"5efd491b-837f-4f5d-ac25-e2fb592ff6c2\",\"bedrockAgentCoreMcpMessageId\":\"6\",\"bedrockAgentCoreGatewayId\":\"grx-gw-r20260810t130945z-zpkfmpwo9n\",\"bedrockAgentCoreTargetId\":\"I7DX308MPV\",\"bedrockAgentCoreToolName\":\"grxecho___echo\"},\"mode\":\"echo\",\"text\":\"Summarise the quarterly revenue figures in the attached spreadsheet.\",\"amount\":null,\"amount_type\":\"NoneType\",\"text_len\":68,\"text_sha256\":\"5dfc3cc186db70ddf5df603870eb4ba50c5cb9af848758408416cfce32a1c649\"}",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": false,
+        "http_status": 200,
+        "i": 5,
+        "outcome": "allowed",
+        "ran": true,
+        "unclassified": false
+      }
+    ],
+    "pre_violating": [
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 627.447,
+          "http_status": 200,
+          "is_error": null,
+          "jsonrpc_error": {
+            "code": -32002,
+            "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_f54b_block_r20260810T130945Z-lc1tuyumhe]"
+          },
+          "outcome": "policy_denied",
+          "request_id": "e275801a-bcf2-4c36-9262-31d66457441a",
+          "session_id": "6cc3d7b6-ed22-492a-99b0-e0706cbee8b9",
+          "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_f54b_block_r20260810T130945Z-lc1tuyumhe]",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": true,
+        "http_status": 200,
+        "i": 1,
+        "outcome": "policy_denied",
+        "ran": false,
+        "unclassified": false
+      },
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 739.447,
+          "http_status": 200,
+          "is_error": null,
+          "jsonrpc_error": {
+            "code": -32002,
+            "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_f54b_block_r20260810T130945Z-lc1tuyumhe]"
+          },
+          "outcome": "policy_denied",
+          "request_id": "c699c380-af2d-40ff-8ae1-8ee70c6a0afc",
+          "session_id": "6cc3d7b6-ed22-492a-99b0-e0706cbee8b9",
+          "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_f54b_block_r20260810T130945Z-lc1tuyumhe]",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": true,
+        "http_status": 200,
+        "i": 2,
+        "outcome": "policy_denied",
+        "ran": false,
+        "unclassified": false
+      },
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 506.711,
+          "http_status": 200,
+          "is_error": null,
+          "jsonrpc_error": {
+            "code": -32002,
+            "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_f54b_block_r20260810T130945Z-lc1tuyumhe]"
+          },
+          "outcome": "policy_denied",
+          "request_id": "07edd13e-a69d-4ef6-aa32-59ebc899e884",
+          "session_id": "6cc3d7b6-ed22-492a-99b0-e0706cbee8b9",
+          "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_f54b_block_r20260810T130945Z-lc1tuyumhe]",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": true,
+        "http_status": 200,
+        "i": 3,
+        "outcome": "policy_denied",
+        "ran": false,
+        "unclassified": false
+      },
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 589.79,
+          "http_status": 200,
+          "is_error": null,
+          "jsonrpc_error": {
+            "code": -32002,
+            "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_f54b_block_r20260810T130945Z-lc1tuyumhe]"
+          },
+          "outcome": "policy_denied",
+          "request_id": "85b47452-b366-4ed1-b570-c8331bba63b0",
+          "session_id": "6cc3d7b6-ed22-492a-99b0-e0706cbee8b9",
+          "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_f54b_block_r20260810T130945Z-lc1tuyumhe]",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": true,
+        "http_status": 200,
+        "i": 4,
+        "outcome": "policy_denied",
+        "ran": false,
+        "unclassified": false
+      },
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 671.477,
+          "http_status": 200,
+          "is_error": null,
+          "jsonrpc_error": {
+            "code": -32002,
+            "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_f54b_block_r20260810T130945Z-lc1tuyumhe]"
+          },
+          "outcome": "policy_denied",
+          "request_id": "2ef5cb06-497c-4ae2-80c7-dc6cc7461c48",
+          "session_id": "6cc3d7b6-ed22-492a-99b0-e0706cbee8b9",
+          "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_f54b_block_r20260810T130945Z-lc1tuyumhe]",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": true,
+        "http_status": 200,
+        "i": 5,
+        "outcome": "policy_denied",
+        "ran": false,
+        "unclassified": false
+      }
+    ],
+    "restored_violating": [
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 528.812,
+          "http_status": 200,
+          "is_error": null,
+          "jsonrpc_error": {
+            "code": -32002,
+            "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_f54b_block_r20260810T130945Z-lc1tuyumhe]"
+          },
+          "outcome": "policy_denied",
+          "request_id": "f7ad2547-9154-4ce1-a0bc-92dac38a21f1",
+          "session_id": "02e79b0b-f839-4301-b15c-9b4c00bfe470",
+          "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_f54b_block_r20260810T130945Z-lc1tuyumhe]",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": true,
+        "http_status": 200,
+        "i": 1,
+        "outcome": "policy_denied",
+        "ran": false,
+        "unclassified": false
+      },
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 515.234,
+          "http_status": 200,
+          "is_error": null,
+          "jsonrpc_error": {
+            "code": -32002,
+            "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_f54b_block_r20260810T130945Z-lc1tuyumhe]"
+          },
+          "outcome": "policy_denied",
+          "request_id": "4b4506ed-3202-4b2e-bfbb-fe5535b89fc7",
+          "session_id": "02e79b0b-f839-4301-b15c-9b4c00bfe470",
+          "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_f54b_block_r20260810T130945Z-lc1tuyumhe]",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": true,
+        "http_status": 200,
+        "i": 2,
+        "outcome": "policy_denied",
+        "ran": false,
+        "unclassified": false
+      },
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 535.966,
+          "http_status": 200,
+          "is_error": null,
+          "jsonrpc_error": {
+            "code": -32002,
+            "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_f54b_block_r20260810T130945Z-lc1tuyumhe]"
+          },
+          "outcome": "policy_denied",
+          "request_id": "3eb08b83-7ab4-4e83-bafa-cb785c021dab",
+          "session_id": "02e79b0b-f839-4301-b15c-9b4c00bfe470",
+          "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_f54b_block_r20260810T130945Z-lc1tuyumhe]",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": true,
+        "http_status": 200,
+        "i": 3,
+        "outcome": "policy_denied",
+        "ran": false,
+        "unclassified": false
+      },
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 533.78,
+          "http_status": 200,
+          "is_error": null,
+          "jsonrpc_error": {
+            "code": -32002,
+            "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_f54b_block_r20260810T130945Z-lc1tuyumhe]"
+          },
+          "outcome": "policy_denied",
+          "request_id": "f1808228-39cf-4fad-8ce7-65ce27ca5950",
+          "session_id": "02e79b0b-f839-4301-b15c-9b4c00bfe470",
+          "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_f54b_block_r20260810T130945Z-lc1tuyumhe]",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": true,
+        "http_status": 200,
+        "i": 4,
+        "outcome": "policy_denied",
+        "ran": false,
+        "unclassified": false
+      },
+      {
+        "decision": {
+          "authorize_exception": false,
+          "default_deny": false,
+          "duration_ms": 532.21,
+          "http_status": 200,
+          "is_error": null,
+          "jsonrpc_error": {
+            "code": -32002,
+            "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_f54b_block_r20260810T130945Z-lc1tuyumhe]"
+          },
+          "outcome": "policy_denied",
+          "request_id": "c233431b-fbce-4505-9bea-c089a34dca6a",
+          "session_id": "02e79b0b-f839-4301-b15c-9b4c00bfe470",
+          "text": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Policy evaluation denied due to grx_f54b_block_r20260810T130945Z-lc1tuyumhe]",
+          "unclassified": false
+        },
+        "default_deny": false,
+        "denied": true,
+        "http_status": 200,
+        "i": 5,
+        "outcome": "policy_denied",
+        "ran": false,
+        "unclassified": false
+      }
+    ]
+  },
+  "legs": {
+    "post_benign": {
+      "decision": "DENY",
+      "item_id": "428e12963d2d",
+      "leg": "post_benign",
+      "n": 5,
+      "n_allowed": 0,
+      "n_denied": 5,
+      "n_neither": 0,
+      "n_reached_gateway": 5,
+      "n_usable": 5,
+      "outcomes_seen": [
+        "policy_denied"
+      ],
+      "unanimous": true
+    },
+    "post_violating_new": {
+      "decision": "DENY",
+      "item_id": "ecad8f288e74",
+      "leg": "post_violating_new",
+      "n": 5,
+      "n_allowed": 0,
+      "n_denied": 5,
+      "n_neither": 0,
+      "n_reached_gateway": 5,
+      "n_usable": 5,
+      "outcomes_seen": [
+        "policy_denied"
+      ],
+      "unanimous": true
+    },
+    "post_violating_same": {
+      "decision": "DENY",
+      "item_id": "e4542f4e415c",
+      "leg": "post_violating_same",
+      "n": 5,
+      "n_allowed": 0,
+      "n_denied": 5,
+      "n_neither": 0,
+      "n_reached_gateway": 5,
+      "n_usable": 5,
+      "outcomes_seen": [
+        "policy_denied"
+      ],
+      "unanimous": true
+    },
+    "pre_benign": {
+      "decision": "ALLOW",
+      "item_id": "428e12963d2d",
+      "leg": "pre_benign",
+      "n": 5,
+      "n_allowed": 5,
+      "n_denied": 0,
+      "n_neither": 0,
+      "n_reached_gateway": 5,
+      "n_usable": 5,
+      "outcomes_seen": [
+        "allowed"
+      ],
+      "unanimous": true
+    },
+    "pre_violating": {
+      "decision": "DENY",
+      "item_id": "e4542f4e415c",
+      "leg": "pre_violating",
+      "n": 5,
+      "n_allowed": 0,
+      "n_denied": 5,
+      "n_neither": 0,
+      "n_reached_gateway": 5,
+      "n_usable": 5,
+      "outcomes_seen": [
+        "policy_denied"
+      ],
+      "unanimous": true
+    },
+    "restored_violating": {
+      "decision": "DENY",
+      "item_id": "e4542f4e415c",
+      "leg": "restored_violating",
+      "n": 5,
+      "n_allowed": 0,
+      "n_denied": 5,
+      "n_neither": 0,
+      "n_reached_gateway": 5,
+      "n_usable": 5,
+      "outcomes_seen": [
+        "policy_denied"
+      ],
+      "unanimous": true
+    }
+  },
+  "n_per_leg": 5,
+  "no_checkpoint_by_design": "a leg is only meaningful inside the window its permission state defines, and a resumed process cannot re-enter a window whose mutation has been restored. A checkpoint would let a later run pair post-restore trials with a removal that no longer exists",
+  "oracle_text": "OUTCOME UNKNOWN. Removing bedrock:InvokeGuardrailChecks from the gateway role makes guardrail evaluation impossible: DENY (fail-closed) or ALLOW (fail-open)? Directly interrogates what AWS does not document",
+  "planned_n": null,
+  "policy_engine_id": "grx_pe_r20260810T130945Z-t6hqadrspf",
+  "publishable_findings": [
+    "FAIL_CLOSED_DENY_WHEN_EVALUATION_CANNOT_RUN",
+    "FAIL_OPEN_ALLOW_WHEN_EVALUATION_CANNOT_RUN"
+  ],
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F5-4b",
+    "evidence": {
+      "observation": {
+        "data_plane_stabilisation": {
+          "post_removal": {
+            "confirmations_required": 3,
+            "consecutive_confirmations": 3,
+            "decision": "DENY",
+            "decisions_seen": [
+              "DENY",
+              "DENY",
+              "DENY"
+            ],
+            "max_wait_s": 90,
+            "phase": "post-removal",
+            "seconds": 11.4,
+            "stabilised": true,
+            "why_symmetric": "this loop waits for STABILITY, not for a named decision. A loop that waited for DENY would manufacture fail-closed by patience, and one that waited for ALLOW would manufacture fail-open"
+          },
+          "post_restore": {
+            "confirmations_required": 3,
+            "consecutive_confirmations": 3,
+            "decision": "DENY",
+            "decisions_seen": [
+              "DENY",
+              "DENY",
+              "DENY"
+            ],
+            "max_wait_s": 90,
+            "phase": "post-restore",
+            "seconds": 12.4,
+            "stabilised": true,
+            "why_symmetric": "this loop waits for STABILITY, not for a named decision. A loop that waited for DENY would manufacture fail-closed by patience, and one that waited for ALLOW would manufacture fail-open"
+          }
+        },
+        "finding": "FAIL_CLOSED_DENY_WHEN_EVALUATION_CANNOT_RUN",
+        "finding_why": "with guardrail evaluation impossible the engine denied the violating request AND the benign one. Denying the benign request is what makes this attributable: the engine stopped discriminating by content, which is what 'cannot evaluate' should look like, rather than continuing to evaluate and denying for the ordinary reason",
+        "guards": {
+          "blocking_was_reasserted_after_the_restore": true,
+          "controls_bracketed_the_measurement": true,
+          "document_was_restored_and_verified_byte_for_byte_after_normalisation": true,
+          "engine_was_quiet_at_start": true,
+          "every_window_leg_reached_the_gateway": true,
+          "forbid_was_active_before_any_leg_ran": true,
+          "post_removal_violating_legs_agreed": true,
+          "probe_policy_was_deleted": true,
+          "removal_was_confirmed_by_iam_before_the_window_legs": true,
+          "role_carried_exactly_its_shipped_document": true,
+          "window_stayed_within_its_bound": true
+        },
+        "iam_propagation": {
+          "removal": {
+            "channels": "iam:GetRolePolicy (the stored document) AND iam:SimulatePrincipalPolicy (IAM's evaluation). Both must agree, because the document changes on the write while the evaluation is the eventually-consistent half the gateway actually depends on",
+            "confirmations_required": 3,
+            "consecutive_confirmations": 3,
+            "max_wait_s": 90,
+            "phase": "removal",
+            "reached": true,
+            "rounds": [
+              {
+                "at_s": 0.1,
+                "decisions": [
+                  "implicitDeny"
+                ],
+                "present_in_document": false,
+                "sids": [
+                  "AgentCoreAsDocumented",
+                  "HarnessLambdaTargetNotFromTheDocument"
+                ],
+                "simulated_allowed": false
+              },
+              {
+                "at_s": 5.2,
+                "decisions": [
+                  "implicitDeny"
+                ],
+                "present_in_document": false,
+                "sids": [
+                  "AgentCoreAsDocumented",
+                  "HarnessLambdaTargetNotFromTheDocument"
+                ],
+                "simulated_allowed": false
+              },
+              {
+                "at_s": 10.3,
+                "decisions": [
+                  "implicitDeny"
+                ],
+                "present_in_document": false,
+                "sids": [
+                  "AgentCoreAsDocumented",
+                  "HarnessLambdaTargetNotFromTheDocument"
+                ],
+                "simulated_allowed": false
+              }
+            ],
+            "seconds": 10.3,
+            "simulation_caveat": "SimulatePrincipalPolicy is not an authorization event and cannot see a Forward Access Session's cached credentials. It is the best channel available for a role this harness cannot assume; its limits are why the benign leg exists as an independent disambiguator",
+            "wanted_present": false
+          },
+          "restore": {
+            "channels": "iam:GetRolePolicy (the stored document) AND iam:SimulatePrincipalPolicy (IAM's evaluation). Both must agree, because the document changes on the write while the evaluation is the eventually-consistent half the gateway actually depends on",
+            "confirmations_required": 3,
+            "consecutive_confirmations": 3,
+            "max_wait_s": 900,
+            "phase": "restore",
+            "reached": true,
+            "rounds": [
+              {
+                "at_s": 0.1,
+                "decisions": [
+                  "allowed"
+                ],
+                "present_in_document": true,
+                "sids": [
+                  "AgentCoreAsDocumented",
+                  "InvokeGuardrailChecks",
+                  "HarnessLambdaTargetNotFromTheDocument"
+                ],
+                "simulated_allowed": true
+              },
+              {
+                "at_s": 5.3,
+                "decisions": [
+                  "allowed"
+                ],
+                "present_in_document": true,
+                "sids": [
+                  "AgentCoreAsDocumented",
+                  "InvokeGuardrailChecks",
+                  "HarnessLambdaTargetNotFromTheDocument"
+                ],
+                "simulated_allowed": true
+              },
+              {
+                "at_s": 10.4,
+                "decisions": [
+                  "allowed"
+                ],
+                "present_in_document": true,
+                "sids": [
+                  "AgentCoreAsDocumented",
+                  "InvokeGuardrailChecks",
+                  "HarnessLambdaTargetNotFromTheDocument"
+                ],
+                "simulated_allowed": true
+              }
+            ],
+            "seconds": 10.4,
+            "simulation_caveat": "SimulatePrincipalPolicy is not an authorization event and cannot see a Forward Access Session's cached credentials. It is the best channel available for a role this harness cannot assume; its limits are why the benign leg exists as an independent disambiguator",
+            "wanted_present": true
+          }
+        },
+        "legs": {
+          "post_benign": {
+            "decision": "DENY",
+            "item_id": "428e12963d2d",
+            "leg": "post_benign",
+            "n": 5,
+            "n_allowed": 0,
+            "n_denied": 5,
+            "n_neither": 0,
+            "n_reached_gateway": 5,
+            "n_usable": 5,
+            "outcomes_seen": [
+              "policy_denied"
+            ],
+            "unanimous": true
+          },
+          "post_violating_new": {
+            "decision": "DENY",
+            "item_id": "ecad8f288e74",
+            "leg": "post_violating_new",
+            "n": 5,
+            "n_allowed": 0,
+            "n_denied": 5,
+            "n_neither": 0,
+            "n_reached_gateway": 5,
+            "n_usable": 5,
+            "outcomes_seen": [
+              "policy_denied"
+            ],
+            "unanimous": true
+          },
+          "post_violating_same": {
+            "decision": "DENY",
+            "item_id": "e4542f4e415c",
+            "leg": "post_violating_same",
+            "n": 5,
+            "n_allowed": 0,
+            "n_denied": 5,
+            "n_neither": 0,
+            "n_reached_gateway": 5,
+            "n_usable": 5,
+            "outcomes_seen": [
+              "policy_denied"
+            ],
+            "unanimous": true
+          },
+          "pre_benign": {
+            "decision": "ALLOW",
+            "item_id": "428e12963d2d",
+            "leg": "pre_benign",
+            "n": 5,
+            "n_allowed": 5,
+            "n_denied": 0,
+            "n_neither": 0,
+            "n_reached_gateway": 5,
+            "n_usable": 5,
+            "outcomes_seen": [
+              "allowed"
+            ],
+            "unanimous": true
+          },
+          "pre_violating": {
+            "decision": "DENY",
+            "item_id": "e4542f4e415c",
+            "leg": "pre_violating",
+            "n": 5,
+            "n_allowed": 0,
+            "n_denied": 5,
+            "n_neither": 0,
+            "n_reached_gateway": 5,
+            "n_usable": 5,
+            "outcomes_seen": [
+              "policy_denied"
+            ],
+            "unanimous": true
+          },
+          "restored_violating": {
+            "decision": "DENY",
+            "item_id": "e4542f4e415c",
+            "leg": "restored_violating",
+            "n": 5,
+            "n_allowed": 0,
+            "n_denied": 5,
+            "n_neither": 0,
+            "n_reached_gateway": 5,
+            "n_usable": 5,
+            "outcomes_seen": [
+              "policy_denied"
+            ],
+            "unanimous": true
+          }
+        },
+        "n_basis": "5 requests per leg over 6 legs; the reading is all-or-nothing per leg because this is an E-class mechanism and a split leg is a finding, not a rate",
+        "residue": {
+          "clean": true,
+          "created": [
+            {
+              "id": "policy:forbid",
+              "kind": "agentcore-policy"
+            },
+            {
+              "id": "statement_removed:InvokeGuardrailChecks",
+              "kind": "iam-statement"
+            },
+            {
+              "id": "ledger:f54b_restore_intent",
+              "kind": "ledger-undo-intent"
+            }
+          ],
+          "n_created": 3,
+          "n_removal_attempted": 3,
+          "n_removed": 3,
+          "removed": [
+            {
+              "id": "policy:forbid",
+              "removed": true
+            },
+            {
+              "id": "statement_removed:InvokeGuardrailChecks",
+              "removed": true
+            },
+            {
+              "id": "ledger:f54b_restore_intent",
+              "removed": true
+            }
+          ],
+          "sids_at_end": [
+            "AgentCoreAsDocumented",
+            "InvokeGuardrailChecks",
+            "HarnessLambdaTargetNotFromTheDocument"
+          ],
+          "statement_present_at_end": true,
+          "surviving": [],
+          "why_the_state_is_read_back_too": "the decisive residue here is not a bookkeeping entry: it is bedrock:InvokeGuardrailChecks missing from grx-gw-exec-policy, which breaks every guardrail-in-policy case in this repo. A failed read-back is residue, not cleanliness",
+          "why_two_lists": "a mutation whose undo was never ATTEMPTED contributes no row to the removals, so a residue computed from that list alone reports zero survivors for exactly the case where one exists",
+          "window_opened": true
+        },
+        "window": {
+          "bound_s": 300,
+          "opened": true,
+          "restored": true,
+          "seconds_without_the_permission": 29.3,
+          "within_bound": true
+        }
+      },
+      "why_no_verdict": "the pre-registration declares this outcome unknown; both answers are findings"
+    },
+    "family": "unassigned_by_seal",
+    "kind": "RECORDED",
+    "mutation_inverted": true,
+    "mutation_required": true,
+    "n_attempted": 0,
+    "n_met": true,
+    "n_usable": 0,
+    "notes": [],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [],
+    "verdict": "RECORDED"
+  },
+  "region": "us-east-1",
+  "removal": {
+    "http_status": 200,
+    "normalised_written": "{\"Statement\": [{\"Action\": \"bedrock-agentcore:*\", \"Effect\": \"Allow\", \"Resource\": \"*\", \"Sid\": \"AgentCoreAsDocumented\"}, {\"Action\": \"lambda:InvokeFunction\", \"Effect\": \"Allow\", \"Resource\": [\"arn:aws:lambda:us-east-1:<account>:function:grx-echo-r20260810T130945Z\", \"arn:aws:lambda:us-east-1:<account>:function:grx-echo-r20260810T130945Z:*\"], \"Sid\": \"HarnessLambdaTargetNotFromTheDocument\"}], \"Version\": \"2012-10-17\"}",
+    "removed": true,
+    "request_id": "1699f12f-4a0e-49a9-8ec7-9474d6f4c776",
+    "sha256_written": "55438997142c6a1db7b02541d07138a776a723eaea8871cd331bfda9621ff7b4"
+  },
+  "residue": {
+    "clean": true,
+    "created": [
+      {
+        "id": "policy:forbid",
+        "kind": "agentcore-policy"
+      },
+      {
+        "id": "statement_removed:InvokeGuardrailChecks",
+        "kind": "iam-statement"
+      },
+      {
+        "id": "ledger:f54b_restore_intent",
+        "kind": "ledger-undo-intent"
+      }
+    ],
+    "n_created": 3,
+    "n_removal_attempted": 3,
+    "n_removed": 3,
+    "removed": [
+      {
+        "id": "policy:forbid",
+        "removed": true
+      },
+      {
+        "id": "statement_removed:InvokeGuardrailChecks",
+        "removed": true
+      },
+      {
+        "id": "ledger:f54b_restore_intent",
+        "removed": true
+      }
+    ],
+    "sids_at_end": [
+      "AgentCoreAsDocumented",
+      "InvokeGuardrailChecks",
+      "HarnessLambdaTargetNotFromTheDocument"
+    ],
+    "statement_present_at_end": true,
+    "surviving": [],
+    "why_the_state_is_read_back_too": "the decisive residue here is not a bookkeeping entry: it is bedrock:InvokeGuardrailChecks missing from grx-gw-exec-policy, which breaks every guardrail-in-policy case in this repo. A failed read-back is residue, not cleanliness",
+    "why_two_lists": "a mutation whose undo was never ATTEMPTED contributes no row to the removals, so a residue computed from that list alone reports zero survivors for exactly the case where one exists",
+    "window_opened": true
+  },
+  "restore": {
+    "attempts": [
+      {
+        "attempt": 1,
+        "put_error": null,
+        "put_ok": true,
+        "read_back_ok": true,
+        "read_error": null,
+        "sha256_read_back": "b29fd3e329ba94da3d1c12fca4991cdd14c1bdfec88dd03cbdce55de759e0fa4",
+        "sids_read_back": [
+          "AgentCoreAsDocumented",
+          "InvokeGuardrailChecks",
+          "HarnessLambdaTargetNotFromTheDocument"
+        ]
+      }
+    ],
+    "comparison": "normalised JSON of the decoded document: sort_keys=True, list order preserved. See `normalised()` for why byte equality is unavailable and why statement order is NOT normalised away",
+    "restored": true,
+    "sha256_expected": "b29fd3e329ba94da3d1c12fca4991cdd14c1bdfec88dd03cbdce55de759e0fa4",
+    "sha256_read_back": "b29fd3e329ba94da3d1c12fca4991cdd14c1bdfec88dd03cbdce55de759e0fa4"
+  },
+  "restore_intent": {
+    "dropped_after_verified_restore": true,
+    "ledger_logical": "f54b_restore_intent",
+    "policy_name_it_would_create": "grx-f54b-restore-r20260810T130945Z",
+    "why": "a finally does not survive SIGKILL. This ledger entry's delete_op is put_role_policy, so infra/99_teardown.py restores the permission from a different process — in a deliberately different SHAPE, so the fallback announces itself as drift instead of healing silently"
+  },
+  "run_id": "r20260810T130945Z",
+  "sids_at_end": [
+    "AgentCoreAsDocumented",
+    "InvokeGuardrailChecks",
+    "HarnessLambdaTargetNotFromTheDocument"
+  ],
+  "startup_engine_interlock": {
+    "checked": "state.json policy resources other than `baseline`",
+    "policies_on_engine_at_start": [
+      "baseline"
+    ]
+  },
+  "target_action": "bedrock:InvokeGuardrailChecks",
+  "target_sid": "InvokeGuardrailChecks",
+  "verdict": "RECORDED",
+  "verdict_reading": "FAIL-CLOSED for this failure mode. With bedrock:InvokeGuardrailChecks removed from the gateway execution role, the engine denied both the violating request and the benign one ({'pre_violating': 'DENY', 'pre_benign': 'ALLOW', 'post_violating_same': 'DENY', 'post_violating_new': 'DENY', 'post_benign': 'DENY', 'restored_violating': 'DENY'}). It stopped discriminating by content, which is what an evaluation that cannot run should look like, and §4.1/§9's 'fail-secure' label is corroborated for the missing-permission mode specifically — not for the timeout mode, which no fault-injection surface in AgentCore can induce",
+  "verdict_rule": "the sealed kind is RECORDED: the pre-registration declares the outcome unknown and BOTH FAIL_CLOSED_DENY_WHEN_EVALUATION_CANNOT_RUN and FAIL_OPEN_ALLOW_WHEN_EVALUATION_CANNOT_RUN are findings. There is no pass condition. What IS gated is attributability, in this order: the controls must bracket the measurement (violating DENY and benign ALLOW with the permission intact), the two post-removal violating legs must agree, and — for a DENY — the benign leg must ALSO be denied, because a violating DENY beside a benign ALLOW means the engine was still discriminating by content and therefore still evaluating",
+  "what_true_does_not_prove": "nothing here is a TRUE. What this measurement does not cover, in either direction: the TIMEOUT failure mode, which is the one §3.1 and §4.1 actually claim and which AgentCore exposes no fault-injection surface to induce (claims C-s3-1-bullet-014-a and C-s4-1-bullet-008-a are excluded for exactly that); any failure mode of the CEDAR evaluator rather than the guardrails hand-off (F5-4a's cedar_missing_attr arm); an evaluation that fails INSIDE Bedrock Guardrails rather than at the IAM boundary; and the standalone ApplyGuardrail path in §3.3, which is the caller's own API call and whose failure posture the caller owns. A fail-closed result also says nothing about how long the engine keeps denying — this case restores the permission within minutes and does not measure a sustained outage",
+  "why_recorded": "the pre-registration declares this outcome unknown. Fail-closed and fail-open are both findings, neither is a confirmation or a refutation of a prediction this project made, and this script contains no branch phrased as a pass",
+  "why_the_benign_leg_exists": "it is the disambiguator that makes a DENY attributable. A violating request still denied is consistent with fail-closed AND with the removal having had no effect on the request path; if evaluation genuinely cannot run, a benign request has no more chance of being evaluated than a violating one, so a fail-closed engine must deny it too. A violating DENY beside a benign ALLOW means the engine was still discriminating by content — evaluation still ran — and is reported as NOT_MEASURED",
+  "why_this_matters_operationally": "this is a permission an operator can remove in one call, forget in a migration, or lose to a permissions boundary or an SCP tightening — and §3.1 lists it in a bullet without saying what happens when it is absent. The two answers have opposite runbooks. Fail-closed means the removal is an outage and belongs on an availability alarm; fail-open means it is a silent loss of enforcement and belongs on a config-drift alarm, with CloudTrail on PutRolePolicy against the gateway execution role. The measured exposure window here was 29.3s against a bound of 300s, which is also the number an operator should assume for how long a mistake like this can go unnoticed",
+  "why_two_violating_legs": "they differ only in WHICH violating item they carry. The repeated item satisfies the seal's 'send a violating request' with the identical request the control established as denied; the unseen item makes a content-keyed cache unable to explain an ALLOW. The finding requires both to agree",
+  "window": {
+    "bound_s": 300,
+    "opened": true,
+    "restored": true,
+    "seconds_without_the_permission": 29.3,
+    "within_bound": true
+  },
+  "window_legs": [
+    "post_violating_same",
+    "post_violating_new",
+    "post_benign"
+  ]
+}

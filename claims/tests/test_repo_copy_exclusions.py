@@ -30,6 +30,7 @@ from __future__ import annotations
 import ast
 import re
 import shutil
+from fnmatch import fnmatch
 from pathlib import Path
 
 import pytest
@@ -54,10 +55,20 @@ def _kb(path: Path) -> int:
 
 
 def _py_files() -> list[Path]:
-    skip = {".venv", ".venv-oracle", ".venv-baseline", "__pycache__", "evidence",
-            "node_modules", ".pytest_cache", ".wheel_cache"}
+    """This project's Python sources: every `.py` the scratch copy would carry.
+
+    The skip set is DERIVED from `COPY_EXCLUDE_NAMES`, and matched with `fnmatch` per path part
+    exactly as `shutil.ignore_patterns` matches it — so the scan's input is the copy's content by
+    construction rather than by two lists agreeing. This file spends eight lines of docstring
+    arguing that a second enumeration of "not part of this tree" drifts, and then carried one, and
+    it had drifted: `.state` was missing from it, so `runner/.state/incoming/<stamp>/` — whole
+    pulled copies of the repo, sources included — sat inside the scan's input, ready to report
+    every copytree site twice under a path nobody can fix.
+    """
     return sorted(p for p in ROOT.rglob("*.py")
-                  if not any(part in skip for part in p.relative_to(ROOT).parts))
+                  if not any(fnmatch(part, pat)
+                             for part in p.relative_to(ROOT).parts
+                             for pat in COPY_EXCLUDE_NAMES))
 
 
 # ---------------------------------------------------------------------------
@@ -423,12 +434,33 @@ def test_the_subtree_scan_can_see_the_shapes_it_has_to_separate():
 
 
 def test_the_python_scan_reads_this_project_and_not_a_venv():
+    """The scan's INPUT is this project's sources — not a dependency tree, not nothing.
+
+    The count is the weaker half of that and is deliberately loose. It was `<= 200` and went red on
+    2026-08-14 at 209 real project files, which is a bound measuring growth rather than the defect:
+    every leak this test exists to catch — a venv, `node_modules`, a pulled `runner/.state/incoming/`
+    tree — arrives with thousands of files and a recognisable path shape, so 1,000 separates the two
+    worlds and 200 only separated this month from last. `git ls-files` would make it exact, but this
+    tree has no `.git` (publication is the Git Data API from a plain directory), so the shape
+    assertions below carry the weight and the count stays a crude mis-rooting canary.
+
+    The floor stays tight: a glob mis-rooted to an empty or wrong directory matches nothing, and a
+    scan of nothing passes every other arm in this file silently.
+    """
     files = _py_files()
-    assert 70 <= len(files) <= 200, (
-        f"{len(files)} .py files scanned; expected the project tree. Far outside that range "
-        "means a venv leaked in or the glob is mis-rooted")
+    assert 70 <= len(files) <= 1_000, (
+        f"{len(files)} .py files scanned; expected this project's sources. Below the floor means "
+        "the glob is mis-rooted and every scan in this file is vacuous; above the ceiling means a "
+        "dependency tree leaked in — find which directory, do not raise the bound to fit it")
     assert Path(__file__) in files, "the scan cannot see its own directory"
-    assert not [p for p in files if "site-packages" in p.parts]
+    for p in files:
+        assert not ({"site-packages", "dist-packages", ".tox", ".mypy_cache"} & set(p.parts)), \
+            f"{p.relative_to(ROOT)} is a dependency file, not a project source"
+        assert not any(part.startswith(".venv") for part in p.parts), \
+            f"{p.relative_to(ROOT)} is inside a virtualenv"
+        # `runner/.state/incoming/<stamp>/` holds whole pulled trees, including their sources.
+        assert ".state" not in p.parts and ".staging" not in p.parts, \
+            f"{p.relative_to(ROOT)} is a pulled copy of the tree, scanned as if it were the tree"
 
 
 def test_shutil_is_still_the_thing_being_constrained():

@@ -137,6 +137,56 @@ RATE_LIMITS: dict[str, float] = {
     # ~2.5 minutes of pacing rather than arriving as a burst. If AWS publishes a figure it
     # replaces this and `SELF_IMPOSED_LIMITS` shrinks.
     "InvokeGateway": 10.0,
+
+    # ---------------------------------------------------------------------------------------
+    # Added 2026-08-13, after a repo-wide cross-check found that 14 of the 29 distinct names
+    # passed to `lim.wait(...)` were absent from this dict — so those calls read as paced while
+    # `wait()` returned 0.0 and slept for nothing. The hazard is documented twice above, in the
+    # past tense, for `CreateGuardrail` and `InvokeGateway`; it had simply happened again, ten
+    # scripts wide, as cases were written. `lib/tests/test_rate_limits.py` now makes it a red
+    # test instead of a comment, which is the difference between a lesson and a guard.
+    #
+    # All of these are SELF-IMPOSED. None is a published per-second ceiling, and the numbers are
+    # chosen floors rather than discovered ones — spacing that keeps a burst off an unadvertised
+    # limit, at a rate no arm here comes close to needing.
+    #
+    # Model inference. The account carries ~$27k/mo of unrelated workloads on Bedrock, so pacing
+    # here is also courtesy to them: an unpaced burst of ours consuming a shared account quota
+    # would throttle somebody else's traffic, and F5-9 in particular runs 4 arms x 5 trials.
+    "Converse": 2.0,
+    "InvokeModel": 2.0,
+
+    # Account-level enforced guardrail configuration (F5-9). One put and one delete per run, so
+    # the rate is nearly irrelevant — what matters is that `lim.wait` for the single most
+    # consequential call in the repo was a no-op. Deliberately slow: this pair changes account
+    # state, and there is no arm that needs to make either call twice in a second.
+    "PutEnforcedGuardrailConfiguration": 1.0,
+    "DeleteEnforcedGuardrailConfiguration": 1.0,
+
+    # IAM. `PutRolePolicy` propagation is the reason F5-3b is slow, not throttling, but IAM does
+    # publish tight control-plane quotas and F5-3b writes several policies per arm.
+    "PutRolePolicy": 2.0,
+    "PutRolePermissionsBoundary": 2.0,
+    "DeleteRolePermissionsBoundary": 2.0,
+    "SimulatePrincipalPolicy": 5.0,
+
+    # Organizations (F5-3a). The management-account control plane, where a burst is both rude and
+    # pointless: the case makes single-digit numbers of these calls.
+    "CreateOrganizationalUnit": 1.0,
+    "DeleteOrganizationalUnit": 1.0,
+    "AttachPolicy": 1.0,
+    "DetachPolicy": 1.0,
+    "DescribeEffectivePolicy": 2.0,
+
+    # CloudWatch reads. F5-4/F5-5 poll these in loops waiting for metrics to appear, which is
+    # exactly the burst shape that earns a throttle on a read API.
+    "ListMetrics": 5.0,
+    "GetMetricStatistics": 5.0,
+
+    # AgentCore + Bedrock reads that were paced everywhere except where they were not.
+    "GetPolicy": 5.0,
+    "StartPolicyGeneration": 1.0,
+    "GetCallerIdentity": 10.0,
 }
 
 # Which entries above are *ours* rather than AWS's. A reader of the evidence record must be
@@ -147,6 +197,16 @@ SELF_IMPOSED_LIMITS = frozenset({
     "CreateGuardrail", "UpdateGuardrail", "DeleteGuardrail", "GetGuardrail",
     "ListGuardrails", "CreateGuardrailVersion",
     "InvokeGateway",
+    # The 2026-08-13 batch. Every one is ours: no per-second ceiling is published for any of them,
+    # and an evidence record must not be able to cite our caution as a fact about the service.
+    "Converse", "InvokeModel",
+    "PutEnforcedGuardrailConfiguration", "DeleteEnforcedGuardrailConfiguration",
+    "PutRolePolicy", "PutRolePermissionsBoundary", "DeleteRolePermissionsBoundary",
+    "SimulatePrincipalPolicy",
+    "CreateOrganizationalUnit", "DeleteOrganizationalUnit", "AttachPolicy", "DetachPolicy",
+    "DescribeEffectivePolicy",
+    "ListMetrics", "GetMetricStatistics",
+    "GetPolicy", "StartPolicyGeneration", "GetCallerIdentity",
 })
 
 # Per-policy ApplyGuardrail text-unit ceilings, per second (Service Quotas, us-east-1,

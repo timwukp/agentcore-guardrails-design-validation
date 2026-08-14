@@ -1,0 +1,1326 @@
+{
+  "a_conflict_is_an_authorized_call": "ConflictException is returned after authorization, so it is counted as AUTHORIZED and tallied separately: 'authorized then serialized away' and 'authorized and applied' are different observations of the same authorization outcome",
+  "ambient_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "arms": {
+    "boundary_denies": {
+      "arm": "boundary_denies",
+      "error_codes": [
+        "AccessDeniedException"
+      ],
+      "n_accepted": 0,
+      "n_attempted": 5,
+      "n_authorized": 0,
+      "n_conflict": 0,
+      "n_denied": 5,
+      "n_unusable": 0,
+      "n_usable": 5,
+      "reading": "DENIED",
+      "rows": [
+        {
+          "arm": "boundary_denies",
+          "elapsed_ms": 29.93,
+          "error_code": "AccessDeniedException",
+          "error_message": "User: arn:aws:sts::<account>:assumed-role/grx-attacker-r20260810T130945Z/grx-harness is not authorized to perform: bedrock-agentcore:UpdateGateway on resource: arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n with an explicit deny in a permissions boundary: arn:aws:iam::<account>:policy/grx-f53b-boundary-deny-r20260810T130945Z",
+          "outcome": "denied_by_iam",
+          "request_id": "76062021-0d56-4f4d-84c7-0c924f264b41",
+          "trial_id": "boundary_denies__0001"
+        },
+        {
+          "arm": "boundary_denies",
+          "elapsed_ms": 31.73,
+          "error_code": "AccessDeniedException",
+          "error_message": "User: arn:aws:sts::<account>:assumed-role/grx-attacker-r20260810T130945Z/grx-harness is not authorized to perform: bedrock-agentcore:UpdateGateway on resource: arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n with an explicit deny in a permissions boundary: arn:aws:iam::<account>:policy/grx-f53b-boundary-deny-r20260810T130945Z",
+          "outcome": "denied_by_iam",
+          "request_id": "35466fc9-e97f-4ca4-8988-8d7b72f84eef",
+          "trial_id": "boundary_denies__0002"
+        },
+        {
+          "arm": "boundary_denies",
+          "elapsed_ms": 32.27,
+          "error_code": "AccessDeniedException",
+          "error_message": "User: arn:aws:sts::<account>:assumed-role/grx-attacker-r20260810T130945Z/grx-harness is not authorized to perform: bedrock-agentcore:UpdateGateway on resource: arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n with an explicit deny in a permissions boundary: arn:aws:iam::<account>:policy/grx-f53b-boundary-deny-r20260810T130945Z",
+          "outcome": "denied_by_iam",
+          "request_id": "cbc9cf36-79d4-493b-9fb7-d8a051546ae8",
+          "trial_id": "boundary_denies__0003"
+        },
+        {
+          "arm": "boundary_denies",
+          "elapsed_ms": 36.36,
+          "error_code": "AccessDeniedException",
+          "error_message": "User: arn:aws:sts::<account>:assumed-role/grx-attacker-r20260810T130945Z/grx-harness is not authorized to perform: bedrock-agentcore:UpdateGateway on resource: arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n with an explicit deny in a permissions boundary: arn:aws:iam::<account>:policy/grx-f53b-boundary-deny-r20260810T130945Z",
+          "outcome": "denied_by_iam",
+          "request_id": "28bc726a-80e1-41e0-a9d3-c2530f8fb396",
+          "trial_id": "boundary_denies__0004"
+        },
+        {
+          "arm": "boundary_denies",
+          "elapsed_ms": 32.98,
+          "error_code": "AccessDeniedException",
+          "error_message": "User: arn:aws:sts::<account>:assumed-role/grx-attacker-r20260810T130945Z/grx-harness is not authorized to perform: bedrock-agentcore:UpdateGateway on resource: arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n with an explicit deny in a permissions boundary: arn:aws:iam::<account>:policy/grx-f53b-boundary-deny-r20260810T130945Z",
+          "outcome": "denied_by_iam",
+          "request_id": "dc998625-989e-4d3b-bce7-0769fac5ff61",
+          "trial_id": "boundary_denies__0005"
+        }
+      ],
+      "unanimous": true
+    },
+    "boundary_omits": {
+      "arm": "boundary_omits",
+      "error_codes": [
+        "AccessDeniedException"
+      ],
+      "n_accepted": 0,
+      "n_attempted": 5,
+      "n_authorized": 0,
+      "n_conflict": 0,
+      "n_denied": 5,
+      "n_unusable": 0,
+      "n_usable": 5,
+      "reading": "DENIED",
+      "rows": [
+        {
+          "arm": "boundary_omits",
+          "elapsed_ms": 35.59,
+          "error_code": "AccessDeniedException",
+          "error_message": "User: arn:aws:sts::<account>:assumed-role/grx-attacker-r20260810T130945Z/grx-harness is not authorized to perform: bedrock-agentcore:UpdateGateway on resource: arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n with an explicit deny in a permissions boundary: arn:aws:iam::<account>:policy/grx-f53b-boundary-deny-r20260810T130945Z",
+          "outcome": "denied_by_iam",
+          "request_id": "e4f2ed0f-3acb-463f-b9d7-015f349e9d5f",
+          "trial_id": "boundary_omits__0001"
+        },
+        {
+          "arm": "boundary_omits",
+          "elapsed_ms": 31.75,
+          "error_code": "AccessDeniedException",
+          "error_message": "User: arn:aws:sts::<account>:assumed-role/grx-attacker-r20260810T130945Z/grx-harness is not authorized to perform: bedrock-agentcore:UpdateGateway on resource: arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n with an explicit deny in a permissions boundary: arn:aws:iam::<account>:policy/grx-f53b-boundary-deny-r20260810T130945Z",
+          "outcome": "denied_by_iam",
+          "request_id": "fba22325-c6a7-46fb-9983-3a1c72574ac3",
+          "trial_id": "boundary_omits__0002"
+        },
+        {
+          "arm": "boundary_omits",
+          "elapsed_ms": 34.39,
+          "error_code": "AccessDeniedException",
+          "error_message": "User: arn:aws:sts::<account>:assumed-role/grx-attacker-r20260810T130945Z/grx-harness is not authorized to perform: bedrock-agentcore:UpdateGateway on resource: arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n with an explicit deny in a permissions boundary: arn:aws:iam::<account>:policy/grx-f53b-boundary-deny-r20260810T130945Z",
+          "outcome": "denied_by_iam",
+          "request_id": "ab3eec21-ccd9-4598-a5e2-d5b706374092",
+          "trial_id": "boundary_omits__0003"
+        },
+        {
+          "arm": "boundary_omits",
+          "elapsed_ms": 31.62,
+          "error_code": "AccessDeniedException",
+          "error_message": "User: arn:aws:sts::<account>:assumed-role/grx-attacker-r20260810T130945Z/grx-harness is not authorized to perform: bedrock-agentcore:UpdateGateway on resource: arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n with an explicit deny in a permissions boundary: arn:aws:iam::<account>:policy/grx-f53b-boundary-deny-r20260810T130945Z",
+          "outcome": "denied_by_iam",
+          "request_id": "ca59efaf-2d73-466e-9a30-6049cc25b3e1",
+          "trial_id": "boundary_omits__0004"
+        },
+        {
+          "arm": "boundary_omits",
+          "elapsed_ms": 34.43,
+          "error_code": "AccessDeniedException",
+          "error_message": "User: arn:aws:sts::<account>:assumed-role/grx-attacker-r20260810T130945Z/grx-harness is not authorized to perform: bedrock-agentcore:UpdateGateway on resource: arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n with an explicit deny in a permissions boundary: arn:aws:iam::<account>:policy/grx-f53b-boundary-deny-r20260810T130945Z",
+          "outcome": "denied_by_iam",
+          "request_id": "849a6259-6c88-4b4f-9037-ad3bb40b3da9",
+          "trial_id": "boundary_omits__0005"
+        }
+      ],
+      "unanimous": true
+    },
+    "boundary_removed": {
+      "arm": "boundary_removed",
+      "error_codes": [],
+      "n_accepted": 3,
+      "n_attempted": 3,
+      "n_authorized": 3,
+      "n_conflict": 0,
+      "n_denied": 0,
+      "n_unusable": 0,
+      "n_usable": 3,
+      "reading": "AUTHORIZED",
+      "rows": [
+        {
+          "arm": "boundary_removed",
+          "elapsed_ms": 286.75,
+          "gateway_status_after": "UPDATING",
+          "http_status": 202,
+          "outcome": "accepted",
+          "request_id": "b9bac2db-fe96-4839-975c-5dff5fc88637",
+          "trial_id": "boundary_removed__0001"
+        },
+        {
+          "arm": "boundary_removed",
+          "elapsed_ms": 313.82,
+          "gateway_status_after": "UPDATING",
+          "http_status": 202,
+          "outcome": "accepted",
+          "request_id": "af5c23c9-ee6c-4dea-ba95-45b59e6fc02c",
+          "trial_id": "boundary_removed__0002"
+        },
+        {
+          "arm": "boundary_removed",
+          "elapsed_ms": 288.67,
+          "gateway_status_after": "UPDATING",
+          "http_status": 202,
+          "outcome": "accepted",
+          "request_id": "4c5a16dc-f7be-41cb-9f25-2a8103a9d6bf",
+          "trial_id": "boundary_removed__0003"
+        }
+      ],
+      "unanimous": true
+    },
+    "granted_no_boundary": {
+      "arm": "granted_no_boundary",
+      "error_codes": [],
+      "n_accepted": 3,
+      "n_attempted": 3,
+      "n_authorized": 3,
+      "n_conflict": 0,
+      "n_denied": 0,
+      "n_unusable": 0,
+      "n_usable": 3,
+      "reading": "AUTHORIZED",
+      "rows": [
+        {
+          "arm": "granted_no_boundary",
+          "elapsed_ms": 314.11,
+          "gateway_status_after": "UPDATING",
+          "http_status": 202,
+          "outcome": "accepted",
+          "request_id": "d3d2b005-bbde-4eb3-92d1-59a437360111",
+          "trial_id": "granted_no_boundary__0001"
+        },
+        {
+          "arm": "granted_no_boundary",
+          "elapsed_ms": 623.34,
+          "gateway_status_after": "UPDATING",
+          "http_status": 202,
+          "outcome": "accepted",
+          "request_id": "9185aa29-1f09-44eb-ac25-913d49982de4",
+          "trial_id": "granted_no_boundary__0002"
+        },
+        {
+          "arm": "granted_no_boundary",
+          "elapsed_ms": 324.55,
+          "gateway_status_after": "UPDATING",
+          "http_status": 202,
+          "outcome": "accepted",
+          "request_id": "15752984-f4af-40b9-8825-3b1a388e4295",
+          "trial_id": "granted_no_boundary__0003"
+        }
+      ],
+      "unanimous": true
+    },
+    "pre_grant_baseline": {
+      "arm": "pre_grant_baseline",
+      "error_codes": [
+        "AccessDeniedException"
+      ],
+      "n_accepted": 0,
+      "n_attempted": 2,
+      "n_authorized": 0,
+      "n_conflict": 0,
+      "n_denied": 2,
+      "n_unusable": 0,
+      "n_usable": 2,
+      "reading": "DENIED",
+      "rows": [
+        {
+          "arm": "pre_grant_baseline",
+          "elapsed_ms": 57.44,
+          "error_code": "AccessDeniedException",
+          "error_message": "User: arn:aws:sts::<account>:assumed-role/grx-attacker-r20260810T130945Z/grx-harness is not authorized to perform: bedrock-agentcore:UpdateGateway on resource: arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n because no identity-based policy allows the bedrock-agentcore:UpdateGateway action",
+          "outcome": "denied_by_iam",
+          "request_id": "ea695ed0-0c84-4176-ab19-3982dcbe149e",
+          "trial_id": "pre_grant_baseline__0001"
+        },
+        {
+          "arm": "pre_grant_baseline",
+          "elapsed_ms": 42.13,
+          "error_code": "AccessDeniedException",
+          "error_message": "User: arn:aws:sts::<account>:assumed-role/grx-attacker-r20260810T130945Z/grx-harness is not authorized to perform: bedrock-agentcore:UpdateGateway on resource: arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n because no identity-based policy allows the bedrock-agentcore:UpdateGateway action",
+          "outcome": "denied_by_iam",
+          "request_id": "4373691a-9858-47d0-9697-f7d13ea54d34",
+          "trial_id": "pre_grant_baseline__0002"
+        }
+      ],
+      "unanimous": true
+    }
+  },
+  "arms_planned": {
+    "boundary_denies": 5,
+    "boundary_omits": 5,
+    "boundary_removed": 3,
+    "granted_no_boundary": 3,
+    "pre_grant_baseline": 2
+  },
+  "attacker_role": "grx-attacker-r20260810T130945Z",
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F5-3b",
+    "clear_here": true
+  },
+  "boundary_policy_names": {
+    "boundary_denies": "grx-f53b-boundary-deny-r20260810T130945Z",
+    "boundary_omits": "grx-f53b-boundary-omit-r20260810T130945Z"
+  },
+  "boundary_reading": {
+    "all_forms_blocked": true,
+    "any_form_ineffective": false,
+    "blocked_per_form": {
+      "boundary_denies": true,
+      "boundary_omits": true
+    },
+    "per_form": {
+      "boundary_denies": "DENIED",
+      "boundary_omits": "DENIED"
+    },
+    "rule": "observed_bool is the AND over both boundary forms. A form that is SPLIT or MISSING is not a block: an all-or-nothing mechanism arm that split is a finding, and an arm that never ran is not evidence of anything"
+  },
+  "case_id": "F5-3b",
+  "end_state": {
+    "boundary_at_end": {
+      "attached": false,
+      "boundary_arn": null,
+      "boundary_type": null,
+      "read_ok": true
+    },
+    "gateway_end_state_read_ok": true,
+    "gateway_fields_that_differ": [],
+    "gateway_pec_identical": true,
+    "inline_policies_at_end": [
+      "grx-attacker-policy"
+    ],
+    "restore_ignore_list": [
+      "name",
+      "description",
+      "gatewayArn",
+      "gatewayId",
+      "gatewayUrl",
+      "createdAt",
+      "updatedAt",
+      "status",
+      "statusReasons",
+      "ResponseMetadata",
+      "workloadIdentityDetails"
+    ],
+    "role_end_state_read_ok": true,
+    "why_the_gateway_is_diffed_at_all": "this case changes no gateway field, so an empty diff is the claim. Every accepted attempt was nonetheless a real full-replacement write, and policyEngineConfiguration is compared explicitly rather than sitting in the ignore list — the field F5-2 moves is the field a no-op body could most plausibly have dropped"
+  },
+  "expiry": "an IAM evaluation-semantics result, dated by botocore 1.43.67 and by the account's configuration on the run date. Permissions-boundary intersection is a documented IAM rule rather than an AgentCore behaviour, so the fragile half is the resource scoping: a new bedrock-agentcore action that reconfigures a gateway without being called UpdateGateway would be outside the Deny form's reach, and this case would still read TRUE. Re-run against the operation list when the service model changes",
+  "gateway_id": "grx-gw-r20260810t130945z-zpkfmpwo9n",
+  "grant_policy_name": "grx-f53b-grant-r20260810T130945Z",
+  "guards": {
+    "an_in_boundary_action_still_worked_under_each_boundary": true,
+    "boundary_was_detached_and_the_role_read_back_clean": true,
+    "every_boundary_transition_was_observed_to_settle": false,
+    "gateway_started_in_its_provisioned_configuration": true,
+    "gateway_was_left_field_for_field_identical": true,
+    "grant_and_boundary_policies_were_deleted": true,
+    "removing_the_boundary_reopened_the_route": true,
+    "role_started_in_its_shipped_configuration": true,
+    "role_started_with_no_permissions_boundary": true,
+    "the_attack_succeeded_before_any_boundary_existed": true
+  },
+  "guards_failed": [
+    "every_boundary_transition_was_observed_to_settle"
+  ],
+  "in_boundary_controls": {
+    "boundary_denies": {
+      "arm": "boundary_denies",
+      "error_code": null,
+      "error_message": null,
+      "ok": true,
+      "request_id": "e2f30185-7bb4-4c2f-993d-3ca80b2fc97d",
+      "why": "an action inside the ceiling must still work, or a denial on UpdateGateway is not attributable to the boundary withholding UpdateGateway"
+    },
+    "boundary_omits": {
+      "arm": "boundary_omits",
+      "error_code": null,
+      "error_message": null,
+      "ok": true,
+      "request_id": "aee15ba8-deb8-4ba2-a0be-590090254b00",
+      "why": "an action inside the ceiling must still work, or a denial on UpdateGateway is not attributable to the boundary withholding UpdateGateway"
+    }
+  },
+  "instrument": "bedrock-agentcore:UpdateGateway on grx-gw-r20260810t130945z-zpkfmpwo9n as grx-attacker-r20260810T130945Z, sending the gateway's own current configuration as a full replacement; classified into accepted / conflict / denied_by_iam / unusable",
+  "is_smoke": false,
+  "kind": "EXISTENCE",
+  "mutation": {
+    "boundary_forms_attached": [
+      "boundary_denies",
+      "boundary_omits"
+    ],
+    "grant_applied": true,
+    "sealed_mutation": "detach the boundary; the same body must be accepted again",
+    "sealed_mutation_arm": "boundary_removed",
+    "sealed_mutation_authorized": 3
+  },
+  "no_checkpoint_by_design": "a trial in a boundary arm is only meaningful while that boundary is attached, and a resumed process cannot re-enter the window it was killed in. A checkpoint would let a later run pair post-detach trials with a boundary that no longer exists",
+  "noop_body_members": [
+    "authorizerType",
+    "description",
+    "exceptionLevel",
+    "gatewayIdentifier",
+    "name",
+    "policyEngineConfiguration",
+    "protocolConfiguration",
+    "protocolType",
+    "roleArn"
+  ],
+  "oracle_text": "TRUE if UpdateGateway is denied despite an identity policy granting it; FALSE if the boundary is ineffective. Mutation: remove boundary -> succeeds",
+  "planned_n": null,
+  "policy_engine_id": "grx_pe_r20260810T130945Z-t6hqadrspf",
+  "propagation": {
+    "attach_boundary_denies": {
+      "confirmations_required": 3,
+      "consecutive_confirmations": 0,
+      "max_wait_s": 300,
+      "outcomes_seen": [
+        "accepted",
+        "accepted",
+        "denied_by_iam",
+        "accepted",
+        "accepted",
+        "accepted",
+        "accepted",
+        "accepted",
+        "accepted",
+        "accepted",
+        "accepted",
+        "accepted",
+        "accepted",
+        "accepted",
+        "accepted",
+        "denied_by_iam",
+        "accepted",
+        "accepted",
+        "accepted",
+        "accepted",
+        "accepted",
+        "accepted"
+      ],
+      "phase": "attach_boundary_denies",
+      "reached": false,
+      "seconds": 308.0,
+      "wanted": "denied_by_iam",
+      "why_it_matters": "the arm that follows ran against an IAM state never confirmed to have settled within 300s, so its tally is about an unknown configuration"
+    },
+    "attach_boundary_omits": {
+      "confirmations_required": 3,
+      "consecutive_confirmations": 3,
+      "flapped_before_converging": false,
+      "max_wait_s": 300,
+      "n_wanted_outcomes_before_the_final_streak": 0,
+      "outcomes_seen": [
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam"
+      ],
+      "phase": "attach_boundary_omits",
+      "reached": true,
+      "seconds": 20.1,
+      "seconds_to_first_confirmation": 0.0,
+      "wanted": "denied_by_iam"
+    },
+    "detach": {
+      "confirmations_required": 3,
+      "consecutive_confirmations": 3,
+      "flapped_before_converging": false,
+      "max_wait_s": 900,
+      "n_wanted_outcomes_before_the_final_streak": 0,
+      "outcomes_seen": [
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "accepted",
+        "accepted",
+        "accepted"
+      ],
+      "phase": "detach",
+      "reached": true,
+      "seconds": 314.3,
+      "seconds_to_first_confirmation": 285.4,
+      "wanted": "accepted"
+    },
+    "grant": {
+      "confirmations_required": 3,
+      "consecutive_confirmations": 1,
+      "max_wait_s": 300,
+      "outcomes_seen": [
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "accepted",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "accepted",
+        "denied_by_iam",
+        "denied_by_iam",
+        "accepted",
+        "denied_by_iam",
+        "accepted",
+        "accepted",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "denied_by_iam",
+        "accepted"
+      ],
+      "phase": "grant",
+      "reached": false,
+      "seconds": 307.2,
+      "wanted": "accepted",
+      "why_it_matters": "the arm that follows ran against an IAM state never confirmed to have settled within 300s, so its tally is about an unknown configuration"
+    }
+  },
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F5-3b",
+    "evidence": {
+      "detail": {
+        "arms": {
+          "boundary_denies": {
+            "arm": "boundary_denies",
+            "error_codes": [
+              "AccessDeniedException"
+            ],
+            "n_accepted": 0,
+            "n_attempted": 5,
+            "n_authorized": 0,
+            "n_conflict": 0,
+            "n_denied": 5,
+            "n_unusable": 0,
+            "n_usable": 5,
+            "reading": "DENIED",
+            "unanimous": true
+          },
+          "boundary_omits": {
+            "arm": "boundary_omits",
+            "error_codes": [
+              "AccessDeniedException"
+            ],
+            "n_accepted": 0,
+            "n_attempted": 5,
+            "n_authorized": 0,
+            "n_conflict": 0,
+            "n_denied": 5,
+            "n_unusable": 0,
+            "n_usable": 5,
+            "reading": "DENIED",
+            "unanimous": true
+          },
+          "boundary_removed": {
+            "arm": "boundary_removed",
+            "error_codes": [],
+            "n_accepted": 3,
+            "n_attempted": 3,
+            "n_authorized": 3,
+            "n_conflict": 0,
+            "n_denied": 0,
+            "n_unusable": 0,
+            "n_usable": 3,
+            "reading": "AUTHORIZED",
+            "unanimous": true
+          },
+          "granted_no_boundary": {
+            "arm": "granted_no_boundary",
+            "error_codes": [],
+            "n_accepted": 3,
+            "n_attempted": 3,
+            "n_authorized": 3,
+            "n_conflict": 0,
+            "n_denied": 0,
+            "n_unusable": 0,
+            "n_usable": 3,
+            "reading": "AUTHORIZED",
+            "unanimous": true
+          },
+          "pre_grant_baseline": {
+            "arm": "pre_grant_baseline",
+            "error_codes": [
+              "AccessDeniedException"
+            ],
+            "n_accepted": 0,
+            "n_attempted": 2,
+            "n_authorized": 0,
+            "n_conflict": 0,
+            "n_denied": 2,
+            "n_unusable": 0,
+            "n_usable": 2,
+            "reading": "DENIED",
+            "unanimous": true
+          }
+        },
+        "boundary_reading": {
+          "all_forms_blocked": true,
+          "any_form_ineffective": false,
+          "blocked_per_form": {
+            "boundary_denies": true,
+            "boundary_omits": true
+          },
+          "per_form": {
+            "boundary_denies": "DENIED",
+            "boundary_omits": "DENIED"
+          },
+          "rule": "observed_bool is the AND over both boundary forms. A form that is SPLIT or MISSING is not a block: an all-or-nothing mechanism arm that split is a finding, and an arm that never ran is not evidence of anything"
+        },
+        "end_state": {
+          "boundary_at_end": {
+            "attached": false,
+            "boundary_arn": null,
+            "boundary_type": null,
+            "read_ok": true
+          },
+          "gateway_end_state_read_ok": true,
+          "gateway_fields_that_differ": [],
+          "gateway_pec_identical": true,
+          "inline_policies_at_end": [
+            "grx-attacker-policy"
+          ],
+          "restore_ignore_list": [
+            "name",
+            "description",
+            "gatewayArn",
+            "gatewayId",
+            "gatewayUrl",
+            "createdAt",
+            "updatedAt",
+            "status",
+            "statusReasons",
+            "ResponseMetadata",
+            "workloadIdentityDetails"
+          ],
+          "role_end_state_read_ok": true,
+          "why_the_gateway_is_diffed_at_all": "this case changes no gateway field, so an empty diff is the claim. Every accepted attempt was nonetheless a real full-replacement write, and policyEngineConfiguration is compared explicitly rather than sitting in the ignore list — the field F5-2 moves is the field a no-op body could most plausibly have dropped"
+        },
+        "guards": {
+          "an_in_boundary_action_still_worked_under_each_boundary": true,
+          "boundary_was_detached_and_the_role_read_back_clean": true,
+          "every_boundary_transition_was_observed_to_settle": false,
+          "gateway_started_in_its_provisioned_configuration": true,
+          "gateway_was_left_field_for_field_identical": true,
+          "grant_and_boundary_policies_were_deleted": true,
+          "removing_the_boundary_reopened_the_route": true,
+          "role_started_in_its_shipped_configuration": true,
+          "role_started_with_no_permissions_boundary": true,
+          "the_attack_succeeded_before_any_boundary_existed": true
+        },
+        "in_boundary_controls": {
+          "boundary_denies": {
+            "arm": "boundary_denies",
+            "error_code": null,
+            "error_message": null,
+            "ok": true,
+            "request_id": "e2f30185-7bb4-4c2f-993d-3ca80b2fc97d",
+            "why": "an action inside the ceiling must still work, or a denial on UpdateGateway is not attributable to the boundary withholding UpdateGateway"
+          },
+          "boundary_omits": {
+            "arm": "boundary_omits",
+            "error_code": null,
+            "error_message": null,
+            "ok": true,
+            "request_id": "aee15ba8-deb8-4ba2-a0be-590090254b00",
+            "why": "an action inside the ceiling must still work, or a denial on UpdateGateway is not attributable to the boundary withholding UpdateGateway"
+          }
+        },
+        "n_basis": "usable UpdateGateway attempts in boundary_denies + boundary_omits; the control arms are reported separately and are not part of this denominator",
+        "propagation": {
+          "attach_boundary_denies": {
+            "confirmations_required": 3,
+            "consecutive_confirmations": 0,
+            "max_wait_s": 300,
+            "outcomes_seen": [
+              "accepted",
+              "accepted",
+              "denied_by_iam",
+              "accepted",
+              "accepted",
+              "accepted",
+              "accepted",
+              "accepted",
+              "accepted",
+              "accepted",
+              "accepted",
+              "accepted",
+              "accepted",
+              "accepted",
+              "accepted",
+              "denied_by_iam",
+              "accepted",
+              "accepted",
+              "accepted",
+              "accepted",
+              "accepted",
+              "accepted"
+            ],
+            "phase": "attach_boundary_denies",
+            "reached": false,
+            "seconds": 308.0,
+            "wanted": "denied_by_iam",
+            "why_it_matters": "the arm that follows ran against an IAM state never confirmed to have settled within 300s, so its tally is about an unknown configuration"
+          },
+          "attach_boundary_omits": {
+            "confirmations_required": 3,
+            "consecutive_confirmations": 3,
+            "flapped_before_converging": false,
+            "max_wait_s": 300,
+            "n_wanted_outcomes_before_the_final_streak": 0,
+            "outcomes_seen": [
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam"
+            ],
+            "phase": "attach_boundary_omits",
+            "reached": true,
+            "seconds": 20.1,
+            "seconds_to_first_confirmation": 0.0,
+            "wanted": "denied_by_iam"
+          },
+          "detach": {
+            "confirmations_required": 3,
+            "consecutive_confirmations": 3,
+            "flapped_before_converging": false,
+            "max_wait_s": 900,
+            "n_wanted_outcomes_before_the_final_streak": 0,
+            "outcomes_seen": [
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "accepted",
+              "accepted",
+              "accepted"
+            ],
+            "phase": "detach",
+            "reached": true,
+            "seconds": 314.3,
+            "seconds_to_first_confirmation": 285.4,
+            "wanted": "accepted"
+          },
+          "grant": {
+            "confirmations_required": 3,
+            "consecutive_confirmations": 1,
+            "max_wait_s": 300,
+            "outcomes_seen": [
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "accepted",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "accepted",
+              "denied_by_iam",
+              "denied_by_iam",
+              "accepted",
+              "denied_by_iam",
+              "accepted",
+              "accepted",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "denied_by_iam",
+              "accepted"
+            ],
+            "phase": "grant",
+            "reached": false,
+            "seconds": 307.2,
+            "wanted": "accepted",
+            "why_it_matters": "the arm that follows ran against an IAM state never confirmed to have settled within 300s, so its tally is about an unknown configuration"
+          }
+        },
+        "residue": {
+          "boundary_read_back": {
+            "attached": false,
+            "boundary_arn": null,
+            "boundary_type": null,
+            "read_ok": true
+          },
+          "boundary_still_attached": false,
+          "clean": true,
+          "created": [
+            {
+              "id": "inline:grx-f53b-grant-r20260810T130945Z",
+              "kind": "iam-inline-policy",
+              "name": "grx-f53b-grant-r20260810T130945Z",
+              "role": "grx-attacker-r20260810T130945Z"
+            },
+            {
+              "arm": "boundary_denies",
+              "id": "policy:arn:aws:iam::<account>:policy/grx-f53b-boundary-deny-r20260810T130945Z",
+              "kind": "iam-policy",
+              "name": "grx-f53b-boundary-deny-r20260810T130945Z"
+            },
+            {
+              "arm": "boundary_denies",
+              "id": "boundary:boundary_denies",
+              "kind": "iam-permissions-boundary",
+              "name": "grx-attacker-r20260810T130945Z"
+            },
+            {
+              "arm": "boundary_omits",
+              "id": "policy:arn:aws:iam::<account>:policy/grx-f53b-boundary-omit-r20260810T130945Z",
+              "kind": "iam-policy",
+              "name": "grx-f53b-boundary-omit-r20260810T130945Z"
+            },
+            {
+              "arm": "boundary_omits",
+              "id": "boundary:boundary_omits",
+              "kind": "iam-permissions-boundary",
+              "name": "grx-attacker-r20260810T130945Z"
+            }
+          ],
+          "inline_policies_at_end": [
+            "grx-attacker-policy"
+          ],
+          "n_created": 5,
+          "n_removal_attempted": 5,
+          "n_removed": 5,
+          "never_attempted": [],
+          "removed": [
+            {
+              "detail": {
+                "detached": true,
+                "errors": [],
+                "manual_remedy": null,
+                "read_back": {
+                  "attached": false,
+                  "boundary_arn": null,
+                  "boundary_type": null,
+                  "read_ok": true
+                }
+              },
+              "id": "boundary:boundary_denies",
+              "removed": true
+            },
+            {
+              "detail": {
+                "attempts": 1,
+                "deleted": true,
+                "errors": []
+              },
+              "id": "policy:arn:aws:iam::<account>:policy/grx-f53b-boundary-deny-r20260810T130945Z",
+              "removed": true
+            },
+            {
+              "detail": {
+                "detached": true,
+                "errors": [],
+                "manual_remedy": null,
+                "read_back": {
+                  "attached": false,
+                  "boundary_arn": null,
+                  "boundary_type": null,
+                  "read_ok": true
+                }
+              },
+              "id": "boundary:boundary_omits",
+              "removed": true
+            },
+            {
+              "detail": {
+                "attempts": 1,
+                "deleted": true,
+                "errors": []
+              },
+              "id": "policy:arn:aws:iam::<account>:policy/grx-f53b-boundary-omit-r20260810T130945Z",
+              "removed": true
+            },
+            {
+              "detail": {
+                "attempts": 1,
+                "deleted": true,
+                "errors": []
+              },
+              "id": "inline:grx-f53b-grant-r20260810T130945Z",
+              "removed": true
+            }
+          ],
+          "surviving": [],
+          "unexpected_inline_policies": [],
+          "why_the_state_is_read_back_too": "the damaging residue for this case is not a bookkeeping entry, it is a boundary still in force on grx-attacker: every future F5-1/F5-2 replication would then be over-determined, and neither of those scripts reads the boundary",
+          "why_two_lists": "a mutation whose undo was never ATTEMPTED contributes no row to the removals, so a residue computed from that list alone reports zero survivors for exactly the case where one exists"
+        },
+        "simulations": {
+          "boundary_denies": {
+            "is_corroborating_not_decisive": "SimulatePrincipalPolicy evaluates identity policies and the attached permissions boundary, which is why it can name WHICH action is outside the ceiling. It is not an authorization event and is never read as one: the arms are real UpdateGateway calls",
+            "per_action": {
+              "bedrock-agentcore:GetGateway": {
+                "allowed": true,
+                "decisions": [
+                  "allowed"
+                ],
+                "matched_statements": [
+                  [
+                    "role_grx-attacker-r20260810T130945Z_grx-f53b-grant-r20260810T130945Z",
+                    "role_grx-attacker-r20260810T130945Z_grx-attacker-policy"
+                  ]
+                ],
+                "permissions_boundary_decision_detail": [
+                  [
+                    [
+                      "AllowedByPermissionsBoundary",
+                      true
+                    ]
+                  ]
+                ]
+              },
+              "bedrock-agentcore:UpdateGateway": {
+                "allowed": false,
+                "decisions": [
+                  "explicitDeny"
+                ],
+                "matched_statements": [
+                  [
+                    "grx-f53b-boundary-deny-r20260810T130945Z"
+                  ]
+                ],
+                "permissions_boundary_decision_detail": [
+                  [
+                    [
+                      "AllowedByPermissionsBoundary",
+                      false
+                    ]
+                  ]
+                ]
+              },
+              "iam:PassRole": {
+                "allowed": false,
+                "decisions": [
+                  "implicitDeny"
+                ],
+                "matched_statements": [
+                  []
+                ],
+                "permissions_boundary_decision_detail": [
+                  []
+                ]
+              }
+            },
+            "phase": "boundary_denies",
+            "read_ok": true
+          },
+          "boundary_omits": {
+            "is_corroborating_not_decisive": "SimulatePrincipalPolicy evaluates identity policies and the attached permissions boundary, which is why it can name WHICH action is outside the ceiling. It is not an authorization event and is never read as one: the arms are real UpdateGateway calls",
+            "per_action": {
+              "bedrock-agentcore:GetGateway": {
+                "allowed": true,
+                "decisions": [
+                  "allowed"
+                ],
+                "matched_statements": [
+                  [
+                    "role_grx-attacker-r20260810T130945Z_grx-f53b-grant-r20260810T130945Z",
+                    "role_grx-attacker-r20260810T130945Z_grx-attacker-policy"
+                  ]
+                ],
+                "permissions_boundary_decision_detail": [
+                  [
+                    [
+                      "AllowedByPermissionsBoundary",
+                      true
+                    ]
+                  ]
+                ]
+              },
+              "bedrock-agentcore:UpdateGateway": {
+                "allowed": false,
+                "decisions": [
+                  "implicitDeny"
+                ],
+                "matched_statements": [
+                  []
+                ],
+                "permissions_boundary_decision_detail": [
+                  [
+                    [
+                      "AllowedByPermissionsBoundary",
+                      false
+                    ]
+                  ]
+                ]
+              },
+              "iam:PassRole": {
+                "allowed": false,
+                "decisions": [
+                  "implicitDeny"
+                ],
+                "matched_statements": [
+                  []
+                ],
+                "permissions_boundary_decision_detail": [
+                  []
+                ]
+              }
+            },
+            "phase": "boundary_omits",
+            "read_ok": true
+          }
+        }
+      },
+      "observed": true
+    },
+    "family": "unassigned_by_seal",
+    "kind": "EXISTENCE",
+    "mutation_inverted": true,
+    "mutation_required": true,
+    "n_attempted": 10,
+    "n_met": true,
+    "n_usable": 10,
+    "notes": [],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [],
+    "verdict": "TRUE"
+  },
+  "region": "us-east-1",
+  "residue": {
+    "boundary_read_back": {
+      "attached": false,
+      "boundary_arn": null,
+      "boundary_type": null,
+      "read_ok": true
+    },
+    "boundary_still_attached": false,
+    "clean": true,
+    "created": [
+      {
+        "id": "inline:grx-f53b-grant-r20260810T130945Z",
+        "kind": "iam-inline-policy",
+        "name": "grx-f53b-grant-r20260810T130945Z",
+        "role": "grx-attacker-r20260810T130945Z"
+      },
+      {
+        "arm": "boundary_denies",
+        "id": "policy:arn:aws:iam::<account>:policy/grx-f53b-boundary-deny-r20260810T130945Z",
+        "kind": "iam-policy",
+        "name": "grx-f53b-boundary-deny-r20260810T130945Z"
+      },
+      {
+        "arm": "boundary_denies",
+        "id": "boundary:boundary_denies",
+        "kind": "iam-permissions-boundary",
+        "name": "grx-attacker-r20260810T130945Z"
+      },
+      {
+        "arm": "boundary_omits",
+        "id": "policy:arn:aws:iam::<account>:policy/grx-f53b-boundary-omit-r20260810T130945Z",
+        "kind": "iam-policy",
+        "name": "grx-f53b-boundary-omit-r20260810T130945Z"
+      },
+      {
+        "arm": "boundary_omits",
+        "id": "boundary:boundary_omits",
+        "kind": "iam-permissions-boundary",
+        "name": "grx-attacker-r20260810T130945Z"
+      }
+    ],
+    "inline_policies_at_end": [
+      "grx-attacker-policy"
+    ],
+    "n_created": 5,
+    "n_removal_attempted": 5,
+    "n_removed": 5,
+    "never_attempted": [],
+    "removed": [
+      {
+        "detail": {
+          "detached": true,
+          "errors": [],
+          "manual_remedy": null,
+          "read_back": {
+            "attached": false,
+            "boundary_arn": null,
+            "boundary_type": null,
+            "read_ok": true
+          }
+        },
+        "id": "boundary:boundary_denies",
+        "removed": true
+      },
+      {
+        "detail": {
+          "attempts": 1,
+          "deleted": true,
+          "errors": []
+        },
+        "id": "policy:arn:aws:iam::<account>:policy/grx-f53b-boundary-deny-r20260810T130945Z",
+        "removed": true
+      },
+      {
+        "detail": {
+          "detached": true,
+          "errors": [],
+          "manual_remedy": null,
+          "read_back": {
+            "attached": false,
+            "boundary_arn": null,
+            "boundary_type": null,
+            "read_ok": true
+          }
+        },
+        "id": "boundary:boundary_omits",
+        "removed": true
+      },
+      {
+        "detail": {
+          "attempts": 1,
+          "deleted": true,
+          "errors": []
+        },
+        "id": "policy:arn:aws:iam::<account>:policy/grx-f53b-boundary-omit-r20260810T130945Z",
+        "removed": true
+      },
+      {
+        "detail": {
+          "attempts": 1,
+          "deleted": true,
+          "errors": []
+        },
+        "id": "inline:grx-f53b-grant-r20260810T130945Z",
+        "removed": true
+      }
+    ],
+    "surviving": [],
+    "unexpected_inline_policies": [],
+    "why_the_state_is_read_back_too": "the damaging residue for this case is not a bookkeeping entry, it is a boundary still in force on grx-attacker: every future F5-1/F5-2 replication would then be over-determined, and neither of those scripts reads the boundary",
+    "why_two_lists": "a mutation whose undo was never ATTEMPTED contributes no row to the removals, so a residue computed from that list alone reports zero survivors for exactly the case where one exists"
+  },
+  "run_id": "r20260810T130945Z",
+  "simulations": {
+    "boundary_denies": {
+      "is_corroborating_not_decisive": "SimulatePrincipalPolicy evaluates identity policies and the attached permissions boundary, which is why it can name WHICH action is outside the ceiling. It is not an authorization event and is never read as one: the arms are real UpdateGateway calls",
+      "per_action": {
+        "bedrock-agentcore:GetGateway": {
+          "allowed": true,
+          "decisions": [
+            "allowed"
+          ],
+          "matched_statements": [
+            [
+              "role_grx-attacker-r20260810T130945Z_grx-f53b-grant-r20260810T130945Z",
+              "role_grx-attacker-r20260810T130945Z_grx-attacker-policy"
+            ]
+          ],
+          "permissions_boundary_decision_detail": [
+            [
+              [
+                "AllowedByPermissionsBoundary",
+                true
+              ]
+            ]
+          ]
+        },
+        "bedrock-agentcore:UpdateGateway": {
+          "allowed": false,
+          "decisions": [
+            "explicitDeny"
+          ],
+          "matched_statements": [
+            [
+              "grx-f53b-boundary-deny-r20260810T130945Z"
+            ]
+          ],
+          "permissions_boundary_decision_detail": [
+            [
+              [
+                "AllowedByPermissionsBoundary",
+                false
+              ]
+            ]
+          ]
+        },
+        "iam:PassRole": {
+          "allowed": false,
+          "decisions": [
+            "implicitDeny"
+          ],
+          "matched_statements": [
+            []
+          ],
+          "permissions_boundary_decision_detail": [
+            []
+          ]
+        }
+      },
+      "phase": "boundary_denies",
+      "read_ok": true
+    },
+    "boundary_omits": {
+      "is_corroborating_not_decisive": "SimulatePrincipalPolicy evaluates identity policies and the attached permissions boundary, which is why it can name WHICH action is outside the ceiling. It is not an authorization event and is never read as one: the arms are real UpdateGateway calls",
+      "per_action": {
+        "bedrock-agentcore:GetGateway": {
+          "allowed": true,
+          "decisions": [
+            "allowed"
+          ],
+          "matched_statements": [
+            [
+              "role_grx-attacker-r20260810T130945Z_grx-f53b-grant-r20260810T130945Z",
+              "role_grx-attacker-r20260810T130945Z_grx-attacker-policy"
+            ]
+          ],
+          "permissions_boundary_decision_detail": [
+            [
+              [
+                "AllowedByPermissionsBoundary",
+                true
+              ]
+            ]
+          ]
+        },
+        "bedrock-agentcore:UpdateGateway": {
+          "allowed": false,
+          "decisions": [
+            "implicitDeny"
+          ],
+          "matched_statements": [
+            []
+          ],
+          "permissions_boundary_decision_detail": [
+            [
+              [
+                "AllowedByPermissionsBoundary",
+                false
+              ]
+            ]
+          ]
+        },
+        "iam:PassRole": {
+          "allowed": false,
+          "decisions": [
+            "implicitDeny"
+          ],
+          "matched_statements": [
+            []
+          ],
+          "permissions_boundary_decision_detail": [
+            []
+          ]
+        }
+      },
+      "phase": "boundary_omits",
+      "read_ok": true
+    }
+  },
+  "startup_gateway_interlock": {
+    "engine_arn_matches_ledger": true,
+    "exception_level": "DEBUG",
+    "mode": "ENFORCE",
+    "read_from": "bedrock-agentcore-control:GetGateway (live)",
+    "status": "READY"
+  },
+  "startup_role_interlock": {
+    "attached_managed_policies_at_start": [],
+    "inline_policies_at_start": [
+      "grx-attacker-policy"
+    ],
+    "permissions_boundary_at_start": null,
+    "read_from": "iam:ListRolePolicies + ListAttachedRolePolicies + GetRole (live)"
+  },
+  "update_gateway_shape": {
+    "accepted_members": [
+      "authorizerConfiguration",
+      "authorizerType",
+      "customTransformConfiguration",
+      "description",
+      "exceptionLevel",
+      "gatewayIdentifier",
+      "interceptorConfigurations",
+      "kmsKeyArn",
+      "name",
+      "policyEngineConfiguration",
+      "protocolConfiguration",
+      "protocolType",
+      "roleArn",
+      "wafConfiguration"
+    ],
+    "read_from": "botocore service model at runtime",
+    "required_members": [
+      "authorizerType",
+      "gatewayIdentifier",
+      "name",
+      "roleArn"
+    ]
+  },
+  "verdict": "TRUE",
+  "verdict_reading": "both boundary forms denied UpdateGateway to an identity whose own policy granted it. The deny form (the document's wording) and the omit form (the intersection rule, with iam:PassRole deliberately inside the ceiling) both read DENIED, and detaching the boundary made the same body accepted again (3 of 3 usable attempts)",
+  "verdict_rule": "TRUE iff BOTH boundary forms denied every usable attempt while the identity policy granted the action, AND the positive control (the same body, same role, no boundary) was authorized, AND detaching the boundary made it authorized again. The positive control is load-bearing rather than decorative: grx-attacker holds no UpdateGateway in its shipped configuration, so a denial without it would be the ordinary refusal of an ungranted action, which is byte-for-byte identical to a boundary working",
+  "what_true_does_not_prove": "that a boundary blocks the mutation for a principal this case did not test. The measurement is one role in one account: an SCP applies to a whole account and a boundary applies to the identity it is attached to, so nothing here says a confused-deputy path through a DIFFERENT identity is closed — that identity has no boundary. It also says nothing about enforcement from inside a constrained member account (F5-3c, structurally unreachable here — this is the Organizations management account, where SCPs never apply), and nothing about the other actions §4's table names in the same breath: policy-engine mutations were not attempted under either ceiling. Finally, a boundary a break-glass admin can remove is a control whose strength is the change management around iam:PutRolePermissionsBoundary, which this case measured by exercising rather than by testing",
+  "why_the_body_is_a_full_replacement": "UpdateGateway replaces rather than patches, so omitting protocolConfiguration or exceptionLevel would reset the gateway F4 and F6 are published against. Every attempt sends what GetGateway returned, which also makes an unexpectedly-accepted call a no-op: authorization is evaluated before the body takes effect, so this does not weaken what the arms count",
+  "why_the_positive_control_is_mandatory": "a permissions boundary denies by INTERSECTION, so if the identity policy never granted UpdateGateway the request is refused for the ordinary reason — and that AccessDeniedException is byte-for-byte identical to a boundary working. grx-attacker holds no UpdateGateway in its shipped configuration (infra/01_iam.py), so without an accepted call before any boundary existed this case would measure the role's shipped configuration and publish it as a property of the boundary",
+  "why_this_matters_operationally": "§4 offers this as the backstop that 'holds even if route #3's role hygiene regresses', and F5-2 measured that route #3 regresses exactly one PutRolePolicy at a time. What the table does not say is how long the backstop takes to become real: the observed settle delays per transition were {'grant': 307.2, 'attach_boundary_denies': 308.0, 'attach_boundary_omits': 20.1, 'detach': 314.3} seconds, requiring 3 consecutive confirmations. An operator attaching a boundary during an incident is not protected at the moment the API returns 200, and an operator DETACHING one for a break-glass repair is still constrained after it returns — both directions are in `propagation`",
+  "why_two_boundary_forms": "an explicit Deny wins wherever it appears, so the deny form tests the document's sentence and would hold even if boundary intersection were broken. The omit form carries the mechanism: the action is absent from the ceiling and only the intersection rule denies it. Its allow-list deliberately includes iam:PassRole, because roleArn is a required member of UpdateGateway and a ceiling omitting both would deny for either reason"
+}
