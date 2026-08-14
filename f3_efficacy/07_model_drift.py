@@ -35,6 +35,26 @@ publishes the verdict. A run with no snapshot on disk refuses rather than silent
 itself, because a baseline collected today and compared against today is the vacuous result this
 case is most likely to publish by accident.
 
+WHY `--early-read` EXISTS, AND WHY IT IS NOT `--compare` WITH A SHORTER WAIT
+---------------------------------------------------------------------------
+There are two different objections to running the pairing early, and only one of them is about
+the calendar. The first is vacuity: comparing a day against itself measures nothing. That
+objection is quantitative, it is enforced by `interval_elapsed` against `MIN_INTERVAL_DAYS`, and
+it stops applying once a real interval has elapsed. The second is that the SEALED oracle names
+its interval --- *"TRUE if the +7d or +30d re-run differs from baseline"* --- so a pairing over
+any other interval is a measurement of a different quantity, however many days it spans.
+
+`--early-read` answers the first objection and respects the second. It runs the identical
+collection and the identical pairing, and it writes the result to `results/F3-11-early-read-*`
+with no oracle record, so `results/phase1/F3-11.json` keeps its day-0 `not_measured` and the +7d
+run stays due. The exclusion is on the interval, which was fixed before the numbers existed ---
+not on the result, which is why the early read is recorded in full rather than discarded.
+
+What it buys: a drift visible at +3d is already a finding about the recommended CADENCE, which is
+the only amendment any F3-11 result supports. And it exercises the pairing path once while there
+is still time to repair it, rather than finding a defect in it on 2026-09-10 with a 30-day
+interval on the line and no way to re-collect the baseline.
+
 WHAT DRIFT IS MEASURED ON — AND WHY NOT ON SCORES
 -------------------------------------------------
 The most sensitive drift instrument would be a per-item numeric score: a model update that
@@ -125,6 +145,8 @@ import awsclients as A                                   # noqa: E402
 import oracle as O                                       # noqa: E402
 import phase1 as P                                       # noqa: E402
 import stats as S                                        # noqa: E402
+# `_redact`, not `R`: `R` is already `arms` in this module. For the `--early-read` write below.
+import redact as _redact                                 # noqa: E402
 from evidence import EvidenceStore                       # noqa: E402
 
 CASE = "F3-11"
@@ -480,7 +502,12 @@ def main(argv: list[str] | None = None) -> int:                     # noqa: C901
     ap = P.parser(CASE, __doc__)
     ap.add_argument("--compare", action="store_true",
                     help="re-send the earliest snapshot's items and publish the paired verdict")
+    ap.add_argument("--early-read", action="store_true", dest="early_read",
+                    help="measure the pairing NOW, before +7d, and record it as a supplementary "
+                         "read that carries NO verdict (see the module docstring)")
     args = ap.parse_args(argv)
+    if args.early_read and args.compare:
+        ap.error("--compare publishes the sealed verdict and --early-read refuses to; pick one")
     limit_per_file = args.n if args.n else None
     is_smoke = args.n is not None
 
@@ -502,6 +529,9 @@ def main(argv: list[str] | None = None) -> int:                     # noqa: C901
                 "the WAIT is the instrument, so DEV-P4-02's waiver of the two-calendar-day "
                 "replication rule does NOT apply here; the day-0 arm runs now and writes a "
                 f"snapshot, and `--compare` publishes on day +{'/+'.join(str(d) for d in REPLICATION_OFFSETS_DAYS)}",
+                "`--early-read` runs the same pairing before then and records it as a "
+                "supplementary read with NO verdict: the sealed oracle names the +7d/+30d "
+                "interval, so a shorter pairing measures a different quantity",
                 "primary (scored): per-item `hit`, McNemar exact two-sided. Secondaries "
                 "(recorded, never scored): the full response fingerprint, and grounding scores "
                 "by Wilcoxon — scoring the smallest of three p-values is p-hacking",
@@ -518,7 +548,7 @@ def main(argv: list[str] | None = None) -> int:                     # noqa: C901
     baseline_path = _find_baseline()
 
     # ---------------- day 0: collect and stop ------------------------------
-    if not args.compare:
+    if not (args.compare or args.early_read):
         if baseline_path is not None:
             print(f"a baseline already exists: {baseline_path.name}\n"
                   f"Re-run with --compare to publish the paired verdict, or move that file "
@@ -680,6 +710,61 @@ def main(argv: list[str] | None = None) -> int:                     # noqa: C901
                     "act on: 'we did not detect drift, and drift is at most this common'"),
         }
 
+    line = (f"  interval {elapsed:.2f}d  paired {n_paired}  "
+            f"lost {prim['n_lost']} / gained {prim['n_gained']}  "
+            f"p={prim['mcnemar_p_two_sided']:.4g}  "
+            f"fingerprint changed {paired['secondary_fingerprint']['n_changed']}"
+            f"/{paired['secondary_fingerprint']['n_compared']}")
+
+    # ---------------- the early read: measure, do not decide ----------------
+    # An early pairing is a real measurement of a real interval, and it is NOT this case's
+    # verdict. The sealed oracle is denominated in the +7d/+30d re-run --- "TRUE if the +7d or
+    # +30d re-run differs from baseline by more than the paired-bootstrap CI" --- so publishing
+    # a shorter interval under F3-11's name would decide a different quantity than the seal
+    # names, and because the verdict is one word the substitution would be invisible in
+    # `results/phase1/F3-11.json` and survive only in the payload. That is the same defect as
+    # answering F1-15 with an `http.passthrough` target. So the early read writes OUTSIDE the
+    # verdict namespace, emits no oracle record, and leaves the day-0 `not_measured` record
+    # standing with the +7d run still due.
+    #
+    # It is worth running anyway for two reasons. A drift already visible at +3d is a finding
+    # about the CADENCE the document recommends, which is the only amendment a F3-11 result
+    # supports at all. And it exercises this whole path once while there is still time to
+    # repair it, instead of discovering a defect in the pairing code on 2026-09-10 with a
+    # 30-day interval on the line and no way to re-collect it.
+    if args.early_read:
+        out = ROOT / "results" / f"F3-11-early-read-{day_tag}.json"
+        # Masked. `payload` is carried through from the day snapshot and this file goes into the
+        # distributable tree; it was the fourteenth unmasked `results/` write in the repo and
+        # `lib/tests/test_results_writes_are_masked.py` failed on it. Masked rather than waived,
+        # for the reason given at the sibling site in `f1_config/diag_target_types.py`: the case
+        # for tolerating the original twelve was that they are other families' working code.
+        out.write_text(_redact.mask_text(json.dumps({
+            "case_id": CASE,
+            "kind": "SUPPLEMENTARY_READ",
+            "status": "NOT A VERDICT. F3-11's sealed oracle is denominated in the +7d/+30d "
+                      "re-run; this pairing is over a shorter interval and decides nothing.",
+            "sealed_oracle": O.oracle_text(CASE),
+            "verdict_would_have_been": (
+                "INCONCLUSIVE (guards)" if [g for g, ok in guards.items() if not ok]
+                else O.evaluate(P.obs_paired(
+                    CASE, improved=n_disc > 0,
+                    p_value=float(prim["mcnemar_p_two_sided"]), n=n_paired,
+                    n_lost=prim["n_lost"], n_gained=prim["n_gained"],
+                    interval_days=round(elapsed, 4)))["verdict"]),
+            "why_that_is_recorded_and_not_published": (
+                "so a reader can see that the early read was not suppressed for being "
+                "inconvenient. It is excluded because of its INTERVAL, which was fixed before "
+                "the numbers were known, and not because of its result"),
+            "still_due": base.get("replication_due"),
+            "payload": payload,
+        }, indent=2, sort_keys=True, default=str) + "\n"))
+        print(line)
+        print(f"  F3-11 EARLY READ (no verdict): {out.relative_to(ROOT)}")
+        print(f"  the sealed +7d run is still due: "
+              f"python3 f3_efficacy/07_model_drift.py --compare")
+        return 0
+
     failed = [g for g, ok in guards.items() if not ok]
     if failed:
         rec = O.not_measured(CASE, f"guard(s) {', '.join(failed)} did not hold, so a difference "
@@ -692,11 +777,7 @@ def main(argv: list[str] | None = None) -> int:                     # noqa: C901
                                       n_lost=prim["n_lost"], n_gained=prim["n_gained"],
                                       interval_days=round(elapsed, 4)))
     P.emit(CASE, rec, payload, EvidenceStore(run_id, FAMILY, "F3-11-compare"))
-    print(f"  interval {elapsed:.2f}d  paired {n_paired}  "
-          f"lost {prim['n_lost']} / gained {prim['n_gained']}  "
-          f"p={prim['mcnemar_p_two_sided']:.4g}  "
-          f"fingerprint changed {paired['secondary_fingerprint']['n_changed']}"
-          f"/{paired['secondary_fingerprint']['n_compared']}")
+    print(line)
     print(f"  F3-11: {rec['verdict']}")
     return 0 if rec["verdict"] in O.DECISIVE else 1
 
