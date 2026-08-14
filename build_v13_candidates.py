@@ -1023,6 +1023,82 @@ CANDIDATES = [
                 "worry about. The failure is silent in the worst way: the alarm never fires, "
                 "which is indistinguishable from nothing having happened.",
     },
+    {
+        "id": "V13-18",
+        "title": "§4.4's core principle rests on an out-of-process backstop that this project "
+                 "has not yet been able to test: an account-level enforced guardrail cannot be "
+                 "put at version DRAFT, and the one run that tried measured nothing",
+        "severity": UNDERINFORMS,
+        "status": "AWAITING_EXPERIMENT",
+        "test_cases": [],
+        "merge_groups": [],
+        "claim_ids": ["C-s4-4-prose-003"],
+        "claim_id_rationale":
+            "`test_cases: [F5-9]` reaches two rows and only one of them is this proposition. "
+            "The other, `C-s4-4-trow-010`, is the account-level backstop row about SCPs and "
+            "permission boundaries denying `UpdateGateway`; it carries merge group "
+            "`M-update-gateway-risk`, V13-16 and V13-17 already act on that group, and it is "
+            "about a principal mutating the enforcement layer rather than about whether a "
+            "model call can decline an enforced configuration. Folding it in would amend a "
+            "sentence nobody decided to amend. Declaring the case and letting the expander "
+            "list both is the over-reach V13-14 describes, so the site is named instead.",
+        "evidence": "none-yet",
+        "finding": "",
+        "planned_cases": ["F5-9"],
+        "doc_says": "§4.4's core principle is that enforcement must live OUTSIDE the agent's "
+                    "execution environment, because anything inside the agent's process is "
+                    "advisory only — \"the same code/model being contained can skip it\". The "
+                    "sentence's force comes from there being controls the contained code "
+                    "cannot skip, and an account-level enforced guardrail configuration is the "
+                    "one an operator reaches for when they cannot audit every caller.",
+        "observed": "F5-9 was pre-registered to test exactly that — TRUE iff every Converse "
+                    "that OMITS `guardrailConfiguration` is still evaluated — and it returned "
+                    "INCONCLUSIVE having measured nothing about the claim. Two observations "
+                    "came out of the run, both shape rather than verdict, both in "
+                    "`results/phase1/F5-9.json`. First, `PutEnforcedGuardrailConfiguration` "
+                    "refused `guardrailVersion: \"DRAFT\"`: the member is constrained to a "
+                    "numeric published version, so a DRAFT guardrail cannot be enforced at "
+                    "account level at all, and the case's instrument was deliberately a "
+                    "throwaway DRAFT guardrail (publishing a version on the shared words "
+                    "guardrail would have left a permanent artefact on an object eleven other "
+                    "cases depend on). Second, the baseline held: arm A sent the violating "
+                    "text five times with no enforced configuration in place and was "
+                    "intervened on 0/5, so the run failed at the put rather than at "
+                    "attribution. The account was left clean — 0 enforced configurations "
+                    "before and 0 after, residue clean, 1 created and 1 deleted.",
+        "proposed": "Two changes, and they are not the same kind. (a) Measured prerequisite: "
+                    "say that an account-level enforced guardrail requires a PUBLISHED "
+                    "guardrail version, that DRAFT is refused by the API, and therefore that "
+                    "this backstop carries a versioning discipline — the enforced "
+                    "configuration pins a version, so a guardrail edit does not take effect "
+                    "until a new version is published AND the configuration is re-pointed at "
+                    "it. §4.4 currently names the control without its prerequisite. (b) NOT "
+                    "yet amendable: whether the backstop is non-bypassable. Until a run "
+                    "measures it, §4.4's principle stays as v1.2 wrote it, and no "
+                    "`[verified F5-9 …]` marker may be attached to it.",
+        "note": "This candidate exists to keep a re-run out of the original seal. The obvious "
+                "repair — publish a version of the sacrificial guardrail and put that — is a "
+                "DIFFERENT experiment from the one F5-9 registered, and choosing it after "
+                "seeing the registered procedure fail is how a pre-registration becomes "
+                "decoration. So it is filed here for the next registered round rather than "
+                "patched into `f5_redteam/09_account_enforced_guardrail.py`.\n\n"
+                "What that round needs, so the cost is visible before it is authorised: "
+                "`bedrock:CreateGuardrailVersion` added to the runner's IAM MAPPING, a "
+                "RATE_LIMITS entry for it, a poll until the new version reports READY (a "
+                "version that is still creating is the F1-3 asynchronous-settle trap in a new "
+                "place), and an update to the ~6 assertions in "
+                "`f5_redteam/tests/test_account_enforced_guardrail.py` that currently pin "
+                "DRAFT as the enforced version. The hard gate does NOT need re-earning: the "
+                "455-day proof that `meta.llama3-8b-instruct-v1:0` is unused by any other "
+                "system in the account, with its positive control, is in F5-9's verdict file "
+                "and is a property of the model rather than of the guardrail version.\n\n"
+                "UNDERINFORMS rather than BREAKS_READER on a narrow reading: the document "
+                "never tells a reader to put an enforced configuration, so it cannot break "
+                "them on a step it does not state. It under-informs by presenting "
+                "out-of-process enforcement as the principle that makes everything else "
+                "advisory, while the one control of that shape this project tried to verify "
+                "could not even be installed as configured.",
+    },
 ]
 
 
