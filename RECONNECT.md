@@ -9,10 +9,18 @@ Session: `fd230f67-029c-480f-a070-54c1670fc4e4` —
 Full narrative: `~/Downloads/session-logs/2026-08-15-grx-whitepaper-v1-figures-scan-scope.md`.
 
 **PR #32** — `https://github.com/timwukp/agentcore-guardrails-design-validation/pull/32`,
-branch `feat/whitepaper-v1` = `696c1b2cb470`, based on `main` `e6534f0f11d5`.
-**152 paths (82 added / 70 modified / 0 deleted)**, all 152 blob SHAs matched a local
-`git hash-object`, branch tree verified **152 present / 0 absent**, `mergeable_state: clean`
-(+88,884 / −4,241).
+branch `feat/whitepaper-v1`, based on `main` `e6534f0f11d5`. Every blob SHA matched a local
+`git hash-object` and the branch tree verified present-count against the push list on each commit;
+`mergeable_state: clean`.
+
+**Read the head SHA and the file count from the API, not from this line** — a hash written into the
+file that the next commit changes is stale the moment it is written, which is how the banner above
+came to describe the PR as unopened:
+
+```
+gh api repos/timwukp/agentcore-guardrails-design-validation/pulls/32 \
+   --jq '{head: .head.sha, changed_files, mergeable_state}'
+```
 
 **Nothing on the publication path is half-finished. Do not merge** — merging is the user's action.
 The next agent action after the merge lands is to **verify `main`'s tree blob-by-blob**
