@@ -7233,6 +7233,74 @@ sit, because reviewing the guard means reading the argument for why it does not 
 
 ---
 
+## DEV-P4-37 — eleven of twelve queued replications are network-position independent, and the twelfth would have measured the runner's network instead of the service
+
+**When** 2026-08-15, on the laptop, **before** the queued day-2 batch launched. Found by refusing to
+launch on the ground that three cases carried `instrument: null` in their verdict records. **Cost**
+$0 — this is a read of six producer scripts. **Effect on the document under test** none yet; the
+point of the entry is that had the batch launched as queued, one of its twelve replications would
+have produced a number that is not comparable to the day-1 number it exists to reproduce, and the
+verdict record would not have said so.
+
+### What was about to happen
+
+The user's 2026-08-15 strict reading of `reproduction_before_amendment` put twelve single-day-amended
+cases into one queued runner session: F6-1…F6-5, F6-8, F4-6, F3-4, F8-4, F8-5, F1-14, F10-3. "One
+runner session covers all of it" was written into `RECONNECT.md` as the plan.
+
+Three of them — **F6-2, F6-5, F6-8** — have `instrument: null` in `results/phase1/*.json`. The field
+is prose, not a producer path, so an absent value is not a missing file reference; it is an
+unrecorded answer to the only question that decides *where* a latency replication may run. Six of
+the twelve were never checked at all, on the assumption that non-latency cases cannot be
+position-sensitive.
+
+### What the producers actually measure
+
+Read from the producers, not from the prose:
+
+| Case | Producer | Measured quantity | Position |
+|---|---|---|---|
+| F6-1, F6-4 | `f6_latency/02_gateway_hops.py` | `AgentCore.Policy.AuthorizeAction.durationNano`, guardrail arm minus `cedar_only` median | server span |
+| F6-3 | `f6_latency/02_gateway_hops.py` | same span, `cedar_only` arm | server span |
+| **F6-2, F6-5** | `f6_latency/01_model_hops.py:230-236` | `invocationMetrics.guardrailProcessingLatency`, hop #2 input / hop #6 output | **service-reported** |
+| **F6-8** | `f6_latency/03_composition.py:632-647` | `(client_total_ms_N − client_total_ms_1) / (N−1)`, paired by trial id | **client-side** |
+| F4-6 | `f4_modes/01_truth_table.py` | signed MCP `tools/call` outcomes classified by `lib/mcp.classify()`; its `time.monotonic()` calls at 1023/1030/1075/1090 are **poll deadlines**, not the measured quantity | position-free |
+| F2-1, F3-4, F8-4, F8-5, F1-14, F10-3 | `f2_determinism/02`, `f3_efficacy/02_pii`, `f8_regional/03`, `f8_regional/04`, `f1_config/02_model_surface`, `f10_billing/02` | no client timer anywhere in the file | position-free |
+| F5-8 | `f5_redteam/11_route_credential_reachability.py` | EXISTENCE binding; its timer is `POLL_SECONDS`/`POLL_TIMEOUT` polling | position-free |
+
+So **F6-2 and F6-5 resolve in favour of the plan** — `guardrailProcessingLatency` is a number the
+service puts in its own response trace, so it is no more position-dependent than
+`durationNano`. Eleven of the twelve are EC2-safe.
+
+**F6-8 is the exception, and pairing does not save it.** Its estimator is a difference of two
+*client-measured* whole-turn wall clocks, which cancels any constant offset — but the whole point of
+the case is the cost of *additional tool calls*, and each additional call is an additional network
+round trip. What the paired difference removes is the offset the two levels share; what it cannot
+remove is the per-call RTT, which is exactly what varies with network position. The script says so
+itself, in the cross-check it declines to score: a gap between the whole-turn increment and the
+gateway-only increment "is client-side overhead per call, not service time"
+(`03_composition.py:1051-1053`). Replicating F6-8 from `t3.small` in us-east-1 against day 1's
+laptop measurement would compare two different quantities and call the difference drift.
+
+### The decision
+
+**F6-8's day-2 replication runs on the laptop**, at the same network position as day 1. The other
+eleven ride the runner session. This extends the standing rule — "F6 latency and publication stay on
+the laptop" — from a family-level heuristic to a per-case classification, and the classification is
+now written down instead of re-derived.
+
+### What to keep
+
+**`instrument: null` is not a missing citation, it is an unanswered question, and the answer decides
+where the case may run.** The three nulls were the visible symptom; the more dangerous half was the
+six cases nobody thought to check because "they are not latency cases". The test that separates
+position-dependent from position-free is not the family name and not the presence of a timer — F4-6
+and F5-8 both call `monotonic()` and are position-free, because their timers are deadlines. It is
+whether a clock reading appears **in the quantity the oracle evaluates**. Grep for the timer, then
+follow it to the estimator; a timer used for waiting is not an instrument.
+
+---
+
 ## Analysis-time deviations
 
 *(None yet — this section is populated during Phase 9. Each entry states the
