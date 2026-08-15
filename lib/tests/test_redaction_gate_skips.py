@@ -119,10 +119,10 @@ def test_every_skipped_directory_is_gitignored():
     # if BOTH were deleted from SKIP_DIRS, and that is a different (also significant)
     # change — this arm makes it fail here, where the reasons are written down, rather
     # than surface later as a mysteriously larger file count.
-    assert {"evidence", ".state"} <= set(skips), (
-        f"evidence/ and/or runner/.state/ are no longer skipped: {sorted(skips)}. If that "
-        "is deliberate, the docstrings in check_redaction.py and .gitignore that explain "
-        "why they were local-only need to change in the same edit.")
+    assert {"evidence", ".state", ".staging"} <= set(skips), (
+        f"evidence/, runner/.state/ and/or runner/.staging/ are no longer skipped: "
+        f"{sorted(skips)}. If that is deliberate, the docstrings in check_redaction.py and "
+        ".gitignore that explain why they were local-only need to change in the same edit.")
 
 
 def test_the_git_exception_is_real_and_is_the_only_one():

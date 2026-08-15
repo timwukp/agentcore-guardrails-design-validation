@@ -35,22 +35,20 @@ sys.path.insert(0, str(ROOT / "lib"))
 
 import redact  # noqa: E402
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from scan_scope import py_files  # noqa: E402  the shared "this repo's own source" rule
+
 # The one file allowed to make the call: the choke point itself. Its docstring also quotes the
 # forbidden expression, which is why the scan cannot simply grep for the text.
 CHOKE_POINT = "lib/awsclients.py"
 
-SKIP_DIRS = {".git", ".venv", ".venv-oracle", ".venv-baseline", "__pycache__",
-             ".pytest_cache", "evidence", "node_modules"}
+# Scope, and the >50 floor, come from `scan_scope`. The local set of venv NAMES this replaced
+# could not see a third virtualenv; `.venv-figs` arrived on 2026-08-15 and two sibling scanners
+# went red on matplotlib's own source (DEV-P4-42).
 
 
 def _py_files() -> list[Path]:
-    out = []
-    for p in ROOT.rglob("*.py"):
-        if any(part in SKIP_DIRS for part in p.relative_to(ROOT).parts):
-            continue
-        out.append(p)
-    assert len(out) > 50, f"the scan found only {len(out)} python files — it is not scanning"
-    return sorted(out)
+    return py_files()
 
 
 def _account_index_calls(tree: ast.AST) -> list[int]:

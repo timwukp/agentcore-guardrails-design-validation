@@ -1,0 +1,322 @@
+{
+  "ambient_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "aws_calls": 0,
+  "billable_calls": 0,
+  "blockers": {
+    "blockers": [
+      "verdict is INCONCLUSIVE, which supports no amendment: RECORDED and INCONCLUSIVE are findings about what was observed, not about what the document got wrong"
+    ],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F1-20",
+    "clear_here": false
+  },
+  "case_id": "F1-20",
+  "client_side_enforcement": "botocore.validate.ParamValidator enforces required members, tagged-union arity and string/list MINIMUMS. It enforces no maximum and performs no enum membership check (direction 7: `sync`, `ASYNCHRONOUS` and `NOT_A_MODE` all pass). Every documented minimum and required field is therefore decidable offline; every documented maximum and value is not",
+  "direction_9_classification": {
+    "accounted": [
+      {
+        "all_values": [
+          "sync",
+          "async"
+        ],
+        "matched_values": [
+          "sync",
+          "async"
+        ],
+        "service": "bedrock-runtime",
+        "shape": "GuardrailStreamProcessingMode",
+        "token": "SYNC",
+        "why": "a LEGITIMATE hit and F1-12's own subject: the SYNC and ASYNC tokens match its two values `sync` and `async`. It is in this table because the table's job is to account for every hit, not to hold only the false ones — and it is the reason the F1-12 verdict below reads the ENUM directly instead of reading a hit count: the hit proves a stream-processing mode enum exists, and F1-12 asks whether its values are the document's SYNCHRONOUS / ASYNCHRONOUS, which they are not"
+      },
+      {
+        "all_values": [
+          "sync",
+          "async"
+        ],
+        "matched_values": [
+          "async"
+        ],
+        "service": "bedrock-runtime",
+        "shape": "GuardrailStreamProcessingMode",
+        "token": "ASYNC",
+        "why": "a LEGITIMATE hit and F1-12's own subject: the SYNC and ASYNC tokens match its two values `sync` and `async`. It is in this table because the table's job is to account for every hit, not to hold only the false ones — and it is the reason the F1-12 verdict below reads the ENUM directly instead of reading a hit count: the hit proves a stream-processing mode enum exists, and F1-12 asks whether its values are the document's SYNCHRONOUS / ASYNCHRONOUS, which they are not"
+      },
+      {
+        "all_values": [
+          "REQUEST",
+          "ACCOUNT_ENFORCED",
+          "ORGANIZATION_ENFORCED"
+        ],
+        "matched_values": [
+          "ACCOUNT_ENFORCED",
+          "ORGANIZATION_ENFORCED"
+        ],
+        "service": "bedrock-runtime",
+        "shape": "GuardrailOrigin",
+        "token": "ENFORCE",
+        "why": "where a guardrail came from. ACCOUNT_ENFORCED / ORGANIZATION_ENFORCED contain the token ENFORCE and describe account- and organization-level enforcement (the F5-9 surface), not an Automated Reasoning detect-vs-enforce mode"
+      },
+      {
+        "all_values": [
+          "CREATING",
+          "UPDATING",
+          "UPDATE_UNSUCCESSFUL",
+          "DELETING",
+          "READY",
+          "FAILED",
+          "SYNCHRONIZING",
+          "SYNCHRONIZE_UNSUCCESSFUL",
+          "CREATE_PENDING_AUTH",
+          "UPDATE_PENDING_AUTH",
+          "SYNCHRONIZE_PENDING_AUTH"
+        ],
+        "matched_values": [
+          "SYNCHRONIZING",
+          "SYNCHRONIZE_UNSUCCESSFUL",
+          "SYNCHRONIZE_PENDING_AUTH"
+        ],
+        "service": "bedrock-agentcore-control",
+        "shape": "TargetStatus",
+        "token": "SYNC",
+        "why": "a gateway-target lifecycle enum. SYNCHRONIZING / SYNCHRONIZE_UNSUCCESSFUL / SYNCHRONIZE_PENDING_AUTH contain the token SYNC and describe target synchronisation, not a guardrail stream-processing mode"
+      },
+      {
+        "all_values": [
+          "LOG_ONLY",
+          "ENFORCE"
+        ],
+        "matched_values": [
+          "ENFORCE"
+        ],
+        "service": "bedrock-agentcore-control",
+        "shape": "GatewayPolicyEngineMode",
+        "token": "ENFORCE",
+        "why": "a LEGITIMATE hit, and it is F1-5's own subject: ENFORCE is a policy-engine mode. It is listed here so the ENFORCE token's hit count is fully accounted for, not to excuse it"
+      }
+    ],
+    "classified_against": [
+      "GatewayPolicyEngineMode",
+      "GuardrailOrigin",
+      "GuardrailStreamProcessingMode",
+      "TargetStatus"
+    ],
+    "documented_tokens_present": [],
+    "n_accounted": 5,
+    "n_hits": 5,
+    "n_unclassified": 0,
+    "unclassified": [],
+    "why_classified_not_dropped": "two of the five hits are substring accidents on enums that mean something else (TargetStatus.SYNCHRONIZING contains SYNC; GuardrailOrigin.ACCOUNT_ENFORCED contains ENFORCE) and three are legitimate. Dropping the accidents silently would assert the classification instead of recording it; a hit on an unlisted shape therefore falls through to `unclassified` and forces INCONCLUSIVE with the shape named. Every hit is accounted for either way, which is what makes the zero-unclassified guard meaningful"
+  },
+  "examined": {
+    "n_enum_values": 1076,
+    "n_enums": 271,
+    "n_member_paths": 14774,
+    "n_operations": 350,
+    "n_services": 4,
+    "n_shape_names": 3432
+  },
+  "instrument": "lib/f1_surface.py, run as a subprocess under .venv-oracle: the botocore service models for bedrock, bedrock-runtime, bedrock-agentcore-control and bedrock-agentcore, read locally in ten directions. No operation is invoked",
+  "is_smoke": false,
+  "kind": "BOUNDARY",
+  "min_botocore_required": "1.43.32",
+  "mutations": 0,
+  "oracle_text": "TRUE if 10 blocks succeed and 11 are rejected; FALSE if the boundary differs",
+  "parent_interpreter": "/Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python",
+  "parent_is_oracle_interpreter": true,
+  "pinned_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "planned_n": null,
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F1-20",
+    "evidence": {
+      "detail": {
+        "surface": {
+          "content_block_list": {
+            "member": {
+              "metadata": {
+                "union": true
+              },
+              "shape": "GuardrailChecksContentBlock",
+              "type": "structure"
+            },
+            "metadata": {
+              "min": 1
+            },
+            "present": true,
+            "read_for_case": "F1-20",
+            "type": "list",
+            "why_this_shape": "the per-message content-block list whose documented cap is 10"
+          },
+          "message_list": {
+            "member": {
+              "metadata": {
+                "required": [
+                  "role",
+                  "content"
+                ]
+              },
+              "shape": "GuardrailChecksMessage",
+              "type": "structure"
+            },
+            "metadata": {
+              "min": 1
+            },
+            "present": true,
+            "read_for_case": "F1-20",
+            "type": "list",
+            "why_this_shape": "the InvokeGuardrailChecks message list"
+          },
+          "required": {
+            "cases": "F1-2/F1-20",
+            "n_members_examined": 14,
+            "present": true,
+            "required_paths": [
+              "checks",
+              "checks.contentFilter.categories",
+              "checks.contentFilter.categories[].category",
+              "checks.promptAttack.categories",
+              "checks.promptAttack.categories[].category",
+              "checks.sensitiveInformation.entities",
+              "checks.sensitiveInformation.entities[].type",
+              "messages",
+              "messages[].content",
+              "messages[].role"
+            ],
+            "top_level_members": [
+              "checks",
+              "messages"
+            ],
+            "top_level_required": [
+              "checks",
+              "messages"
+            ]
+          },
+          "text_content": {
+            "metadata": {
+              "min": 1,
+              "sensitive": true
+            },
+            "present": true,
+            "read_for_case": "F1-20",
+            "type": "string",
+            "why_this_shape": "the text inside one checks content block"
+          }
+        }
+      },
+      "measured": false,
+      "reason": "the service model settles the SURFACE and not the oracle. Settled: GuardrailChecksContentBlockList is a list with {min: 1} and NO max, as is GuardrailChecksMessageList — the documented cap of 10 blocks per message is absent from the model. Open because ParamValidator enforces `min` and not `max`, so an 11-block request is constructible and reaches the service; the boundary is server-side. Deferred to f1_config/05_live_boundaries.py (InvokeGuardrailChecks at 10 and 11 blocks)",
+      "why_not_recorded": "RECORDED is a sealed property of the case, meaning the pre-registration declared the outcome unknown and both answers are findings. This case's sealed kind is BOUNDARY: it made a prediction, and the prediction was not tested"
+    },
+    "family": "descriptive_no_test",
+    "kind": "BOUNDARY",
+    "mutation_required": false,
+    "n_attempted": 0,
+    "n_met": true,
+    "n_usable": 0,
+    "notes": [
+      "not measured: the service model settles the SURFACE and not the oracle. Settled: GuardrailChecksContentBlockList is a list with {min: 1} and NO max, as is GuardrailChecksMessageList — the documented cap of 10 blocks per message is absent from the model. Open because ParamValidator enforces `min` and not `max`, so an 11-block request is constructible and reaches the service; the boundary is server-side. Deferred to f1_config/05_live_boundaries.py (InvokeGuardrailChecks at 10 and 11 blocks)"
+    ],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [
+      10.0
+    ],
+    "verdict": "INCONCLUSIVE"
+  },
+  "run_id": "r20260810T180012Z",
+  "services_available": [
+    "bedrock",
+    "bedrock-agentcore",
+    "bedrock-agentcore-control",
+    "bedrock-runtime"
+  ],
+  "services_unavailable": {},
+  "successor": "f1_config/05_live_boundaries.py (InvokeGuardrailChecks at 10 and 11 blocks)",
+  "surface_facts": {
+    "content_block_list": {
+      "member": {
+        "metadata": {
+          "union": true
+        },
+        "shape": "GuardrailChecksContentBlock",
+        "type": "structure"
+      },
+      "metadata": {
+        "min": 1
+      },
+      "present": true,
+      "read_for_case": "F1-20",
+      "type": "list",
+      "why_this_shape": "the per-message content-block list whose documented cap is 10"
+    },
+    "message_list": {
+      "member": {
+        "metadata": {
+          "required": [
+            "role",
+            "content"
+          ]
+        },
+        "shape": "GuardrailChecksMessage",
+        "type": "structure"
+      },
+      "metadata": {
+        "min": 1
+      },
+      "present": true,
+      "read_for_case": "F1-20",
+      "type": "list",
+      "why_this_shape": "the InvokeGuardrailChecks message list"
+    },
+    "required": {
+      "cases": "F1-2/F1-20",
+      "n_members_examined": 14,
+      "present": true,
+      "required_paths": [
+        "checks",
+        "checks.contentFilter.categories",
+        "checks.contentFilter.categories[].category",
+        "checks.promptAttack.categories",
+        "checks.promptAttack.categories[].category",
+        "checks.sensitiveInformation.entities",
+        "checks.sensitiveInformation.entities[].type",
+        "messages",
+        "messages[].content",
+        "messages[].role"
+      ],
+      "top_level_members": [
+        "checks",
+        "messages"
+      ],
+      "top_level_required": [
+        "checks",
+        "messages"
+      ]
+    },
+    "text_content": {
+      "metadata": {
+        "min": 1,
+        "sensitive": true
+      },
+      "present": true,
+      "read_for_case": "F1-20",
+      "type": "string",
+      "why_this_shape": "the text inside one checks content block"
+    }
+  },
+  "surface_settled": "GuardrailChecksContentBlockList is a list with {min: 1} and NO max, as is GuardrailChecksMessageList — the documented cap of 10 blocks per message is absent from the model",
+  "sweep_interpreter": "/Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python",
+  "sweep_python": "3.12.12",
+  "verdict": "INCONCLUSIVE",
+  "why_a_record_at_all": "a case with no file in results/phase1/ is indistinguishable from a case nobody triaged. This record says what is known, what is not, and who closes it — and it is INCONCLUSIVE rather than RECORDED because RECORDED is a sealed property meaning the pre-registration declared the outcome unknown, and a script cannot grant itself that",
+  "why_inconclusive": "the oracle asks about SERVICE behaviour and this instrument reads a shipped model. Reporting the model's declaration as the answer would publish documentation as a measurement",
+  "why_no_aws_call": "boto3.client loads the service model from the installed package; no operation is invoked and no socket is opened",
+  "why_subprocess": "so the interpreter that loaded the model is a RECORDED ARGUMENT rather than whichever python launched this file: the content of these cases is which fields a specific botocore models, and system python3 and .venv-baseline both carry 1.42.79, under which enforcementMode and InvokeGuardrailChecks are absent — an absence that is a fact about pip (F1-1, DEV-P1-15). It is NOT because .venv-oracle cannot evaluate an oracle: that venv carries numpy 2.5.2 and scipy 1.18.0 and imports every lib/ module cleanly, so the rationale in f8_regional/07_absent_surface.py is stale prose and was re-derived rather than copied. `parent_is_oracle_interpreter` records whether the subprocess is a necessity or a redundancy on this run",
+  "why_the_model_cannot_close_it": "ParamValidator enforces `min` and not `max`, so an 11-block request is constructible and reaches the service; the boundary is server-side"
+}

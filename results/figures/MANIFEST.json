@@ -1,0 +1,410 @@
+{
+  "figures": {
+    "fig-01-verdict-distribution": {
+      "total": 91,
+      "verdict_mix": {
+        "FALSE": 23,
+        "INCONCLUSIVE": 20,
+        "RECORDED": 2,
+        "TRUE": 46
+      }
+    },
+    "fig-02-evidence-by-section": {
+      "sections": [
+        {
+          "anchor": "s4-4",
+          "claims": 37,
+          "mix": {
+            "INCONCLUSIVE": 8,
+            "RECORDED": 2,
+            "TRUE": 51
+          }
+        },
+        {
+          "anchor": "s3-2",
+          "claims": 35,
+          "mix": {
+            "FALSE": 4,
+            "INCONCLUSIVE": 11,
+            "TRUE": 19
+          }
+        },
+        {
+          "anchor": "s4-1",
+          "claims": 30,
+          "mix": {
+            "FALSE": 6,
+            "INCONCLUSIVE": 5,
+            "RECORDED": 2,
+            "TRUE": 30
+          }
+        },
+        {
+          "anchor": "s2-1",
+          "claims": 29,
+          "mix": {
+            "FALSE": 1,
+            "INCONCLUSIVE": 2,
+            "TRUE": 3
+          }
+        },
+        {
+          "anchor": "s9",
+          "claims": 29,
+          "mix": {
+            "FALSE": 7,
+            "INCONCLUSIVE": 1,
+            "TRUE": 4
+          }
+        },
+        {
+          "anchor": "s5-1",
+          "claims": 27,
+          "mix": {
+            "FALSE": 6,
+            "INCONCLUSIVE": 17,
+            "TRUE": 5
+          }
+        },
+        {
+          "anchor": "s8",
+          "claims": 27,
+          "mix": {
+            "FALSE": 1,
+            "INCONCLUSIVE": 2,
+            "TRUE": 9
+          }
+        },
+        {
+          "anchor": "s10",
+          "claims": 25,
+          "mix": {
+            "TRUE": 24
+          }
+        },
+        {
+          "anchor": "s3-1",
+          "claims": 24,
+          "mix": {
+            "FALSE": 5,
+            "INCONCLUSIVE": 12,
+            "RECORDED": 3,
+            "TRUE": 24
+          }
+        },
+        {
+          "anchor": "s7-1",
+          "claims": 22,
+          "mix": {
+            "FALSE": 13,
+            "INCONCLUSIVE": 1,
+            "TRUE": 7
+          }
+        },
+        {
+          "anchor": "s3-4",
+          "claims": 21,
+          "mix": {
+            "FALSE": 7,
+            "INCONCLUSIVE": 5,
+            "TRUE": 30
+          }
+        },
+        {
+          "anchor": "appC",
+          "claims": 20,
+          "mix": {
+            "TRUE": 1
+          }
+        },
+        {
+          "anchor": "s4-5-5",
+          "claims": 16,
+          "mix": {
+            "INCONCLUSIVE": 14,
+            "TRUE": 1
+          }
+        },
+        {
+          "anchor": "s6-3",
+          "claims": 15,
+          "mix": {
+            "TRUE": 14
+          }
+        }
+      ]
+    },
+    "fig-03-latency-vs-bands": {
+      "F6-1": {
+        "quantiles": {
+          "block": "record.evidence",
+          "ci_p50": "401 [396, 406] (n=1000, order-statistic, 95%)",
+          "n": 1000,
+          "p50": 401.0,
+          "p90": 528.1,
+          "p99": 779.06
+        },
+        "thresholds": [
+          50.0,
+          200.0
+        ],
+        "verdict": "FALSE"
+      },
+      "F6-2": {
+        "quantiles": {
+          "block": "record.evidence",
+          "ci_p50": "231 [226, 235] (n=1000, order-statistic, 95%)",
+          "n": 1000,
+          "p50": 231.0,
+          "p90": 374.20000000000005,
+          "p99": 622.03
+        },
+        "thresholds": [
+          100.0,
+          500.0
+        ],
+        "verdict": "FALSE"
+      },
+      "F6-3": {
+        "quantiles": {
+          "block": "record.evidence",
+          "ci_p50": "55 [54, 56] (n=1000, order-statistic, 95%)",
+          "n": 1000,
+          "p50": 55.0,
+          "p90": 70.0,
+          "p99": 94.03999999999996
+        },
+        "thresholds": [
+          5.0,
+          50.0
+        ],
+        "verdict": "FALSE"
+      },
+      "F6-5": {
+        "quantiles": {
+          "block": "record.evidence",
+          "ci_p50": "234 [228, 238] (n=1000, order-statistic, 95%)",
+          "n": 1000,
+          "p50": 234.0,
+          "p90": 366.1,
+          "p99": 662.2399999999998
+        },
+        "thresholds": [
+          100.0,
+          500.0
+        ],
+        "verdict": "FALSE"
+      },
+      "F6-6": {
+        "quantiles": {
+          "block": "record.evidence",
+          "ci_p50": "1483 [1474, 1491] (n=1000, order-statistic, 95%)",
+          "n": 1000,
+          "p50": 1482.811,
+          "p90": 1721.583,
+          "p99": 2107.2128999999995
+        },
+        "thresholds": [
+          800.0,
+          31000.0
+        ],
+        "verdict": "TRUE"
+      }
+    },
+    "fig-04-censored-score-lattice": {
+      "censored_points": [
+        0.0,
+        0.2
+      ],
+      "counts": [
+        0,
+        0,
+        1,
+        3,
+        48,
+        9
+      ],
+      "histogram": {
+        "0.4000": 1,
+        "0.6000": 3,
+        "0.8000": 48,
+        "1.0000": 9
+      },
+      "lattice": [
+        0.0,
+        0.2,
+        0.4,
+        0.6,
+        0.8,
+        1.0
+      ],
+      "n_scored": 61,
+      "n_unscored": 61,
+      "observed_min": 0.4
+    },
+    "fig-05-detection-by-arm": {
+      "converse_guardcontent_other.fpr": {
+        "ci": [
+          0.0,
+          0.06017393047793289
+        ],
+        "n": 60,
+        "point": 0.0,
+        "x": 0
+      },
+      "converse_guardcontent_other.recall": {
+        "ci": [
+          0.0,
+          0.031020271055929513
+        ],
+        "n": 120,
+        "point": 0.0,
+        "x": 0
+      },
+      "converse_no_guardcontent.fpr": {
+        "ci": [
+          0.009189126490150246,
+          0.11363987528925378
+        ],
+        "n": 60,
+        "point": 0.03333333333333333,
+        "x": 2
+      },
+      "converse_no_guardcontent.recall": {
+        "ci": [
+          0.7472413105195714,
+          0.8825955132940744
+        ],
+        "n": 120,
+        "point": 0.825,
+        "x": 99
+      },
+      "invokemodel_tagged.fpr": {
+        "ci": [
+          0.009189126490150246,
+          0.11363987528925378
+        ],
+        "n": 60,
+        "point": 0.03333333333333333,
+        "x": 2
+      },
+      "invokemodel_tagged.recall": {
+        "ci": [
+          0.7472413105195714,
+          0.8825955132940744
+        ],
+        "n": 120,
+        "point": 0.825,
+        "x": 99
+      },
+      "invokemodel_untagged.fpr": {
+        "ci": [
+          0.0,
+          0.06017393047793289
+        ],
+        "n": 60,
+        "point": 0.0,
+        "x": 0
+      },
+      "invokemodel_untagged.recall": {
+        "ci": [
+          0.0,
+          0.031020271055929513
+        ],
+        "n": 120,
+        "point": 0.0,
+        "x": 0
+      }
+    },
+    "fig-06-control-threat-matrix": {
+      "closes_when": "the pinned v1.1 PDF (sha256 65e3bd59f99c...0345ff) is re-read for T1-T17 titles and a per-control state is authored into results/CROSSMAP-ACG-THREATS.json, which this script would then read. The mapping is authorial and the data file must say so.",
+      "grounded_threat_ids": [
+        "T1",
+        "T3",
+        "T9",
+        "T15",
+        "T16"
+      ],
+      "reason": "The control x threat matrix needs all seventeen OWASP Agentic AI v1.1 threat titles. Five are grounded in this project's notes (T1, T3, T9, T15, T16); twelve are not. Rendering twelve columns from memory would be fabrication, and rendering them as a third state would report a sourcing gap as a coverage finding.",
+      "state": "BLOCKED",
+      "ungrounded_count": 12
+    },
+    "fig-07-mode-flip-timeline": {
+      "bound_s": 300,
+      "confirmations_required": 2,
+      "per_day": {
+        "2026-08-12": {
+          "accept_elapsed_ms": 602.8,
+          "accept_http_status": 202,
+          "seconds_to_the_first_denial": 325.0,
+          "seconds_to_three_consecutive_denials": 345.6,
+          "seconds_until_blocked_request_was_allowed": 14.2,
+          "seconds_until_blocking_returned": 13.4
+        },
+        "2026-08-13": {
+          "accept_elapsed_ms": 931.71,
+          "accept_http_status": 202,
+          "seconds_to_the_first_denial": 305.8,
+          "seconds_to_three_consecutive_denials": 326.4,
+          "seconds_until_blocked_request_was_allowed": 13.2,
+          "seconds_until_blocking_returned": 13.3
+        }
+      },
+      "revoke_wait_bound_s": 1800
+    },
+    "fig-08-metric-log-agreement": {
+      "2026-08-12": {
+        "all_agree": true,
+        "checked": 3,
+        "per_arm": {
+          "active_golden_set": {
+            "agrees": true,
+            "log_sum": 24.6,
+            "metric_sum": 24.6,
+            "n_logged_score_values": 30
+          },
+          "active_one_per_minute": {
+            "agrees": true,
+            "log_sum": 0.8,
+            "metric_sum": 0.8,
+            "n_logged_score_values": 1
+          },
+          "log_only_golden_set": {
+            "agrees": true,
+            "log_sum": 24.2,
+            "metric_sum": 24.2,
+            "n_logged_score_values": 30
+          }
+        }
+      },
+      "2026-08-13": {
+        "all_agree": true,
+        "checked": 3,
+        "per_arm": {
+          "active_golden_set": {
+            "agrees": true,
+            "log_sum": 24.4,
+            "metric_sum": 24.4,
+            "n_logged_score_values": 30
+          },
+          "active_one_per_minute": {
+            "agrees": true,
+            "log_sum": 0.8,
+            "metric_sum": 0.8,
+            "n_logged_score_values": 1
+          },
+          "log_only_golden_set": {
+            "agrees": true,
+            "log_sum": 24.8,
+            "metric_sum": 24.8,
+            "n_logged_score_values": 30
+          }
+        }
+      }
+    }
+  },
+  "generated_by": "tools/whitepaper_figures.py",
+  "matplotlib": "3.11.1",
+  "note": "--check compares these numbers, never the PNG bytes: rendered bytes move with matplotlib/freetype versions while the measurements do not.",
+  "register_sha256_recomputed": "fc4216ca1eb470cc17abe77308570c6426f12f9532ec2bf9ac34759c33ee27a9"
+}

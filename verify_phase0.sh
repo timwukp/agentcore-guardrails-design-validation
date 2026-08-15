@@ -181,10 +181,29 @@ run_tests() {
   # which is the right discipline and is also why they fell behind — arms were added faster than
   # the floors were raised (test_runner_trust.py 17, test_rate_limits.py 8, test_probe_guardrail.py
   # 17, and the four tagged-create arms in runner/tests, over two days).
+  # runner/tests 80 -> 94 with test_merge_evidence.py (13 arms over runner/merge_evidence.py, the
+  # promote-a-staged-pull step that did not exist until 2026-08-15 — its absence left 607 evidence
+  # records, across fifteen case and diagnostic directories, staged for a day and invisible to
+  # check_amendment_readiness.py). It is the second tool in the repo that can damage the audit
+  # archive, and the only one that damages it by WRITING, so its all-or-nothing conflict abort and
+  # its refusal to touch results/ belong behind this gate.
+  # tools/tests:48 is the TWELFTH directory, and it arrived exactly the way the three of
+  # 2026-08-13 did: the day-2 replication driver got a test suite, the suite was run directly
+  # (`pytest tools/tests`) and reported green, and nothing added it here — so for two days its
+  # arms were passing outside the gate that is supposed to be the reason to believe them. Found
+  # 2026-08-15 by claims/tests/test_verify_phase0_gates_every_test_directory.py, which is the
+  # check written for precisely this, doing its job on the first directory added after it existed.
+  # The floor matters more than most: these arms bound `tools/day2_replicate.py`, the only script
+  # in the repo that can DESTROY a day-1 verdict (`lib.phase1.emit` overwrites
+  # results/phase1/<case>.json unconditionally, so the driver's pre-run snapshot is the only copy
+  # during the window before the archive step), and `drop_snapshot` deletes that snapshot with
+  # shutil.rmtree. A directory that silently stopped collecting would take the whole
+  # snapshot-safety argument with it.
   for spec in "claims/tests:423" "lib/tests:882" "f5_redteam/tests:720" \
               "f2_determinism/tests:34" "f3_efficacy/tests:268" \
               "f8_regional/tests:152" "f10_billing/tests:80" "infra/tests:79" \
-              "runner/tests:80" "f9_failsecure/tests:106" "f1_config/tests:170"; do
+              "runner/tests:94" "f9_failsecure/tests:106" "f1_config/tests:170" \
+              "tools/tests:48"; do
     dir="${spec%%:*}"; floor="${spec##*:}"
     if [ ! -d "$dir" ]; then
       echo "FATAL: $dir does not exist — its tests cannot be reported as passing" >&2
@@ -206,7 +225,8 @@ run_tests() {
   "$PY" -m pytest claims/tests/ lib/tests/ f5_redteam/tests/ \
                   f2_determinism/tests/ f3_efficacy/tests/ \
                   f8_regional/tests/ f10_billing/tests/ infra/tests/ \
-                  runner/tests/ f9_failsecure/tests/ f1_config/tests/ -q || rc=$?
+                  runner/tests/ f9_failsecure/tests/ f1_config/tests/ \
+                  tools/tests/ -q || rc=$?
   return $rc
 }
 

@@ -1,0 +1,566 @@
+{
+  "runs": [
+    {
+      "amendment": "clean_observation/transient_error_calls backfilled by tools/day2_replicate.py's transient_failures() over this run's own evidence records; no transiently failed call was found. See DEVIATIONS.md DEV-P4-39. payload_fields_differing/payload_run_scoped_differences backfilled by tools/day2_replicate.py's payload_diff() over the archived day-1 file and the live verdict file; `record` alone is coarser than the figures the document cites. See DEVIATIONS.md DEV-P4-39.",
+      "calls_reported": 0,
+      "cases_requested": [
+        "F1-14"
+      ],
+      "cases_with_transient_failures": [],
+      "checkpoints_archived": [],
+      "day1_files_archived": [
+        "F1-10__day1_2026-08-10.json",
+        "F1-11__day1_2026-08-10.json",
+        "F1-12__day1_2026-08-10.json",
+        "F1-13__day1_2026-08-10.json",
+        "F1-14__day1_2026-08-10.json",
+        "F1-16__day1_2026-08-10.json",
+        "F1-17__day1_2026-08-10.json",
+        "F1-20__day1_2026-08-10.json",
+        "F1-21__day1_2026-08-10.json",
+        "F1-22__day1_2026-08-10.json",
+        "F1-23__day1_2026-08-10.json",
+        "F1-4__day1_2026-08-10.json",
+        "F1-5__day1_2026-08-10.json",
+        "F1-7__day1_2026-08-10.json",
+        "F1-8__day1_2026-08-10.json",
+        "F1-9__day1_2026-08-10.json"
+      ],
+      "fresh_records": 0,
+      "observation_proof": "16 summary/summaries captured 2026-08-15, reporting 0 calls (--no-call-case: this producer sends none)",
+      "producer": [
+        ".venv-oracle/bin/python",
+        "f1_config/02_model_surface.py",
+        "--run-id",
+        "r20260815T082524Z"
+      ],
+      "results": [
+        {
+          "case_id": "F1-10",
+          "clean_observation": true,
+          "day1_archived_to": "results/phase1/archive/F1-10__day1_2026-08-10.json",
+          "day1_date": "2026-08-10",
+          "day1_run_id": "r20260810T180012Z",
+          "day1_verdict": "INCONCLUSIVE",
+          "day2_date": "2026-08-15",
+          "day2_run_id": "r20260815T082524Z",
+          "day2_verdict": "INCONCLUSIVE",
+          "payload_fields_differing": [],
+          "payload_fields_differing_total": 0,
+          "payload_run_scoped_differences": 1,
+          "status": "AGREE",
+          "transient_error_calls": []
+        },
+        {
+          "case_id": "F1-11",
+          "clean_observation": true,
+          "day1_archived_to": "results/phase1/archive/F1-11__day1_2026-08-10.json",
+          "day1_date": "2026-08-10",
+          "day1_run_id": "r20260810T180012Z",
+          "day1_verdict": "INCONCLUSIVE",
+          "day2_date": "2026-08-15",
+          "day2_run_id": "r20260815T082524Z",
+          "day2_verdict": "INCONCLUSIVE",
+          "payload_fields_differing": [],
+          "payload_fields_differing_total": 0,
+          "payload_run_scoped_differences": 1,
+          "status": "AGREE",
+          "transient_error_calls": []
+        },
+        {
+          "case_id": "F1-12",
+          "clean_observation": true,
+          "day1_archived_to": "results/phase1/archive/F1-12__day1_2026-08-10.json",
+          "day1_date": "2026-08-10",
+          "day1_run_id": "r20260810T180012Z",
+          "day1_verdict": "INCONCLUSIVE",
+          "day2_date": "2026-08-15",
+          "day2_run_id": "r20260815T082524Z",
+          "day2_verdict": "INCONCLUSIVE",
+          "payload_fields_differing": [],
+          "payload_fields_differing_total": 0,
+          "payload_run_scoped_differences": 1,
+          "status": "AGREE",
+          "transient_error_calls": []
+        },
+        {
+          "case_id": "F1-13",
+          "clean_observation": true,
+          "day1_archived_to": "results/phase1/archive/F1-13__day1_2026-08-10.json",
+          "day1_date": "2026-08-10",
+          "day1_run_id": "r20260810T180012Z",
+          "day1_verdict": "INCONCLUSIVE",
+          "day2_date": "2026-08-15",
+          "day2_run_id": "r20260815T082524Z",
+          "day2_verdict": "INCONCLUSIVE",
+          "payload_fields_differing": [],
+          "payload_fields_differing_total": 0,
+          "payload_run_scoped_differences": 1,
+          "status": "AGREE",
+          "transient_error_calls": []
+        },
+        {
+          "case_id": "F1-14",
+          "clean_observation": true,
+          "day1_archived_to": "results/phase1/archive/F1-14__day1_2026-08-10.json",
+          "day1_date": "2026-08-10",
+          "day1_run_id": "r20260810T180012Z",
+          "day1_verdict": "FALSE",
+          "day2_date": "2026-08-15",
+          "day2_run_id": "r20260815T082524Z",
+          "day2_verdict": "FALSE",
+          "payload_fields_differing": [],
+          "payload_fields_differing_total": 0,
+          "payload_run_scoped_differences": 1,
+          "status": "AGREE",
+          "transient_error_calls": []
+        },
+        {
+          "case_id": "F1-16",
+          "clean_observation": true,
+          "day1_archived_to": "results/phase1/archive/F1-16__day1_2026-08-10.json",
+          "day1_date": "2026-08-10",
+          "day1_run_id": "r20260810T180012Z",
+          "day1_verdict": "INCONCLUSIVE",
+          "day2_date": "2026-08-15",
+          "day2_run_id": "r20260815T082524Z",
+          "day2_verdict": "INCONCLUSIVE",
+          "payload_fields_differing": [],
+          "payload_fields_differing_total": 0,
+          "payload_run_scoped_differences": 1,
+          "status": "AGREE",
+          "transient_error_calls": []
+        },
+        {
+          "case_id": "F1-17",
+          "clean_observation": true,
+          "day1_archived_to": "results/phase1/archive/F1-17__day1_2026-08-10.json",
+          "day1_date": "2026-08-10",
+          "day1_run_id": "r20260810T180012Z",
+          "day1_verdict": "INCONCLUSIVE",
+          "day2_date": "2026-08-15",
+          "day2_run_id": "r20260815T082524Z",
+          "day2_verdict": "INCONCLUSIVE",
+          "payload_fields_differing": [],
+          "payload_fields_differing_total": 0,
+          "payload_run_scoped_differences": 1,
+          "status": "AGREE",
+          "transient_error_calls": []
+        },
+        {
+          "case_id": "F1-20",
+          "clean_observation": true,
+          "day1_archived_to": "results/phase1/archive/F1-20__day1_2026-08-10.json",
+          "day1_date": "2026-08-10",
+          "day1_run_id": "r20260810T180012Z",
+          "day1_verdict": "INCONCLUSIVE",
+          "day2_date": "2026-08-15",
+          "day2_run_id": "r20260815T082524Z",
+          "day2_verdict": "INCONCLUSIVE",
+          "payload_fields_differing": [],
+          "payload_fields_differing_total": 0,
+          "payload_run_scoped_differences": 1,
+          "status": "AGREE",
+          "transient_error_calls": []
+        },
+        {
+          "case_id": "F1-21",
+          "clean_observation": true,
+          "day1_archived_to": "results/phase1/archive/F1-21__day1_2026-08-10.json",
+          "day1_date": "2026-08-10",
+          "day1_run_id": "r20260810T180012Z",
+          "day1_verdict": "TRUE",
+          "day2_date": "2026-08-15",
+          "day2_run_id": "r20260815T082524Z",
+          "day2_verdict": "TRUE",
+          "payload_fields_differing": [],
+          "payload_fields_differing_total": 0,
+          "payload_run_scoped_differences": 1,
+          "status": "AGREE",
+          "transient_error_calls": []
+        },
+        {
+          "case_id": "F1-22",
+          "clean_observation": true,
+          "day1_archived_to": "results/phase1/archive/F1-22__day1_2026-08-10.json",
+          "day1_date": "2026-08-10",
+          "day1_run_id": "r20260810T180012Z",
+          "day1_verdict": "TRUE",
+          "day2_date": "2026-08-15",
+          "day2_run_id": "r20260815T082524Z",
+          "day2_verdict": "TRUE",
+          "payload_fields_differing": [],
+          "payload_fields_differing_total": 0,
+          "payload_run_scoped_differences": 1,
+          "status": "AGREE",
+          "transient_error_calls": []
+        },
+        {
+          "case_id": "F1-23",
+          "clean_observation": true,
+          "day1_archived_to": "results/phase1/archive/F1-23__day1_2026-08-10.json",
+          "day1_date": "2026-08-10",
+          "day1_run_id": "r20260810T180012Z",
+          "day1_verdict": "TRUE",
+          "day2_date": "2026-08-15",
+          "day2_run_id": "r20260815T082524Z",
+          "day2_verdict": "TRUE",
+          "payload_fields_differing": [],
+          "payload_fields_differing_total": 0,
+          "payload_run_scoped_differences": 1,
+          "status": "AGREE",
+          "transient_error_calls": []
+        },
+        {
+          "case_id": "F1-4",
+          "clean_observation": true,
+          "day1_archived_to": "results/phase1/archive/F1-4__day1_2026-08-10.json",
+          "day1_date": "2026-08-10",
+          "day1_run_id": "r20260810T180012Z",
+          "day1_verdict": "TRUE",
+          "day2_date": "2026-08-15",
+          "day2_run_id": "r20260815T082524Z",
+          "day2_verdict": "TRUE",
+          "payload_fields_differing": [],
+          "payload_fields_differing_total": 0,
+          "payload_run_scoped_differences": 1,
+          "status": "AGREE",
+          "transient_error_calls": []
+        },
+        {
+          "case_id": "F1-5",
+          "clean_observation": true,
+          "day1_archived_to": "results/phase1/archive/F1-5__day1_2026-08-10.json",
+          "day1_date": "2026-08-10",
+          "day1_run_id": "r20260810T180012Z",
+          "day1_verdict": "TRUE",
+          "day2_date": "2026-08-15",
+          "day2_run_id": "r20260815T082524Z",
+          "day2_verdict": "TRUE",
+          "payload_fields_differing": [],
+          "payload_fields_differing_total": 0,
+          "payload_run_scoped_differences": 1,
+          "status": "AGREE",
+          "transient_error_calls": []
+        },
+        {
+          "case_id": "F1-7",
+          "clean_observation": true,
+          "day1_archived_to": "results/phase1/archive/F1-7__day1_2026-08-10.json",
+          "day1_date": "2026-08-10",
+          "day1_run_id": "r20260810T180012Z",
+          "day1_verdict": "TRUE",
+          "day2_date": "2026-08-15",
+          "day2_run_id": "r20260815T082524Z",
+          "day2_verdict": "TRUE",
+          "payload_fields_differing": [],
+          "payload_fields_differing_total": 0,
+          "payload_run_scoped_differences": 1,
+          "status": "AGREE",
+          "transient_error_calls": []
+        },
+        {
+          "case_id": "F1-8",
+          "clean_observation": true,
+          "day1_archived_to": "results/phase1/archive/F1-8__day1_2026-08-10.json",
+          "day1_date": "2026-08-10",
+          "day1_run_id": "r20260810T180012Z",
+          "day1_verdict": "INCONCLUSIVE",
+          "day2_date": "2026-08-15",
+          "day2_run_id": "r20260815T082524Z",
+          "day2_verdict": "INCONCLUSIVE",
+          "payload_fields_differing": [],
+          "payload_fields_differing_total": 0,
+          "payload_run_scoped_differences": 1,
+          "status": "AGREE",
+          "transient_error_calls": []
+        },
+        {
+          "case_id": "F1-9",
+          "clean_observation": true,
+          "day1_archived_to": "results/phase1/archive/F1-9__day1_2026-08-10.json",
+          "day1_date": "2026-08-10",
+          "day1_run_id": "r20260810T180012Z",
+          "day1_verdict": "TRUE",
+          "day2_date": "2026-08-15",
+          "day2_run_id": "r20260815T082524Z",
+          "day2_verdict": "TRUE",
+          "payload_fields_differing": [],
+          "payload_fields_differing_total": 0,
+          "payload_run_scoped_differences": 1,
+          "status": "AGREE",
+          "transient_error_calls": []
+        }
+      ],
+      "run_id": "r20260815T082524Z",
+      "summaries_captured_today": 16,
+      "utc_date": "2026-08-15"
+    },
+    {
+      "amendment": "clean_observation/transient_error_calls backfilled by tools/day2_replicate.py's transient_failures() over this run's own evidence records; no transiently failed call was found. See DEVIATIONS.md DEV-P4-39. payload_fields_differing/payload_run_scoped_differences backfilled by tools/day2_replicate.py's payload_diff() over the archived day-1 file and the live verdict file; `record` alone is coarser than the figures the document cites. See DEVIATIONS.md DEV-P4-39.",
+      "calls_reported": 367,
+      "cases_requested": [
+        "F3-4"
+      ],
+      "cases_with_transient_failures": [],
+      "checkpoints_archived": [
+        "F3-4__pii-address.json",
+        "F3-4__pii-age.json",
+        "F3-4__pii-aws_access_key.json",
+        "F3-4__pii-aws_secret_key.json",
+        "F3-4__pii-ca_health_number.json",
+        "F3-4__pii-ca_social_insurance_number.json",
+        "F3-4__pii-credit_debit_card_cvv.json",
+        "F3-4__pii-credit_debit_card_expiry.json",
+        "F3-4__pii-credit_debit_card_number.json",
+        "F3-4__pii-driver_id.json",
+        "F3-4__pii-email.json",
+        "F3-4__pii-international_bank_account_number.json",
+        "F3-4__pii-ip_address.json",
+        "F3-4__pii-license_plate.json",
+        "F3-4__pii-mac_address.json",
+        "F3-4__pii-name.json",
+        "F3-4__pii-negative.json",
+        "F3-4__pii-password.json",
+        "F3-4__pii-phone.json",
+        "F3-4__pii-pin.json",
+        "F3-4__pii-swift_code.json",
+        "F3-4__pii-uk_national_health_service_number.json",
+        "F3-4__pii-uk_national_insurance_number.json",
+        "F3-4__pii-uk_unique_taxpayer_reference_number.json",
+        "F3-4__pii-url.json",
+        "F3-4__pii-us_bank_account_number.json",
+        "F3-4__pii-us_bank_routing_number.json",
+        "F3-4__pii-us_individual_tax_identification_number.json",
+        "F3-4__pii-us_passport_number.json",
+        "F3-4__pii-us_social_security_number.json",
+        "F3-4__pii-username.json",
+        "F3-4__pii-vehicle_identification_number.json"
+      ],
+      "day1_files_archived": [
+        "F3-4__day1_2026-08-10.json"
+      ],
+      "fresh_records": 367,
+      "observation_proof": "367 call record(s) dated 2026-08-15",
+      "producer": [
+        ".venv-oracle/bin/python",
+        "f3_efficacy/02_pii.py",
+        "--run-id",
+        "r20260815T084022Z"
+      ],
+      "results": [
+        {
+          "case_id": "F3-4",
+          "clean_observation": true,
+          "day1_archived_to": "results/phase1/archive/F3-4__day1_2026-08-10.json",
+          "day1_date": "2026-08-10",
+          "day1_run_id": "r20260810T0345Z",
+          "day1_verdict": "FALSE",
+          "day2_date": "2026-08-15",
+          "day2_run_id": "r20260815T084022Z",
+          "day2_verdict": "FALSE",
+          "payload_fields_differing": [],
+          "payload_fields_differing_total": 0,
+          "payload_run_scoped_differences": 1,
+          "status": "AGREE",
+          "transient_error_calls": []
+        }
+      ],
+      "run_id": "r20260815T084022Z",
+      "summaries_captured_today": 33,
+      "utc_date": "2026-08-15"
+    },
+    {
+      "amendment": "clean_observation/transient_error_calls backfilled by tools/day2_replicate.py's transient_failures() over this run's own evidence records; no transiently failed call was found. See DEVIATIONS.md DEV-P4-39. payload_fields_differing/payload_run_scoped_differences backfilled by tools/day2_replicate.py's payload_diff() over the archived day-1 file and the live verdict file; `record` alone is coarser than the figures the document cites. See DEVIATIONS.md DEV-P4-39.",
+      "calls_reported": 10,
+      "cases_requested": [
+        "F10-3"
+      ],
+      "cases_with_transient_failures": [],
+      "checkpoints_archived": [
+        "F10-3__tagged.json",
+        "F10-3__untagged.json"
+      ],
+      "day1_date_source": {
+        "F10-3": "run id r20260813T145248Z"
+      },
+      "day1_files_archived": [
+        "F10-3__day1_2026-08-13.json"
+      ],
+      "fresh_records": 10,
+      "observation_proof": "10 call record(s) dated 2026-08-15",
+      "producer": [
+        "./.venv-oracle/bin/python",
+        "f10_billing/02_input_tagging.py",
+        "--run-id",
+        "r20260815T092538Z"
+      ],
+      "results": [
+        {
+          "case_id": "F10-3",
+          "clean_observation": true,
+          "day1_archived_to": "results/phase1/archive/F10-3__day1_2026-08-13.json",
+          "day1_date": "2026-08-13",
+          "day1_run_id": "r20260813T145248Z",
+          "day1_verdict": "FALSE",
+          "day2_date": "2026-08-15",
+          "day2_run_id": "r20260815T092538Z",
+          "day2_verdict": "FALSE",
+          "payload_fields_differing": [],
+          "payload_fields_differing_total": 0,
+          "payload_run_scoped_differences": 11,
+          "record_fields_differing": [],
+          "record_fields_differing_total": 0,
+          "record_identical": true,
+          "sealed_fields_differing": [],
+          "status": "AGREE",
+          "transient_error_calls": []
+        }
+      ],
+      "run_id": "r20260815T092538Z",
+      "summaries_captured_today": 2,
+      "utc_date": "2026-08-15"
+    },
+    {
+      "amended_utc_date": "2026-08-15",
+      "amendment": "Written as REPLICATED by a driver that (a) re-derived the day-1 label from the run id instead of the resolved date, printing 'unknown', and (b) had no check for transiently failed calls. Both are fixed in tools/day2_replicate.py; every value below is re-derived by day1_label/evidence_date/transient_failures over the same archived artifacts. The standing of this replication is REPLICATED WITH CAVEAT: see DEVIATIONS.md DEV-P4-39. payload_fields_differing/payload_run_scoped_differences backfilled by tools/day2_replicate.py's payload_diff() over the archived day-1 file and the live verdict file; `record` alone is coarser than the figures the document cites. See DEVIATIONS.md DEV-P4-39.",
+      "amendment_changes": [
+        "F8-5.day1_date 'unknown' -> '2026-08-10'",
+        "F8-5.clean_observation -> False (1 transient call(s))"
+      ],
+      "calls_reported": 5,
+      "cases_requested": [
+        "F8-5"
+      ],
+      "cases_with_transient_failures": [
+        "F8-5"
+      ],
+      "checkpoints_archived": [],
+      "day1_date_source": {
+        "F8-5": "evidence under run id smoke20260810T0305Z: call records' t_start_utc"
+      },
+      "day1_files_archived": [
+        "F8-5__day1_unknown.json"
+      ],
+      "fresh_records": 5,
+      "observation_proof": "5 call record(s) dated 2026-08-15",
+      "producer": [
+        "./.venv-oracle/bin/python",
+        "f8_regional/04_topic_limits.py",
+        "--run-id",
+        "r20260815T092557Z"
+      ],
+      "results": [
+        {
+          "case_id": "F8-5",
+          "clean_observation": false,
+          "day1_archived_to": "results/phase1/archive/F8-5__day1_2026-08-10.json",
+          "day1_date": "2026-08-10",
+          "day1_run_id": "smoke20260810T0305Z",
+          "day1_verdict": "FALSE",
+          "day2_date": "2026-08-15",
+          "day2_run_id": "r20260815T092557Z",
+          "day2_verdict": "FALSE",
+          "payload_fields_differing": [
+            "deletions[0].already_gone (absent day 1)",
+            "deletions[0].attempt_error_codes (absent day 1)",
+            "deletions[0].attempts (absent day 1)",
+            "per_tier.STANDARD.at_limit.error_code: \"ValidationException\" -> \"ThrottlingException\"",
+            "per_tier.STANDARD.over_limit.error_code: \"ThrottlingException\" -> \"ValidationException\"",
+            "per_tier.STANDARD.over_limit.error_message: \"Too many requests, please wait before trying again. You have sent too many requests.  Wait before trying again.\" -> \"1 validation error detected: Value at 'topicPolicyConfig.topicsConfig.1.member.definition' failed to satisfy constraint: Member must have length less than or equal to 1000\"",
+            "probes[2].error_code: \"ValidationException\" -> \"ThrottlingException\"",
+            "probes[2].error_message: \"Can't configure guardrail policy tier. Enable cross-Region inference for your guardrail to use Standard tier. For more information, see the Amazon Bedrock documentation.\" -> \"Too many requests, please wait before trying again. You have sent too many requests.  Wait before trying again.\"",
+            "probes[2].http_status: 400 -> 429",
+            "probes[3].error_code: \"ThrottlingException\" -> \"ValidationException\"",
+            "probes[3].error_message: \"Too many requests, please wait before trying again. You have sent too many requests.  Wait before trying again.\" -> \"1 validation error detected: Value at 'topicPolicyConfig.topicsConfig.1.member.definition' failed to satisfy constraint: Member must have length less than or equal to 1000\"",
+            "probes[3].http_status: 429 -> 400"
+          ],
+          "payload_fields_differing_total": 12,
+          "payload_run_scoped_differences": 23,
+          "record_fields_differing": [],
+          "record_fields_differing_total": 0,
+          "record_identical": true,
+          "sealed_fields_differing": [],
+          "status": "AGREE",
+          "transient_error_calls": [
+            {
+              "error_code": "ThrottlingException",
+              "evidence": "evidence/r20260815T092557Z/f8/F8-5/0003_create_guardrail_err.json"
+            }
+          ]
+        }
+      ],
+      "run_id": "r20260815T092557Z",
+      "summaries_captured_today": 1,
+      "utc_date": "2026-08-15"
+    },
+    {
+      "amendment": "payload_fields_differing/payload_run_scoped_differences backfilled by tools/day2_replicate.py's payload_diff() over the archived day-1 file and the live verdict file; `record` alone is coarser than the figures the document cites. See DEVIATIONS.md DEV-P4-39.",
+      "calls_reported": 690,
+      "cases_requested": [
+        "F8-4"
+      ],
+      "cases_with_transient_failures": [],
+      "checkpoints_archived": [
+        "F8-4__checks-benign.json",
+        "F8-4__checks-leakage.json",
+        "F8-4__classic-benign.json",
+        "F8-4__classic-leakage.json",
+        "F8-4__standard-benign.json",
+        "F8-4__standard-leakage.json"
+      ],
+      "day1_date_source": {
+        "F8-4": "run id r20260810T0345Z"
+      },
+      "day1_files_archived": [
+        "F8-4__day1_2026-08-10.json"
+      ],
+      "fresh_records": 690,
+      "observation_proof": "690 call record(s) dated 2026-08-15",
+      "producer": [
+        "./.venv-oracle/bin/python",
+        "f8_regional/03_prompt_leakage.py",
+        "--run-id",
+        "r20260815T093942Z"
+      ],
+      "results": [
+        {
+          "case_id": "F8-4",
+          "clean_observation": true,
+          "day1_archived_to": "results/phase1/archive/F8-4__day1_2026-08-10.json",
+          "day1_date": "2026-08-10",
+          "day1_run_id": "r20260810T0345Z",
+          "day1_verdict": "FALSE",
+          "day2_date": "2026-08-15",
+          "day2_run_id": "r20260815T093942Z",
+          "day2_verdict": "FALSE",
+          "payload_fields_differing": [
+            "checks_arms.separation.p_one_sided: 1.190769410371392e-28 -> 8.921820807186144e-29",
+            "checks_arms.threshold_sweep[6].tpr.ci: \"0.5333 [0.4444, 0.6202] (n=120, wilson, 95%)\" -> \"0.525 [0.4363, 0.6122] (n=120, wilson, 95%)\"",
+            "checks_arms.threshold_sweep[6].tpr.x: 64 -> 63",
+            "checks_arms.threshold_sweep[6].youden_j: 0.5333333333333333 -> 0.525",
+            "checks_arms.threshold_sweep[7].tpr.ci: \"0.5333 [0.4444, 0.6202] (n=120, wilson, 95%)\" -> \"0.525 [0.4363, 0.6122] (n=120, wilson, 95%)\"",
+            "checks_arms.threshold_sweep[7].tpr.x: 64 -> 63",
+            "checks_arms.threshold_sweep[7].youden_j: 0.5333333333333333 -> 0.525",
+            "checks_arms.threshold_sweep[8].tpr.ci: \"0.3667 [0.2858, 0.4558] (n=120, wilson, 95%)\" -> \"0.425 [0.3402, 0.5144] (n=120, wilson, 95%)\"",
+            "checks_arms.threshold_sweep[8].tpr.x: 44 -> 51",
+            "checks_arms.threshold_sweep[8].youden_j: 0.36666666666666664 -> 0.425",
+            "tier_proxy.standard.recall.x: 119 -> 118",
+            "tier_proxy.standard.recall_ci: \"0.9917 [0.9543, 0.9985] (n=120, wilson, 95%)\" -> \"0.9833 [0.9413, 0.9954] (n=120, wilson, 95%)\""
+          ],
+          "payload_fields_differing_total": 12,
+          "payload_run_scoped_differences": 1,
+          "record_fields_differing": [],
+          "record_fields_differing_total": 0,
+          "record_identical": true,
+          "sealed_fields_differing": [],
+          "status": "AGREE",
+          "transient_error_calls": []
+        }
+      ],
+      "run_id": "r20260815T093942Z",
+      "summaries_captured_today": 7,
+      "utc_date": "2026-08-15"
+    }
+  ]
+}

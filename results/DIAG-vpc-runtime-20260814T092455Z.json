@@ -1,0 +1,74 @@
+{
+  "arms": {
+    "pull_fails": {
+      "container_uri": "public.ecr.aws/nginx/nginx:grx-no-such-tag-f57b-diag",
+      "create_refused": true,
+      "created": false,
+      "deleted": false,
+      "error_code": "ValidationException",
+      "error_message": "Public ECR resource not found for URI 'public.ecr.aws/nginx/nginx:grx-no-such-tag-f57b-diag'. Repository: 'nginx/nginx', Reference: 'grx-no-such-tag-f57b-diag'. Verify the repository name, image tag, or digest.",
+      "network_mode": "PUBLIC",
+      "request_id": "aaed56be-2719-4b77-8235-91255f53ab4b",
+      "runtime_name": "grxF57bPullBad_r20260810t130945z"
+    },
+    "pull_ok_serve_bad": {
+      "container_uri": "public.ecr.aws/nginx/nginx:stable",
+      "created": true,
+      "deleted": true,
+      "failure_reason": "",
+      "network_mode": "PUBLIC",
+      "poll_error": "",
+      "runtime_id": "grxF57bPullOk_r20260810t130945z-EFRFP356Ym",
+      "runtime_name": "grxF57bPullOk_r20260810t130945z",
+      "seconds": 10.1,
+      "step_label": "no_reason_given",
+      "step_why": "the service returned no failureReason at all",
+      "terminal_status": "READY"
+    },
+    "vpc_shape": {
+      "container_uri": "public.ecr.aws/nginx/nginx:stable",
+      "created": true,
+      "deleted": true,
+      "failure_reason": "The following subnets could not be found: subnet-0f57b0000000000aa, subnet-0f57b0000000000bb",
+      "network_mode": "VPC",
+      "poll_error": "",
+      "runtime_id": "grxF57bVpcShape_r20260810t130945z-vVVLa5AHr6",
+      "runtime_name": "grxF57bVpcShape_r20260810t130945z",
+      "seconds": 10.1,
+      "step_label": "unclassified",
+      "step_why": "matched no marker in either list \u2014 read the raw string",
+      "terminal_status": "CREATE_FAILED"
+    }
+  },
+  "created": [
+    "iam-role/grx-runtime-vpcdiag-r20260810T130945Z",
+    "agent-runtime/grxF57bPullOk_r20260810t130945z-EFRFP356Ym",
+    "agent-runtime/grxF57bVpcShape_r20260810t130945z-vVVLa5AHr6"
+  ],
+  "deleted": [
+    "agent-runtime/grxF57bPullOk_r20260810t130945z-EFRFP356Ym",
+    "agent-runtime/grxF57bVpcShape_r20260810t130945z-vVVLa5AHr6",
+    "iam-role/grx-runtime-vpcdiag-r20260810T130945Z"
+  ],
+  "ended_utc": "20260814T092540Z",
+  "label": "DIAG-vpc-runtime",
+  "missing_tag_image": "public.ecr.aws/nginx/nginx:grx-no-such-tag-f57b-diag",
+  "public_image": "public.ecr.aws/nginx/nginx:stable",
+  "question": "can F5-7b's image-pull oracle be measured, and is a public.ecr.aws image enough to measure it with",
+  "readings": {
+    "f57b_is_measurable": false,
+    "public_ecr_image_accepted": true,
+    "pull_and_post_pull_are_distinguishable": false,
+    "vpc_mode_is_live_and_validated": true,
+    "why": {
+      "public_ecr_image_accepted": "CreateAgentRuntime accepted a public.ecr.aws containerUri, so F5-7b needs no ECR repository, no Docker daemon and no arm64 cross-build",
+      "pull_and_post_pull_are_distinguishable": "the two arms are NOT distinguishable from failureReason, so no VPC arrangement can answer an oracle denominated in the pull",
+      "vpc_mode_is_live_and_validated": "networkMode=VPC was validated server-side against the ids supplied"
+    }
+  },
+  "region": "us-east-1",
+  "residue_clean": true,
+  "run_id": "r20260810T130945Z",
+  "started_utc": "20260814T092455Z",
+  "writes_a_verdict": false
+}

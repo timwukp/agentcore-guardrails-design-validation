@@ -37,14 +37,19 @@ precisely how the twelfth would otherwise have arrived.
 from __future__ import annotations
 
 import ast
+import sys
 from pathlib import Path
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from scan_scope import ROOT, py_files  # noqa: E402  sibling helper; see its docstring
 
-SKIP_DIRS = {".venv", ".venv-oracle", ".venv-baseline", "__pycache__", ".git",
-             "node_modules", "evidence", ".pytest_cache", ".state", "tests"}
+# Test directories are excluded on purpose and only here: a test may legitimately write an
+# unmasked fixture into a tmp_path that spells `results/`. Everything else about "not this repo's
+# source" comes from `scan_scope`, whose venv rule is a PREFIX — the local set of venv names this
+# replaced could not see `.venv-figs` (DEV-P4-42).
+SKIP_TESTS = frozenset({"tests"})
 
 MASKERS = {"mask_text", "mask"}
 
@@ -121,12 +126,7 @@ NOT_A_RESULTS_TARGET: dict[tuple[str, str], str] = {
 
 
 def _py_files() -> list[Path]:
-    out = []
-    for p in ROOT.rglob("*.py"):
-        if any(part in SKIP_DIRS for part in p.relative_to(ROOT).parts):
-            continue
-        out.append(p)
-    return sorted(out)
+    return py_files(extra_names=SKIP_TESTS, floor=60)
 
 
 def _root_name(node: ast.AST) -> str:
@@ -426,8 +426,12 @@ def test_the_scan_reads_more_than_zero_files():
     """`feedback_zero_file_scan_is_error`: a scan finding nothing must not agree with anything.
 
     The floors are below the measured values (92 files, 10 writer modules on 2026-08-12) so
-    that adding a script does not red the suite. The named probes are the real guard: a
-    SKIP_DIRS entry that quietly swallowed a whole family would keep the count plausible.
+    that adding a script does not red the suite. The named probes are the real guard: a scope
+    entry that quietly swallowed a whole family would keep the count plausible.
+
+    The opposite direction — a scan reading too MUCH — is guarded in `test_scan_scope.py`, which
+    is where the shared scope rule lives. That is the direction this test's scope failed in on
+    2026-08-15, and a floor cannot see it.
     """
     files = _py_files()
     rels = {str(p.relative_to(ROOT)) for p in files}
@@ -435,7 +439,7 @@ def test_the_scan_reads_more_than_zero_files():
     for probe in ("f2_determinism/03_score_harvest.py", "lib/phase1.py", "census.py",
                   "f5_redteam/archive_flapped_restore_arm.py"):
         assert probe in rels, \
-            f"{probe} is no longer scanned — SKIP_DIRS or the glob has narrowed"
+            f"{probe} is no longer scanned — scan_scope or the glob has narrowed"
     writers = [p for p in files if _results_writes(p)]
     assert len(writers) >= 8, \
         f"only {len(writers)} modules write into results/; the AST walk has stopped finding them"

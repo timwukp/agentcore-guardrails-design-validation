@@ -7301,6 +7301,501 @@ follow it to the estimator; a timer used for waiting is not an instrument.
 
 ---
 
+## DEV-P4-38 — the first queued replication would have passed without observing anything, because a checkpoint's identity does not include the run id
+
+**When** 2026-08-15, on the laptop. **Cost $0**, and **zero AWS calls** — the producer reads four
+botocore service models off disk. **Effect on the document under test** none: sixteen verdicts were
+re-derived and all sixteen agree with day 1, so nothing in v1.4 changes. What changed is that **two of
+the twelve queued replications are now discharged — F1-14 and F3-4** — and that the mechanism for
+discharging the other ten exists, has been mutation-checked, and has now been exercised on both a
+zero-call case and a 367-call checkpointed one.
+
+### Result
+
+`tools/day2_replicate.py --cases F1-14 --allow-no-checkpoints --no-call-case --
+.venv-oracle/bin/python f1_config/02_model_surface.py` ran under a freshly minted
+`r20260815T082524Z`. The producer decides sixteen cases, not one, so sixteen were compared:
+
+| | |
+|---|---|
+| cases compared | 16 — F1-4, F1-5, F1-7…F1-14, F1-16, F1-17, F1-20…F1-23 |
+| day 1 → day 2 | 2026-08-10 (`r20260810T130945Z`) → 2026-08-15 (`r20260815T082524Z`) |
+| outcome | **16 AGREE, 0 disagree** |
+| observation proof | 16 `summary.json` captured 2026-08-15 reporting **0 calls** |
+| day-1 copies | `results/phase1/archive/<CASE>__day1_2026-08-10.json`, 16 files |
+| machine-readable | `results/day2_replication_2026-08-15.json` |
+
+**It ran on the laptop, not the runner.** DEV-P4-37 assigned eleven of the twelve to one runner
+session; F1-14 is one of those eleven. Departing from that is safe for this case *and only* because
+it makes no network call at all — a producer with zero calls is position-free by construction, not by
+argument — and it avoids paying for a runner session to read local files. The other ten still ride
+the runner, because they talk to the service.
+
+### Why a driver exists instead of a command per case
+
+`lib.checkpoint.Checkpoint` names its file `<case>__<cell>.json` under `results/checkpoints/`, and
+the run id is deliberately **not** in the path (`lib/checkpoint.py:125` — varying the run id is how
+this project re-emits an analysis without re-billing). A second run of a checkpointed case therefore
+finds every trial already recorded, skips all of them, re-derives the identical verdict from day-1
+rows, and **exits 0**. Nothing in its output says the API was never called. Had the batch been run by
+hand as queued, eleven of the twelve would have produced a day-2 verdict file, a day-2 run id, and no
+second observation — a replication that is indistinguishable, in every artifact, from one that
+happened.
+
+Two adjacent traps sit next to it. `lib.phase1.emit` rewrites `results/phase1/<case>.json`
+unconditionally, so day 1 is *replaced* — and a disagreement, which is a finding rather than an
+error, would have nothing left to disagree with. And the local calendar rolls hours before UTC, so an
+evening run can land on day 1's own UTC date (`f5_redteam/07a_run_day2.sh` was written after exactly
+that). The driver refuses all three, and each refusal was mutation-checked by breaking the condition
+and confirming rc 2.
+
+### The driver's own defect, caught by its own run
+
+The first version archived day 1 **after** its post-run guards passed. A guard fired on the first
+live run, and sixteen rewritten verdict files were left with no day-1 copy anywhere in the tree —
+recoverable only because the handover bundle happened to hold a stale copy. A recovery path that
+depends on luck is not one. The order is now: snapshot all of `results/phase1/` to
+`runner/.staging/day2_pre_<run_id>/` before anything moves, then run, then archive, then adjudicate.
+
+The same run also exposed a false negative: the freshness guard counted only records carrying
+`t_start_utc`, which a zero-call producer never writes, so a legitimate replication was reported as
+the checkpoint-resume failure. The fallback is `--no-call-case`, and it is accepted only when the run
+also reports **zero** calls, because `EvidenceStore` writes a summary on every run whether or not a
+trial executed.
+
+### The second replication, same day, closes the gap the first one left
+
+**F3-4 — REPLICATED 2026-08-15, and it is the run that exercised the branch that matters.**
+`tools/day2_replicate.py --cases F3-4 -- .venv-oracle/bin/python f3_efficacy/02_pii.py` under
+`r20260815T084022Z`, on the laptop, **$0.037** upper bound (367 text units × $0.00010 at the paid
+sensitive-information rate; the free-tier usagetype would make it $0):
+
+| | |
+|---|---|
+| checkpoints isolated | **32 moved** to `results/checkpoints/day1_2026-08-10/` — the branch F1-14 could not reach |
+| observation proof | **367 call records dated 2026-08-15**, the strong path, not the zero-call fallback |
+| verdict | FALSE → FALSE, **AGREE** |
+| instrument | guardrail `wwjmltbo1dt5` (`grx-gr-pii-…`), status READY, `updatedAt` 2026-08-10T01:15:08Z — the *same* guardrail at the *same* version, confirmed live before the run |
+
+**And it replicates the published number, not merely the verdict.** The driver compares verdicts,
+which is weaker than what the document actually cites: v1.4 says "**9 of 31** documented types were
+refuted". All 31 strata were compared by hand afterwards — **the same 9 FALSE strata, the same 2
+INCONCLUSIVE strata, and identical success counts `x` in 31 of 31 strata.** Zero drift in the
+composition, not just in the roll-up.
+
+Identical output is normally the signature of a test watching the wrong quantity, so it was checked
+rather than celebrated: the 367 records under `evidence/r20260815T084022Z/` carry distinct AWS request
+ids and `t_start_utc` values at 2026-08-15T08:43Z, against day 1's distinct ids at
+2026-08-10T08:04Z. The calls were made. ApplyGuardrail's PII detection is simply deterministic on
+identical inputs — which is itself worth stating, because it means the "9 of 31" figure is a property
+of the entity matchers and not a sample.
+
+**What this does not establish.** `check_amendment_readiness.py` still cannot see either replication,
+for the reason below. And a per-stratum comparison this strict was done by hand; the driver does not
+do it, so a future case whose verdict agrees while its composition drifts would pass quietly. That is
+worth folding into the driver before the remaining ten run.
+
+### What neither replication establishes
+
+**`check_amendment_readiness.py` cannot see either replication, and does not claim to.** The gate reads
+`evidence_runs` and `cases` out of each `results/FINDING-*.md` provenance block and counts distinct
+UTC days. **None of the twelve queued cases appears in any FINDING doc** — the docs cover F1-3, F1-15,
+F1-19/24/25, F3-10, F5-1, F5-2, F5-4a, F5-7a, F5-7b. The twelve were amended through v1.4's amendment
+batches instead, which the gate does not read. So the gate's verdict is unchanged by this work in both
+directions: it reported **4 problems in 92 assertions** before the run and the identical 4 after
+(FINDING-F1-15.md ×2, FINDING-F5-7B.md ×2, both pre-existing). A green gate would not have meant the
+twelve were replicated, and its staying red does not mean this one was not. That gap is
+`FUTURE-WORK.md` item 22.
+
+---
+
+## DEV-P4-39 — three more replications, and two of them were agreeing on figures that had moved or on calls that never reached the service
+
+**When** 2026-08-15, on the laptop, immediately after DEV-P4-38's pair. **Cost ≈$0.115** (F10-3's ten
+`ApplyGuardrail` calls ≈$0.0105, F8-4's 690 calls ≈$0.104, F8-5's five control-plane probes $0).
+**Effect on the document under test** none from the verdicts, all three of which reproduced; the erratum
+F8-5 turned out to owe is DEV-P4-40, found by a comparison this entry adds. What changed is that **five
+of the twelve queued replications are now discharged (F1-14, F3-4, F10-3, F8-5, F8-4) and seven remain
+(F6-1…F6-5, F6-8, F4-6)** — and that two of the three exposed defect classes that no verdict-level or
+record-level comparison can see.
+
+### The two runs
+
+| | F10-3 | F8-5 |
+|---|---|---|
+| day 1 → day 2 | 2026-08-13 (`r20260813T145248Z`) → 2026-08-15 (`r20260815T092538Z`) | 2026-08-10 (`smoke20260810T0305Z`) → 2026-08-15 (`r20260815T092557Z`) |
+| verdict | FALSE → FALSE, AGREE | FALSE → FALSE, AGREE |
+| decision record | **identical at every path** | **identical at every path** |
+| observation proof | 10 call records dated 2026-08-15 | 5 call records dated 2026-08-15 |
+| checkpoints isolated | 2 (`F10-3__tagged`, `F10-3__untagged`) — both were **complete** (`n_done 5` of `planned_n 5`), so an unguarded re-run would have made zero calls and exited 0 | none exist |
+| instrument | guardrail `s5vk53hdnahz`, same on both days | a fresh probe guardrail per call, deleted in a `finally` |
+| clean observation | yes | **no — see below** |
+
+F10-3 reproduced more than its verdict: 5 of 5 tagged/untagged pairs billed **7 units each**, coverage
+6659/6659 characters in both arms, texts byte-identical across the pair. The claim it refutes — that a
+`guard_content` qualifier changes what is billed — is refuted the same way twice.
+
+**F8-5's day-1 run id is not a dateable string**, so the driver would have refused it outright. It was
+unblocked by reading the day off the observation itself (`evidence_date`): the five day-1 records are
+stamped 2026-08-10T02:45:52Z–02:45:56Z, which is a stronger warrant for "which day this was observed"
+than a filename an operator typed — and they *disagree* with the `0305` in the run id, which is
+precisely why the record and not the string is the source.
+
+### The defect: a throttled probe was scored as an observation, on both days
+
+F8-5 sends four `CreateGuardrail` probes and **the error is the data**: a topic definition at the tier
+limit should be accepted, one over it rejected. Day 2's third probe came back
+`ThrottlingException` — the service refusing the *request*, not judging the *definition*.
+
+| probe | expect | 2026-08-10 (published day 1) | 2026-08-15 (day 2) |
+|---|---|---|---|
+| `classic-200` | accepted | accepted (202) | accepted (202) |
+| `classic-201` | rejected | `ValidationException` | `ValidationException` |
+| `standard-1000` | accepted | `ValidationException` — the real refutation | **`ThrottlingException`** |
+| `standard-1001` | rejected | **`ThrottlingException`** — scored `matches_expected: true` | `ValidationException` |
+
+Both days threw exactly one throttle, on **different** probes, and the producer classified both as
+`observed: "rejected"`. The consequences are not symmetric:
+
+* **Day 2** threw it on `standard-1000`, whose expectation was *accepted*. So `matches_expected: false`
+  → `record.evidence.at_limit_accepted: false` → the FALSE verdict. **Day 2's refutation rests on a
+  call that never reached the boundary.**
+* **Day 1** threw it on `standard-1001`, whose expectation was *rejected* anyway. The throttle was
+  therefore recorded as a **match**, so `record.evidence.over_limit_rejected: true` over-states what
+  was seen for the STANDARD tier on that day as well.
+
+**An erratum IS owed, and not for this reason — see DEV-P4-40.** The paragraph below was written before
+the probes' error *messages* were read, and it is left standing because the correction is the point: the
+throttle is the smaller of the two defects in this case, and finding it is what led to reading the
+messages. `agentcore_guardrails_best_practices_v1.4.md:274`
+already carves the throttle out in prose — "the 1,001-char probe returned `ThrottlingException`, so the
+exact effective limit was not established" — so the published document never rested on the contaminated
+half. The machine-readable `record` did. **The prose was more careful than the decision record**, which
+inverts the usual direction of `feedback_prose_is_not_verified` and is the reason this is engineering
+debt rather than a correction to the paper.
+
+**F8-5's verdict still stands, on day 1's evidence.** A 1000-character definition drew a genuine
+`ValidationException` on 2026-08-10 against a documented STANDARD limit of 1000, and that is the
+refutation the document cites. What does *not* stand is day 2 as a second observation of it. The
+standing of the replication is therefore **REPLICATED WITH CAVEAT**, recorded as such in
+`results/day2_replication_2026-08-15.json` (`clean_observation: false`, with the offending evidence path
+and error code).
+
+### Why every existing guard reported clean
+
+The verdict agreed. `record_diff` reported the decision record **identical at every path**. No sealed
+field moved. All three were true, and all three were blind, because `record.evidence` for this case is
+three coarse booleans — `at_limit_accepted`, `over_limit_rejected`, `limits` — and no boolean can
+distinguish *the service rejected this content* from *the service rejected this request*. Reading the
+day-1 archive by hand is what exposed it, which is exactly the kind of check the next case does not get.
+
+So the check now lives in the driver, keyed on nothing but the error code, over the raw call records the
+run wrote (`transient_failures`, twelve codes from `ThrottlingException` to `ModelTimeoutException`).
+It is a **caveat, not a failure** — a throttle does not contradict day 1, and the operator's next step
+is to re-run the case, not to investigate a disagreement — so rc stays 0, but the word REPLICATED never
+appears unqualified over an observation with a hole in it. Applied to today's other three runs it
+reports **zero** transient failures across their 377 call records (367 + 10 + 0), which makes it
+informative rather than noisy; applied to F8-5's two days it finds exactly the two calls above.
+
+### F8-4: the record was identical and the numbers had moved
+
+**F8-4 — REPLICATED 2026-08-15** under `r20260815T093942Z`, ≈**$0.104**: **690 fresh call records** (460
+`ApplyGuardrail` + 230 `InvokeGuardrailChecks`, **690 distinct request ids**, all stamped 2026-08-15), 6
+day-1 checkpoints isolated first, FALSE → FALSE, and the decision record identical at every path.
+
+That last clause is where it stops being reassuring. F8-4's `record.evidence` is two booleans and a proxy
+string (`classic_works`, `standard_works`, `observed`); the figures the document reasons about live one
+level up. Comparing the rest of the verdict file found:
+
+| path | 2026-08-10 | 2026-08-15 |
+|---|---|---|
+| `tier_proxy.standard.recall.x` | 119/120 | **118/120** |
+| `checks_arms.threshold_sweep[6].tpr.x` | 64/120 | **63/120** |
+| `checks_arms.threshold_sweep[7].tpr.x` | 64/120 | **63/120** |
+| `checks_arms.threshold_sweep[8].tpr.x` | 44/120 | **51/120** |
+| `tier_proxy.classic.recall.x` / `.fpr.x` | 49/120, 4/110 | **identical** |
+
+**The verdict is unaffected and the tier it turns on reproduced exactly** — FALSE follows from CLASSIC
+working (recall 0.4083 [0.3246, 0.4978] against its own benign FPR upper bound 0.08979, disjoint), and
+CLASSIC's two counts are byte-identical across the two days. But "identical" was the wrong word for the
+file, and `record_diff` alone would have printed exactly that.
+
+**And it is a finding in its own right: `InvokeGuardrailChecks` is not day-to-day deterministic.** Its
+confidence scores moved enough to shift the sweep's TPR by up to 7 of 120 items at the highest thresholds
+(44 → 51, i.e. 0.367 → 0.425), against F3-4's ApplyGuardrail PII matchers which reproduced to the item
+across 367 calls. Any threshold recommended from one day's sweep carries that movement, and the paper
+should say so rather than present a single-day Youden point as a setting.
+
+So the comparison now covers the whole verdict file, not just `record` (`payload_diff`), splitting
+differences into **quantitative** and **run-scoped** — the latter being run ids, AWS request ids,
+`evidence/<run_id>/…` paths, SDK versions: values that must move, and that would otherwise bury the
+signal. Over the five replications recorded so far it reports quantitative drift in exactly two cases
+(F8-4's 12 paths and F8-5's 12) and **zero** in the other eighteen, which is the property that makes it
+worth printing. Its first run over F8-5's pair is what found DEV-P4-40.
+
+### Two smaller fixes from the same run
+
+**The driver had the day-1 date and threw it away twice.** `evidence_date` resolved F8-5 to
+2026-08-10, and three later sites re-derived the label from the run id instead of reading that result —
+so the comparison row printed `unknown FALSE -> 2026-08-15 FALSE` and day 1 was archived as
+`F8-5__day1_unknown.json`. There is now one resolution point (`day1_label`), the archive file has been
+renamed to `F8-5__day1_2026-08-10.json`, and the run entry has been re-derived from the same artifacts
+and marked `amended`. A driver that reports a date it already knows to be wrong is worse than one that
+cannot tell, because the wrong value is the one that gets cited.
+
+**An SDK change between the two days argues the instrument is sound.** Day 1 ran botocore 1.42.79, day
+2 1.43.67. Both days recorded `client_side_enforces_max: false` and `param_validator: client-side OK`
+for all six lengths including 5000 — so the "the model declares max=200 regardless of tier" quirk that
+makes this case measurable is a property of the service model as shipped in two different releases, not
+of one pinned wheel.
+
+---
+
+## DEV-P4-40 — F8-5's published conclusion is the opposite of what its own two days show, because the oracle scored *that* the call was rejected and never *why*
+
+**When** 2026-08-15, found by the payload comparison added hours earlier in DEV-P4-39, running over
+F8-5's day-1 archive and day-2 verdict. **Cost $0** — no new call was made; every fact below is read
+from call records that already existed. **Effect on the document under test: an erratum is owed at six
+sites**, and the STANDARD half of F8-5 needs a verdict decision that is the user's, not mine. **Nothing
+has been amended.**
+
+### What the four probes actually returned
+
+No probe on either day sent `crossRegionConfig`. Both days are read from
+`evidence/<run_id>/f8/F8-5/000*_create_guardrail_*.json`:
+
+| probe | 2026-08-10 (the published day) | 2026-08-15 |
+|---|---|---|
+| `classic-200` | accepted, 202 | accepted, 202 |
+| `classic-201` | 400 `ValidationException` — **length**: "your guardrail topic definitions exceeds the maximum allowed length" | identical message |
+| `standard-1000` | 400 `ValidationException` — **"Can't configure guardrail policy tier. Enable cross-Region inference for your guardrail to use Standard tier."** | 429 `ThrottlingException` |
+| `standard-1001` | 429 `ThrottlingException` | 400 `ValidationException` — **length**: "Value at `topicPolicyConfig.topicsConfig.1.member.definition` failed to satisfy constraint: Member must have length less than or equal to 1000" |
+
+### The published claim attributes a rejection to the wrong cause
+
+v1.4 §3.4 says the Standard tier's documented 1,000-character denied-topic limit **did not hold**,
+because "Standard rejected a 1,000-char definition with `ValidationException`". It did return a
+`ValidationException` — about **cross-Region inference**, a tier-configuration precondition. The request
+was refused before definition length was in question. The oracle recorded `accepted: false` and moved on,
+because what it scores is whether the call succeeded, never what the service said.
+
+### Read together, the two days support the documented limit rather than refuting it
+
+Day 2 establishes an ordering: a STANDARD request with **no** `crossRegionConfig` and a 1001-character
+definition was rejected for **length**, so the length constraint is evaluated *before* the tier
+precondition — a length failure short-circuits it. Day 1's 1000-character STANDARD request was **not**
+rejected for length; it reached the tier check. Therefore 1000 characters passed length validation and
+1001 did not, which is the documented limit of 1000 exactly, from two independent observation days.
+
+The direction of the correction matters: the study published "the documented limit did not hold" on
+evidence that, read with its own error messages, says the limit is **precisely as documented**.
+
+### What may and may not be concluded
+
+* **The CLASSIC half is genuinely replicated**: 200 accepted and 201 rejected *for length*, with
+  byte-identical error messages on both days. Nothing here touches it.
+* **The STANDARD half is INCONCLUSIVE**, not TRUE and not FALSE. The sealed oracle requires observing an
+  at-limit definition **accepted**, and in an account without cross-Region inference enabled the tier gate
+  refuses the create regardless of length — so the criterion as sealed is not observable by this
+  instrument. Inferring "the limit is 1000" from the two error messages is sound reasoning about the
+  service and is **not** the sealed criterion, so it cannot be promoted to a verdict.
+* **`INCONCLUSIVE` licenses no amendment**, and a day 2 that contradicts day 1 is a finding rather than a
+  fix-up. So the verdict file is untouched and the decision is queued for the user
+  (`FUTURE-WORK.md` item 27).
+* **This is independent corroboration of F1-6** (`crossRegionConfig` required for the Standard tier,
+  TRUE, 2026-08-10) from a different producer that was not trying to measure it.
+
+### Why every guard missed it, including the one built for this class of error
+
+The verdict agreed FALSE→FALSE. `record_diff` reported the decision record identical at **every** path.
+No sealed field moved. `transient_failures` — written this same day for this same case — flagged the
+throttle and stopped there, because a throttle was the defect I had gone looking for. What found it was
+`payload_diff`, added an hour later for F8-4's coarse record, on its first run over F8-5's pair:
+`per_tier.STANDARD.at_limit.error_code: "ValidationException" -> "ThrottlingException"` and
+`probes[2].error_message: "Can't configure guardrail policy tier…" -> "Too many requests…"`. **The
+error messages were in the artifacts the whole time; nothing was reading them.**
+
+`AWS-BEHAVIOR-CHANGES.md:90` (W-03) records the adjacent worry — that a future botocore might reject
+client-side and be reported as a service boundary — and F8-5 re-checks that branch live on every run. The
+watch was correct in form and aimed one step short: the rejection that got mis-read was not
+client-side, it was a **different service error**.
+
+### The general defect
+
+An oracle over an exception must score the **cause**, not the fact. Any case whose oracle reads
+"rejected" from a non-2xx is one unrelated 400 away from a confident wrong verdict, and no comparison of
+verdicts, decision records or sealed fields can see it — only the response text can, and until today
+nothing compared the response text. That is `FUTURE-WORK.md` item 23, whose scope this widens from
+transient errors to **every** rejection whose reason is not asserted.
+
+---
+
+## DEV-P4-41 — 607 evidence records sat unmerged in staging, and two gates called that state clean
+
+**When** 2026-08-14 into 2026-08-15. **Cost $0** — no AWS call was made; every fact below is a local
+file read. Discovered while trying to explain why `check_amendment_readiness.py` reported problems that
+had no cause in the gate's own logic.
+
+### What was actually wrong
+
+`runner/.state/incoming/20260814T162515Z/` held **607 evidence records** that the runner had produced and
+that nothing had promoted into `evidence/`. The records were complete and correct; they were simply not
+where every reader looks. After `runner/merge_evidence.py` promoted them,
+`check_amendment_readiness.py` **exits 0**, and `FINDING-F5-7B.md` moves from an unexplained problem
+report to `AMENDMENT_DEFERRED  1 day(s) ['2026-08-14']`, which is the true state: one day of data, so the
+sealed two-calendar-day rule correctly withholds the amendment.
+
+**A staging directory is not a queue unless something drains it.** The runner wrote to
+`.state/incoming/<stamp>/` on the assumption that a later step promoted it. No later step existed.
+
+### The correction this forced in `FUTURE-WORK.md` item 22
+
+Item 22 had claimed the replication gate found "4 problems in 92 assertions". That figure is **not in the
+gate's output at all** — it was a test-suite number attributed to the gate from memory. The four problems
+were a symptom of the unmerged records, not a property of the gate. Item 22 now carries the correction
+in place, and its scope argument — which is about *which cases* the gate looks at — survives untouched,
+which is why the item stays open rather than closing.
+
+### Two gates that could not see it
+
+1. **`check_redaction.py` enumerated virtualenvs by name.** `SKIP_DIRS` listed `.venv`-style directories
+   literally, so the newly created `.venv-figs` would have been **scanned** — and this file already
+   records the same defect once before, where `".venv" not in p.parts` never matched `.venv-oracle` and
+   the gate read 1,272 files of `site-packages`, satisfying its own non-empty floor on dependencies
+   rather than on the repository. Fixed at the producer: `SKIP_DIR_PREFIXES = (".venv",)` and a prefix
+   predicate, so no future `.venv-*` can be silently in scope. Coverage was proven unchanged —
+   **699 files before, 699 after**, rc 0 — and the scope line now prints the prefix rule so the skip is
+   visible in the transcript instead of implied by the count.
+2. **`results/DIAG-vpc-runtime-20260814T092455Z.json`** was retrieved and is now in the distributable
+   tree, so the VPC diagnosis is readable without the runner.
+
+### The general defect
+
+Both halves are the same shape: **a gate whose scope is expressed as a list of names cannot notice a new
+name.** The redaction gate enumerated the venvs it should skip; the evidence readers enumerated nowhere to
+look but `evidence/`. In each case the correct fix is a rule over the shape of the tree — a prefix
+predicate, a drain step — rather than one more literal. Adding the fourth literal would have passed
+today and failed on `.venv-figs2`.
+
+---
+
+## DEV-P4-42 — the same list-of-names defect in four more gates, found because a third virtualenv appeared and two of them reported findings in matplotlib
+
+**Date:** 2026-08-15. **Discovered by:** the full offline suite, `./verify_phase0.sh`, run before opening
+the whitepaper PR. **Result:** 2 failed / 3143 passed / 9 skipped in 1:14:23.
+
+DEV-P4-41 closed with a prediction: *adding the fourth literal would have passed today and failed on
+`.venv-figs2`*. It did not take a second figure venv. The **first** one was enough, and it broke four
+gates that DEV-P4-41 never looked at.
+
+### What failed
+
+`.venv-figs` was created this day so the figure generator could hold matplotlib 3.11.1 without
+disturbing the sealed oracle's pinned botocore. `lib/tests/test_property_not_called.py` then reported
+**16 property-called-as-a-method findings, all 16 in third-party source**:
+
+```
+.venv-figs/lib/python3.12/site-packages/matplotlib/backends/backend_qt.py:607  .width()  [stats.CI.width]
+.venv-figs/lib/python3.12/site-packages/PIL/ImageTk.py:262                     .width()  [stats.CI.width]
+```
+
+Sixteen findings, none of them ours, in a check whose entire value is that its findings are ours. The
+cause is DEV-P4-41's cause verbatim: the scope rule was spelled
+`SKIP_DIRS = {".venv", ".venv-oracle", ".venv-baseline", ...}`, and a set of names cannot notice a new
+name.
+
+### The census, which is the part worth keeping
+
+Eleven tests in this repo walk `ROOT.rglob("*.py")` and assert something about every file they find.
+Counted rather than assumed:
+
+| Scope rule | Scanners | Behaviour on `.venv-figs` |
+|---|---|---|
+| prefix (`part.startswith(".venv")`) or substring (`"/.venv" in rel`) | 7 | correct |
+| set of venv NAMES | **4** | reads site-packages |
+
+The four: `test_property_not_called.py`, `test_results_writes_are_masked.py`,
+`test_account_id_choke_point.py`, `test_probe_guardrail.py`. **Two of the four went red. The other two
+passed by luck** — matplotlib's source happens to contain no `get_caller_identity()[...]` subscript and
+no `create_probe_guardrail(...)` call. Nothing about the second pair's correctness caused them to pass,
+and a different third-party package would have flipped them too.
+
+Worse, the lesson was already in the tree. `lib/tests/test_module_name_collisions.py` carries this
+comment from an earlier instance:
+
+> `p.parts` never equals `".venv"`: the venvs are `.venv-oracle` and `.venv-baseline`, so an equality
+> test let site-packages in and the scan read 1,272 files instead of 78 — which made the non-empty
+> floor below pass on the wrong tree entirely.
+
+That fix was applied to one scanner and to no other. `feedback_fix_producer_not_janitor`: a fix scoped
+to one instance is a localised fix, and the same defect wedged four more.
+
+### The fix
+
+`lib/tests/scan_scope.py` — one definition of "this repo's own source", imported by all four:
+
+* `SKIP_DIR_PREFIXES = (".venv",)` — covers every venv including the next one, which is the point.
+* `SKIP_DIR_NAMES` for trees whose identity is not a family (`.git`, `__pycache__`, `evidence`,
+  `.state`, `.staging`, `.wheel_cache`, `.pytest_cache`, `node_modules`). Names are safe here: a new
+  one of these is a new *kind* of directory, which arrives with a human deciding where it goes, unlike
+  a second virtualenv, which arrives as a variation on a name already in the list.
+* `py_files()` owns the zero-file floor, so every caller inherits `feedback_zero_file_scan_is_error`
+  instead of remembering to re-write it.
+
+Deriving the rule from `.gitignore` (line 26 is `.venv-*/`, which is how `tools/repo_diff.py` and
+`claims/tests/repo_copy.py` already exclude them, and why neither tried to publish the new venv) was
+considered and rejected: the coupling runs the wrong way, since an entry added there to keep a file out
+of *git* would silently remove it from every *static check*.
+
+### The guard, and both directions of failure
+
+`lib/tests/test_scan_scope.py`. Every scanner already guarded the too-narrow direction with a floor.
+**Nothing guarded too wide, and a floor cannot see it** — reading more files never trips a floor. So:
+
+* every venv actually on disk is out of scope, with a `>= 2` precondition so the test cannot pass by
+  having nothing to check;
+* a venv that does not exist yet is out of scope. Its fixture name is assembled from pieces
+  (`".venv" + "-" + "..."`) so this guard is not its own match (`feedback_self_scanning_guard`);
+* named repo files are *in* scope, each asserted to exist, so the in-scope assertions are not vacuous —
+  a rule that excluded everything would otherwise pass the two above;
+* `py_files()` reads no `.venv*` and no `site-packages`, with a **ceiling as well as a floor**
+  (`100 < n < 900`): `.venv-figs` alone holds over 1,000 `.py` files, so any accidental venv read blows
+  past the ceiling long before it could be mistaken for the repo growing;
+* **no scanner enumerates the venv family by name.** The threshold is **two or more** venv-prefixed
+  strings in one literal, and that threshold is the whole discrimination: one name is a legitimate
+  probe — four sites name `.venv-oracle` as their test *subject* — while two or more is an attempt to
+  enumerate a family a prefix already covers, which is exactly the thing that goes stale.
+
+Mutation-checked rather than assumed (`feedback_vacuous_test_check`): a three-name set dropped into a
+scratch module fails the guard with the offending literal named; the module was removed afterwards.
+
+### The second failure in the same run: three unmasked writes into the distributable tree
+
+`lib/tests/test_results_writes_are_masked.py` reported three violations, all introduced this day by the
+whitepaper tooling:
+
+```
+tools/whitepaper_data.py:248     DATA_OUT.write_text(...)
+tools/whitepaper_data.py:249     APPC_OUT.write_text(...)
+tools/whitepaper_figures.py:633  MANIFEST.write_text(...)
+```
+
+`results/` is the distributable record. Fixed by masking through `lib/redact.mask_text` — and masked
+**before the `--check` comparison**, not only before the write, so both paths compare the same bytes
+and a masking difference cannot present itself as staleness. On clean input the mask is a no-op, which
+is the point: *a guarantee that holds because the inputs happen to be clean is not a guarantee.*
+
+Not added to that test's `WAIVED` inventory. Its stated reason for tolerating the twelve existing
+entries — "masking five other families' scripts at once is a change to working code for a latent risk"
+— does not apply to code written the same day by the same author.
+
+### Post-fix state
+
+84 passed across the eight scanner tests touched or adjacent. `whitepaper_figures.py --check` FRESH,
+`whitepaper_data.py --check` FRESH, `check_redaction.py` PASSED over **703** files, rc 0 in all three.
+
+---
+
 ## Analysis-time deviations
 
 *(None yet — this section is populated during Phase 9. Each entry states the

@@ -39,7 +39,7 @@
       ],
       "mann_whitney_u": 11440.0,
       "measured": true,
-      "p_one_sided": 1.190769410371392e-28,
+      "p_one_sided": 8.921820807186144e-29,
       "rank_auc": 0.8666666666666667,
       "why_rank_based": "severityScore has no documented units and no service threshold, so a rank statistic is what the response supports; a mean difference would imply a scale"
     },
@@ -137,11 +137,11 @@
         },
         "threshold": 0.7,
         "tpr": {
-          "ci": "0.5333 [0.4444, 0.6202] (n=120, wilson, 95%)",
+          "ci": "0.525 [0.4363, 0.6122] (n=120, wilson, 95%)",
           "n": 120,
-          "x": 64
+          "x": 63
         },
-        "youden_j": 0.5333333333333333
+        "youden_j": 0.525
       },
       {
         "fpr": {
@@ -151,11 +151,11 @@
         },
         "threshold": 0.8,
         "tpr": {
-          "ci": "0.5333 [0.4444, 0.6202] (n=120, wilson, 95%)",
+          "ci": "0.525 [0.4363, 0.6122] (n=120, wilson, 95%)",
           "n": 120,
-          "x": 64
+          "x": 63
         },
-        "youden_j": 0.5333333333333333
+        "youden_j": 0.525
       },
       {
         "fpr": {
@@ -165,11 +165,11 @@
         },
         "threshold": 0.9,
         "tpr": {
-          "ci": "0.3667 [0.2858, 0.4558] (n=120, wilson, 95%)",
+          "ci": "0.425 [0.3402, 0.5144] (n=120, wilson, 95%)",
           "n": 120,
-          "x": 44
+          "x": 51
         },
-        "youden_j": 0.36666666666666664
+        "youden_j": 0.425
       }
     ],
     "why_descriptive": "these arms cannot decide the sealed oracle because the API has no tier; they establish that the category exists, is answerable, and is answered with a score rather than a verdict — the part of the finding no extra n would change"
@@ -308,7 +308,7 @@
     "thresholds": [],
     "verdict": "FALSE"
   },
-  "run_id": "r20260810T0345Z",
+  "run_id": "r20260815T093942Z",
   "tier_proxy": {
     "classic": {
       "fpr": {
@@ -336,9 +336,9 @@
       "fpr_ci": "0 [0, 0.03374] (n=110, wilson, 95%)",
       "recall": {
         "n": 120,
-        "x": 119
+        "x": 118
       },
-      "recall_ci": "0.9917 [0.9543, 0.9985] (n=120, wilson, 95%)",
+      "recall_ci": "0.9833 [0.9413, 0.9954] (n=120, wilson, 95%)",
       "rule": "recall's two-sided 95% lower bound above the SAME tier's benign FPR upper bound; the FPR term is the same tier's own benign arm, because a tier that fires on everything is not detecting leakage",
       "works": true
     }

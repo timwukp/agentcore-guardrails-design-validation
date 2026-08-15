@@ -64,14 +64,36 @@ SCAN_EXT = {".py", ".md", ".csv", ".json", ".yaml", ".yml", ".txt", ".sh", ".sql
 # id", and this renderer never splits a run mid-token, so an identifier cannot hide
 # across two <a:t> elements.
 OOXML_EXT = {".pptx", ".docx", ".xlsx"}
-SKIP_DIRS = {".git", ".pytest_cache", "__pycache__", ".venv", ".venv-oracle",
-             ".venv-baseline", "node_modules", "evidence", ".state"}
+SKIP_DIRS = {".git", ".pytest_cache", "__pycache__", "node_modules", "evidence",
+             ".state", ".staging"}
+# Virtualenvs are matched by PREFIX, not enumerated. Enumerating them is how this gate
+# already failed once: DEVIATIONS records a version where `".venv" not in p.parts` never
+# matched `.venv-oracle`, so the scan read 1,272 files of site-packages and its own
+# non-empty floor was satisfied by dependencies rather than by the repo. Listing each
+# venv by name fixes that instance and leaves the next one uncovered — `.venv-figs`, added
+# 2026-08-15 for the whitepaper figures, would have been the third such instance. A
+# predicate cannot go stale when someone creates a fourth.
+SKIP_DIR_PREFIXES = (".venv",)
 # Every entry above is a directory that CANNOT reach a reader, and that is the whole
 # justification for skipping it — this gate's docstring scopes it to "everything that
-# could be published". Two of the entries hold project data rather than tooling:
-# `evidence/`, 178 MB of raw API responses kept local by written policy, and
+# could be published". Three of the entries hold project data rather than tooling:
+# `evidence/`, 178 MB of raw API responses kept local by written policy;
 # `runner/.state/`, which records the live instance id and the runner bucket name —
-# precisely the value DEV-P4-25 exists to keep out of a pushable file.
+# precisely the value DEV-P4-25 exists to keep out of a pushable file; and
+# `runner/.staging/`, the local-only scratch path `.gitignore:14-22` describes, which
+# `tools/day2_replicate.py` uses for its pre-run snapshot of `results/phase1/`.
+#
+# `.staging` was added on 2026-08-15 after that snapshot made the gate FAIL on six
+# private-ip hits, all of them in copies of `results/phase1/F5-7b.json` — a file whose
+# original carries a reviewed ALLOW for exactly those lines, keyed to its path. The
+# alternative fixes were both worse: waiving the pattern again under a second path teaches
+# a reader that F5-7b's VPC CIDR is always fine wherever it appears, and moving the
+# snapshot out of the repo would put the one copy of day 1 somewhere a crashed run's
+# operator would not think to look. (The CIDR itself is deliberately not written here: this
+# file is inside its own scan, so quoting the literal made the gate FAIL on its own source
+# — which is the guard working, and `feedback_self_scanning_guard` says describe the value
+# rather than exempt the file by path.) The gate was reading a directory that neither publication path can reach,
+# which is the mirror image of the defect the skip list is usually accused of.
 #
 # "Cannot reach a reader" is a claim, so it is checked rather than trusted:
 # `lib/tests/test_redaction_gate_skips.py` asserts that every entry here is matched by a
@@ -608,7 +630,10 @@ def files() -> list[Path]:
     for p in sorted(ROOT.rglob("*")):
         if not p.is_file() or p.suffix.lower() not in SCAN_EXT | OOXML_EXT:
             continue
-        if any(part in SKIP_DIRS for part in p.relative_to(ROOT).parts):
+        parts = p.relative_to(ROOT).parts
+        if any(part in SKIP_DIRS for part in parts):
+            continue
+        if any(part.startswith(SKIP_DIR_PREFIXES) for part in parts[:-1]):
             continue
         out.append(p)
     return out
@@ -631,7 +656,8 @@ def main(argv: list[str] | None = None) -> int:
     ooxml = [str(p.relative_to(ROOT)) for p in paths if p.suffix.lower() in OOXML_EXT]
     print(f"  OOXML {sorted(OOXML_EXT)} — {len(ooxml)} package(s) unzipped: "
           f"{', '.join(ooxml) if ooxml else 'none'}")
-    print(f"  skipped dirs {sorted(SKIP_DIRS)}")
+    print(f"  skipped dirs {sorted(SKIP_DIRS)} "
+          f"+ any dir starting with {list(SKIP_DIR_PREFIXES)}")
 
     if len(paths) < MIN_FILES:
         print(f"\nFAIL — scanned {len(paths)} file(s), below the floor of {MIN_FILES}. "

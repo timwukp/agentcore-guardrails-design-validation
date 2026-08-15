@@ -11,7 +11,12 @@ reviewer will find them anyway and will then also distrust the 46.
 Ordered by how badly each one would embarrass the paper if a reviewer found it first.
 
 **Item numbers are stable identifiers, not positions.** Items 1–18 were written in this file's first
-pass; 19–21 were added on 2026-08-15 from research pass `wf_3762680e-846` and are placed in the tier
+pass; 19–21 were added on 2026-08-15 from research pass `wf_3762680e-846`, **22** on the same day from
+running the first replication in item 2's queue, and **23–27** later that day from the third, fourth and
+fifth (F10-3, F8-5, F8-4) — four of those five were found by *doing* the replications, not by reviewing
+them, and item 27 is the first Tier-1 item any of this work produced, which is the argument for finishing
+the remaining eight. **28** was added on 2026-08-15 from drawing the whitepaper's figures: a blocked
+figure is a deficiency with a name, not a blank space. All are placed in the tier
 they belong to rather than appended, so the numbering is out of order on purpose. Nothing is renumbered
 once written, because other files cite these numbers.
 
@@ -68,6 +73,15 @@ printing the rule in the methods section is the worst available combination.
 Until then every one of those amendments carries a one-day-data caveat **in the body, not only in
 an appendix**. A contradicting day-2 is a finding, not a fix-up.
 
+**The document edit is deliberately batched, not incremental.** v1.4 already has a convention for a
+replicated citation — "F5-1, TRUE, n=120, **replicated 2026-08-11/12**" — and each discharged case
+earns that form. Rewriting citations one case at a time would mean a seventh, eighth, ninth amendment
+batch, each dragging both editions, both decks and an Appendix D item, for a change that adds a date.
+The pass happens **once**, when the batch is done or is declared closed, and it is a citation-dating
+pass that amends no claim. Nothing published is wrong in the meantime: v1.4 carries no per-case
+one-day caveat for these twelve to be stale — the only one-day caveat in the body is F5-8's, which is
+a different case with a different problem (item 3).
+
 **Blocker RESOLVED 2026-08-15 — see DEV-P4-37.** All twelve are now classified from their
 producers, not from prose. **Eleven ride the runner**; F6-2 and F6-5 turned out to read
 `invocationMetrics.guardrailProcessingLatency`, a service-reported number, so they are as
@@ -80,6 +94,55 @@ cross-check it declines to score (`f6_latency/03_composition.py:1051-1053`).
 The test that decides this is **not** the family name and **not** the presence of a timer: F4-6 and
 F5-8 both call `monotonic()` and are position-free because their timers are poll deadlines. It is
 whether a clock reading appears **in the quantity the oracle evaluates**.
+
+**5 of 12 discharged 2026-08-15 — F1-14, F3-4 (DEV-P4-38), F10-3, F8-5 and F8-4 (DEV-P4-39).** F8-5's discharge is **qualified**: it replicated with a caveat and then turned out to owe an erratum (item 27), so it is discharged as a *replication* and reopened as a *finding*.
+
+**F3-4** ran under `r20260815T084022Z` against the same guardrail at the same version (`wwjmltbo1dt5`,
+READY, `updatedAt` 2026-08-10T01:15:08Z, checked live first): **367 fresh call records** dated
+2026-08-15, 32 day-1 checkpoints moved aside first, FALSE → FALSE. It also replicates the *number* the
+document cites rather than only the verdict — the same **9 of 31** entity types refuted, the same 2
+inconclusive, and identical success counts in **31 of 31** strata. Cost **$0.037** upper bound.
+
+**F1-14**, and fifteen sibling cases with it —
+`tools/day2_replicate.py` ran `f1_config/02_model_surface.py` under `r20260815T082524Z`; the producer
+decides sixteen cases, so sixteen were compared and **all sixteen agree** with 2026-08-10. $0, zero
+AWS calls, on the laptop — legitimate here only because a producer that makes no network call is
+position-free by construction. Day-1 verdicts are archived under `results/phase1/archive/`; the
+comparison is in `results/day2_replication_2026-08-15.json`.
+
+**F10-3** ran under `r20260815T092538Z` against the same guardrail (`s5vk53hdnahz`): **10 fresh call
+records**, both day-1 checkpoints isolated first — and both were *complete*, so an unguarded re-run
+would have made zero calls and exited 0 — FALSE → FALSE with the decision record identical at every
+path and 5 of 5 tagged/untagged pairs billing 7 units each. ≈**$0.0105**.
+
+**F8-5** ran under `r20260815T092557Z`, **$0** (control-plane probes), and is **REPLICATED WITH
+CAVEAT**: one of its four probes came back `ThrottlingException`, so that probe is not a second
+observation. It is also the case that produced items **23** and **25** in this file. See DEV-P4-39.
+
+**F8-4** ran under `r20260815T093942Z`: **690 fresh call records** (460 `ApplyGuardrail` +
+230 `InvokeGuardrailChecks`, 690 distinct request ids), 6 day-1 checkpoints moved aside, FALSE → FALSE,
+≈**$0.104**. Its decision record is identical at every path — and that record is two booleans, so the
+comparison was extended to the rest of the file, which is how the drift below was found (DEV-P4-39).
+**CLASSIC, the tier the verdict turns on, reproduced exactly** (recall 49/120, benign FPR 4/110);
+STANDARD's recall moved 119/120 → 118/120, and the `InvokeGuardrailChecks` threshold sweep moved at three
+thresholds, by as much as 44/120 → 51/120. So `InvokeGuardrailChecks` confidence scoring is **not**
+day-to-day deterministic, unlike ApplyGuardrail's PII matchers (F3-4) — worth stating in the paper, since
+any threshold recommended from a single day's sweep inherits that movement.
+
+**Seven remain: F6-1…F6-5, F6-8, F4-6.** Six can run live against the service;
+**F6-8 must run on the laptop** (DEV-P4-37). Every branch of the driver is now exercised by use, not
+only by mutation: the zero-call proof path on F1-14, checkpoint isolation plus the 367-record proof path
+on F3-4, the complete-checkpoint trap on F10-3, the evidence-derived day-1 date on F8-5, and the
+payload comparison on F8-4.
+
+**F4-6** and **F2-1** are gated on infrastructure, not money:
+`lib.testbed.State.load_or_new` refuses a state file written under a different run id, so each needs
+`--state` or a rebuilt testbed. The six F6-* cases are next; five ride the runner and F6-8 does not.
+
+**The driver has since been taught the comparison F3-4 got by hand** — `record_diff` reports every path
+at which the two days' decision records differ, and a move in `kind`/`thresholds`/`planned_n` is an
+error rather than a note. That closed the per-stratum gap and immediately opened item 23: the record can
+be identical at every path and still be carrying a throttled call.
 
 ### 3. F5-8's day-2 replication has an undiagnosed instrument fault
 
@@ -94,6 +157,42 @@ was ours or the service's. It must be recorded, not absorbed.
 **Closes when.** The failure is diagnosed and written into the finding, or the replication is
 re-run clean. The output is still only on the instance and in S3 — it has not been pulled into
 `results/`.
+
+### 27. §3.4's Standard-tier correction cites a rejection that was about something else — and the evidence supports the documented limit
+
+**Evidence.** F8-5's `standard-1000` probe on 2026-08-10 returned `ValidationException` with the message
+"**Can't configure guardrail policy tier. Enable cross-Region inference for your guardrail to use Standard
+tier.**" — a tier-configuration precondition, not a length verdict. The 2026-08-15 replication returned
+the length message on the **1001**-character probe instead ("Member must have length less than or equal to
+1000"), which shows length is evaluated *before* the tier gate; so day 1's 1000-character definition
+**passed** length validation and day 2's 1001 did not. Both days, read with their own error messages, put
+the effective maximum at exactly the documented 1000. Full probe table and derivation in DEV-P4-40.
+
+**Why it matters.** Six published sites say the opposite of what the evidence shows:
+`agentcore_guardrails_best_practices_v1.4.md` lines **274** (§3.4 tier table), **859** (checklist) and
+**1047** (changelog item 7), and lines **278 / 863 / 1051** of the zh-TW edition — plus both copies in
+`~/Downloads/AgentCore-guardrails-closed-loop-practices/deliverables/` and any deck slide built from §3.4.
+This is the worst category in this file: not a gap, not an overclaim, but a **correction that corrects a
+true statement into a false one**, published in two languages. A reader following it would avoid
+1,000-character topic definitions that in fact work.
+
+**Closes when** the user decides, because three things are entangled and only one is mine to do:
+
+1. **The verdict.** The STANDARD half is **INCONCLUSIVE** — the sealed oracle needs an at-limit definition
+   observed *accepted*, and without cross-Region inference the tier gate refuses the create whatever the
+   length. It is not TRUE either: "the limit is 1000" is sound inference from two error messages, not the
+   sealed criterion. `INCONCLUSIVE` licenses no amendment, so the §3.4 correction has to be **withdrawn**
+   rather than reversed. The CLASSIC half (200 accepted, 201 rejected for length, byte-identical messages
+   on both days) is unaffected and genuinely replicated.
+2. **The erratum.** E-2, at the six sites above, both editions in the same edit, plus the bundle and decks.
+3. **The re-test that would settle it, $0.** Re-run `f8_regional/04_topic_limits.py` with
+   `crossRegionConfig` set on the STANDARD probes and with backoff between them, on a third UTC day. That
+   makes acceptance observable and removes both throttles. It is a *new* observation of a sealed case, so
+   it needs the user's go-ahead, not a quiet re-run — and if it shows 1000 accepted, F8-5's STANDARD half
+   becomes TRUE and §3.4 needs no correction at all.
+
+**Do not fix this by editing the verdict file.** The FALSE is what the sealed oracle computed from what it
+was given; the defect is that it was given accept/reject and not cause (item 23).
 
 ### 19. We call it reproduction; the accepted vocabulary calls it repeatability
 
@@ -263,6 +362,51 @@ judgment and must be labelled as such, with the two anchors above cited where th
 Non-negotiable either way: **every figure is generated by a repo script from the evidence tree**, or it
 does not ship.
 
+**Update 2026-08-15: the generation half is now done; the sourcing half is not.**
+`tools/whitepaper_figures.py` draws **7 of 8** figures from `results/` only, and `--check` re-derives
+their numbers against `results/figures/MANIFEST.json` (numbers, never PNG bytes — a byte diff would red
+on a matplotlib bump while the measurements were untouched). What this item still owes is unchanged: the
+conventions those seven figures follow are our judgment, and the WCAG citation that would turn
+"INCONCLUSIVE needs a hatch, not a third hue" into a standards requirement is still unverified.
+
+Three things were learned by drawing them, all worth keeping:
+
+- **A generated figure is not verified until the rendered image is inspected.** Two defects survived a
+  clean script run and would have shipped a false claim. Figure 7 placed the ENFORCE restore at 26.5 s
+  while labelling it "+13.3 s", because it summed two intervals that are timed from *different* control-
+  plane calls — F5-2 records no clock shared between them, so the single timeline it drew could not
+  exist. Figure 4 drew its two censored lattice points as bars 44 units tall, a height a reader can read
+  straight off the y-axis and compare with the real 48 at score 0.8; a censored point has no count.
+- **Read the measurement, not the prose beside it.** Figure 7's first label said "HTTP 200", copied from
+  F5-2's `why_it_is_recorded` narrative. The measured `chain.flip.http_status` is **202**.
+- **Plot every replication day.** Figure 7 initially showed day 2 only. Day 1 exists in
+  `results/phase1/archive/F5-2__day1_2026-08-12.json` and disagrees — 14.2 s against 13.2 s on the same
+  quantity — which is itself the result: the interval is not a constant, and a one-day figure publishes
+  a precision the measurement does not have.
+
+### 28. Figure 6 cannot be drawn: 12 of the 17 OWASP Agentic threat titles are ungrounded
+
+**Evidence.** `tools/whitepaper_figures.py` records `fig-06-control-threat-matrix` as `BLOCKED` in
+`results/figures/MANIFEST.json`, with its reason. Of the seventeen threat IDs in OWASP Agentic AI v1.1,
+only **five** (T1, T3, T9, T15, T16) have a title grounded in a source this project holds; the paper's
+Chapter 2 quotes exactly those. The other twelve would have to be authored from memory.
+
+**Why it matters.** This is the one figure a security architect would use first — the control × threat
+matrix is how a reader decides whether our 31 controls cover the threats they already track. It is also
+the figure most dangerous to fake: drawing twelve columns from memory is fabrication, and drawing them
+as an empty "not established" state would misreport **our** missing source as **AgentCore's** missing
+coverage, which a matrix reads as a finding. The blocked state is the correct output, and it is recorded
+where a script can see it rather than only in prose.
+
+**Closes when.** The pinned OWASP Agentic AI v1.1 PDF (sha256 `65e3bd59f99c…0345ff`, already pinned in
+Chapter 2) is re-read for all seventeen titles, `results/CROSSMAP-ACG-THREATS.json` is authored from it
+with a per-cell state and a per-cell reason, and `fig06()` reads that file. The three-state encoding is
+already specified: covered-by-measurement / covered-by-inference / not-established, distinct by hatch as
+well as hue, which ties this item to item 9's WCAG verification.
+
+**Constraint carried from item 8.** Map by **TID only** — OWASP's own 2026 document renames T4/T6/T12,
+so a title-keyed matrix would silently mismatch across versions.
+
 ### 20. The verdict taxonomy is our own construction and has no located precedent
 
 **Evidence.** Research pass `wf_3762680e-846` looked for a citable venue or standards-body precedent
@@ -368,6 +512,127 @@ after confirming the same files collect on the runner.
 One script serves four cases, so their records are filed under F2-2. An open design question for
 the owed F1-18/F2-2/F2-3/F2-4 finding document — **not** a silent fix, because renaming records
 after the fact is exactly what the seals exist to prevent.
+
+### 22. The replication gate does not look at the twelve cases that owe a replication
+
+**Evidence.** `check_amendment_readiness.py` enumerates `results/FINDING-*.md`, reads
+`evidence_runs` and `cases` from each provenance block, and counts distinct UTC observation days for
+any finding whose status is `AMENDED` or `READY_TO_AMEND`. Eleven docs carry a non-empty
+`evidence_runs`, and between them they name **twelve distinct case ids**: F1-3, F1-15, F1-19, F1-24,
+F1-25, F3-10, F5-1, F5-2, F5-4a, F5-4a-logonly-read, F5-7a, F5-7b. **Not one of
+the twelve cases from item 2 appears in any of them** — the two sets are the same size by coincidence
+and are entirely disjoint. Those were amended through v1.4's amendment
+batches, which the gate does not read.
+
+**A correction to this item's own evidence, 2026-08-15.** It previously reported the gate as standing
+at "4 problems in 92 assertions, all four about FINDING-F1-15.md and FINDING-F5-7B.md" and offered
+that as the gate's fixed state. Those four problems were **not** a property of the gate: 607 evidence
+records were sitting unmerged in `runner/.state/incoming/20260814T162515Z/`, so the gate was reading a
+tree from which two findings' records were absent. After `runner/merge_evidence.py` promoted them,
+`check_amendment_readiness.py` **exits 0**, and FINDING-F5-7B.md reports
+`AMENDMENT_DEFERRED  1 day(s) ['2026-08-14']` — correctly deferred rather than erroring. The measured
+figure described a transient tree state and was quoted here as if it described the tool. The
+scope argument below is untouched by that correction and is why this item stays open.
+
+**Why it matters.** The gate is the only executable statement of the study's own two-day rule, and it
+is silent on exactly the population that violates it. Its failing does not mean the twelve are
+unreplicated and its passing would not mean they are — so a reader who runs it, as the README invites
+them to, learns nothing about the largest replication debt in the study. Worse, the gate's own
+docstring describes it as enforcing the sealed rule, which reads as *the* rule rather than *the rule
+over findings that happen to carry a provenance block*. Same defect class as
+`FUTURE-WORK.md` item 18: a check whose scope is narrower than the claim it appears to make.
+
+**Closes when.** Either the gate is extended to read amendment provenance from a source that covers
+all twelve — `results/day2_replication_*.json` is now a machine-readable record of exactly what was
+observed on which day, so the input exists — or the gate states its scope in its own output, so that
+"OK" cannot be read as "the two-day rule holds everywhere". The first is better; the second is the
+minimum. Do not close it by adding provenance blocks to findings that do not exist: **none** of the
+twelve has a FINDING doc, and manufacturing one to satisfy a gate is the inverse of the gate's
+purpose.
+
+### 23. Producers can score a transient AWS error as an observation, and one published verdict did
+
+**Evidence.** F8-5's oracle reads four `CreateGuardrail` outcomes, where the exception *is* the datum.
+On both of its observation days one probe returned `ThrottlingException` — the service declining the
+request rather than judging the topic definition — and the producer classified both as
+`observed: "rejected"`. On 2026-08-10 that landed on `standard-1001` (expected rejected), so
+`record.evidence.over_limit_rejected: true` over-states what was seen; on 2026-08-15 it landed on
+`standard-1000` (expected accepted), so the day's entire refutation rested on a call that never reached
+the boundary. See DEV-P4-39 for the probe-by-probe table. `agentcore_guardrails_best_practices_v1.4.md:274`
+happens to disclose the day-1 throttle in prose, so nothing published is wrong — but that was the
+author's care, not a guard.
+
+**Why it matters.** Nothing in the evidence chain could see it. The verdict agreed, `record_diff`
+reported the decision record identical at every path, and no sealed field moved, because
+`record.evidence` is three booleans that cannot separate *this content was rejected* from *this request
+was rejected*. `tools/day2_replicate.py` now flags transiently-failed calls at replication time
+(`transient_failures`, and `clean_observation` in the run JSON), which catches the **replication**
+case — it does not fix the **producer**, so a first observation can still convert a throttle into
+evidence with nothing to notice.
+
+**Closes when.** Every producer whose oracle reads an exception classifies transient codes as a third
+outcome (`throttled` / `matches_expected: null`) and retries with backoff instead of scoring them, and
+`lib.oracle` refuses to count a trial whose call carries a transient error. Audit target: every case
+whose `record.evidence` is a boolean over error codes rather than a count — F8-5, F8-4 and the F1-*
+validation-boundary family are the known population; it has not been enumerated. Until then, F8-5's
+STANDARD half has **one** sound observation, not two.
+
+### 24. Two published verdicts' call records exist only in S3, under a 90-day expiry that deletes them in November 2026
+
+**Evidence.** Of 98 verdict files, 92 cite a run id with a local `evidence/<run_id>/` directory. Two do
+not: **F10-3** (`r20260813T145248Z`) and **F3-11_snapshot** (`r20260814T031052Z`). Both ran on the EC2
+runner and were never pulled, so their call records exist only in the runner's S3 bucket, spread across
+four `out/<ts>/` prefixes. The bucket's lifecycle was read live: `expire-90d`, **Enabled**, prefix `""`,
+`Expiration {Days: 90}` — i.e. every object, no exceptions. Those objects are therefore scheduled for
+deletion **~2026-11-11 to ~2026-11-13**.
+
+**Why it matters.** F10-3's verdict was replicated on 2026-08-15 (DEV-P4-39) and the day-2 records *are*
+local, so the finding survives; but its **day-1** observation, which is the one the document cites, does
+not exist anywhere else. After the expiry the study would carry two verdicts whose primary evidence is
+unavailable at any level of scrutiny — which is a stronger version of item 21 (a commit is not an
+archive): here there would be nothing to archive.
+
+**Closes when.** Both prefixes are pulled into `evidence/` and the pull is verified by object count and
+sha256, **or** a lifecycle exception is added for them and recorded. Blocked on a user decision: the
+`runner/sync.py pull` path was declined twice and its `EndpointConnectionError` is still un-reproduced
+(item 16), so the pull may have to be done with the AWS CLI instead. **This has a date on it** — unlike
+every other item here, doing nothing eventually destroys evidence.
+
+### 25. Two published run ids cannot be dated from their own name
+
+**Evidence.** F8-5 (FALSE) and F8-8 (TRUE) carry `run_id` `smoke20260810T0305Z`, which
+`lib.evidence.RUN_ID_RE` does not match, so every tool that derives an observation date from the run id
+returns nothing for them. The replication driver refused F8-5 outright until a fallback was written that
+reads the day off the records' own `t_start_utc` (`evidence_date`) — and those records say
+**02:45:52Z–02:45:56Z**, so the string is not merely unparseable, it **disagrees** with the observation
+by twenty minutes.
+
+**Why it matters.** Any future audit that groups evidence by observation day silently drops these two,
+and a reader who parses the run id gets a time that is wrong. The fallback fixes one consumer; the other
+consumers of run ids have not been enumerated.
+
+**Closes when.** Either the two verdict files gain an explicit `observed_utc_date` field derived from
+their records (a *new* field, not a rewritten run id — renaming a sealed run id is what the seals
+prevent), or every tool that dates a run is audited to use the record rather than the name. Prefer the
+first: it is one derivation, done once, checkable.
+
+### 26. A checkpoint labels F10-3's manipulated arm as unmanipulated
+
+**Evidence.** F10-3's two day-1 checkpoints both record `meta.qualifiers: []`, including the *tagged*
+arm — whose entire manipulation is `qualifiers=['guard_content']`. The verdict itself is sound: the
+qualifier is set per content block, not on the request (`f10_billing/02_input_tagging.py:230`), the
+producer's own `manipulation_check()` FATALs if the two arms differ by anything else, and the published
+verdict records `tagged_qualifiers: [[], ["guard_content"]]` against `untagged_qualifiers: [[], []]`
+with `texts_identical: true`.
+
+**Why it matters.** It cost real time during the 2026-08-15 replication: the checkpoint was read as
+evidence that the manipulation had not been applied, and it took reading the producer to establish that
+the label, not the experiment, was wrong. A checkpoint field that contradicts the manipulation it is
+meant to document is a trap for the next reader, and it is on the artifact a resumed run trusts.
+
+**Closes when.** `meta.qualifiers` records the per-block qualifiers actually sent (or is renamed to say
+it holds the request-level ones, which are always empty for this producer). Cosmetic for the verdict,
+not for the audit trail.
 
 ---
 

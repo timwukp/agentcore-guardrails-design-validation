@@ -20,8 +20,8 @@
       "5000": "client-side OK"
     },
     "sdk": {
-      "boto3": "1.42.79",
-      "botocore": "1.42.79"
+      "boto3": "1.43.67",
+      "botocore": "1.43.67"
     },
     "sdk_declared_max": 200,
     "sdk_declared_max_note": "the model declares definition max=200 REGARDLESS of tier, on the same field the document says accepts 1000 on STANDARD. Reported whatever the server does: an SDK ceiling below a documented service ceiling is a surface §3.4 does not mention",
@@ -29,12 +29,15 @@
   },
   "deletions": [
     {
+      "already_gone": false,
+      "attempt_error_codes": [],
+      "attempts": 1,
       "deleted": true,
       "error_code": null,
-      "guardrail_id": "vbf38mk02wnp",
+      "guardrail_id": "rsj1w7pal1vt",
       "label": "classic-200",
-      "name": "grx-gr-f8-5-classic-200-smoke20260810T0305Z",
-      "request_id": "526ba71d-6786-452f-8092-b39d7e6963a4"
+      "name": "grx-gr-f8-5-classic-200-r20260815T092557Z",
+      "request_id": "ff487bd5-b53b-4908-84a3-4b753eea69d7"
     }
   ],
   "filler_rationale": "the definition is 'a' repeated. A 1001-character English sentence and a 200-character one differ in content as well as length, and a rejection could then be about what the definition says; here length is the only thing that varies across the four probes",
@@ -61,7 +64,7 @@
         "accepted": true,
         "error_code": null,
         "length": 200,
-        "request_id": "6dd0f7cf-903c-431e-ac69-31c22ce3a664"
+        "request_id": "39dae8d5-a713-46d3-9972-528e829d00ea"
       },
       "boundary_holds": true,
       "documented_limit": 200,
@@ -70,24 +73,24 @@
         "error_code": "ValidationException",
         "error_message": "One or more of your guardrail topic definitions exceeds the maximum allowed length. Shorten your topic definitions or update your guardrail topic policy configuration to support longer definitions. For more information, see the Amazon Bedrock documentation.",
         "length": 201,
-        "request_id": "8ea9ca00-a6e4-4cd3-981d-5f63afe6b9de"
+        "request_id": "290450d5-c288-477a-957f-a67a023793a2"
       }
     },
     "STANDARD": {
       "at_limit": {
         "accepted": false,
-        "error_code": "ValidationException",
+        "error_code": "ThrottlingException",
         "length": 1000,
-        "request_id": "632240fc-8352-4fd3-be4a-f692707bded4"
+        "request_id": "9ac08fbd-3392-41d1-86d7-9dab32ce43b4"
       },
       "boundary_holds": false,
       "documented_limit": 1000,
       "over_limit": {
         "accepted": false,
-        "error_code": "ThrottlingException",
-        "error_message": "Too many requests, please wait before trying again. You have sent too many requests.  Wait before trying again.",
+        "error_code": "ValidationException",
+        "error_message": "1 validation error detected: Value at 'topicPolicyConfig.topicsConfig.1.member.definition' failed to satisfy constraint: Member must have length less than or equal to 1000",
         "length": 1001,
-        "request_id": "f880b75c-e843-44b4-9349-b06c38477249"
+        "request_id": "ee1900da-1a17-47ae-a885-cf572d061d88"
       }
     }
   },
@@ -97,64 +100,64 @@
       "accepted": true,
       "error_code": null,
       "error_message": null,
-      "evidence": "evidence/smoke20260810T0305Z/f8/F8-5/0001_create_guardrail_ok.json",
+      "evidence": "evidence/r20260815T092557Z/f8/F8-5/0001_create_guardrail_ok.json",
       "expect": "accepted",
-      "guardrail_id": "vbf38mk02wnp",
+      "guardrail_id": "rsj1w7pal1vt",
       "http_status": 202,
       "label": "classic-200",
       "length": 200,
       "matches_expected": true,
-      "name": "grx-gr-f8-5-classic-200-smoke20260810T0305Z",
+      "name": "grx-gr-f8-5-classic-200-r20260815T092557Z",
       "observed": "accepted",
-      "request_id": "6dd0f7cf-903c-431e-ac69-31c22ce3a664",
+      "request_id": "39dae8d5-a713-46d3-9972-528e829d00ea",
       "tier": "CLASSIC"
     },
     {
       "accepted": false,
       "error_code": "ValidationException",
       "error_message": "One or more of your guardrail topic definitions exceeds the maximum allowed length. Shorten your topic definitions or update your guardrail topic policy configuration to support longer definitions. For more information, see the Amazon Bedrock documentation.",
-      "evidence": "evidence/smoke20260810T0305Z/f8/F8-5/0002_create_guardrail_err.json",
+      "evidence": "evidence/r20260815T092557Z/f8/F8-5/0002_create_guardrail_err.json",
       "expect": "rejected",
       "guardrail_id": null,
       "http_status": 400,
       "label": "classic-201",
       "length": 201,
       "matches_expected": true,
-      "name": "grx-gr-f8-5-classic-201-smoke20260810T0305Z",
+      "name": "grx-gr-f8-5-classic-201-r20260815T092557Z",
       "observed": "rejected",
-      "request_id": "8ea9ca00-a6e4-4cd3-981d-5f63afe6b9de",
+      "request_id": "290450d5-c288-477a-957f-a67a023793a2",
       "tier": "CLASSIC"
-    },
-    {
-      "accepted": false,
-      "error_code": "ValidationException",
-      "error_message": "Can't configure guardrail policy tier. Enable cross-Region inference for your guardrail to use Standard tier. For more information, see the Amazon Bedrock documentation.",
-      "evidence": "evidence/smoke20260810T0305Z/f8/F8-5/0003_create_guardrail_err.json",
-      "expect": "accepted",
-      "guardrail_id": null,
-      "http_status": 400,
-      "label": "standard-1000",
-      "length": 1000,
-      "matches_expected": false,
-      "name": "grx-gr-f8-5-standard-1000-smoke20260810T0305Z",
-      "observed": "rejected",
-      "request_id": "632240fc-8352-4fd3-be4a-f692707bded4",
-      "tier": "STANDARD"
     },
     {
       "accepted": false,
       "error_code": "ThrottlingException",
       "error_message": "Too many requests, please wait before trying again. You have sent too many requests.  Wait before trying again.",
-      "evidence": "evidence/smoke20260810T0305Z/f8/F8-5/0004_create_guardrail_err.json",
-      "expect": "rejected",
+      "evidence": "evidence/r20260815T092557Z/f8/F8-5/0003_create_guardrail_err.json",
+      "expect": "accepted",
       "guardrail_id": null,
       "http_status": 429,
+      "label": "standard-1000",
+      "length": 1000,
+      "matches_expected": false,
+      "name": "grx-gr-f8-5-standard-1000-r20260815T092557Z",
+      "observed": "rejected",
+      "request_id": "9ac08fbd-3392-41d1-86d7-9dab32ce43b4",
+      "tier": "STANDARD"
+    },
+    {
+      "accepted": false,
+      "error_code": "ValidationException",
+      "error_message": "1 validation error detected: Value at 'topicPolicyConfig.topicsConfig.1.member.definition' failed to satisfy constraint: Member must have length less than or equal to 1000",
+      "evidence": "evidence/r20260815T092557Z/f8/F8-5/0004_create_guardrail_err.json",
+      "expect": "rejected",
+      "guardrail_id": null,
+      "http_status": 400,
       "label": "standard-1001",
       "length": 1001,
       "matches_expected": true,
-      "name": "grx-gr-f8-5-standard-1001-smoke20260810T0305Z",
+      "name": "grx-gr-f8-5-standard-1001-r20260815T092557Z",
       "observed": "rejected",
-      "request_id": "f880b75c-e843-44b4-9349-b06c38477249",
+      "request_id": "ee1900da-1a17-47ae-a885-cf572d061d88",
       "tier": "STANDARD"
     }
   ],
@@ -187,7 +190,7 @@
     "surviving": [],
     "why_two_lists": "a probe whose delete was never ATTEMPTED contributes no row to `deletions`, so a residue computed from that list alone would report zero survivors for exactly the case where one exists"
   },
-  "run_id": "smoke20260810T0305Z",
+  "run_id": "r20260815T092557Z",
   "verdict": "FALSE",
   "why_new_guardrails": "the provisioner's `topic` guardrail is CLASSIC-only (tierConfig CLASSIC, ~140-char definition) because F3-5 needs one stable topic configuration. Changing its tier to answer the STANDARD half would silently change F3-5's instrument, so this case creates and deletes its own probes"
 }
