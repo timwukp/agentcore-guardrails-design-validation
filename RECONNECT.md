@@ -2,7 +2,7 @@
 
 Read this first if the session dropped. It is the shortest path back to the live state.
 
-## ⇢ RESUME HERE (2026-08-15): **measurement and both decks are finished; what is left is two user decisions and four dated follow-ups**
+## ⇢ RESUME HERE (2026-08-15): **measurement and both decks are finished; the two user decisions are MADE (see below) — what is left is the queued day-2 batch and three dated follow-ups**
 
 Written because the laptop may be powered off at any moment. The runner has been **stopped** (see
 below) and nothing is in flight anywhere — no LIVE case, no detached job, no half-written AWS state.
@@ -114,19 +114,27 @@ slides** with `keep_rows`. The rest quote verbatim. Verdict citations are stripp
 `strip_citations` (content-driven — it keys on case ids, so it works on both languages) and replaced
 by one footnote per slide pointing back at the document.
 
-### Two things owed to the user, both awaiting *their* decision, not more work
+### The two user decisions — BOTH MADE 2026-08-15; one is done, one is queued
 
-1. **`reproduction_before_amendment` is applied inconsistently.** F6-1…F6-5, F6-8, F4-6, F3-4, F8-4,
-   F8-5, F1-14 and F10-3 were amended on a single calendar day's data, while F5-8 is being held to
-   the two-UTC-day bar. Either the bar binds all of them or it binds none; I have not chosen.
-2. **Sealed `claims/triage.csv:147` still says `POST /inference`** where §4.1 now says
-   `/inference/v1/messages`. The csv is a sealed bound artifact — it cannot be edited, so the
-   divergence has to be either accepted and annotated or handled as a deviation.
+1. **`reproduction_before_amendment` inconsistency → the user chose the strict reading** ("從嚴"):
+   the two-UTC-day bar binds every amendment, so the 12 cases amended on a single calendar day's
+   data — **F6-1…F6-5, F6-8, F4-6, F3-4, F8-4, F8-5, F1-14, F10-3** — each owe a day-2
+   replication. The user explicitly queued this as a to-do rather than an immediate run ("可以將這
+   放在to-list"), so it sits in the list below and **does not block anything published**: until a
+   case's day-2 lands, its v1.4 amendment stands on one day's data and should be cited with that
+   caveat. If any day-2 *contradicts* day 1, that is a finding, not a fix-up — record it and bring
+   it back to the user.
+2. **Sealed `claims/triage.csv:147` (`POST /inference` vs the measured `/inference/v1/messages`) →
+   annotated, not edited.** DONE: `results/ERRATA.md` entry **E-1** carries the correction, the
+   evidence pointers and the reasoning; the csv stays byte-identical and its seal stands.
 
 ### Still owed, mechanically
 
-- **Day-2 replications: F5-8** (window opened 2026-08-15 UTC — it is the gate for swapping §4.4
-  route #3's Accelerator/NDA citation for public evidence), **F4-6**, **F2-1**.
+- **Day-2 replications — one runner session covers all of it** (start with `runner/provision.py`):
+  - **F5-8** (window opened 2026-08-15 UTC — it is the gate for swapping §4.4 route #3's
+    Accelerator/NDA citation for public evidence), **F4-6**, **F2-1** — owed already.
+  - **The 12 single-day-amended cases** per user decision 1 above: F6-1…F6-5, F6-8, F3-4, F8-4,
+    F8-5, F1-14, F10-3 (F4-6 is already in the line above). Queued, per the user, not urgent.
 - `f5_redteam/tests/test_route_credential_reachability.py` — F5-8 has no test file.
 - `F3-11 --compare` on **2026-08-18** and **2026-09-10**.
 - `runner/sync.py pull` exits 0 after an `EndpointConnectionError`. Deferred deliberately as its own
@@ -137,10 +145,9 @@ by one footnote per slide pointing back at the document.
 `i-0f90ac6377bba523b` (`t3.small`, us-east-1) was stopped 2026-08-15 after this note was written.
 Nothing was running on it: every job in `runner/run.py --jobs` carries an exit code, the one `LOST?`
 row is a stale 2026-08-12 job. A stopped `t3.small` bills only its 40 GB volume (~$0.11/day).
-Restart with `runner/provision.py` (it knows the instance id) — but note that **nothing outstanding
-needs it**: the two user decisions need no instrument, the F5-8/F4-6/F2-1 day-2 replications are LIVE
-AWS work that does want the runner, and everything else (the decks, the publication steps) is
-laptop-only by design — python-pptx is on the system python3, and the instance deliberately holds no
+Restart with `runner/provision.py` (it knows the instance id). The one thing that needs it is the
+queued day-2 replication batch above (F5-8/F4-6/F2-1 plus the 12 from user decision 1 — LIVE AWS
+work); everything else (the decks, the publication steps) is laptop-only by design — python-pptx is on the system python3, and the instance deliberately holds no
 GitHub credential.
 
 ## HISTORICAL (2026-08-13): **71 of 92 published; F5 is the whole remaining bulk**
