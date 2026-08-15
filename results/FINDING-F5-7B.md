@@ -18,7 +18,7 @@ states wrongly
   "evidence_runs": ["r20260810T130945Z"],
   "cases": ["F5-7b"],
   "amendment_licensed": false,
-  "blocked_on": "A working invoke channel. The oracle is denominated in an IMAGE PULL, and on all three arms the only channel that could observe a pull returned a client-side botocore read timeout with http_status None, no request id, and duration_ms of 70082/70077/70073 — a fixed 70s socket timeout, identical across three different network configurations, carrying no information about whether an image was fetched. `pull_evidence()` labelled that `pull_failed` because `PULL_MARKERS` contains 'timeout'; the honest label is `ambiguous` on all three arms. Until the pull is made observable — an image that answers the AgentCore contract on :8080, or the runtime's CloudWatch log stream, which the execution role can already write — this case cannot be decided either way. Separately citable and NOT blocked: (1) a VPC-mode runtime with NO default route reached READY with an empty failureReason, so READY is not evidence of egress; (2) a VPC-mode runtime leaves a service-managed `agentic_ai` ENI attached by `amazon-aws` that outlives the runtime and blocks subnet/SG/VPC teardown — measured at 25 consecutive refusals over 7,208 s, i.e. hours rather than the 35 minutes first recorded, with `ListAgentRuntimes` on 2026-08-15 confirming no `grx-*` runtime survives to be holding it. Both are single-day and single-run.",
+  "blocked_on": "A working invoke channel. The oracle is denominated in an IMAGE PULL, and on all three arms the only channel that could observe a pull returned a client-side botocore read timeout with http_status None, no request id, and duration_ms of 70082/70077/70073 — a fixed 70s socket timeout, identical across three different network configurations, carrying no information about whether an image was fetched. `pull_evidence()` labelled that `pull_failed` because `PULL_MARKERS` contains 'timeout'; the honest label is `ambiguous` on all three arms. Until the pull is made observable — an image that answers the AgentCore contract on :8080, or the runtime's CloudWatch log stream, which the execution role can already write — this case cannot be decided either way. Separately citable and NOT blocked: (1) a VPC-mode runtime with NO default route reached READY with an empty failureReason, so READY is not evidence of egress; (2) a VPC-mode runtime leaves a service-managed `agentic_ai` ENI attached by `amazon-aws` that outlives the runtime and blocks subnet/SG/VPC teardown — measured to exhaustion at 48 consecutive refusals over 14,115.6 s (the sweeper's full 240-minute budget), with `ListAgentRuntimes` on 2026-08-15 confirming no `grx-*` runtime survives to be holding it, and then released by the service unprompted — `DescribeNetworkInterfaces` answers `InvalidNetworkInterfaceID.NotFound` and the three items behind it deleted on the first attempt, so this case's residue is now zero. Both are single-day and single-run.",
   "note": "The published verdict is safe despite the defect: the mislabelling can only ever produce `pull_failed`, and the oracle's TRUE requires the pair (pull_failed, pull_succeeded), so the defect cannot manufacture a TRUE. It also cannot manufacture the FALSE, which needs pull_succeeded on the no-route arm. The defect can only push the case toward 'not a pair the oracle names' — i.e. toward INCONCLUSIVE. Nothing wrong was published. What is wrong is the recorded REASON, which invites the wrong repair."
 }
 -->
@@ -168,11 +168,20 @@ Both are direct API/wire observations rather than oracle outputs. Single-day, si
    `DeleteSecurityGroup`, `DeleteSubnet` and `DeleteVpc` behind it — the Lambda hyperplane-ENI
    pattern, on a new interface type.
 
-   **How long it actually outlives the runtime: at least 2 hours, not the 35 minutes first
-   recorded.** The `f57b-sweep` poller has now retried on a 5-minute interval for **7,208 s (25
-   consecutive attempts)** and every one returned the same `InvalidParameterValue`; the interface is
-   still `in-use`, `InterfaceType: agentic_ai`, `Attachment.InstanceOwnerId: amazon-aws`, with an
-   empty `Description`. The earlier figure was simply how long anyone had watched.
+   **How long it outlives the runtime, measured to exhaustion: held for at least 3.92 hours, then
+   released by the service with no caller action at all.** `f57b-sweep` retried
+   `delete_network_interface` on a 5-minute interval for its entire 240-minute budget — **48
+   consecutive `InvalidParameterValue` refusals, the last at 14,115.6 s** — and exited 3 with the
+   residue retained in the ledger rather than reported clean. Some time after that,
+   `DescribeNetworkInterfaces` began answering `InvalidNetworkInterfaceID.NotFound`: **the interface
+   was released on the service's own schedule, and nothing this project did caused it.** The three
+   items behind it then deleted on the first attempt (§6).
+
+   The earlier figures — 35 minutes, then "at least 2 hours" — were both just how long anyone had
+   watched. This one is different in kind: the poller ran to the end of its budget, so 3.92 h is a
+   measured *lower bound on the hold* rather than the length of an observation window, and the
+   subsequent NotFound is a measured fact about release. The upper bound is still unknown, because
+   nothing was watching between the sweeper's exit and the next check.
 
    **And nothing this project left standing is holding it.** `ListAgentRuntimes` on 2026-08-15
    returns 19 runtimes and **not one is a `grx-*`** — all three of this case's runtimes are gone, as
@@ -183,9 +192,12 @@ Both are direct API/wire observations rather than oracle outputs. Single-day, si
 
    **Operational consequence:** any automation that creates a VPC-mode runtime and then tears down
    its own VPC must poll for ENI release on the service's schedule, not its own — and must be
-   prepared for that schedule to be hours. This case's `ENI_CLEAR_TIMEOUT` of 420 s was not enough,
-   and neither is any timeout chosen to fit inside a test run. The right shape is a ledger entry
-   that survives the process, which is what `f57b-sweep` plus the retained ledger provides.
+   prepared for that schedule to be hours. This case's `ENI_CLEAR_TIMEOUT` of 420 s was not enough;
+   neither was a 4-hour sweeper. **No timeout chosen to fit inside a test run is enough, and that is
+   the finding** — the right shape is not a longer timeout but a ledger entry that outlives the
+   process, so the residue is still addressable by id after every poller has given up. That is
+   exactly what made §6's eventual clean-up possible: the ids were read back from the run's own
+   residue record, hours later, from a different process.
 
 ## 6. Safety and residue
 
@@ -203,15 +215,26 @@ cleanup before any delete was issued.
 **The NAT gateway — the only hourly-billing resource in the run (~$0.045/h) — was deleted**, polled
 to state `deleted` (60.2 s) rather than trusted to return 200. The Elastic IP was released.
 
-**Residue: 4 items, all of them behind the ENI of §5, and all billing $0.00/h** — one service-held
-ENI, one security group, one private subnet, one empty VPC. Deleted in the run: 9 items. A detached
-sweeper (`f57b-sweep`) retries the chain every 5 minutes for 4 hours, guarded by the same runtime
-deny-list; the ledger retains all four entries so none is forgotten if it outlives the sweeper.
+**Residue at the end of the run: 4 items, all behind the ENI of §5, all billing $0.00/h** — one
+service-held ENI, one security group, one private subnet, one empty VPC. Deleted in the run: 9 items.
+A detached sweeper (`f57b-sweep`) retried the chain every 5 minutes for 4 hours, guarded by the same
+runtime deny-list, and the ledger retained all four entries so none would be forgotten if it outlived
+the sweeper — which it did.
 
-**Not a leak of anything that bills, and not a case of teardown having been skipped** — the teardown
-ran, in the documented order, and was refused by the platform. That distinction is worth keeping:
-`back_to_baseline: false` here means "AWS is still holding an interface", not "this run abandoned
-resources".
+**Residue now: zero.** Once §5's ENI answered NotFound, the security group, the private subnet and the
+VPC were deleted, each on the first attempt, and `describe_vpcs` returns no match for the VPC id.
+`back_to_baseline` is now true for this case. Two guards were required before any of those calls,
+because the delete ran outside the producer: the 20-id deny-list re-resolved from the `grx-runner-sg`
+*name* (empty ⇒ refuse everything), and an independent CIDR check — F5-7b's VPC is 10.61.0.0/16 and
+the runner's is 172.31/16, so the CIDR is a second opinion on identity that does not depend on the
+first. The ids were read from the run's own residue record, not from a describe.
+
+**Never a leak of anything that bills, and never a case of teardown having been skipped** — the
+teardown ran, in the documented order, and was refused by the platform. That distinction is worth
+keeping: `back_to_baseline: false` in the published record means "AWS is still holding an interface",
+not "this run abandoned resources". The published `results/phase1/F5-7b.json` still records the
+4-item residue, correctly: it is what was true when the run ended, and the seal is not rewritten
+because the world later changed. This section is where the later state is recorded.
 
 ## 7. Census effect
 
