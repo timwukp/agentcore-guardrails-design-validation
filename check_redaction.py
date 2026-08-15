@@ -46,6 +46,7 @@ from __future__ import annotations
 import argparse
 import re
 import sys
+import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
@@ -54,6 +55,15 @@ import redact as _redact  # noqa: E402
 ROOT = Path(__file__).resolve().parent
 
 SCAN_EXT = {".py", ".md", ".csv", ".json", ".yaml", ".yml", ".txt", ".sh", ".sql"}
+# An OOXML file is a zip of XML, so reading its bytes finds nothing and an extension
+# skip would have been indistinguishable from a pass. The two v1.4 decks are built from
+# the Markdown and distributed alongside it, so a leak in the source reaches a reader
+# through them as well: the package is unzipped and every UTF-8 part is scanned. Only
+# the raw XML is scanned, not a tag-stripped concatenation — stripping tags with no
+# separator can fuse digits from adjacent table cells into a spurious 12-digit "account
+# id", and this renderer never splits a run mid-token, so an identifier cannot hide
+# across two <a:t> elements.
+OOXML_EXT = {".pptx", ".docx", ".xlsx"}
 SKIP_DIRS = {".git", ".pytest_cache", "__pycache__", ".venv", ".venv-oracle",
              ".venv-baseline", "node_modules", "evidence", ".state"}
 # Every entry above is a directory that CANNOT reach a reader, and that is the whole
@@ -576,10 +586,27 @@ def allowed(path: Path, name: str, line: str) -> str | None:
     return None
 
 
+def units(path: Path) -> list[tuple[str, str]]:
+    """``(label, text)`` pairs to scan for one file — several for an OOXML package."""
+    rel = str(path.relative_to(ROOT))
+    if path.suffix.lower() in OOXML_EXT:
+        out = []
+        with zipfile.ZipFile(path) as z:
+            for name in z.namelist():
+                try:
+                    out.append((f"{rel}!{name}", z.read(name).decode("utf-8")))
+                except (UnicodeDecodeError, KeyError):
+                    continue
+        if not out:
+            raise OSError("no readable XML part inside the package")
+        return out
+    return [(rel, path.read_text(encoding="utf-8"))]
+
+
 def files() -> list[Path]:
     out = []
     for p in sorted(ROOT.rglob("*")):
-        if not p.is_file() or p.suffix not in SCAN_EXT:
+        if not p.is_file() or p.suffix.lower() not in SCAN_EXT | OOXML_EXT:
             continue
         if any(part in SKIP_DIRS for part in p.relative_to(ROOT).parts):
             continue
@@ -599,6 +626,11 @@ def main(argv: list[str] | None = None) -> int:
     paths = files()
     print(f"redaction gate: {len(paths)} file(s) under {ROOT.name}/")
     print(f"  extensions {sorted(SCAN_EXT)}")
+    # Printed separately, and printed at all, because a reader checking whether the
+    # decks were covered has only this line to go on.
+    ooxml = [str(p.relative_to(ROOT)) for p in paths if p.suffix.lower() in OOXML_EXT]
+    print(f"  OOXML {sorted(OOXML_EXT)} — {len(ooxml)} package(s) unzipped: "
+          f"{', '.join(ooxml) if ooxml else 'none'}")
     print(f"  skipped dirs {sorted(SKIP_DIRS)}")
 
     if len(paths) < MIN_FILES:
@@ -607,39 +639,38 @@ def main(argv: list[str] | None = None) -> int:
               f"list is broken, not the tree.", file=sys.stderr)
         return 2
 
-    findings: list[tuple[Path, int, str, str]] = []
+    findings: list[tuple[str, int, str, str]] = []
     waived = 0
     scanned_bytes = 0
 
     for path in paths:
         try:
-            text = path.read_text(encoding="utf-8")
-        except (UnicodeDecodeError, OSError) as exc:
+            parts = units(path)
+        except (UnicodeDecodeError, OSError, zipfile.BadZipFile) as exc:
             print(f"\nFAIL — cannot read {path.relative_to(ROOT)}: {exc}. An "
                   f"unreadable file is an unscanned file.", file=sys.stderr)
             return 2
-        scanned_bytes += len(text)
-        for lineno, line in enumerate(text.splitlines(), 1):
-            for name, rx, _desc in PATTERNS:
-                m = rx.search(line)
-                if not m:
-                    continue
-                why = allowed(path, name, line)
-                if why:
-                    waived += 1
-                    if args.verbose:
-                        print(f"  waived {path.relative_to(ROOT)}:{lineno} "
-                              f"[{name}] — {why}")
-                    continue
-                findings.append((path, lineno, name, line.strip()[:120]))
+        for label, text in parts:
+            scanned_bytes += len(text)
+            for lineno, line in enumerate(text.splitlines(), 1):
+                for name, rx, _desc in PATTERNS:
+                    m = rx.search(line)
+                    if not m:
+                        continue
+                    why = allowed(path, name, line)
+                    if why:
+                        waived += 1
+                        if args.verbose:
+                            print(f"  waived {label}:{lineno} [{name}] — {why}")
+                        continue
+                    findings.append((label, lineno, name, line.strip()[:120]))
 
     print(f"  {scanned_bytes:,} bytes read, {waived} reviewed exception(s) waived")
 
     if findings:
         print(f"\nFAIL — {len(findings)} unredacted identifier(s):\n", file=sys.stderr)
-        for path, lineno, name, snippet in findings:
-            print(f"  {path.relative_to(ROOT)}:{lineno}  [{name}]  {snippet}",
-                  file=sys.stderr)
+        for label, lineno, name, snippet in findings:
+            print(f"  {label}:{lineno}  [{name}]  {snippet}", file=sys.stderr)
         print(f"\nRedact these, or add a narrow reviewed exception to ALLOW with a "
               f"written reason.", file=sys.stderr)
         return 1
