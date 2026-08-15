@@ -1,8 +1,149 @@
-# Reconnect note — updated 2026-08-13
+# Reconnect note — updated 2026-08-15
 
 Read this first if the session dropped. It is the shortest path back to the live state.
 
-## ⇢ RESUME HERE (2026-08-13): **71 of 92 published; F5 is the whole remaining bulk**
+## ⇢ RESUME HERE (2026-08-15): **measurement and both decks are finished; what is left is two user decisions and four dated follow-ups**
+
+Written because the laptop may be powered off at any moment. The runner has been **stopped** (see
+below) and nothing is in flight anywhere — no LIVE case, no detached job, no half-written AWS state.
+
+### Measurement: done. 91 of 92 published, 1 outstanding and it is a decision, not a run
+
+Regenerate rather than trust; the numbers below were read from the command, not remembered:
+
+```
+.venv-oracle/bin/python census.py            # read-only;  --write rewrites results/_progress_census.txt
+```
+
+**93 sealed cases → 92 verdict-eligible** (minus F9-1, untestable by its own oracle) → **91
+published**, **TRUE 46 / FALSE 23 / INCONCLUSIVE 20 / RECORDED 2**. Every family reads `complete`
+except F10 (2/3). Of the 91, **90 are publishable**: F5-3b is TRUE but its
+`every_boundary_transition_was_observed_to_settle` guard failed, so it is **non-publishable and must
+not be cited as confirmation**.
+
+The single outstanding case, **F10-1**, is not a missing run. The `ce:GetCostAndUsage` grant is
+removable and I declined to remove it unilaterally; that is recorded in
+`results/CENSUS-NOT-MEASURED.md`. It needs a decision, not an instrument.
+
+### The document exists in two languages and both are published
+
+| file | bytes | sha256 |
+|:---|--:|:---|
+| `agentcore_guardrails_best_practices_v1.4.md` | 161,264 | `0ce7608fbf39f17b…` |
+| `agentcore_guardrails_best_practices_v1.4.zh-TW.md` | 154,801 | `bcfa943a57450f74…` |
+
+PRs #24 (EN v1.4) and #25 (zh-TW) are merged; `main` is **`95b03ea91c9a`**, 678 blobs, tree-verified
+after the merge (`feedback_merged_pr_is_not_landed`). Only v1.4 and v1.2 are kept — `只保留1.4`,
+`1.2要保留`. `~/Downloads/agentcore_guardrails_best_practices_v1.2.md` is the sealed
+`document_under_test` (`PREREGISTRATION.yaml:58-60`) and **must never be deleted or modified**.
+
+### The bilingual PPTX decks are DONE — 61 slides each, rebuild with one command
+
+Request: *做成PPTX, one for english version, one for chinese version* — one deck per language, from
+v1.4. Both exist and both are published. **They are generated, never hand-edited**: edit the deck
+plan and rebuild, or the next build silently discards the edit.
+
+```
+python3 tools/build_pptx.py                  # SYSTEM python3 — python-pptx is not in .venv-oracle
+                                             # exit 1 if any slide overflows; 0 means it all fits
+```
+
+| file | bytes | sha256 | slides |
+|:---|--:|:---|--:|
+| `agentcore_guardrails_best_practices_v1.4.pptx` | 177,474 | `7b3cef94e216a5d7…` | 61 |
+| `agentcore_guardrails_best_practices_v1.4.zh-TW.pptx` | 187,014 | `74a6e561ad30254b…` | 61 |
+
+Both are also copied to `~/Downloads/` (hash-verified identical). The slide plan is **one** plan in
+two languages — every string is a `t(en, zh)` pair — so the two decks have the same 61 slides in the
+same order and a sentence cannot be updated in one language and forgotten in the other.
+
+- `render.py` — the layout engine. Slide kinds `title_slide` / `divider` / `bullets` / `table` /
+  `kpi` / `twocol` / `diagram`. Three disciplines are load-bearing: it **measures then fits** (picks
+  the largest font that still fits), it **writes east-asian typefaces**, and anything that still
+  cannot be made to fit **appends to `Deck.warnings`**, which the CLI prints and turns into exit 1 —
+  a slide that quietly runs off the bottom otherwise looks deliberate.
+- `mdsource.py` — pulls all 21 tables out of both files so slides *quote* the document instead of
+  retyping it. Tables are addressed by **index**; `Source.assert_parallel()` raises if the two files'
+  table counts or shapes diverge. `abridge(text, budget)` shortens a long cell **at a sentence
+  boundary** (`.`/`。`, CJK measured double-width) so every word on a slide is a word the document
+  wrote, and `rebalance()` closes a `**`/`` ` `` span the cut left open.
+- `diagrams.py` — the 11 mermaid figures as **native PowerPoint shapes** (closed loop §2, hop
+  lifecycle §2.1, billing asymmetry §3.2, tier decision §3.4, LOG_ONLY precedence §4.1, containment
+  boundary §4.4, network containment §4.5.5, streaming §5.1, trace tree §6.3, threshold tuning §7.1,
+  reference architecture §9). Editable in PowerPoint, no render dependency.
+- `deck.py` + `deck_after.py` — the plan itself, split at the document's own BEFORE/DURING → AFTER
+  boundary. `deck.build(lang, src, path)` returns `(slide_count, warnings)`.
+- `tools/tests/test_deckgen.py` — 15 tests, 7 of which `importorskip` python-pptx so the oracle venv
+  stays green. Three pin defects that each produced a *plausible slide* rather than an error: a code
+  span nested in bold printing its own backticks, an abridged cell leaving `**` unclosed, and
+  `<a:cs>` written before `<a:ea>` (out of schema order → PowerPoint offers to repair the file).
+
+**Verified on the built decks, not assumed:** 0 shapes outside the slide, 0 markup leaks, every
+`a:rPr` child in schema order (`latin → ea → cs`, 1,571 runs EN / 1,575 ZH), `PingFang TC` on every
+ZH run, complete `[Content_Types].xml`, no dangling relationship, no duplicate shape id.
+**PowerPoint could not be used to open them** — this machine has no display session, so
+`osascript`-driven export timed out and `screencapture` fails; the checks above are structural, and
+a human should still open both once.
+
+**`check_redaction.py` now reads inside OOXML packages.** `SCAN_EXT` had no `.pptx`, so the gate
+would have skipped the deliverable and still printed PASSED. It unzips `.pptx`/`.docx`/`.xlsx` and
+scans every UTF-8 part, prints which packages it opened, and treats a package with no readable part
+as unreadable rather than clean. Current run: **622 files, 2 packages unzipped, 40,028,666 bytes,
+exit 0**. Read the exit code directly — never pipe it to `tail`.
+
+**Four environment facts that each cost time to learn — do not re-derive:**
+
+- **python-pptx 1.0.2 lives on the system homebrew python3 only** (`/opt/homebrew/bin/python3`). It
+  is **not** in `.venv-oracle`. Build with `python3`; the venv raises `ModuleNotFoundError`.
+- **The package is `tools/deckgen/`, not `tools/pptx/`.** The first name shadowed the installed
+  `pptx` package and every import failed. Import as `from deckgen.mdsource import Source` with
+  `sys.path.insert(0, 'tools')`.
+- **No `mmdc` and no LibreOffice**, so mermaid cannot be rasterised. PowerPoint *is* installed.
+  Native shapes were chosen deliberately: editable in PowerPoint, no render dependency.
+- **python-pptx writes only `<a:latin>`.** A run containing Chinese needs `<a:ea>` (and `<a:cs>`) or
+  PowerPoint substitutes per glyph. `render.Deck._style_run` writes all three. Fonts actually
+  installed here: Arial, Helvetica Neue, PingFang TC. **Microsoft JhengHei and Consolas are
+  absent** — hence latin `Arial`, east-asian `PingFang TC`, mono `Courier New`.
+
+**Table index map** (same index = same table in both languages, verified). Ten tables have cells too
+long to quote whole — **#4** (five bypass routes, 4,310-char cell), **#5**, **#9**, **#11**, **#13**,
+**#15**, **#16**, **#17**, **#19**, **#20**. They are passed a `budget=` and abridged at a sentence
+boundary; no cell is retyped and no bilingual override table was needed, which is why there is no
+`overrides` mechanism to maintain. Table #4 and table #18 are additionally **split across two
+slides** with `keep_rows`. The rest quote verbatim. Verdict citations are stripped by
+`strip_citations` (content-driven — it keys on case ids, so it works on both languages) and replaced
+by one footnote per slide pointing back at the document.
+
+### Two things owed to the user, both awaiting *their* decision, not more work
+
+1. **`reproduction_before_amendment` is applied inconsistently.** F6-1…F6-5, F6-8, F4-6, F3-4, F8-4,
+   F8-5, F1-14 and F10-3 were amended on a single calendar day's data, while F5-8 is being held to
+   the two-UTC-day bar. Either the bar binds all of them or it binds none; I have not chosen.
+2. **Sealed `claims/triage.csv:147` still says `POST /inference`** where §4.1 now says
+   `/inference/v1/messages`. The csv is a sealed bound artifact — it cannot be edited, so the
+   divergence has to be either accepted and annotated or handled as a deviation.
+
+### Still owed, mechanically
+
+- **Day-2 replications: F5-8** (window opened 2026-08-15 UTC — it is the gate for swapping §4.4
+  route #3's Accelerator/NDA citation for public evidence), **F4-6**, **F2-1**.
+- `f5_redteam/tests/test_route_credential_reachability.py` — F5-8 has no test file.
+- `F3-11 --compare` on **2026-08-18** and **2026-09-10**.
+- `runner/sync.py pull` exits 0 after an `EndpointConnectionError`. Deferred deliberately as its own
+  change; do not fold it into unrelated work.
+
+### The runner is STOPPED, on purpose
+
+`i-0f90ac6377bba523b` (`t3.small`, us-east-1) was stopped 2026-08-15 after this note was written.
+Nothing was running on it: every job in `runner/run.py --jobs` carries an exit code, the one `LOST?`
+row is a stale 2026-08-12 job. A stopped `t3.small` bills only its 40 GB volume (~$0.11/day).
+Restart with `runner/provision.py` (it knows the instance id) — but note that **nothing outstanding
+needs it**: the two user decisions need no instrument, the F5-8/F4-6/F2-1 day-2 replications are LIVE
+AWS work that does want the runner, and everything else (the decks, the publication steps) is
+laptop-only by design — python-pptx is on the system python3, and the instance deliberately holds no
+GitHub credential.
+
+## HISTORICAL (2026-08-13): **71 of 92 published; F5 is the whole remaining bulk**
 
 Do not read the case counts out of this file. Regenerate them:
 
