@@ -28,11 +28,24 @@ absence costs a re-derivation is a tool that belongs in the repo.
 Usage:
     tools/api_push_incremental.py [<file-list>] --branch B --title T --body-file F \
         --message-file M [--delete-list D] [--merge]
+    tools/api_push_incremental.py [<file-list>] --onto B --message-file M [--delete-list D]
+
+`--branch` cuts a NEW branch from `main` and opens a PR. `--onto` commits onto an EXISTING branch
+and opens nothing, which is how a mistake in an already-open PR gets corrected: the alternative is a
+second PR for a one-line fix, and this repo has `delete_branch_on_merge: false`, so a second PR
+based on the first cannot retarget when the first merges (`feedback_merged_pr_is_not_landed`).
+`--onto` takes no `--title`/`--body-file` (the PR already has them) and refuses `--merge`, because
+merging is the user's action and an amend has no PR of its own to merge.
 
 Build the file list with `tools/repo_diff.py`, which writes one. `--delete-list` removes paths from
 the tree and may be used with no file list at all — a deletion-only commit is a legitimate change.
 Deletions are never inferred from `repo_diff.py`'s remote-only list: a path can be missing locally
 because it was deleted, or because it was never on this machine, and those want opposite actions.
+
+Note that under `--onto` the deletion guards change meaning and are deliberately kept: a path may be
+absent from the BRANCH's tree while present on `main`, so the phantom-deletion check reads the
+branch's tree, not main's — checking the wrong tree would call a real deletion phantom and refuse a
+legitimate push.
 """
 import argparse
 import os
@@ -55,13 +68,27 @@ def tree_of(commit_sha: str) -> dict:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("file_list", nargs="?")
-    ap.add_argument("--branch", required=True)
-    ap.add_argument("--title", required=True)
-    ap.add_argument("--body-file", required=True)
+    ap.add_argument("--branch", help="NEW branch cut from main; a PR is opened for it")
+    ap.add_argument("--onto", help="EXISTING branch to commit onto; no PR is opened")
+    ap.add_argument("--title")
+    ap.add_argument("--body-file")
     ap.add_argument("--message-file", required=True)
     ap.add_argument("--delete-list", help="paths to REMOVE from the tree, one per line")
     ap.add_argument("--merge", action="store_true")
     a = ap.parse_args()
+
+    if bool(a.branch) == bool(a.onto):
+        raise SystemExit("give exactly one of --branch (new branch + PR) or --onto (existing branch)")
+    if a.onto:
+        # An amend has no PR of its own, so there is nothing here to merge, and merging the PR it
+        # belongs to is the user's action either way.
+        if a.merge:
+            raise SystemExit("--merge is meaningless with --onto: the PR it amends is the user's to merge")
+        if a.title or a.body_file:
+            raise SystemExit("--onto opens no PR, so --title/--body-file would be silently ignored")
+    elif not (a.title and a.body_file):
+        raise SystemExit("--branch opens a PR and needs --title and --body-file")
+
     P.TOKEN = P.token()
 
     files = sorted({l.strip() for l in open(a.file_list) if l.strip()}) if a.file_list else []
@@ -83,13 +110,17 @@ def main() -> None:
         raise SystemExit(f"REFUSING to delete paths that still exist locally: {still_here}")
     if not files and not deletes:
         raise SystemExit("nothing to push and nothing to delete")
-    body = open(a.body_file).read()
+    body = open(a.body_file).read() if a.body_file else ""
     message = open(a.message_file).read()
 
-    base_sha = P.call("GET", f"{R}/git/refs/heads/main")["object"]["sha"]
+    # Under --onto the parent is the BRANCH's head, not main's: parenting an amend on main would
+    # produce a commit whose tree silently reverts every other file the branch changed.
+    target = a.branch or a.onto
+    base_ref = "main" if a.branch else a.onto
+    base_sha = P.call("GET", f"{R}/git/refs/heads/{base_ref}")["object"]["sha"]
     base_tree = P.call("GET", f"{R}/git/commits/{base_sha}")["tree"]["sha"]
-    print(f"base main {base_sha[:12]}   pushing {len(files)} file(s), "
-          f"deleting {len(deletes)} on {a.branch}")
+    print(f"base {base_ref} {base_sha[:12]}   pushing {len(files)} file(s), "
+          f"deleting {len(deletes)} on {target}")
 
     # A deletion of a path the base tree does not carry is a silent no-op, so check first: the
     # request would succeed, the verification below would pass (the path is absent either way), and
@@ -97,7 +128,7 @@ def main() -> None:
     on_base = tree_of(base_sha)
     phantom = [d for d in deletes if d not in on_base]
     if phantom:
-        raise SystemExit(f"not on main, nothing to delete: {phantom}")
+        raise SystemExit(f"not on {base_ref}, nothing to delete: {phantom}")
 
     entries = [P.upload(f) for f in files]          # each SHA-verified inside upload()
     print(f"  blobs {len(entries)}/{len(files)}, every SHA matches git hash-object")
@@ -108,8 +139,14 @@ def main() -> None:
                       {"base_tree": base_tree, "tree": tree})["sha"]
     commit_sha = P.call("POST", f"{R}/git/commits",
                         {"message": message, "tree": tree_sha, "parents": [base_sha]})["sha"]
-    P.call("POST", f"{R}/git/refs", {"ref": f"refs/heads/{a.branch}", "sha": commit_sha})
-    print(f"  branch {a.branch} -> {commit_sha[:12]}")
+    # POST creates a ref and fails if it exists; PATCH advances one. No `force`: the parent is the
+    # branch's current head, so this is a fast-forward, and a non-fast-forward here would mean the
+    # branch moved under us — which must fail loudly rather than discard whatever moved it.
+    if a.branch:
+        P.call("POST", f"{R}/git/refs", {"ref": f"refs/heads/{a.branch}", "sha": commit_sha})
+    else:
+        P.call("PATCH", f"{R}/git/refs/heads/{a.onto}", {"sha": commit_sha})
+    print(f"  branch {target} -> {commit_sha[:12]}")
 
     on_branch = tree_of(commit_sha)
     bad = [e["path"] for e in entries if on_branch.get(e["path"]) != e["sha"]]
@@ -117,6 +154,17 @@ def main() -> None:
     if bad or left:
         raise SystemExit(f"branch tree verification FAILED: added={bad[:5]} not_deleted={left[:5]}")
     print(f"  branch tree verified: {len(files)} present, {len(deletes)} absent")
+
+    if a.onto:
+        # The PR that already tracks this branch picks the commit up on its own. Reporting its
+        # number is not cosmetic: if this prints nothing, the branch has no open PR and the push
+        # would otherwise sit invisible.
+        open_prs = P.call("GET", f"{R}/pulls?state=open&head={P.OWNER}:{a.onto}")
+        if not open_prs:
+            raise SystemExit(f"pushed to {a.onto}, but NO OPEN PR tracks it — the commit is invisible")
+        for pr in open_prs:
+            print(f"  amended PR #{pr['number']}: {pr['html_url']}")
+        return
 
     pr = P.call("POST", f"{R}/pulls",
                 {"title": a.title, "body": body, "head": a.branch, "base": "main"})

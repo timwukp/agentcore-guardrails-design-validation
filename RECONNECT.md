@@ -2,13 +2,26 @@
 
 Read this first if the session dropped. It is the shortest path back to the live state.
 
-## ⇢ RESUME HERE (2026-08-15, late): **whitepaper v1 is DRAFTED with 7 of 8 figures; the PR is built but NOT OPENED**
+## ⇢ RESUME HERE (2026-08-15, late): **whitepaper v1 is DRAFTED with 7 of 8 figures; PR #32 is OPEN and awaiting the user's merge**
 
 Session: `fd230f67-029c-480f-a070-54c1670fc4e4` —
 `claude --resume fd230f67-029c-480f-a070-54c1670fc4e4` from `/Users/tmwu/Downloads`.
 Full narrative: `~/Downloads/session-logs/2026-08-15-grx-whitepaper-v1-figures-scan-scope.md`.
 
-**The one thing to do first on resume: open the PR.** Nothing else is half-finished.
+**PR #32** — `https://github.com/timwukp/agentcore-guardrails-design-validation/pull/32`,
+branch `feat/whitepaper-v1` = `696c1b2cb470`, based on `main` `e6534f0f11d5`.
+**152 paths (82 added / 70 modified / 0 deleted)**, all 152 blob SHAs matched a local
+`git hash-object`, branch tree verified **152 present / 0 absent**, `mergeable_state: clean`
+(+88,884 / −4,241).
+
+**Nothing on the publication path is half-finished. Do not merge** — merging is the user's action.
+The next agent action after the merge lands is to **verify `main`'s tree blob-by-blob**
+(`delete_branch_on_merge: false`, so a merged PR is not automatically a landed one).
+
+If the PR ever has to be rebuilt (e.g. it is closed unmerged), `/tmp/grx_wp_msg.txt` and
+`/tmp/grx_wp_body.md` hold the commit message and body — **they live only in `/tmp`**; if it was
+cleared, rewrite them from the session log above, and re-run `repo_diff.py` rather than reusing the
+count:
 
 ```
 .venv-oracle/bin/python tools/repo_diff.py                 # rebuild the push list; read-only
@@ -17,12 +30,8 @@ Full narrative: `~/Downloads/session-logs/2026-08-15-grx-whitepaper-v1-figures-s
     --body-file /tmp/grx_wp_body.md --message-file /tmp/grx_wp_msg.txt
 ```
 
-Then **STOP** — merging is the user's action, not the agent's. If `/tmp` was cleared, the commit
-message and PR body must be rewritten; the session log above holds everything they said. Last
-measured diff: **146 paths (80 added / 66 modified / 0 deleted)** against `main` `e6534f0f`, plus
-this session's later scope-fix files, so re-run `repo_diff.py` rather than reusing the count.
-
-**The PNGs are the first binary content this repo would publish, and that path is verified**:
+**The PNGs are the first binary content this repo has published, and that path was verified before
+the push**:
 `api_push_pr.upload()` reads `"rb"`, sends `encoding: "base64"`, and raises on any blob whose
 returned SHA differs from a locally computed `git hash-object`. No change was needed.
 
@@ -62,7 +71,7 @@ returned SHA differs from a locally computed `git hash-object`. No change was ne
 
 ### Still open, in the order I would take them
 
-1. Open the PR (above), then stop.
+1. **Wait for the user to merge PR #32**, then verify `main`'s tree blob-by-blob. Nothing to push.
 2. **Seven day-2 replications**: F6-1…F6-5 (ride the runner), **F6-8 on the laptop** (DEV-P4-37),
    F4-6 (needs `--state` or a rebuilt testbed).
 3. **Three user decisions**, unchanged: the F8-5 / DEV-P4-40 erratum bundle (item 27); F10-1's
