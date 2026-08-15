@@ -26,10 +26,13 @@ next session and had to be re-derived from a session log before this push could 
 absence costs a re-derivation is a tool that belongs in the repo.
 
 Usage:
-    tools/api_push_incremental.py <file-list> --branch B --title T --body-file F \
-        --message-file M [--merge]
+    tools/api_push_incremental.py [<file-list>] --branch B --title T --body-file F \
+        --message-file M [--delete-list D] [--merge]
 
-Build the file list with `tools/repo_diff.py`, which writes one.
+Build the file list with `tools/repo_diff.py`, which writes one. `--delete-list` removes paths from
+the tree and may be used with no file list at all — a deletion-only commit is a legitimate change.
+Deletions are never inferred from `repo_diff.py`'s remote-only list: a path can be missing locally
+because it was deleted, or because it was never on this machine, and those want opposite actions.
 """
 import argparse
 import os
@@ -51,33 +54,58 @@ def tree_of(commit_sha: str) -> dict:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("file_list")
+    ap.add_argument("file_list", nargs="?")
     ap.add_argument("--branch", required=True)
     ap.add_argument("--title", required=True)
     ap.add_argument("--body-file", required=True)
     ap.add_argument("--message-file", required=True)
+    ap.add_argument("--delete-list", help="paths to REMOVE from the tree, one per line")
     ap.add_argument("--merge", action="store_true")
     a = ap.parse_args()
     P.TOKEN = P.token()
 
-    files = sorted({l.strip() for l in open(a.file_list) if l.strip()})
-    if not files:
-        raise SystemExit("empty file list")
+    files = sorted({l.strip() for l in open(a.file_list) if l.strip()}) if a.file_list else []
     missing = [f for f in files if not os.path.isfile(os.path.join(P.ROOT, f))]
     if missing:
         raise SystemExit(f"not on disk: {missing}")
+
+    # Deletions. `repo_diff.py` reports remote-only paths but deliberately refuses to act on them,
+    # because a path absent locally may be absent because it was never on this machine — so the
+    # list is always passed in explicitly, never inferred.
+    #
+    # The guard is the important part: a path that STILL EXISTS locally is not a deletion, it is an
+    # accident, and the Git Data API would carry it out silently. `sha: None` serialises to JSON
+    # null, which is how a tree entry says "remove this"; there is no error if the path was never
+    # there, so without this check a typo removes nothing and reports success.
+    deletes = sorted({l.strip() for l in open(a.delete_list) if l.strip()}) if a.delete_list else []
+    still_here = [d for d in deletes if os.path.exists(os.path.join(P.ROOT, d))]
+    if still_here:
+        raise SystemExit(f"REFUSING to delete paths that still exist locally: {still_here}")
+    if not files and not deletes:
+        raise SystemExit("nothing to push and nothing to delete")
     body = open(a.body_file).read()
     message = open(a.message_file).read()
 
     base_sha = P.call("GET", f"{R}/git/refs/heads/main")["object"]["sha"]
     base_tree = P.call("GET", f"{R}/git/commits/{base_sha}")["tree"]["sha"]
-    print(f"base main {base_sha[:12]}   pushing {len(files)} file(s) on {a.branch}")
+    print(f"base main {base_sha[:12]}   pushing {len(files)} file(s), "
+          f"deleting {len(deletes)} on {a.branch}")
+
+    # A deletion of a path the base tree does not carry is a silent no-op, so check first: the
+    # request would succeed, the verification below would pass (the path is absent either way), and
+    # the only thing that would be wrong is our belief about what the repo held.
+    on_base = tree_of(base_sha)
+    phantom = [d for d in deletes if d not in on_base]
+    if phantom:
+        raise SystemExit(f"not on main, nothing to delete: {phantom}")
 
     entries = [P.upload(f) for f in files]          # each SHA-verified inside upload()
     print(f"  blobs {len(entries)}/{len(files)}, every SHA matches git hash-object")
 
+    # `sha: None` -> JSON null, the Git Data API's spelling of "remove this path from base_tree".
+    tree = entries + [{"path": d, "mode": "100644", "type": "blob", "sha": None} for d in deletes]
     tree_sha = P.call("POST", f"{R}/git/trees",
-                      {"base_tree": base_tree, "tree": entries})["sha"]
+                      {"base_tree": base_tree, "tree": tree})["sha"]
     commit_sha = P.call("POST", f"{R}/git/commits",
                         {"message": message, "tree": tree_sha, "parents": [base_sha]})["sha"]
     P.call("POST", f"{R}/git/refs", {"ref": f"refs/heads/{a.branch}", "sha": commit_sha})
@@ -85,9 +113,10 @@ def main() -> None:
 
     on_branch = tree_of(commit_sha)
     bad = [e["path"] for e in entries if on_branch.get(e["path"]) != e["sha"]]
-    if bad:
-        raise SystemExit(f"branch tree verification FAILED: {bad[:5]}")
-    print(f"  branch tree verified: {len(files)} path(s)")
+    left = [d for d in deletes if d in on_branch]
+    if bad or left:
+        raise SystemExit(f"branch tree verification FAILED: added={bad[:5]} not_deleted={left[:5]}")
+    print(f"  branch tree verified: {len(files)} present, {len(deletes)} absent")
 
     pr = P.call("POST", f"{R}/pulls",
                 {"title": a.title, "body": body, "head": a.branch, "base": "main"})
@@ -105,9 +134,11 @@ def main() -> None:
     # the check api_push_pr.main() does not do: is it actually on main?
     on_main = tree_of(P.call("GET", f"{R}/git/refs/heads/main")["object"]["sha"])
     absent = [e["path"] for e in entries if on_main.get(e["path"]) != e["sha"]]
-    if absent:
-        raise SystemExit(f"MERGED BUT NOT LANDED on main: {absent[:5]}")
-    print(f"  landed on main: {len(files)} path(s), SHAs re-verified")
+    survived = [d for d in deletes if d in on_main]
+    if absent or survived:
+        raise SystemExit(
+            f"MERGED BUT NOT LANDED on main: missing={absent[:5]} still_present={survived[:5]}")
+    print(f"  landed on main: {len(files)} present, {len(deletes)} removed, SHAs re-verified")
 
 
 if __name__ == "__main__":
