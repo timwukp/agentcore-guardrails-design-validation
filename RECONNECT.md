@@ -2,10 +2,53 @@
 
 Read this first if the session dropped. It is the shortest path back to the live state.
 
-## ⇢ RESUME HERE (2026-08-15): **measurement and both decks are finished; the two user decisions are MADE (see below) — what is left is the queued day-2 batch and three dated follow-ups**
+## ⇢ RESUME HERE (2026-08-15): **the project has entered its WHITEPAPER phase; measurement and both decks are finished and the two user decisions are MADE (see below)**
 
-Written because the laptop may be powered off at any moment. The runner has been **stopped** (see
-below) and nothing is in flight anywhere — no LIVE case, no detached job, no half-written AWS state.
+Written because the laptop may be powered off at any moment.
+
+**⚠ Two things in this banner are now stale further down the file: the runner is RUNNING, not
+stopped (~$0.58/day — `runner/teardown.py` for $0), and PR #29 is MERGED (main `cd5f802132ab`,
+689 blobs, verified blob-by-blob 2026-08-15).**
+
+### The whitepaper phase — three new files, read them before drafting anything
+
+The user asked for an AWS-whitepaper-style publication in which every viewpoint is validated, with
+method and results in appendices, rigorous charts, and an objective list of the study's own
+deficiencies. Research and design are done; drafting has not started.
+
+- **`results/RESEARCH-whitepaper-conventions-20260815.md`** — what is actually *verified* about AWS
+  whitepaper convention and the OWASP/GENSEC cross-map. 16 primary sources, 25 claims through
+  3-vote adversarial panels, **13 survived / 12 killed**. Its headline is a negative result: AWS's
+  **identifier and versioning** conventions are real and machine-verifiable, its **prose-block
+  templates are not** (four "AWS template" claims refuted 0-3). Also records the four wrong
+  citation anchors that must be re-pointed before publication.
+- **`WHITEPAPER-DESIGN.md`** — the chapter structure, the `ACG-nn-BPnn` control-ID scheme, the
+  two-tier claim policy (deterministic → scoped *prevents*; probabilistic → measured reduction +
+  residual risk), chapter ordering by measured evidence strength, and the 8-figure list. Every
+  decision tagged **[C]** confirmed / **[I]** our inference / **[U]** unsourced.
+- **`results/RESEARCH-evidence-presentation-20260815.md`** — pass 2, landed 2026-08-15.
+  `wf_3762680e-846`, 108 agents, 26 primary sources, **129 claims extracted, 25 verified, 23 survived /
+  2 killed**. Establishes the ACM and USENIX badge vocabularies, Registered Reports, the four-part
+  validity structure **and the trap in citing it** (that Essential is human-participant-scoped;
+  `Benchmarking.md` requires only construct validity), negative-result protection, and effect-sizes-with-
+  intervals. Its two sharpest findings for us: our second-day runs are **repeatability, not
+  reproduction** — ACM reserves both *Reproduced* and *Replicated* for non-authors, so **no independent
+  party has re-run anything here** — and our `TRUE/FALSE/INCONCLUSIVE/RECORDED` taxonomy has **no located
+  precedent** and must be defined, not cited.
+- **`FUTURE-WORK.md`** — the deficiency list, **21 items** in 5 tiers, each with derived evidence.
+  Item numbers are stable identifiers, not positions. **Tier-1 item 1 is CLOSED** (both prevention
+  overclaims rewritten in both editions, Appendix D correction item 23). Still open in Tier 1: the 12
+  single-day amendments; F5-8's undiagnosed 2-of-3-session day-2 fault; and new **item 19**, that this
+  study says "reproduction" where the accepted vocabulary says "repeatability".
+
+**Blocked on one thing only, and it is narrower than it was:** `wf_3762680e-846` has landed, so
+**Chapter 12 is unblocked**. **Appendix D is not** — the pass returned only two citable figure anchors
+(a distribution-form mapping and a truncated-bar antipattern) and left censoring, binomial intervals at
+zero successes, and colour-blind-safe three-state encoding **unadjudicated rather than unsearched**:
+eight primary sources were fetched and never voted on, including **WCAG 2.2 Use of Color**, which is the
+right citation for figure 6. Next step is a **scoped verification of those eight URLs**, listed in
+`RESEARCH-evidence-presentation-20260815.md` §5 — a verification, not a search. Everything else is
+draftable now.
 
 ### Measurement: done. 91 of 92 published, 1 outstanding and it is a decision, not a run
 
