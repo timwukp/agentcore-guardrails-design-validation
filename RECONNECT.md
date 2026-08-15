@@ -80,14 +80,33 @@ returned SHA differs from a locally computed `git hash-object`. No change was ne
 ### Still open, in the order I would take them
 
 1. **Wait for the user to merge PR #32**, then verify `main`'s tree blob-by-blob. Nothing to push.
-2. **Seven day-2 replications**: F6-1…F6-5 (ride the runner), **F6-8 on the laptop** (DEV-P4-37),
-   F4-6 (needs `--state` or a rebuilt testbed).
+2. **Seven day-2 replications**: F6-1…F6-5, F6-8, F4-6 (needs `--state` or a rebuilt testbed).
+
+   **Correction, measured 2026-08-15: ALL of F6 must run on the LAPTOP, not just F6-8.** Earlier
+   notes said F6-1…F6-5 could ride the runner. Every F6 day-1 `environment.json` records
+   `platform: "macOS-26.6-arm64-arm-64bit"` — all three groups (`F6-1_3_4_9`, `F6-2_5`, `F6-6_7_8`)
+   ran here on 2026-08-11. F6 measures **latency**; the runner is AL2023 on EC2, a different
+   platform *and* a different network position, so a day-2 run there varies the instrument in the
+   exact dimension the replication is supposed to hold fixed. It would not fail any gate —
+   `SEALED_FIELDS` is `("kind", "thresholds", "planned_n")` and platform is not among them — so the
+   confound would land silently and a differing number would be unattributable. DEV-P4-37's
+   laptop-only rule for F6-8 is a *stronger* argument for the same conclusion, not a narrower one.
+
+   **Blocker to raise with the user before launching any runner job:** output lands on the instance
+   and the only merge path is `runner/sync.py pull`, which the **user rejected twice — ask first**.
+   More jobs would pile up unpullable output. (F5-8's day-2 `20260815T061609Z` is *not* hostage to
+   the instance, though — verified 2026-08-15: it is in the bucket under
+   `out/20260815T061609Z/`, **31,989 objects / 177 MB**, including 54 F5-8 paths.)
 3. **Three user decisions**, unchanged: the F8-5 / DEV-P4-40 erratum bundle (item 27); F10-1's
    disposition; whether to fix `runner/sync.py pull`.
 4. Re-sync `~/Downloads/AgentCore-guardrails-closed-loop-practices/` — its README still says
    "**21** named deficiencies" in two places (now **28**); then patch `MANIFEST.sha256`, `shasum -c`.
 5. `runner/teardown.py` when the batch is done — with `--keep-bucket` (the default). The bucket
-   holds the only copies of F10-3's and F3-11_snapshot's call records.
+   holds the only copies of F10-3's and F3-11_snapshot's call records. `teardown.py` **terminates the
+   instance**, so anything living only on its disk dies with it; the F5-8 check above was run for
+   exactly that reason, and it came back safe.
+   With F6 now laptop-only (item 2), **nothing in the remaining batch needs the runner except F4-6
+   and F2-1** — so the teardown decision is available earlier than the batch's end.
 6. A **zh-TW edition** of the whitepaper, once the English edition stabilises.
 
 **The runner `i-0f90ac6377bba523b` is still RUNNING** (~$0.58/day). It is safe to leave up, and it
