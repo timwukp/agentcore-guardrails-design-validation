@@ -87,7 +87,8 @@ import evidence as E                                                # noqa: E402
 import oracle as O                                                  # noqa: E402
 import phase1 as P                                                  # noqa: E402
 
-ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from scan_scope import ROOT, py_files                                # noqa: E402
 
 CASE = "F8-5"
 
@@ -495,11 +496,11 @@ def _call_sites() -> list[tuple[str, int, ast.Call]]:
     Derived by walking the AST rather than by grep, so a call split across lines — which both
     live call sites are — is one site and not four (`feedback_grep_the_claim_not_the_phrasing`).
     """
-    skip = {".venv", ".venv-oracle", ".venv-baseline", "__pycache__", "evidence",
-            ".state", ".wheel_cache", ".pytest_cache"}
+    # Scope from `scan_scope`, not a local set of venv names — that set could not see the third
+    # virtualenv `.venv-figs` (DEV-P4-42), and this scan reads matplotlib's source for free.
     out: list[tuple[str, int, ast.Call]] = []
-    for path in sorted(ROOT.rglob("*.py")):
-        if set(path.parts) & skip or path == Path(__file__):
+    for path in py_files():
+        if path == Path(__file__):
             continue
         try:
             tree = ast.parse(path.read_text(encoding="utf-8"))

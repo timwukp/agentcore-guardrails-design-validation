@@ -1,8 +1,120 @@
-# Reconnect note — updated 2026-08-15
+# Reconnect note — updated 2026-08-15 (late)
 
 Read this first if the session dropped. It is the shortest path back to the live state.
 
-## ⇢ RESUME HERE (2026-08-15): **the project has entered its WHITEPAPER phase; measurement and both decks are finished and the two user decisions are MADE (see below)**
+## ⇢ RESUME HERE (2026-08-15, late): **whitepaper v1 is DRAFTED with 7 of 8 figures; PR #32 is OPEN and awaiting the user's merge**
+
+Session: `fd230f67-029c-480f-a070-54c1670fc4e4` —
+`claude --resume fd230f67-029c-480f-a070-54c1670fc4e4` from `/Users/tmwu/Downloads`.
+Full narrative: `~/Downloads/session-logs/2026-08-15-grx-whitepaper-v1-figures-scan-scope.md`.
+
+**PR #32** — `https://github.com/timwukp/agentcore-guardrails-design-validation/pull/32`,
+branch `feat/whitepaper-v1`, based on `main` `e6534f0f11d5`. Every blob SHA matched a local
+`git hash-object` and the branch tree verified present-count against the push list on each commit;
+`mergeable_state: clean`.
+
+**Read the head SHA and the file count from the API, not from this line** — a hash written into the
+file that the next commit changes is stale the moment it is written, which is how the banner above
+came to describe the PR as unopened:
+
+```
+gh api repos/timwukp/agentcore-guardrails-design-validation/pulls/32 \
+   --jq '{head: .head.sha, changed_files, mergeable_state}'
+```
+
+**Nothing on the publication path is half-finished. Do not merge** — merging is the user's action.
+The next agent action after the merge lands is to **verify `main`'s tree blob-by-blob**
+(`delete_branch_on_merge: false`, so a merged PR is not automatically a landed one).
+
+If the PR ever has to be rebuilt (e.g. it is closed unmerged), `/tmp/grx_wp_msg.txt` and
+`/tmp/grx_wp_body.md` hold the commit message and body — **they live only in `/tmp`**; if it was
+cleared, rewrite them from the session log above, and re-run `repo_diff.py` rather than reusing the
+count:
+
+```
+.venv-oracle/bin/python tools/repo_diff.py                 # rebuild the push list; read-only
+.venv-oracle/bin/python tools/api_push_incremental.py /tmp/grx_push_list.txt \
+    --branch feat/whitepaper-v1 --title "..." \
+    --body-file /tmp/grx_wp_body.md --message-file /tmp/grx_wp_msg.txt
+```
+
+**The PNGs are the first binary content this repo has published, and that path was verified before
+the push**:
+`api_push_pr.upload()` reads `"rb"`, sends `encoding: "base64"`, and raises on any blob whose
+returned SHA differs from a locally computed `git hash-object`. No change was needed.
+
+### What landed this session
+
+- **`WHITEPAPER.md` — version 1 exists.** 13 chapters + 7 appendices. Every number is re-derived at
+  build time by `tools/whitepaper_data.py`; nothing is quoted from memory.
+- **7 of 8 figures drawn**, `tools/whitepaper_figures.py` under **`.venv-figs`** (matplotlib 3.11.1
+  — a separate venv so the sealed oracle's pinned botocore is untouched). `--check` compares the
+  **numbers**, never the PNG bytes, so a matplotlib bump cannot red the gate while a stale figure
+  does. Figure 6 is **BLOCKED, not drawn**: `results/CROSSMAP-ACG-THREATS.json` grounds only 5 of
+  the 17 OWASP Agentic v1.1 threat titles, and shading the other 12 "not established" would report
+  *our* missing source as *AgentCore's* missing coverage. Recorded in the manifest, in §2.3, and as
+  FUTURE-WORK item 28.
+- **A generated figure is not verified until the image is inspected.** Four defects passed a clean
+  script run: figure 4 drew censored points as bars 44.2 tall (readable as a count of 44, four from
+  the real 48); figure 5's axis ran to 1.28 on a proportion scale; figure 7 drew one timeline for
+  two intervals that have **different origins and no shared clock**, labelled the accept HTTP 200
+  when the measured `chain.flip.http_status` is **202**, and plotted only day 2. All fixed.
+- **New result in the paper**: F5-2's `data_plane_reconvergence` — first denial 305.8 s / 325.0 s,
+  three consecutive denials 326.4 s / 345.6 s, `n_that_were_still_authorized: 0`. §11.4.
+- **`FUTURE-WORK.md` is now 28 items** (was 21, then 22). New item 28 is figure 6's missing source.
+- **`DEVIATIONS.md` gained DEV-P4-41 and DEV-P4-42** — 42 `DEV-P4-*` entries.
+- **`./verify_phase0.sh`: 2 failed / 3143 passed / 9 skipped in 1:14:23** → both fixed, then 84
+  passed across the eight affected scanner tests and 72 passed across the deviation-structure tests.
+  Both failures were caused by this session's own additions and both were real:
+  1. **DEV-P4-42** — `.venv-figs` made two scanners report 16 findings inside matplotlib/PIL.
+     Of the 11 repo-wide `rglob("*.py")` scanners, **4 expressed scope as a set of venv NAMES**;
+     two went red and **two passed by luck**. Fixed with one shared `lib/tests/scan_scope.py`
+     (prefix rule, and it owns the zero-file floor) plus `lib/tests/test_scan_scope.py`, which
+     guards **too-wide as well as too-narrow** — a floor cannot see a scan that reads too much.
+  2. Three writes into `results/` did not mask (`whitepaper_data.py` ×2,
+     `whitepaper_figures.py` ×1). Now masked through `lib/redact.mask_text` **before the `--check`
+     comparison**, so both paths compare the same bytes.
+- Gates at close: `whitepaper_figures.py --check` FRESH, `whitepaper_data.py --check` FRESH,
+  `check_redaction.py` PASSED over **703** files — rc 0 on all three. **Cost added: $0.**
+
+### Still open, in the order I would take them
+
+1. **Wait for the user to merge PR #32**, then verify `main`'s tree blob-by-blob. Nothing to push.
+2. **Seven day-2 replications**: F6-1…F6-5, F6-8, F4-6 (needs `--state` or a rebuilt testbed).
+
+   **Correction, measured 2026-08-15: ALL of F6 must run on the LAPTOP, not just F6-8.** Earlier
+   notes said F6-1…F6-5 could ride the runner. Every F6 day-1 `environment.json` records
+   `platform: "macOS-26.6-arm64-arm-64bit"` — all three groups (`F6-1_3_4_9`, `F6-2_5`, `F6-6_7_8`)
+   ran here on 2026-08-11. F6 measures **latency**; the runner is AL2023 on EC2, a different
+   platform *and* a different network position, so a day-2 run there varies the instrument in the
+   exact dimension the replication is supposed to hold fixed. It would not fail any gate —
+   `SEALED_FIELDS` is `("kind", "thresholds", "planned_n")` and platform is not among them — so the
+   confound would land silently and a differing number would be unattributable. DEV-P4-37's
+   laptop-only rule for F6-8 is a *stronger* argument for the same conclusion, not a narrower one.
+
+   **Blocker to raise with the user before launching any runner job:** output lands on the instance
+   and the only merge path is `runner/sync.py pull`, which the **user rejected twice — ask first**.
+   More jobs would pile up unpullable output. (F5-8's day-2 `20260815T061609Z` is *not* hostage to
+   the instance, though — verified 2026-08-15: it is in the bucket under
+   `out/20260815T061609Z/`, **31,989 objects / 177 MB**, including 54 F5-8 paths.)
+3. **Three user decisions**, unchanged: the F8-5 / DEV-P4-40 erratum bundle (item 27); F10-1's
+   disposition; whether to fix `runner/sync.py pull`.
+4. Re-sync `~/Downloads/AgentCore-guardrails-closed-loop-practices/` — its README still says
+   "**21** named deficiencies" in two places (now **28**); then patch `MANIFEST.sha256`, `shasum -c`.
+5. `runner/teardown.py` when the batch is done — with `--keep-bucket` (the default). The bucket
+   holds the only copies of F10-3's and F3-11_snapshot's call records. `teardown.py` **terminates the
+   instance**, so anything living only on its disk dies with it; the F5-8 check above was run for
+   exactly that reason, and it came back safe.
+   With F6 now laptop-only (item 2), **nothing in the remaining batch needs the runner except F4-6
+   and F2-1** — so the teardown decision is available earlier than the batch's end.
+6. A **zh-TW edition** of the whitepaper, once the English edition stabilises.
+
+**The runner `i-0f90ac6377bba523b` is still RUNNING** (~$0.58/day). It is safe to leave up, and it
+is the only recurring cost.
+
+---
+
+## ⇢ PREVIOUS BANNER (2026-08-15, earlier) — kept for its reasoning; the whitepaper status and the FUTURE-WORK count below are superseded above
 
 Written because the laptop may be powered off at any moment.
 
@@ -17,7 +129,8 @@ method and results in appendices, rigorous charts, and an objective list of the 
 deficiencies. Research and design are done; drafting has not started.
 
 - **`results/RESEARCH-whitepaper-conventions-20260815.md`** — what is actually *verified* about AWS
-  whitepaper convention and the OWASP/GENSEC cross-map. 16 primary sources, 25 claims through
+  whitepaper convention and the OWASP/GENSEC cross-map. (Drafting is DONE — see the banner above;
+  the sentence just below saying it "has not started" was true when written.) 16 primary sources, 25 claims through
   3-vote adversarial panels, **13 survived / 12 killed**. Its headline is a negative result: AWS's
   **identifier and versioning** conventions are real and machine-verifiable, its **prose-block
   templates are not** (four "AWS template" claims refuted 0-3). Also records the four wrong
@@ -35,11 +148,15 @@ deficiencies. Research and design are done; drafting has not started.
   reproduction** — ACM reserves both *Reproduced* and *Replicated* for non-authors, so **no independent
   party has re-run anything here** — and our `TRUE/FALSE/INCONCLUSIVE/RECORDED` taxonomy has **no located
   precedent** and must be defined, not cited.
-- **`FUTURE-WORK.md`** — the deficiency list, **21 items** in 5 tiers, each with derived evidence.
+- **`FUTURE-WORK.md`** — the deficiency list, **22 items** in 5 tiers at the time this paragraph was
+  written; **28 items now** (items 23–28 were added on 2026-08-15). Each with derived evidence.
   Item numbers are stable identifiers, not positions. **Tier-1 item 1 is CLOSED** (both prevention
-  overclaims rewritten in both editions, Appendix D correction item 23). Still open in Tier 1: the 12
-  single-day amendments; F5-8's undiagnosed 2-of-3-session day-2 fault; and new **item 19**, that this
-  study says "reproduction" where the accepted vocabulary says "repeatability".
+  overclaims rewritten in both editions, Appendix D correction item 23). Still open in Tier 1: the
+  single-day amendments (**item 2 — 5 of 12 discharged 2026-08-15, 7 remain**); F5-8's undiagnosed
+  2-of-3-session day-2 fault; and **item 19**, that this study says "reproduction" where the accepted
+  vocabulary says "repeatability". New **item 22**, in Tier 4: `check_amendment_readiness.py` reads
+  only FINDING-doc provenance blocks, and **none of item 2's twelve cases appears in one**, so the
+  gate is silent on the study's largest replication debt.
 
 **Blocked on one thing only, and it is narrower than it was:** `wf_3762680e-846` has landed, so
 **Chapter 12 is unblocked**. **Appendix D is not** — the pass returned only two citable figure anchors
@@ -157,7 +274,7 @@ slides** with `keep_rows`. The rest quote verbatim. Verdict citations are stripp
 `strip_citations` (content-driven — it keys on case ids, so it works on both languages) and replaced
 by one footnote per slide pointing back at the document.
 
-### The two user decisions — BOTH MADE 2026-08-15; one is done, one is queued
+### User decisions — two MADE 2026-08-15 (one done, one queued); a THIRD is now open
 
 1. **`reproduction_before_amendment` inconsistency → the user chose the strict reading** ("從嚴"):
    the two-UTC-day bar binds every amendment, so the 12 cases amended on a single calendar day's
@@ -170,28 +287,86 @@ by one footnote per slide pointing back at the document.
 2. **Sealed `claims/triage.csv:147` (`POST /inference` vs the measured `/inference/v1/messages`) →
    annotated, not edited.** DONE: `results/ERRATA.md` entry **E-1** carries the correction, the
    evidence pointers and the reasoning; the csv stays byte-identical and its seal stands.
+3. **OPEN — F8-5's Standard-tier correction in v1.4 §3.4 cites a rejection that was about something
+   else.** Found 2026-08-15 while comparing its two days (DEV-P4-40, `FUTURE-WORK.md` item 27).
+   Day 1's `ValidationException` on a 1,000-character Standard-tier definition was *"Can't configure
+   guardrail policy tier. Enable cross-Region inference…"* — a tier precondition. Day 2's, on 1,001
+   characters, was the length constraint. Length is validated **before** the tier gate, so the two
+   days together **support** the documented 1,000-char limit, which is the opposite of what §3.4
+   publishes. Three entangled calls, all the user's: (a) STANDARD half → **INCONCLUSIVE** and the
+   §3.4 correction **withdrawn**, not reversed (the sealed oracle wants at-limit *acceptance*, which
+   is unobservable without `crossRegionConfig`); (b) erratum **E-2** at six document sites in two
+   languages plus both bundle copies and any deck slide; (c) a **$0** re-test with `crossRegionConfig`
+   set and backoff, on a third UTC day. **Nothing has been amended and no verdict file was touched.**
+   The CLASSIC half (200 accepted / 201 rejected, byte-identical messages both days) is unaffected
+   and genuinely replicated.
 
 ### Still owed, mechanically
 
-- **Day-2 replications — one runner session covers all of it** (start with `runner/provision.py`):
+- **Day-2 replications — `tools/day2_replicate.py` drives them; read its docstring before running
+  one by hand.** A hand-run of a checkpointed case exits 0 having called nothing, because
+  `lib.checkpoint` leaves the run id out of the checkpoint path on purpose (DEV-P4-38).
+  - **DONE 2026-08-15 — F1-14**, plus fifteen sibling F1 surface cases the same producer decides:
+    **16 of 16 agree** across 2026-08-10 → 2026-08-15 (`r20260815T082524Z`), $0, zero AWS calls, on
+    the laptop. Day 1 archived under `results/phase1/archive/`; comparison in
+    `results/day2_replication_2026-08-15.json`.
+  - **DONE 2026-08-15 — F3-4** (`r20260815T084022Z`): **32** day-1 checkpoints moved aside, **367
+    fresh call records** dated 2026-08-15, FALSE → FALSE, **$0.037** upper bound. Same guardrail
+    `wwjmltbo1dt5` at the same version, checked live first. Per-stratum comparison done by hand:
+    the same **9 of 31** entity types refuted, identical `x` in **31 of 31** strata — so the figure
+    v1.4 actually cites replicates, not just the verdict.
+  - **DONE 2026-08-15 — F10-3** (`r20260815T092538Z`): both day-1 checkpoints isolated first and both
+    were **complete**, so an unguarded re-run would have called nothing and exited 0. **10 fresh call
+    records**, FALSE → FALSE, decision record identical at every path, 5/5 pairs billing 7 units each,
+    ≈**$0.0105**. Same guardrail `s5vk53hdnahz` on both days.
+  - **DONE 2026-08-15, WITH CAVEAT — F8-5** (`r20260815T092557Z`, $0): FALSE → FALSE and the record
+    identical, **but** one of its four probes returned `ThrottlingException`, so that probe is not a
+    second observation. Reading the probes' error *messages* then produced **DEV-P4-40**: the
+    day-1 rejection v1.4 §3.4 cites as a length boundary was actually "enable cross-Region inference
+    for your guardrail to use Standard tier", and the two days read together support the documented
+    1,000-char limit rather than refuting it. **An erratum (E-2) is owed at six document sites and the
+    STANDARD half is INCONCLUSIVE — this is `FUTURE-WORK.md` item 27 and it needs the user's decision.
+    Nothing has been amended.**
+  - **DONE 2026-08-15 — F8-4** (`r20260815T093942Z`, ≈**$0.104**): **690 fresh call records**, 690
+    distinct request ids, 6 checkpoints isolated, FALSE → FALSE, record identical at every path — and
+    twelve figures outside the record had moved (STANDARD recall 119→118 of 120; the
+    `InvokeGuardrailChecks` threshold sweep by up to 44→51 of 120). CLASSIC, which the verdict turns
+    on, reproduced exactly. So **`InvokeGuardrailChecks` scoring is not day-to-day deterministic**,
+    unlike ApplyGuardrail's PII matchers.
+  - **The driver now compares the whole verdict file, not just `record`** (`payload_diff`, split into
+    quantitative vs run-scoped), and flags **transiently-failed calls** (`transient_failures`). Both
+    were added mid-batch because F8-4 and F8-5 each agreed on a verdict while something underneath had
+    moved. 41 offline arms in `tools/tests/`.
   - **F5-8** (window opened 2026-08-15 UTC — it is the gate for swapping §4.4 route #3's
-    Accelerator/NDA citation for public evidence), **F4-6**, **F2-1** — owed already.
-  - **The 12 single-day-amended cases** per user decision 1 above: F6-1…F6-5, F6-8, F3-4, F8-4,
-    F8-5, F1-14, F10-3 (F4-6 is already in the line above). Queued, per the user, not urgent.
+    Accelerator/NDA citation for public evidence), **F4-6**, **F2-1** — owed already. F4-6 and F2-1
+    also need `--state` or a rebuilt testbed: `lib.testbed.State.load_or_new` refuses a state file
+    written under a different run id.
+  - **Still owed of the 12 — seven**: F6-1…F6-5, F6-8 (F4-6 is in the line above).
+    **F6-8 runs on the laptop** per DEV-P4-37; the rest of the live ones ride the runner. The six F6-*
+    cases are the whole remainder of the batch.
+  - The replication gate does **not** cover these twelve — see `FUTURE-WORK.md` item 22. Its
+    passing or failing says nothing about them.
 - `f5_redteam/tests/test_route_credential_reachability.py` — F5-8 has no test file.
 - `F3-11 --compare` on **2026-08-18** and **2026-09-10**.
 - `runner/sync.py pull` exits 0 after an `EndpointConnectionError`. Deferred deliberately as its own
   change; do not fold it into unrelated work.
 
-### The runner is STOPPED, on purpose
+### The runner is RUNNING again, for the day-2 batch
 
-`i-0f90ac6377bba523b` (`t3.small`, us-east-1) was stopped 2026-08-15 after this note was written.
-Nothing was running on it: every job in `runner/run.py --jobs` carries an exit code, the one `LOST?`
-row is a stale 2026-08-12 job. A stopped `t3.small` bills only its 40 GB volume (~$0.11/day).
-Restart with `runner/provision.py` (it knows the instance id). The one thing that needs it is the
-queued day-2 replication batch above (F5-8/F4-6/F2-1 plus the 12 from user decision 1 — LIVE AWS
-work); everything else (the decks, the publication steps) is laptop-only by design — python-pptx is on the system python3, and the instance deliberately holds no
-GitHub credential.
+`i-0f90ac6377bba523b` (`t3.small`, us-east-1) — **state `running`, launched 2026-08-15T05:58:47Z**,
+confirmed by `describe-instances`, not remembered. It was stopped earlier on 2026-08-15 and restarted
+for the queued replication batch; ~$17/mo, **~$0.58/day** while up, against ~$0.11/day for the volume
+alone when stopped. `runner/teardown.py` returns it to $0 and should be run when the batch is done —
+that is the last operational step of this phase, not an optional one.
+
+An earlier revision of this section said the instance was stopped. It was true when written and was
+published in that state in PR #31; treat any instance state in a document as a claim to re-derive.
+
+Restart, if it is ever stopped again, with `runner/provision.py` (it knows the instance id). The one
+thing that needs it is the live half of the queued day-2 batch above; everything else (the decks, the
+publication steps) is laptop-only by design — python-pptx is on the system python3, and the instance
+deliberately holds no GitHub credential. Do **not** run `runner/sync.py` while a live case runs:
+`_state()` repairs the instance profile on every subcommand and can rotate credentials mid-job.
 
 ## HISTORICAL (2026-08-13): **71 of 92 published; F5 is the whole remaining bulk**
 

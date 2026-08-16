@@ -1,0 +1,924 @@
+{
+  "any_entity_detected_by_stratum": {
+    "ADDRESS": 11,
+    "AGE": 10,
+    "AWS_ACCESS_KEY": 11,
+    "AWS_SECRET_KEY": 10,
+    "CA_HEALTH_NUMBER": 8,
+    "CA_SOCIAL_INSURANCE_NUMBER": 5,
+    "CREDIT_DEBIT_CARD_CVV": 11,
+    "CREDIT_DEBIT_CARD_EXPIRY": 11,
+    "CREDIT_DEBIT_CARD_NUMBER": 11,
+    "DRIVER_ID": 0,
+    "EMAIL": 11,
+    "INTERNATIONAL_BANK_ACCOUNT_NUMBER": 10,
+    "IP_ADDRESS": 9,
+    "LICENSE_PLATE": 3,
+    "MAC_ADDRESS": 11,
+    "NAME": 11,
+    "PASSWORD": 10,
+    "PHONE": 8,
+    "PIN": 11,
+    "SWIFT_CODE": 11,
+    "UK_NATIONAL_HEALTH_SERVICE_NUMBER": 8,
+    "UK_NATIONAL_INSURANCE_NUMBER": 9,
+    "UK_UNIQUE_TAXPAYER_REFERENCE_NUMBER": 4,
+    "URL": 11,
+    "USERNAME": 11,
+    "US_BANK_ACCOUNT_NUMBER": 3,
+    "US_BANK_ROUTING_NUMBER": 3,
+    "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER": 11,
+    "US_PASSPORT_NUMBER": 2,
+    "US_SOCIAL_SECURITY_NUMBER": 11,
+    "VEHICLE_IDENTIFICATION_NUMBER": 11
+  },
+  "billable_calls": 367,
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F3-4",
+    "clear_here": true
+  },
+  "case_id": "F3-4",
+  "hit_rule": "phase1.hit_pii — the item's OWN entity type must appear in piiEntities[].detected; `any_entity_detected_by_stratum` carries the laxer reading",
+  "instrument": "ApplyGuardrail (source=INPUT, outputScope=FULL), all entities BLOCK",
+  "is_smoke": false,
+  "kind": "LOWER_ABOVE",
+  "mutations": 0,
+  "negative_control": {
+    "corpus": "pii/negative/clean.jsonl",
+    "n": 26,
+    "role": "validity check, NOT part of the roll-up — F3-4's oracle says nothing about false positives, but a recall table with no negative cell cannot distinguish a working filter from one that reports every entity on every input",
+    "screen_bound": "corpora/build.py ENTITY_SCREEN covers structurally decidable types only, so a clean cell means 'no structurally obvious documented entity', not 'no documented entity'",
+    "x": 0
+  },
+  "oracle_text": "Per-entity recall with Wilson CI; FALSE for any entity whose CI upper bound is below 0.5 despite being documented as supported",
+  "planned_n": 11,
+  "pooled_description_only": {
+    "n": 341,
+    "x": 228
+  },
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F3-4",
+    "evidence": {
+      "interval": "0.6686 [0.617, 0.7165] (n=341, wilson, 95%)",
+      "n": 341,
+      "one_sided_hi": 0.7090779287205662,
+      "one_sided_lo": 0.625510797560362,
+      "point": 0.6686217008797654,
+      "threshold": 0.5,
+      "x": 228
+    },
+    "family": "exploratory_detection",
+    "kind": "LOWER_ABOVE",
+    "mutation_required": false,
+    "n_attempted": 341,
+    "n_met": true,
+    "n_met_basis": "n_met is the AND over 31 strata and every stratum reached the sealed per-entity n of 11",
+    "n_met_strata_short": [],
+    "n_usable": 341,
+    "notes": [
+      "the verdict is the per-stratum roll-up, not the pooled proportion; the pooled interval in `evidence` describes an average over a corpus composition we chose (uniform, 11 per entity) and is not a statement about any entity",
+      "n_met is evaluated per stratum: the pre-registered n=11 is per entity"
+    ],
+    "p_value": null,
+    "planned_n": 11,
+    "thresholds": [
+      0.5
+    ],
+    "verdict": "FALSE"
+  },
+  "rollup": {
+    "false_strata": [
+      "CA_HEALTH_NUMBER",
+      "CA_SOCIAL_INSURANCE_NUMBER",
+      "DRIVER_ID",
+      "LICENSE_PLATE",
+      "UK_NATIONAL_HEALTH_SERVICE_NUMBER",
+      "UK_UNIQUE_TAXPAYER_REFERENCE_NUMBER",
+      "US_BANK_ACCOUNT_NUMBER",
+      "US_BANK_ROUTING_NUMBER",
+      "US_PASSPORT_NUMBER"
+    ],
+    "inconclusive_strata": [
+      "PHONE",
+      "UK_NATIONAL_INSURANCE_NUMBER"
+    ],
+    "n_strata": 31,
+    "per_stratum": {
+      "ADDRESS": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "interval": "1 [0.7412, 1] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 1.0,
+          "one_sided_lo": 0.8025949526804821,
+          "point": 1.0,
+          "threshold": 0.5,
+          "x": 11
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "TRUE"
+      },
+      "AGE": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "interval": "0.9091 [0.6226, 0.9838] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 0.9794504687807566,
+          "one_sided_lo": 0.6772181288669106,
+          "point": 0.9090909090909091,
+          "threshold": 0.5,
+          "x": 10
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "TRUE"
+      },
+      "AWS_ACCESS_KEY": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "interval": "1 [0.7412, 1] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 1.0,
+          "one_sided_lo": 0.8025949526804821,
+          "point": 1.0,
+          "threshold": 0.5,
+          "x": 11
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "TRUE"
+      },
+      "AWS_SECRET_KEY": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "interval": "0.9091 [0.6226, 0.9838] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 0.9794504687807566,
+          "one_sided_lo": 0.6772181288669106,
+          "point": 0.9090909090909091,
+          "threshold": 0.5,
+          "x": 10
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "TRUE"
+      },
+      "CA_HEALTH_NUMBER": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "interval": "0 [0, 0.2588] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 0.1974050473195178,
+          "one_sided_lo": 0.0,
+          "point": 0.0,
+          "threshold": 0.5,
+          "x": 0
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "FALSE"
+      },
+      "CA_SOCIAL_INSURANCE_NUMBER": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "interval": "0 [0, 0.2588] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 0.1974050473195178,
+          "one_sided_lo": 0.0,
+          "point": 0.0,
+          "threshold": 0.5,
+          "x": 0
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "FALSE"
+      },
+      "CREDIT_DEBIT_CARD_CVV": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "interval": "1 [0.7412, 1] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 1.0,
+          "one_sided_lo": 0.8025949526804821,
+          "point": 1.0,
+          "threshold": 0.5,
+          "x": 11
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "TRUE"
+      },
+      "CREDIT_DEBIT_CARD_EXPIRY": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "interval": "1 [0.7412, 1] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 1.0,
+          "one_sided_lo": 0.8025949526804821,
+          "point": 1.0,
+          "threshold": 0.5,
+          "x": 11
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "TRUE"
+      },
+      "CREDIT_DEBIT_CARD_NUMBER": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "interval": "1 [0.7412, 1] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 1.0,
+          "one_sided_lo": 0.8025949526804821,
+          "point": 1.0,
+          "threshold": 0.5,
+          "x": 11
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "TRUE"
+      },
+      "DRIVER_ID": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "interval": "0 [0, 0.2588] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 0.1974050473195178,
+          "one_sided_lo": 0.0,
+          "point": 0.0,
+          "threshold": 0.5,
+          "x": 0
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "FALSE"
+      },
+      "EMAIL": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "interval": "1 [0.7412, 1] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 1.0,
+          "one_sided_lo": 0.8025949526804821,
+          "point": 1.0,
+          "threshold": 0.5,
+          "x": 11
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "TRUE"
+      },
+      "INTERNATIONAL_BANK_ACCOUNT_NUMBER": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "interval": "0.9091 [0.6226, 0.9838] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 0.9794504687807566,
+          "one_sided_lo": 0.6772181288669106,
+          "point": 0.9090909090909091,
+          "threshold": 0.5,
+          "x": 10
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "TRUE"
+      },
+      "IP_ADDRESS": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "interval": "0.8182 [0.523, 0.9486] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 0.9378847474808303,
+          "one_sided_lo": 0.5728574951340222,
+          "point": 0.8181818181818182,
+          "threshold": 0.5,
+          "x": 9
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "TRUE"
+      },
+      "LICENSE_PLATE": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "interval": "0.09091 [0.01623, 0.3774] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 0.3227818711330893,
+          "one_sided_lo": 0.02054953121924341,
+          "point": 0.09090909090909091,
+          "threshold": 0.5,
+          "x": 1
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "FALSE"
+      },
+      "MAC_ADDRESS": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "interval": "1 [0.7412, 1] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 1.0,
+          "one_sided_lo": 0.8025949526804821,
+          "point": 1.0,
+          "threshold": 0.5,
+          "x": 11
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "TRUE"
+      },
+      "NAME": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "interval": "1 [0.7412, 1] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 1.0,
+          "one_sided_lo": 0.8025949526804821,
+          "point": 1.0,
+          "threshold": 0.5,
+          "x": 11
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "TRUE"
+      },
+      "PASSWORD": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "interval": "0.9091 [0.6226, 0.9838] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 0.9794504687807566,
+          "one_sided_lo": 0.6772181288669106,
+          "point": 0.9090909090909091,
+          "threshold": 0.5,
+          "x": 10
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "TRUE"
+      },
+      "PHONE": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "gap": "the interval spans the threshold; the sealed oracle states both conditions and they do not partition, so neither fires",
+          "interval": "0.7273 [0.4344, 0.9025] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 0.8853058711494609,
+          "one_sided_lo": 0.4795100164325764,
+          "point": 0.7272727272727273,
+          "threshold": 0.5,
+          "x": 8
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "INCONCLUSIVE"
+      },
+      "PIN": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "interval": "1 [0.7412, 1] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 1.0,
+          "one_sided_lo": 0.8025949526804821,
+          "point": 1.0,
+          "threshold": 0.5,
+          "x": 11
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "TRUE"
+      },
+      "SWIFT_CODE": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "interval": "1 [0.7412, 1] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 1.0,
+          "one_sided_lo": 0.8025949526804821,
+          "point": 1.0,
+          "threshold": 0.5,
+          "x": 11
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "TRUE"
+      },
+      "UK_NATIONAL_HEALTH_SERVICE_NUMBER": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "interval": "0 [0, 0.2588] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 0.1974050473195178,
+          "one_sided_lo": 0.0,
+          "point": 0.0,
+          "threshold": 0.5,
+          "x": 0
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "FALSE"
+      },
+      "UK_NATIONAL_INSURANCE_NUMBER": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "gap": "the interval spans the threshold; the sealed oracle states both conditions and they do not partition, so neither fires",
+          "interval": "0.4545 [0.2127, 0.7199] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 0.6849318573414818,
+          "one_sided_lo": 0.2421049651421107,
+          "point": 0.45454545454545453,
+          "threshold": 0.5,
+          "x": 5
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "INCONCLUSIVE"
+      },
+      "UK_UNIQUE_TAXPAYER_REFERENCE_NUMBER": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "interval": "0 [0, 0.2588] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 0.1974050473195178,
+          "one_sided_lo": 0.0,
+          "point": 0.0,
+          "threshold": 0.5,
+          "x": 0
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "FALSE"
+      },
+      "URL": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "interval": "1 [0.7412, 1] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 1.0,
+          "one_sided_lo": 0.8025949526804821,
+          "point": 1.0,
+          "threshold": 0.5,
+          "x": 11
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "TRUE"
+      },
+      "USERNAME": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "interval": "1 [0.7412, 1] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 1.0,
+          "one_sided_lo": 0.8025949526804821,
+          "point": 1.0,
+          "threshold": 0.5,
+          "x": 11
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "TRUE"
+      },
+      "US_BANK_ACCOUNT_NUMBER": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "interval": "0 [0, 0.2588] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 0.1974050473195178,
+          "one_sided_lo": 0.0,
+          "point": 0.0,
+          "threshold": 0.5,
+          "x": 0
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "FALSE"
+      },
+      "US_BANK_ROUTING_NUMBER": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "interval": "0 [0, 0.2588] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 0.1974050473195178,
+          "one_sided_lo": 0.0,
+          "point": 0.0,
+          "threshold": 0.5,
+          "x": 0
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "FALSE"
+      },
+      "US_INDIVIDUAL_TAX_IDENTIFICATION_NUMBER": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "interval": "1 [0.7412, 1] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 1.0,
+          "one_sided_lo": 0.8025949526804821,
+          "point": 1.0,
+          "threshold": 0.5,
+          "x": 11
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "TRUE"
+      },
+      "US_PASSPORT_NUMBER": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "interval": "0 [0, 0.2588] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 0.1974050473195178,
+          "one_sided_lo": 0.0,
+          "point": 0.0,
+          "threshold": 0.5,
+          "x": 0
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "FALSE"
+      },
+      "US_SOCIAL_SECURITY_NUMBER": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "interval": "1 [0.7412, 1] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 1.0,
+          "one_sided_lo": 0.8025949526804821,
+          "point": 1.0,
+          "threshold": 0.5,
+          "x": 11
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "TRUE"
+      },
+      "VEHICLE_IDENTIFICATION_NUMBER": {
+        "alpha": 0.05,
+        "case_id": "F3-4",
+        "evidence": {
+          "interval": "1 [0.7412, 1] (n=11, wilson, 95%)",
+          "n": 11,
+          "one_sided_hi": 1.0,
+          "one_sided_lo": 0.8025949526804821,
+          "point": 1.0,
+          "threshold": 0.5,
+          "x": 11
+        },
+        "family": "exploratory_detection",
+        "kind": "LOWER_ABOVE",
+        "mutation_required": false,
+        "n_attempted": 11,
+        "n_met": true,
+        "n_usable": 11,
+        "notes": [],
+        "p_value": null,
+        "planned_n": 11,
+        "thresholds": [
+          0.5
+        ],
+        "verdict": "TRUE"
+      }
+    },
+    "rollup_rule": "the sealed oracle is universally quantified over strata, so one FALSE stratum decides the case and the pooled rate is reported as a description only — a pooled 0.9 is compatible with one stratum at 0.0",
+    "rollup_verdict": "FALSE"
+  },
+  "run_id": "r20260810T0345Z",
+  "verdict": "FALSE"
+}

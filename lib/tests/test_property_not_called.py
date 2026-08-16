@@ -41,8 +41,11 @@ sys.path.insert(0, str(ROOT / "lib"))
 # The library modules whose classes case scripts hold instances of. Introspected, not enumerated.
 LIB_MODULES = ("checkpoint", "evidence", "oracle", "testbed", "arms", "stats", "phase1")
 
-SKIP_DIRS = {".git", ".venv", ".venv-oracle", ".venv-baseline", "__pycache__", "node_modules",
-             "evidence", ".pytest_cache"}
+# Scope comes from `scan_scope`, not from a local set of directory names. The local set said
+# `{".venv", ".venv-oracle", ".venv-baseline"}` and therefore could not see `.venv-figs`, which
+# made this test report 16 findings in matplotlib and PIL on 2026-08-15 (DEV-P4-42).
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from scan_scope import py_files  # noqa: E402  sibling helper; see its docstring
 
 
 def _properties() -> dict[str, set[str]]:
@@ -66,20 +69,15 @@ def _properties() -> dict[str, set[str]]:
     return out
 
 
-def _py_files() -> list[Path]:
-    return [p for p in sorted(ROOT.rglob("*.py"))
-            if not (SKIP_DIRS & set(p.relative_to(ROOT).parts))]
-
-
 def test_no_property_is_called_as_a_method():
     props = _properties()
     assert "n_done" in props, \
         "the derivation found no Checkpoint.n_done — LIB_MODULES or the introspection is wrong, " \
         "and a check that derived an empty target set would pass over the whole repo"
 
-    files = _py_files()
-    assert len(files) > 50, f"only {len(files)} python file(s) scanned — a near-empty scan is an " \
-                            f"error, not a pass (feedback_zero_file_scan_is_error)"
+    # The >50 floor that used to sit here is inside `py_files` now, so every scanner sharing the
+    # helper inherits it rather than each one remembering to write it.
+    files = py_files()
 
     offenders: list[str] = []
     for path in files:
