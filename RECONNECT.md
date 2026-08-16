@@ -8,19 +8,23 @@ Session: `fd230f67-029c-480f-a070-54c1670fc4e4` —
 `claude --resume fd230f67-029c-480f-a070-54c1670fc4e4` from `/Users/tmwu/Downloads`.
 Full narrative: `~/Downloads/session-logs/2026-08-15-grx-whitepaper-v1-figures-scan-scope.md`.
 
-**PR #32** — `https://github.com/timwukp/agentcore-guardrails-design-validation/pull/32`,
-branch `feat/whitepaper-v1`, based on `main` `e6534f0f11d5`. Every blob SHA matched a local
-`git hash-object` and the branch tree verified present-count against the push list on each commit;
-`mergeable_state: clean`.
+**PR #32 was MERGED by the user on 2026-08-16T06:08:38Z** (merge commit `8208cfad257f`, now `main`).
+Verified after the merge, which is the step a merged PR does not do for you
+(`feedback_merged_pr_is_not_landed`): `tools/repo_diff.py` reports **775 remote blobs = 775 local
+files, 0 added / 0 modified / 0 remote-only**. It compares blob SHAs, so that IS the blob-by-blob
+check. **There are 0 open PRs.**
 
-**Read the head SHA and the file count from the API, not from this line** — a hash written into the
-file that the next commit changes is stale the moment it is written, which is how the banner above
-came to describe the PR as unopened:
+**Read counts and SHAs from the API, not from this file** — a hash written into a file that the next
+commit changes is stale the moment it is written, which is how this banner once came to describe an
+open PR as unopened:
 
 ```
-gh api repos/timwukp/agentcore-guardrails-design-validation/pulls/32 \
-   --jq '{head: .head.sha, changed_files, mergeable_state}'
+gh api repos/timwukp/agentcore-guardrails-design-validation/git/refs/heads/main --jq .object.sha
+.venv-oracle/bin/python tools/repo_diff.py        # read-only; 0/0/0 means main == local
 ```
+
+**Anything edited in the working tree after that merge is UNPUSHED** and rides the next concern's PR.
+As of this line that is `RECONNECT.md` itself (this banner).
 
 **Nothing on the publication path is half-finished. Do not merge** — merging is the user's action.
 The next agent action after the merge lands is to **verify `main`'s tree blob-by-blob**
@@ -61,7 +65,10 @@ returned SHA differs from a locally computed `git hash-object`. No change was ne
   when the measured `chain.flip.http_status` is **202**, and plotted only day 2. All fixed.
 - **New result in the paper**: F5-2's `data_plane_reconvergence` — first denial 305.8 s / 325.0 s,
   three consecutive denials 326.4 s / 345.6 s, `n_that_were_still_authorized: 0`. §11.4.
-- **`FUTURE-WORK.md` is now 28 items** (was 21, then 22). New item 28 is figure 6's missing source.
+- **`FUTURE-WORK.md` is now 30 items** (was 21, then 22, then 28). Item 28 is figure 6's missing source;
+  item 29 is the same-run_id roll-up overwrite found on 2026-08-16; item 30 is Tier 5's citation
+  anchors, which had existed unnumbered since the tier was written. `claims/tests/test_future_work_register.py`
+  derives the count from the headings and fails any file that states a different one, so this line is checked.
 - **`DEVIATIONS.md` gained DEV-P4-41 and DEV-P4-42** — 42 `DEV-P4-*` entries.
 - **`./verify_phase0.sh`: 2 failed / 3143 passed / 9 skipped in 1:14:23** → both fixed, then 84
   passed across the eight affected scanner tests and 72 passed across the deviation-structure tests.
@@ -79,7 +86,16 @@ returned SHA differs from a locally computed `git hash-object`. No change was ne
 
 ### Still open, in the order I would take them
 
-1. **Wait for the user to merge PR #32**, then verify `main`'s tree blob-by-blob. Nothing to push.
+1. ~~Wait for the merge, then verify `main`'s tree.~~ **DONE 2026-08-16** — see the banner. The
+   highest-priority open item is now **FUTURE-WORK item 24**, because it is the only one with a
+   deadline that destroys data: F10-3's and F3-11_snapshot's **day-1 call records exist ONLY in the
+   runner's S3 bucket**, whose lifecycle `expire-90d` (Enabled, prefix `""`, `Expiration {Days: 90}`)
+   deletes every object **~2026-11-11 to ~2026-11-13**. Two published verdicts would then have no
+   primary evidence at any level of scrutiny. Blocked on the user, because the only pull path in the
+   repo is `runner/sync.py pull`, **declined twice** — the alternative is a plain `aws s3 cp
+   --recursive` of the four `out/<ts>/` prefixes, which is a different mechanism and costs about
+   **$0.03**. Closes when both prefixes are in `evidence/` and verified by object count + sha256, or
+   a recorded lifecycle exception is added.
 2. **Seven day-2 replications**: F6-1…F6-5, F6-8, F4-6 (needs `--state` or a rebuilt testbed).
 
    **Correction, measured 2026-08-15: ALL of F6 must run on the LAPTOP, not just F6-8.** Earlier
@@ -148,8 +164,10 @@ deficiencies. Research and design are done; drafting has not started.
   reproduction** — ACM reserves both *Reproduced* and *Replicated* for non-authors, so **no independent
   party has re-run anything here** — and our `TRUE/FALSE/INCONCLUSIVE/RECORDED` taxonomy has **no located
   precedent** and must be defined, not cited.
-- **`FUTURE-WORK.md`** — the deficiency list, **22 items** in 5 tiers at the time this paragraph was
-  written; **28 items now** (items 23–28 were added on 2026-08-15). Each with derived evidence.
+- **`FUTURE-WORK.md`** — the deficiency list, **30 items** in 5 tiers, each with derived evidence
+  (this paragraph was first written at 22; items 23–28 were added on 2026-08-15, items 29–30 on 2026-08-16).
+  Only the current count is stated as a count: a historical one cannot be derived, so it cannot be
+  checked, and a reader has no way to tell it apart from a stale one.
   Item numbers are stable identifiers, not positions. **Tier-1 item 1 is CLOSED** (both prevention
   overclaims rewritten in both editions, Appendix D correction item 23). Still open in Tier 1: the
   single-day amendments (**item 2 — 5 of 12 discharged 2026-08-15, 7 remain**); F5-8's undiagnosed
