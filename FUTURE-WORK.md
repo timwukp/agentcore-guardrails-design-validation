@@ -16,7 +16,9 @@ running the first replication in item 2's queue, and **23–27** later that day 
 fifth (F10-3, F8-5, F8-4) — four of those five were found by *doing* the replications, not by reviewing
 them, and item 27 is the first Tier-1 item any of this work produced, which is the argument for finishing
 the remaining eight. **28** was added on 2026-08-15 from drawing the whitepaper's figures: a blocked
-figure is a deficiency with a name, not a blank space. All are placed in the tier
+figure is a deficiency with a name, not a blank space. **29** was added on 2026-08-16 by dry-running
+`runner/merge_evidence.py` over all twelve staging trees — the first audit of them as a set, and the
+first thing anyone had done to that directory other than read one of them. All are placed in the tier
 they belong to rather than appended, so the numbering is out of order on purpose. Nothing is renumbered
 once written, because other files cite these numbers.
 
@@ -636,9 +638,68 @@ not for the audit trail.
 
 ---
 
+### 29. A second run into one run_id overwrites the first day's per-case roll-up, and the survivor lives only in a gitignored staging directory
+
+**Evidence.** `runner/merge_evidence.py` was run in dry-run over all twelve
+`runner/.state/incoming/<stamp>/` trees on 2026-08-16 — the first time anything has audited them as a
+set. Eleven are fully merged (`to copy 0`, `conflicts 0`; e.g. `20260814T062501Z` = 25,174 identical
+files, `20260813T174237Z` = 3,168, `20260815T061609Z` = 259). One is not:
+**`20260812T130844Z` reports `to copy 0` but `conflicts 8`** — eight staged evidence files whose bytes
+differ from the live published copy, so the tool refuses and copies nothing.
+
+The eight are exactly the per-case *aggregates*, never the call records:
+`f3_efficacy/F3-10/{analysis,environment,summary}.json`,
+`f3_efficacy/F3-10-log-surface/{analysis,environment,summary}.json`, and
+`infra/P2-01-iam/{environment,summary}.json`. They differ substantively, not cosmetically: the staged
+`environment.json` is stamped `2026-08-12T03:07:54Z` and the live one `2026-08-13T02:28:49Z`; the staged
+`summary.json` names `0510_get_gateway_ok.json` with `duration_ms 948.4` and request_id
+`dfaad8d6-…`, the live one `1492_get_gateway_ok.json` with `892.9` and `ab01c08c-…`; staged
+`analysis.json` has `arms.active_golden_set.score_datapoints.n_score_series_this_gateway: 28`
+against the live **48**, and the live one carries a
+`application_logs.numeric_strings_seen…contentFilter[].score: "0.8000"` key the staged one does not.
+
+**Root cause.** F3-10 was replicated by running the producer a second time **into the same run_id**
+(`r20260810T130945Z`). Call records are sequence-numbered, so both days coexist — the live directory
+holds **2,696** files and day-1's `0510_get_gateway_ok.json` is still there, against **1,494** staged.
+But `analysis.json` / `environment.json` / `summary.json` are one-per-case-directory, so day 2 wrote
+over day 1's. This is the shared-output-file shape of a second-instance defect: the artifact that is
+appended survives replication and the artifact that is rewritten does not.
+
+**Why it does NOT touch a published number, and why that is a fact rather than a hope.**
+`results/FINDING-F3-10.md:7` states the roll-ups "are aggregates rather than calls and carry no
+`t_start_utc`, so they contribute no observation day" — day attribution and every published figure are
+re-derived from the 1,491 day-1 call records, which are live and complete. So the overwrite costs the
+audit trail, not the verdict.
+
+**Why it still matters.** The surviving day-1 roll-up exists in exactly one place:
+`runner/.state/incoming/20260812T130844Z/`, which is **local-only and `.gitignore`d**. That directory
+is also the largest single candidate in the standing "reclaim 1.6 GB from `runner/.state/incoming/`"
+housekeeping idea — **so that cleanup, executed as stated, destroys the only copy of a published
+case's day-1 aggregates.** Nobody would have noticed: the live tree looks complete, and the gate reads
+call records.
+
+**Closes when.** (a) The eight conflicts are resolved by hand — the honest resolution is to keep both
+under day-distinguished names rather than to pick a winner, since both are real observations of
+different days; (b) the producer stops writing a per-case aggregate to a path a re-run reuses (stamp
+it with the day, as the call records effectively are); and (c) the `incoming/` cleanup carries a guard
+that refuses to delete a tree `merge_evidence.py` reports conflicts for. Until (c) exists, **do not
+delete `runner/.state/incoming/20260812T130844Z/`**.
+
+---
+
 ## Tier 5 — citation hygiene, before anything is published
 
-The research's own anchors were wrong at least four times. Fix all four:
+### 30. The research's own citation anchors were wrong at least four times
+
+This tier's contents were written as a table and a paragraph with **no item number**, which is why it
+is numbered now rather than rewritten: for its first day it was the only work in this register that no
+other document could cite, no count could include, and no test could see. `WHITEPAPER.md` called the
+register *full* and gave a size that excluded these fixes entirely — so "full" was false, and the tier
+whose own heading says *before anything is published* was the one tier a reader could not look up.
+`claims/tests/test_future_work_register.py::test_every_tier_has_at_least_one_item` now fails on a tier
+with no numbered item, so a future tier cannot be added this way again.
+
+Fix all four anchors:
 
 | Assertion | Wrong anchor | Correct anchor |
 |---|---|---|
@@ -646,6 +707,10 @@ The research's own anchors were wrong at least four times. Fix all four:
 | AWS agentic least-privilege controls | GenAI Lens landing page | `generative-ai-lens/gensec05-bp01.html` |
 | "No fool-proof prevention" | `genai.owasp.org/llm-top-10/` | `genai.owasp.org/llmrisk/llm01-prompt-injection/` |
 | OWASP agentic T1–T17 | landing page (banners v1.0/Feb-2025) | the v1.1/Dec-2025 PDF, pinned by sha256 |
+
+**Closes when** all four anchors are corrected in both editions of the whitepaper and in
+`agentcore_guardrails_best_practices_v1.4.md`, and the three caveats below are either applied or
+recorded as declined.
 
 Plus: quote the Security Pillar revision log as "**23 entries as of the 2024-11-06 revision**", not
 a live number; do not claim AWS has a fixed prose template (four such claims were refuted 0-3, one
