@@ -77,3 +77,31 @@ def test_the_gate_lists_every_test_directory_on_disk_and_runs_it():
         "gated but absent from the combined pytest invocation:\n"
         + "\n".join(f"  {d}" for d in not_run)
     )
+
+
+def test_the_gate_counts_its_directories_instead_of_stating_a_number():
+    """The label a reader sees must be derived from the list, not typed alongside it.
+
+    The arm above holds the *set* equal to the tree, and it passed all along while the script
+    said three different things about the SIZE of that set: its header comment opened "The test
+    gate runs SEVEN directories", the gate's label read "all 11 test directories", and the loop
+    ran TWELVE. A number inside a string is not covered by a test over the data next to it
+    (feedback_prose_is_not_verified), so a fully green run printed a false label for two days —
+    which is worse than a stale comment, because the label is what a resuming session reads as
+    the record of what the gate covered.
+
+    The fix was to make the label count `TEST_SPECS`, and this arm is what stops it being
+    hand-typed again: no literal directory count may appear in the label, and the expansion
+    must be there.
+    """
+    text = SCRIPT.read_text(encoding="utf-8")
+    label = re.search(r'^gate "test suite \(([^"]*)\)"', text, re.M)
+    assert label, "the test-suite gate's label moved — find it and re-point this arm"
+
+    assert "${#TEST_SPECS[@]}" in label.group(1), (
+        f'the gate label is {label.group(1)!r}. It must COUNT the list rather than state a size:\n'
+        '  gate "test suite (all ${#TEST_SPECS[@]} test directories)"\n'
+        "A typed number here is wrong on the day the thirteenth directory is added, and every "
+        "gate still passes while it is wrong.")
+    assert not re.search(r"\b\d+\b", label.group(1)), (
+        f"the gate label {label.group(1)!r} contains a literal number — that is the defect")

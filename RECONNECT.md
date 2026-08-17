@@ -67,8 +67,10 @@ returned SHA differs from a locally computed `git hash-object`. No change was ne
   three consecutive denials 326.4 s / 345.6 s, `n_that_were_still_authorized: 0`. §11.4.
 - **`FUTURE-WORK.md` is now 31 items** (was 21, then 22, then 28). Item 28 is figure 6's missing source;
   item 29 is the same-run_id roll-up overwrite found on 2026-08-16; item 30 is Tier 5's citation
-  anchors, which had existed unnumbered since the tier was written; item 31 is this suite's six-hour
-  runtime against a run-book that said fifteen minutes. `claims/tests/test_future_work_register.py`
+  anchors, which had existed unnumbered since the tier was written; item 31 is the gate's runtime, which
+  this file had stated three different ways — **rewritten 2026-08-17 from a timed run, because the
+  "≈ 6 hours" the item was filed with was itself an extrapolation and wrong by a factor of four**.
+  `claims/tests/test_future_work_register.py`
   derives the count from the headings and fails any file that states a different one, so this line is checked.
 - **`DEVIATIONS.md` gained DEV-P4-41 and DEV-P4-42** — 42 `DEV-P4-*` entries.
 - **`./verify_phase0.sh`: 2 failed / 3143 passed / 9 skipped in 1:14:23** → both fixed, then 84
@@ -678,12 +680,20 @@ assertions) — neither file is a sealed bound artifact.
   the PR #12 note at the top of this file before pushing anything.
 - Approved plan: `/Users/tmwu/.claude/plans/melodic-hatching-seal.md`
 - Python: `.venv-oracle/bin/python` (botocore 1.43.67). `.venv-baseline` is 1.42.79 and is **data**, not a fallback.
-- Full gate: `./verify_phase0.sh` — ~6 min, 14 gates.
-- Full suite: `.venv-oracle/bin/python -m pytest -q --basetemp=<scratch>` → **≈ 6 hours**, 3,171 tests
-  (**measured 2026-08-16**; the "~15 min" that stood here for days was from when `evidence/` was a third
-  of its size). `claims/tests` alone is 438 tests / **37 min 30 s**. It is I/O-bound walking the 30,851
-  evidence files, not CPU-bound, and `pytest-xdist` is **not installed** so there is no `-n auto`.
-  **Budget for it, or scope deliberately and say so** — FUTURE-WORK item 31.
+- Full gate: `PYTHON=.venv-oracle/bin/python ./verify_phase0.sh` — **1 h 24 min 16 s, 14 gates**
+  (measured 2026-08-17, rc 0, 14/14; its pytest leg was 3,187 passed / 16 skipped in 1:04:17 over the
+  twelve test directories). The 2026-08-15 run at the top of this file agrees: 1:14:23. **This is the
+  only runtime figure for the gate in this file — if you find a second one, one of them is stale.**
+- Full suite: the gate's pytest leg is the suite; run it through `./verify_phase0.sh` rather than by
+  hand, so the per-directory collection floors run first. If you must: `.venv-oracle/bin/python -m
+  pytest -q --basetemp=<scratch>`. `claims/tests` alone is 438 tests / **37 min 30 s** — 13.7% of the
+  tests and 58% of the leg. It is I/O-bound walking the 32,018 evidence files, not CPU-bound (51% CPU,
+  more system than user), and `pytest-xdist` is **not installed** so there is no `-n auto`.
+  **It is affordable before a push at ~85 min — run it.** FUTURE-WORK item 31.
+  - Two earlier figures here were wrong and are recorded so neither comes back: "~15 min"/"~6 min"
+    dated from when `evidence/` was a third of its size, and "≈ 6 hours" (2026-08-16) was
+    `claims/tests`'s rate extrapolated to the whole suite — a biased sample, because pytest runs that
+    directory first and it holds nearly all the evidence-walking tests.
   - Blast-radius alternative, when the change is small: `grep -rl` the changed files across every `*.py`
     to find what actually reads them, run those directories, and **write down in the PR what was not
     run**. That is a narrower gate, not the same gate.
