@@ -1326,7 +1326,7 @@ The ledger, quantified. None of these is hedging; each is a number.
 9. **0 independent replications.** See Chapter 12.
 10. **No control interaction was measured at all.** Not one case.
 
-The full 30-item deficiency register, tiered by severity, is `FUTURE-WORK.md`. Its Tier 1 —
+The full 31-item deficiency register, tiered by severity, is `FUTURE-WORK.md`. Its Tier 1 —
 "the paper is wrong or self-contradictory until these are fixed" — currently holds 5 items (1, 2, 3,
 19, 27), of which the prevention/detection verb contradiction (item 1) and the F8-5 erratum (item 27)
 are the two that change published text.

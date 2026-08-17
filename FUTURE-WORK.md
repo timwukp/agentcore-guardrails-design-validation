@@ -18,7 +18,11 @@ them, and item 27 is the first Tier-1 item any of this work produced, which is t
 the remaining eight. **28** was added on 2026-08-15 from drawing the whitepaper's figures: a blocked
 figure is a deficiency with a name, not a blank space. **29** was added on 2026-08-16 by dry-running
 `runner/merge_evidence.py` over all twelve staging trees — the first audit of them as a set, and the
-first thing anyone had done to that directory other than read one of them. All are placed in the tier
+first thing anyone had done to that directory other than read one of them. **30** and **31** were added
+on 2026-08-16 by writing `claims/tests/test_future_work_register.py`, which derives this register's size
+from its own headings: 30 is Tier 5, which had held four fixes with **no item number** and was therefore
+outside every count in the repo, and 31 is the six-hour test suite the run-book still called fifteen
+minutes. Both were found by making a number checkable, not by re-reading the file. All are placed in the tier
 they belong to rather than appended, so the numbering is out of order on purpose. Nothing is renumbered
 once written, because other files cite these numbers.
 
@@ -684,6 +688,50 @@ different days; (b) the producer stops writing a per-case aggregate to a path a 
 it with the day, as the call records effectively are); and (c) the `incoming/` cleanup carries a guard
 that refuses to delete a tree `merge_evidence.py` reports conflicts for. Until (c) exists, **do not
 delete `runner/.state/incoming/20260812T130844Z/`**.
+
+---
+
+### 31. The full test suite takes about six hours, is documented as fifteen minutes, and has no parallel path — so it has stopped being run
+
+`RECONNECT.md` has said **"Full suite: … → ~15 min"** since the suite was small. Measured 2026-08-16:
+**3,171 tests collected**, and `claims/tests` **alone** — 438 of them, 14% — takes **37 min 30 s**. At
+that rate the whole suite is **≈ 6 hours**. A first attempt to run it as a pre-push gate was stopped
+after 36 minutes at roughly 11%.
+
+**It is I/O-bound on the evidence tree, not CPU-bound.** The run reported 54% CPU with *more system than
+user* time (595 s system vs 642 s user), and the slowest tests are the ones that walk all 30,851 evidence
+files:
+
+| Test | Duration |
+|---|---|
+| `test_amendment_evidence_subset.py::test_the_subset_yields_the_same_observation_days_as_the_full_tree` | 218.8 s |
+| `test_redaction_gate.py::test_gate_passes_on_the_real_tree` | 88.1 s |
+| `test_redaction_gate.py::test_the_gate_fails_if_a_waived_fixture_is_removed_from_its_file` | 85.2 s |
+| `test_finding_numbers.py::test_redaction_figures_in_the_finding_are_lower_bounds_and_hold` | 83.2 s |
+| `test_amendment_gate.py::test_control_arm_the_unmutated_tree_passes` | 63.9 s |
+
+`pytest-xdist` is **not installed** (`ModuleNotFoundError: No module named 'xdist'`), so there is no
+`-n auto` to fall back on.
+
+**Why this is a deficiency and not just slow.** A gate nobody can afford to run is not a gate. The
+project's stated convention is to run the full suite before every push; at six hours that convention is
+now aspirational, and the actual practice — which is what protects the evidence — has silently become
+"run the blast radius and hope". The danger is specific: this register's own guards are cheap, but the
+expensive tests are exactly the ones that verify the **evidence tree** and the **redaction gate**, i.e.
+the two things whose failure is unrecoverable once published. The stale "~15 min" makes the gap invisible
+to anyone reading the run-book, which is how a resuming session comes to believe it ran a gate it skipped.
+
+Note that the runtime is a **consequence of the evidence tree growing**, not of a regression: the same
+tests were affordable when `evidence/` was a third of its present size. Any fix must therefore not be a
+one-off speed-up.
+
+**Closes when** (a) `RECONNECT.md`'s figure is re-measured and corrected, and states the measurement date
+so the next reader can tell whether it has aged again; (b) there is a documented **tiered** gate — a
+blast-radius tier that is honest about what it does *not* cover, and a full tier with its real cost — so
+that "I ran the gate" names which one; and (c) either `pytest-xdist` is added to the figures/oracle venv
+policy deliberately (it changes nothing the sealed oracle imports) or the evidence-walking tests are
+given a derived subset in the manner of `claims/tests/evidence_subset.py`, whose whole purpose was this
+problem one size ago. **Do not close it by deleting evidence.**
 
 ---
 
