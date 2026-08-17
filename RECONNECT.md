@@ -2,17 +2,17 @@
 
 Read this first if the session dropped. It is the shortest path back to the live state.
 
-## ⇢ RESUME HERE (2026-08-15, late): **whitepaper v1 is DRAFTED with 7 of 8 figures; PR #32 is OPEN and awaiting the user's merge**
+## ⇢ RESUME HERE (2026-08-16): **whitepaper v1 is DRAFTED with 7 of 8 figures; PRs #32 and #33 are MERGED; nothing is open**
 
 Session: `fd230f67-029c-480f-a070-54c1670fc4e4` —
 `claude --resume fd230f67-029c-480f-a070-54c1670fc4e4` from `/Users/tmwu/Downloads`.
 Full narrative: `~/Downloads/session-logs/2026-08-15-grx-whitepaper-v1-figures-scan-scope.md`.
 
-**PR #32 was MERGED by the user on 2026-08-16T06:08:38Z** (merge commit `8208cfad257f`, now `main`).
-Verified after the merge, which is the step a merged PR does not do for you
-(`feedback_merged_pr_is_not_landed`): `tools/repo_diff.py` reports **775 remote blobs = 775 local
-files, 0 added / 0 modified / 0 remote-only**. It compares blob SHAs, so that IS the blob-by-blob
-check. **There are 0 open PRs.**
+**Two PRs merged on 2026-08-16 and both were verified after the merge**, which is the step a merged PR
+does not do for you (`feedback_merged_pr_is_not_landed`): **#32** at 06:08:38Z (the whitepaper, figures,
+`merge_evidence.py`, DEV-P4-41/42) and **#33** at 11:01:56Z (the derived deficiency register). After each,
+`tools/repo_diff.py` reported remote blobs = local files with **0 added / 0 modified / 0 remote-only**;
+it compares blob SHAs, so that IS the blob-by-blob check. **0 open PRs.**
 
 **Read counts and SHAs from the API, not from this file** — a hash written into a file that the next
 commit changes is stale the moment it is written, which is how this banner once came to describe an
@@ -23,8 +23,8 @@ gh api repos/timwukp/agentcore-guardrails-design-validation/git/refs/heads/main 
 .venv-oracle/bin/python tools/repo_diff.py        # read-only; 0/0/0 means main == local
 ```
 
-**Anything edited in the working tree after that merge is UNPUSHED** and rides the next concern's PR.
-As of this line that is `RECONNECT.md` itself (this banner).
+**Anything edited in the working tree after the last merge is UNPUSHED** and rides the next concern's
+PR. Run `tools/repo_diff.py` to see which — do not read the set out of this paragraph.
 
 **Nothing on the publication path is half-finished. Do not merge** — merging is the user's action.
 The next agent action after the merge lands is to **verify `main`'s tree blob-by-blob**
@@ -65,9 +65,10 @@ returned SHA differs from a locally computed `git hash-object`. No change was ne
   when the measured `chain.flip.http_status` is **202**, and plotted only day 2. All fixed.
 - **New result in the paper**: F5-2's `data_plane_reconvergence` — first denial 305.8 s / 325.0 s,
   three consecutive denials 326.4 s / 345.6 s, `n_that_were_still_authorized: 0`. §11.4.
-- **`FUTURE-WORK.md` is now 30 items** (was 21, then 22, then 28). Item 28 is figure 6's missing source;
+- **`FUTURE-WORK.md` is now 31 items** (was 21, then 22, then 28). Item 28 is figure 6's missing source;
   item 29 is the same-run_id roll-up overwrite found on 2026-08-16; item 30 is Tier 5's citation
-  anchors, which had existed unnumbered since the tier was written. `claims/tests/test_future_work_register.py`
+  anchors, which had existed unnumbered since the tier was written; item 31 is this suite's six-hour
+  runtime against a run-book that said fifteen minutes. `claims/tests/test_future_work_register.py`
   derives the count from the headings and fails any file that states a different one, so this line is checked.
 - **`DEVIATIONS.md` gained DEV-P4-41 and DEV-P4-42** — 42 `DEV-P4-*` entries.
 - **`./verify_phase0.sh`: 2 failed / 3143 passed / 9 skipped in 1:14:23** → both fixed, then 84
@@ -164,7 +165,7 @@ deficiencies. Research and design are done; drafting has not started.
   reproduction** — ACM reserves both *Reproduced* and *Replicated* for non-authors, so **no independent
   party has re-run anything here** — and our `TRUE/FALSE/INCONCLUSIVE/RECORDED` taxonomy has **no located
   precedent** and must be defined, not cited.
-- **`FUTURE-WORK.md`** — the deficiency list, **30 items** in 5 tiers, each with derived evidence
+- **`FUTURE-WORK.md`** — the deficiency list, **31 items** in 5 tiers, each with derived evidence
   (this paragraph was first written at 22; items 23–28 were added on 2026-08-15, items 29–30 on 2026-08-16).
   Only the current count is stated as a count: a historical one cannot be derived, so it cannot be
   checked, and a reader has no way to tell it apart from a stale one.
@@ -678,9 +679,18 @@ assertions) — neither file is a sealed bound artifact.
 - Approved plan: `/Users/tmwu/.claude/plans/melodic-hatching-seal.md`
 - Python: `.venv-oracle/bin/python` (botocore 1.43.67). `.venv-baseline` is 1.42.79 and is **data**, not a fallback.
 - Full gate: `./verify_phase0.sh` — ~6 min, 14 gates.
-- Full suite: `.venv-oracle/bin/python -m pytest -q --basetemp=<scratch>` → ~15 min. Pass
-  `--basetemp`; the default location is what wedged the runner's disk (DEV-P4-31). Regenerate the
-  pass count rather than trusting one written here.
+- Full suite: `.venv-oracle/bin/python -m pytest -q --basetemp=<scratch>` → **≈ 6 hours**, 3,171 tests
+  (**measured 2026-08-16**; the "~15 min" that stood here for days was from when `evidence/` was a third
+  of its size). `claims/tests` alone is 438 tests / **37 min 30 s**. It is I/O-bound walking the 30,851
+  evidence files, not CPU-bound, and `pytest-xdist` is **not installed** so there is no `-n auto`.
+  **Budget for it, or scope deliberately and say so** — FUTURE-WORK item 31.
+  - Blast-radius alternative, when the change is small: `grep -rl` the changed files across every `*.py`
+    to find what actually reads them, run those directories, and **write down in the PR what was not
+    run**. That is a narrower gate, not the same gate.
+  - Pass `--basetemp`; the default location is what wedged the runner's disk (DEV-P4-31). Regenerate the
+    pass count rather than trusting one written here.
+  - Killing a suite run needs care: some tests spawn a **nested** pytest, and `pkill` on the parent can
+    leave the child alive (check `ps -o ppid` before assuming a stray pytest is yours).
 - **Do not edit the tree while the suite runs.** The write guard watches `results/` and charges a
   concurrent modification to whichever test last spawned a subprocess, so an interactive edit
   surfaces as `ERROR at teardown of test_mutant[...]` naming a file that test never touched. Seen
