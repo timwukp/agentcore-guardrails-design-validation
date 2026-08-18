@@ -21,8 +21,10 @@ figure is a deficiency with a name, not a blank space. **29** was added on 2026-
 first thing anyone had done to that directory other than read one of them. **30** and **31** were added
 on 2026-08-16 by writing `claims/tests/test_future_work_register.py`, which derives this register's size
 from its own headings: 30 is Tier 5, which had held four fixes with **no item number** and was therefore
-outside every count in the repo, and 31 is the six-hour test suite the run-book still called fifteen
-minutes. Both were found by making a number checkable, not by re-reading the file. All are placed in the tier
+outside every count in the repo, and 31 is the run-book's own gate runtime, which the run-book stated
+three different ways. Both were found by making a number checkable, not by re-reading the file — and 31
+was then found to be **wrong itself** on 2026-08-17 and rewritten from a timed run, which is recorded in
+the item rather than quietly replaced. All are placed in the tier
 they belong to rather than appended, so the numbering is out of order on purpose. Nothing is renumbered
 once written, because other files cite these numbers.
 
@@ -500,12 +502,14 @@ invisible at desk; and `_returned_the_execution_role`'s rule that `sts_http_stat
 
 ### 16. `runner/sync.py pull` bug — the premise itself is unverified
 
-`RECONNECT.md:140` records that `pull` exits 0 after an `EndpointConnectionError`. A static read of
+`RECONNECT.md` records, in its open-items list, that `pull` exits 0 after an
+`EndpointConnectionError` (grep the exception name — this anchor was a line number until 2026-08-17
+and had already drifted by two lines). A static read of
 `cmd_pull` (lines 573-604) and `main()` (643-664) found **no swallow path** — the whole file has
 exactly one `except` clause (line 395, `InvocationDoesNotExist`). The one reproduction attempt was
 **invalidated**: its traceback proved the failure came from `_state()`'s instance-profile repair
 racing a concurrent `provision.py`, not from the S3 path. **Verify before fixing**; if it cannot be
-reproduced, correct `RECONNECT.md:140` rather than "fix" a non-bug.
+reproduced, correct that `RECONNECT.md` entry rather than "fix" a non-bug.
 
 ### 17. Stale test floors, deliberately untouched
 
@@ -691,18 +695,38 @@ delete `runner/.state/incoming/20260812T130844Z/`**.
 
 ---
 
-### 31. The full test suite takes about six hours, is documented as fifteen minutes, and has no parallel path — so it has stopped being run
+### 31. The run-book stated three different runtimes for its own gate, and the one it advertised was an extrapolation from the slowest slice
 
-`RECONNECT.md` has said **"Full suite: … → ~15 min"** since the suite was small. Measured 2026-08-16:
-**3,171 tests collected**, and `claims/tests` **alone** — 438 of them, 14% — takes **37 min 30 s**. At
-that rate the whole suite is **≈ 6 hours**. A first attempt to run it as a pre-push gate was stopped
-after 36 minutes at roughly 11%.
+The full gate takes **1 h 24 min 16 s**. That is measured, not extrapolated: `./verify_phase0.sh` on
+2026-08-17, laptop, `PYTHON=.venv-oracle/bin/python`, **14/14 gates passed, rc 0**, 51% CPU
+(1641.87 s user + 971.99 s system). Its pytest leg alone was **3,187 passed / 16 skipped in 1 h 04 min
+17 s** over the twelve test directories. The 2026-08-15 run recorded at the top of `RECONNECT.md`
+agrees — 3,143 passed / 9 skipped / 2 failed in **1 h 14 min 23 s** — so there are two runs two days
+apart agreeing to within ten minutes, on a suite that grew by 49 collected tests in between
+(3,154 → 3,203).
 
-**It is I/O-bound on the evidence tree, not CPU-bound.** The run reported 54% CPU with *more system than
-user* time (595 s system vs 642 s user), and the slowest tests are the ones that walk all 30,851 evidence
-files:
+**The "≈ 6 hours" this item was filed with on 2026-08-16 is withdrawn.** It was not measured. It was
+`claims/tests`'s per-test rate (438 tests / 37 min 30 s) multiplied by the 3,171 tests the suite
+collects, and that multiplication assumes per-test cost is uniform while the paragraph it sat in
+explained that it is not: the expensive tests are the ones that walk every file of `evidence/`, and
+almost all of them are in `claims/tests`, which is the directory pytest runs **first**. The aborted
+run that "reached 11%" had therefore not left the slowest prefix, so the sample was the worst-case
+slice of the job and the estimate inherited its rate. Recording it here rather than deleting it,
+because the error is the useful part: a rate from an ordered job's first slice is a biased sample by
+construction.
 
-| Test | Duration |
+So the run-book carried **three** figures for one quantity — the "~6 min" in `RECONNECT.md`'s
+run-book section, the measured 1:14:23 in its own session notes, and this item's 6 hours — and the
+last one was the one a reader would have believed, because it was the only one that named a method.
+(No line number is cited here on purpose: this correction moved those lines, and a stale line-number
+anchor is Tier 5's subject.)
+
+**What survives, and is the actual finding.** The cost is real and it is concentrated: `claims/tests`
+is **13.7%** of the tests and **58%** of the pytest leg (37 min 30 s of 64 min 17 s). It is I/O-bound,
+not CPU-bound — 51% CPU with *more system than user* time — and the slowest tests are the ones that
+walk all 32,018 evidence files:
+
+| Test (durations from the `claims/tests` run of 2026-08-16) | Duration |
 |---|---|
 | `test_amendment_evidence_subset.py::test_the_subset_yields_the_same_observation_days_as_the_full_tree` | 218.8 s |
 | `test_redaction_gate.py::test_gate_passes_on_the_real_tree` | 88.1 s |
@@ -713,20 +737,26 @@ files:
 `pytest-xdist` is **not installed** (`ModuleNotFoundError: No module named 'xdist'`), so there is no
 `-n auto` to fall back on.
 
-**Why this is a deficiency and not just slow.** A gate nobody can afford to run is not a gate. The
-project's stated convention is to run the full suite before every push; at six hours that convention is
-now aspirational, and the actual practice — which is what protects the evidence — has silently become
-"run the blast radius and hope". The danger is specific: this register's own guards are cheap, but the
-expensive tests are exactly the ones that verify the **evidence tree** and the **redaction gate**, i.e.
-the two things whose failure is unrecoverable once published. The stale "~15 min" makes the gap invisible
-to anyone reading the run-book, which is how a resuming session comes to believe it ran a gate it skipped.
+**Why this is still a deficiency, in a smaller and more precise way than it was filed.** At 85 minutes
+the full gate is affordable before a push — which is the opposite of what this item originally claimed,
+and it means the recommendation changes: **run it**, and budget an hour and a half, rather than treat it
+as out of reach and fall back to a blast-radius run by default. What remains wrong is the run-book, in
+both directions: "~15 min" then "~6 min" understated it by an order of magnitude, and this item
+overstated it by a factor of four. A figure that is wrong in either direction produces the same outcome
+— a resuming session that does not know what running the gate costs, and therefore cannot decide
+honestly whether it ran one.
 
-Note that the runtime is a **consequence of the evidence tree growing**, not of a regression: the same
-tests were affordable when `evidence/` was a third of its present size. Any fix must therefore not be a
-one-off speed-up.
+The concentration matters more than the total, because it is what will grow: the expensive tests are
+exactly the ones that verify the **evidence tree** and the **redaction gate**, the two things whose
+failure is unrecoverable once published, and their cost scales with `evidence/`, which only ever grows.
+This is not a regression — the same tests were affordable when `evidence/` was a third of its present
+size — so any fix must not be a one-off speed-up. The direction is already visible over two days:
+3,171 tests collected on 2026-08-16 against **3,203** on 2026-08-17, and the gate itself went from
+1 h 14 min 23 s on 2026-08-15 to 1 h 24 min 16 s on 2026-08-17.
 
-**Closes when** (a) `RECONNECT.md`'s figure is re-measured and corrected, and states the measurement date
-so the next reader can tell whether it has aged again; (b) there is a documented **tiered** gate — a
+**Closes when** (a) ~~`RECONNECT.md`'s figure is re-measured and corrected, and states the measurement
+date~~ **DONE 2026-08-17** — one dated figure, `1:24:16`, replacing three undated inconsistent ones;
+(b) there is a documented **tiered** gate — a
 blast-radius tier that is honest about what it does *not* cover, and a full tier with its real cost — so
 that "I ran the gate" names which one; and (c) either `pytest-xdist` is added to the figures/oracle venv
 policy deliberately (it changes nothing the sealed oracle imports) or the evidence-walking tests are

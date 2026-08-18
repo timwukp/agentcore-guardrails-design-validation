@@ -47,10 +47,17 @@ gate() {
   return 0
 }
 
-# The test gate runs SEVEN directories. pytest exits 5 when it collects nothing, so
-# a wholesale disappearance already fails — but one directory quietly contributing
-# zero tests would not, and that is the same defect as an assertion floor set below
-# the current total. So the collected count is pinned per directory.
+# The test gate runs every directory in TEST_SPECS (defined just above run_tests, so the
+# gate's own label can count it instead of stating a number). pytest exits 5 when it
+# collects nothing, so a wholesale disappearance already fails — but one directory quietly
+# contributing zero tests would not, and that is the same defect as an assertion floor set
+# below the current total. So the collected count is pinned per directory.
+#
+# This comment used to open "The test gate runs SEVEN directories" and the gate's label read
+# "all 11 test directories", while the loop ran TWELVE — three hand-typed statements of one
+# quantity the list already holds, all three wrong, none of them checked by anything. Both
+# are derived now (feedback_prose_is_not_verified). Found 2026-08-17 by reading the output of
+# a green run: every gate passed and the label was still false.
 #
 # Floors are the yield at the time of writing, rounded down. They are a tripwire for
 # a directory that stops being collected (a renamed file, a broken import, a path
@@ -69,6 +76,16 @@ gate() {
 # over `*/tests` would silently cover a directory that was deleted, and "no directory,
 # no tests, no failure" is the defect this whole function is written against. A new
 # family therefore requires one line here, which is a deliberate edit and leaves a diff.
+#
+# The list lives at file scope so that the gate's label can count it (`${#TEST_SPECS[@]}`)
+# rather than restate it. The per-floor rationale — one entry per bump, deliberately kept as
+# a record — is inside run_tests, immediately above the loop that reads this.
+TEST_SPECS=("claims/tests:423" "lib/tests:882" "f5_redteam/tests:720" \
+            "f2_determinism/tests:34" "f3_efficacy/tests:268" \
+            "f8_regional/tests:152" "f10_billing/tests:80" "infra/tests:79" \
+            "runner/tests:94" "f9_failsecure/tests:106" "f1_config/tests:170" \
+            "tools/tests:48")
+
 run_tests() {
   local rc=0
   local dir floor got
@@ -199,11 +216,7 @@ run_tests() {
   # during the window before the archive step), and `drop_snapshot` deletes that snapshot with
   # shutil.rmtree. A directory that silently stopped collecting would take the whole
   # snapshot-safety argument with it.
-  for spec in "claims/tests:423" "lib/tests:882" "f5_redteam/tests:720" \
-              "f2_determinism/tests:34" "f3_efficacy/tests:268" \
-              "f8_regional/tests:152" "f10_billing/tests:80" "infra/tests:79" \
-              "runner/tests:94" "f9_failsecure/tests:106" "f1_config/tests:170" \
-              "tools/tests:48"; do
+  for spec in "${TEST_SPECS[@]}"; do
     dir="${spec%%:*}"; floor="${spec##*:}"
     if [ ! -d "$dir" ]; then
       echo "FATAL: $dir does not exist — its tests cannot be reported as passing" >&2
@@ -311,7 +324,7 @@ gate "v1.3 amendment register (sites derived from the triage, not listed by hand
      "$PY" build_v13_candidates.py
 gate "cost projection within the sealed ceiling" \
      "$PY" estimate_cost.py
-gate "test suite (all 11 test directories)" \
+gate "test suite (all ${#TEST_SPECS[@]} test directories)" \
      run_tests
 gate "redaction gate" \
      "$PY" check_redaction.py
