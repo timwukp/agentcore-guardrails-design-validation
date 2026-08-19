@@ -9,7 +9,7 @@
         "body": "",
         "duration_ms": 70082.358569,
         "error_code": "",
-        "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fgrx_f57b_noroute_r20260810t130945z-3mYHW26mMo/invocations\"",
+        "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A<account>%3Aruntime%2Fgrx_f57b_noroute_r20260810t130945z-3mYHW26mMo/invocations\"",
         "http_status": null,
         "ok": false,
         "request_id": "",
@@ -40,7 +40,7 @@
         "body": "",
         "duration_ms": 70073.474289,
         "error_code": "",
-        "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fgrx_f57b_restored_r20260810t130945z-mvw2EvGpLX/invocations\"",
+        "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A<account>%3Aruntime%2Fgrx_f57b_restored_r20260810t130945z-mvw2EvGpLX/invocations\"",
         "http_status": null,
         "ok": false,
         "request_id": "",
@@ -71,7 +71,7 @@
         "body": "",
         "duration_ms": 70077.305758,
         "error_code": "",
-        "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fgrx_f57b_route_r20260810t130945z-OYSQfuDM4P/invocations\"",
+        "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A<account>%3Aruntime%2Fgrx_f57b_route_r20260810t130945z-OYSQfuDM4P/invocations\"",
         "http_status": null,
         "ok": false,
         "request_id": "",
@@ -156,15 +156,15 @@
   "pull_evidence": {
     "no_nat_route": {
       "label": "ambiguous",
-      "why": "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any other step. With this image a successful pull produces the same silence as a failed one — nginx serves :80 and AgentCore's contract is :8080 — so this arm does not distinguish a fetched image from an unfetched one: Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fg"
+      "why": "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any other step. With this image a successful pull produces the same silence as a failed one — nginx serves :80 and AgentCore's contract is :8080 — so this arm does not distinguish a fetched image from an unfetched one: Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A<account>%3Aruntime%2Fg"
     },
     "route_removed_again": {
       "label": "ambiguous",
-      "why": "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any other step. With this image a successful pull produces the same silence as a failed one — nginx serves :80 and AgentCore's contract is :8080 — so this arm does not distinguish a fetched image from an unfetched one: Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fg"
+      "why": "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any other step. With this image a successful pull produces the same silence as a failed one — nginx serves :80 and AgentCore's contract is :8080 — so this arm does not distinguish a fetched image from an unfetched one: Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A<account>%3Aruntime%2Fg"
     },
     "with_nat_route": {
       "label": "ambiguous",
-      "why": "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any other step. With this image a successful pull produces the same silence as a failed one — nginx serves :80 and AgentCore's contract is :8080 — so this arm does not distinguish a fetched image from an unfetched one: Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fg"
+      "why": "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any other step. With this image a successful pull produces the same silence as a failed one — nginx serves :80 and AgentCore's contract is :8080 — so this arm does not distinguish a fetched image from an unfetched one: Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A<account>%3Aruntime%2Fg"
     }
   },
   "record": {
@@ -182,7 +182,7 @@
               "body": "",
               "duration_ms": 70082.358569,
               "error_code": "",
-              "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fgrx_f57b_noroute_r20260810t130945z-3mYHW26mMo/invocations\"",
+              "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A<account>%3Aruntime%2Fgrx_f57b_noroute_r20260810t130945z-3mYHW26mMo/invocations\"",
               "http_status": null,
               "ok": false,
               "request_id": "",
@@ -213,7 +213,7 @@
               "body": "",
               "duration_ms": 70073.474289,
               "error_code": "",
-              "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fgrx_f57b_restored_r20260810t130945z-mvw2EvGpLX/invocations\"",
+              "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A<account>%3Aruntime%2Fgrx_f57b_restored_r20260810t130945z-mvw2EvGpLX/invocations\"",
               "http_status": null,
               "ok": false,
               "request_id": "",
@@ -244,7 +244,7 @@
               "body": "",
               "duration_ms": 70077.305758,
               "error_code": "",
-              "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fgrx_f57b_route_r20260810t130945z-OYSQfuDM4P/invocations\"",
+              "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A<account>%3Aruntime%2Fgrx_f57b_route_r20260810t130945z-OYSQfuDM4P/invocations\"",
               "http_status": null,
               "ok": false,
               "request_id": "",
@@ -270,15 +270,15 @@
         "evidence": {
           "no_nat_route": [
             "ambiguous",
-            "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any other step. With this image a successful pull produces the same silence as a failed one — nginx serves :80 and AgentCore's contract is :8080 — so this arm does not distinguish a fetched image from an unfetched one: Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fg"
+            "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any other step. With this image a successful pull produces the same silence as a failed one — nginx serves :80 and AgentCore's contract is :8080 — so this arm does not distinguish a fetched image from an unfetched one: Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A<account>%3Aruntime%2Fg"
           ],
           "route_removed_again": [
             "ambiguous",
-            "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any other step. With this image a successful pull produces the same silence as a failed one — nginx serves :80 and AgentCore's contract is :8080 — so this arm does not distinguish a fetched image from an unfetched one: Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fg"
+            "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any other step. With this image a successful pull produces the same silence as a failed one — nginx serves :80 and AgentCore's contract is :8080 — so this arm does not distinguish a fetched image from an unfetched one: Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A<account>%3Aruntime%2Fg"
           ],
           "with_nat_route": [
             "ambiguous",
-            "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any other step. With this image a successful pull produces the same silence as a failed one — nginx serves :80 and AgentCore's contract is :8080 — so this arm does not distinguish a fetched image from an unfetched one: Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fg"
+            "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any other step. With this image a successful pull produces the same silence as a failed one — nginx serves :80 and AgentCore's contract is :8080 — so this arm does not distinguish a fetched image from an unfetched one: Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A<account>%3Aruntime%2Fg"
           ]
         },
         "report": {
@@ -321,7 +321,7 @@
             "invoke": {
               "channel": "invoke_error",
               "code": "",
-              "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fgrx_f57b_noroute_r20260810t130945z-3mYHW26mMo/invocations\""
+              "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A<account>%3Aruntime%2Fgrx_f57b_noroute_r20260810t130945z-3mYHW26mMo/invocations\""
             }
           },
           "route_removed_again": {
@@ -333,7 +333,7 @@
             "invoke": {
               "channel": "invoke_error",
               "code": "",
-              "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fgrx_f57b_restored_r20260810t130945z-mvw2EvGpLX/invocations\""
+              "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A<account>%3Aruntime%2Fgrx_f57b_restored_r20260810t130945z-mvw2EvGpLX/invocations\""
             }
           },
           "with_nat_route": {
@@ -345,12 +345,12 @@
             "invoke": {
               "channel": "invoke_error",
               "code": "",
-              "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fgrx_f57b_route_r20260810t130945z-OYSQfuDM4P/invocations\""
+              "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A<account>%3Aruntime%2Fgrx_f57b_route_r20260810t130945z-OYSQfuDM4P/invocations\""
             }
           }
         },
-        "why_no_route": "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any other step. With this image a successful pull produces the same silence as a failed one — nginx serves :80 and AgentCore's contract is :8080 — so this arm does not distinguish a fetched image from an unfetched one: Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fg",
-        "why_with_route": "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any other step. With this image a successful pull produces the same silence as a failed one — nginx serves :80 and AgentCore's contract is :8080 — so this arm does not distinguish a fetched image from an unfetched one: Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fg"
+        "why_no_route": "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any other step. With this image a successful pull produces the same silence as a failed one — nginx serves :80 and AgentCore's contract is :8080 — so this arm does not distinguish a fetched image from an unfetched one: Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A<account>%3Aruntime%2Fg",
+        "why_with_route": "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any other step. With this image a successful pull produces the same silence as a failed one — nginx serves :80 and AgentCore's contract is :8080 — so this arm does not distinguish a fetched image from an unfetched one: Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A<account>%3Aruntime%2Fg"
       },
       "measured": false,
       "reason": "neither channel distinguished the fetch on at least one arm (no_nat_route=ambiguous, with_nat_route=ambiguous). The oracle is denominated in the image pull, and an observation that does not locate the pull cannot answer it in either direction.",
@@ -452,7 +452,7 @@
       "invoke": {
         "channel": "invoke_error",
         "code": "",
-        "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fgrx_f57b_noroute_r20260810t130945z-3mYHW26mMo/invocations\""
+        "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A<account>%3Aruntime%2Fgrx_f57b_noroute_r20260810t130945z-3mYHW26mMo/invocations\""
       }
     },
     "route_removed_again": {
@@ -464,7 +464,7 @@
       "invoke": {
         "channel": "invoke_error",
         "code": "",
-        "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fgrx_f57b_restored_r20260810t130945z-mvw2EvGpLX/invocations\""
+        "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A<account>%3Aruntime%2Fgrx_f57b_restored_r20260810t130945z-mvw2EvGpLX/invocations\""
       }
     },
     "with_nat_route": {
@@ -476,7 +476,7 @@
       "invoke": {
         "channel": "invoke_error",
         "code": "",
-        "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A677207132843%3Aruntime%2Fgrx_f57b_route_r20260810t130945z-OYSQfuDM4P/invocations\""
+        "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-east-1%3A<account>%3Aruntime%2Fgrx_f57b_route_r20260810t130945z-OYSQfuDM4P/invocations\""
       }
     }
   },
