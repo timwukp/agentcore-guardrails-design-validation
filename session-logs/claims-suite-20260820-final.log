@@ -1,0 +1,110 @@
+.......................................................F................ [  4%]
+..................................F..................................... [  9%]
+........................................................................ [ 14%]
+................................................................E....... [ 18%]
+.........E.............................................................. [ 23%]
+........................................................................ [ 28%]
+........................................................................ [ 33%]
+........................................................................ [ 37%]
+........................................................................ [ 42%]
+........................................................................ [ 47%]
+........................................................................ [ 52%]
+........................................................................ [ 56%]
+........................................................................ [ 61%]
+........................................................................ [ 66%]
+............................s...........................s............... [ 71%]
+........................................................................ [ 75%]
+........................................................................ [ 80%]
+........................................................................ [ 85%]
+........................................................................ [ 90%]
+.................s...................................................... [ 94%]
+.......................................sssssss.......................... [ 99%]
+......                                                                   [100%]
+==================================== ERRORS ====================================
+_ ERROR at teardown of test_kills_determinism_cell_below_the_derived_requirement _
+the live results tree changed while this test ran:
+  MODIFIED results/FINDING-F6-DAY2-DECISIVENESS.md
+
+This test made no such write in-process, but it spawned 1 subprocess(es) (/Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python), whose writes an audit hook in THIS interpreter cannot see. A child process is a write this test caused, so it is charged here rather than excused: pass the child a tmp_path root, or assert on its output without letting it write into the live tree.
+
+A checkpoint written by a test makes a live run resume trials it never ran, and `Checkpoint.load`'s case_id/cell guard cannot see it because the test chose those values. Pass a `tmp_path`-based root — `lib/tests/test_arms.py` has a `roots` fixture that does exactly this — rather than letting the default `Path('results')/'checkpoints'` apply.
+This guard was added after results/checkpoints/T__main.json was found in the live tree carrying a StubClient's 'stub exhausted' failure.
+____ ERROR at teardown of test_kills_corpus_arithmetic_that_does_not_close _____
+the live results tree changed while this test ran:
+  MODIFIED results/FINDING-F6-DAY2-DECISIVENESS.md
+
+This test made no such write in-process, but it spawned 1 subprocess(es) (/Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python), whose writes an audit hook in THIS interpreter cannot see. A child process is a write this test caused, so it is charged here rather than excused: pass the child a tmp_path root, or assert on its output without letting it write into the live tree.
+
+A checkpoint written by a test makes a live run resume trials it never ran, and `Checkpoint.load`'s case_id/cell guard cannot see it because the test chose those values. Pass a `tmp_path`-based root — `lib/tests/test_arms.py` has a `roots` fixture that does exactly this — rather than letting the default `Path('results')/'checkpoints'` apply.
+This guard was added after results/checkpoints/T__main.json was found in the live tree carrying a StubClient's 'stub exhausted' failure.
+=================================== FAILURES ===================================
+______________________ test_every_cited_repo_path_exists _______________________
+
+    def test_every_cited_repo_path_exists():
+        anchors, suffixes = _anchors(), _suffixes()
+        docs = _docs()
+        dangling: list[str] = []
+        total = 0
+        citing_docs = 0
+        for doc in docs:
+            cites = _citations(doc.read_text(encoding="utf-8"), anchors, suffixes)
+            total += len(cites)
+            citing_docs += 1 if cites else 0
+            for tok in sorted(cites):
+                if tok not in ABSENT_BY_DESIGN and not (ROOT / tok).exists():
+                    dangling.append(f"  {doc.relative_to(ROOT)} cites `{tok}`")
+    
+        assert total >= MIN_CITATIONS and citing_docs >= MIN_DOCUMENTS, (
+            f"recognised only {total} citation(s) across {citing_docs} document(s), below the floor of "
+            f"{MIN_CITATIONS}/{MIN_DOCUMENTS}. The extractor has stopped matching, so this guard is "
+            f"reporting clean over prose it is not reading.")
+    
+>       assert not dangling, (
+            "these documents cite repo-relative paths that do not exist in the tree:\n"
+            + "\n".join(dangling)
+            + "\n\nA citation a reader cannot fetch is a claim with no evidence that reads exactly like "
+              "a claim with evidence. Note there are TWO directories named `session-logs/` — this "
+              "repo's and the outer ~/Downloads one — which is how this failed on 2026-08-20: the "
+              "cited file existed, in the wrong tree. Copy the artifact in, or stop citing it. If the "
+              "sentence's point is that the file does NOT exist — a specification, quoted output, or a "
+              "local-only runtime file — add it to ABSENT_BY_DESIGN with the reason.")
+E       AssertionError: these documents cite repo-relative paths that do not exist in the tree:
+E           results/FINDING-F6-DAY2-DECISIVENESS.md cites `claims/tests/test_hash_citations.py`
+E         
+E         A citation a reader cannot fetch is a claim with no evidence that reads exactly like a claim with evidence. Note there are TWO directories named `session-logs/` — this repo's and the outer ~/Downloads one — which is how this failed on 2026-08-20: the cited file existed, in the wrong tree. Copy the artifact in, or stop citing it. If the sentence's point is that the file does NOT exist — a specification, quoted output, or a local-only runtime file — add it to ABSENT_BY_DESIGN with the reason.
+E       assert not ['  results/FINDING-F6-DAY2-DECISIVENESS.md cites `claims/tests/test_hash_citations.py`']
+
+claims/tests/test_cited_paths_exist.py:201: AssertionError
+_______________ test_every_prose_count_matches_the_derived_count _______________
+
+    def test_every_prose_count_matches_the_derived_count():
+        fams = _families()
+        sites, bad = [], []
+        for path in _md_files():
+            for m in CLAIM_RE.finditer(path.read_text(encoding="utf-8")):
+                claimed, fam = int(m.group(1)), m.group(2)
+                where = f"{path.relative_to(ROOT)}: …{m.group(0)}…"
+                sites.append(where)
+                if fam not in fams:
+                    bad.append(f"{where}\n      names family DEV-{fam}, which has no entries")
+                elif claimed != len(fams[fam]):
+                    bad.append(f"{where}\n      claims {claimed}, derived {len(fams[fam])}")
+>       assert not bad, (
+            "prose states a DEVIATIONS count that no derivation supports:\n    " + "\n    ".join(bad))
+E       AssertionError: prose states a DEVIATIONS count that no derivation supports:
+E             DEVIATIONS.md: …42 `DEV-P4-*` entries…
+E               claims 42, derived 43
+E       assert not ['DEVIATIONS.md: …42 `DEV-P4-*` entries…\n      claims 42, derived 43']
+
+claims/tests/test_deviation_register.py:121: AssertionError
+============================== concurrent writer ===============================
+1 change(s) under results/ or evidence/ during this session were made by ANOTHER PROCESS.
+  No test wrote to a watched tree in this interpreter (audit hook: 0 charged writes) and no test spawned a child that could have. A live run is almost certainly in flight. Not charged to any test.
+  But the tree-diff channel is VOID for this session — only the audit channel was in force. Re-run with no live run active for full two-channel coverage.
+  MODIFIED results/FINDING-F6-DAY2-DECISIVENESS.md
+=========================== short test summary info ============================
+FAILED claims/tests/test_cited_paths_exist.py::test_every_cited_repo_path_exists
+FAILED claims/tests/test_deviation_register.py::test_every_prose_count_matches_the_derived_count
+ERROR claims/tests/test_prereg_verifier.py::test_kills_determinism_cell_below_the_derived_requirement
+ERROR claims/tests/test_prereg_verifier.py::test_kills_corpus_arithmetic_that_does_not_close
+2 failed, 1504 passed, 10 skipped, 2 errors in 2489.76s (0:41:29)

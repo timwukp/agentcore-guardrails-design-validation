@@ -1,0 +1,370 @@
+{
+  "ambient_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "arms": {
+    "bare": {
+      "guardrail": null,
+      "n_done": 998,
+      "n_failed": 2
+    },
+    "guarded": {
+      "guardrail": "billing",
+      "guardrail_id": "s5vk53hdnahz",
+      "guardrail_version": "DRAFT",
+      "n_done": 1000,
+      "n_failed": 0,
+      "trace": "enabled"
+    },
+    "interleaved": true,
+    "why_interleaved": "Bedrock latency drifts with load; blocked arms would put the difference at risk of being time of day rather than the guardrail"
+  },
+  "bare_total_ms": {
+    "ci_p50": "369.5 [367, 373] (n=998, order-statistic, 95%)",
+    "ci_p90": "439 [431, 445] (n=998, order-statistic, 95%)",
+    "ci_p99": "545.1 [520, 709] (n=998, order-statistic, 95%)",
+    "max": 37234.0,
+    "min": 231.0,
+    "n": 998,
+    "p50": 369.5,
+    "p90": 439.0,
+    "p99": 545.15
+  },
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F6-2",
+    "clear_here": true
+  },
+  "case_id": "F6-2",
+  "configuration_ladder": {
+    "arms": [
+      {
+        "guardrail": "topic",
+        "guardrail_id": "piydsa0vhz19",
+        "input_ms": {
+          "ci_p50": "215.5 [213, 217] (n=200, order-statistic, 95%)",
+          "ci_p90": "234 [230, 243] (n=200, order-statistic, 95%)",
+          "max": 330.0,
+          "min": 185.0,
+          "n": 200,
+          "p50": 215.5,
+          "p90": 234.0,
+          "p99": null,
+          "why_no_p99": "a p99 needs n>=100 and a cell that pre-registered one; this series has neither, and a p99 printed beside a verdict gets quoted"
+        },
+        "is_primary": false,
+        "n_done": 200,
+        "n_failed": 0,
+        "n_policies": 1,
+        "output_ms": {
+          "ci_p50": "215 [211, 218] (n=200, order-statistic, 95%)",
+          "ci_p90": "244.1 [235, 256] (n=200, order-statistic, 95%)",
+          "max": 760.0,
+          "min": 187.0,
+          "n": 200,
+          "p50": 215.0,
+          "p90": 244.1,
+          "p99": null,
+          "why_no_p99": "a p99 needs n>=100 and a cell that pre-registered one; this series has neither, and a p99 printed beside a verdict gets quoted"
+        },
+        "total_ms": {
+          "ci_p50": "801 [791, 808] (n=200, order-statistic, 95%)",
+          "ci_p90": "872.4 [857, 908] (n=200, order-statistic, 95%)",
+          "max": 1397.0,
+          "min": 666.0,
+          "n": 200,
+          "p50": 801.0,
+          "p90": 872.4,
+          "p99": null,
+          "why_no_p99": "a p99 needs n>=100 and a cell that pre-registered one; this series has neither, and a p99 printed beside a verdict gets quoted"
+        },
+        "why": "one denied topic"
+      },
+      {
+        "guardrail": "words",
+        "guardrail_id": "bb8eo7hr35og",
+        "input_ms": {
+          "ci_p50": "131 [129, 133] (n=200, order-statistic, 95%)",
+          "ci_p90": "153 [147, 167] (n=200, order-statistic, 95%)",
+          "max": 318.0,
+          "min": 86.0,
+          "n": 200,
+          "p50": 131.0,
+          "p90": 153.0,
+          "p99": null,
+          "why_no_p99": "a p99 needs n>=100 and a cell that pre-registered one; this series has neither, and a p99 printed beside a verdict gets quoted"
+        },
+        "is_primary": false,
+        "n_done": 200,
+        "n_failed": 0,
+        "n_policies": 3,
+        "output_ms": {
+          "ci_p50": "130 [129, 133] (n=200, order-statistic, 95%)",
+          "ci_p90": "152.1 [144, 163] (n=200, order-statistic, 95%)",
+          "max": 516.0,
+          "min": 108.0,
+          "n": 200,
+          "p50": 130.0,
+          "p90": 152.1,
+          "p99": null,
+          "why_no_p99": "a p99 needs n>=100 and a cell that pre-registered one; this series has neither, and a p99 printed beside a verdict gets quoted"
+        },
+        "total_ms": {
+          "ci_p50": "634 [625, 641] (n=200, order-statistic, 95%)",
+          "ci_p90": "707.3 [688, 741] (n=200, order-statistic, 95%)",
+          "max": 1086.0,
+          "min": 480.0,
+          "n": 200,
+          "p50": 634.0,
+          "p90": 707.3,
+          "p99": null,
+          "why_no_p99": "a p99 needs n>=100 and a cell that pre-registered one; this series has neither, and a p99 printed beside a verdict gets quoted"
+        },
+        "why": "three word-policy entries"
+      },
+      {
+        "guardrail": "billing",
+        "guardrail_id": "s5vk53hdnahz",
+        "input_ms": {
+          "ci_p50": "201 [199, 204] (n=200, order-statistic, 95%)",
+          "ci_p90": "233 [222, 249] (n=200, order-statistic, 95%)",
+          "max": 1225.0,
+          "min": 180.0,
+          "n": 200,
+          "p50": 201.0,
+          "p90": 233.0,
+          "p99": null,
+          "why_no_p99": "a p99 needs n>=100 and a cell that pre-registered one; this series has neither, and a p99 printed beside a verdict gets quoted"
+        },
+        "is_primary": true,
+        "n_done": 200,
+        "n_failed": 0,
+        "n_policies": 5,
+        "output_ms": {
+          "ci_p50": "200 [198, 204] (n=200, order-statistic, 95%)",
+          "ci_p90": "229.4 [223, 253] (n=200, order-statistic, 95%)",
+          "max": 894.0,
+          "min": 177.0,
+          "n": 200,
+          "p50": 200.0,
+          "p90": 229.4,
+          "p99": null,
+          "why_no_p99": "a p99 needs n>=100 and a cell that pre-registered one; this series has neither, and a p99 printed beside a verdict gets quoted"
+        },
+        "total_ms": {
+          "ci_p50": "799.5 [786, 810] (n=200, order-statistic, 95%)",
+          "ci_p90": "921.4 [896, 1005] (n=200, order-statistic, 95%)",
+          "max": 1700.0,
+          "min": 654.0,
+          "n": 200,
+          "p50": 799.5,
+          "p90": 921.4,
+          "p99": null,
+          "why_no_p99": "a p99 needs n>=100 and a cell that pre-registered one; this series has neither, and a p99 printed beside a verdict gets quoted"
+        },
+        "why": "five content filters at MEDIUM, actions NONE — the primary arm"
+      },
+      {
+        "guardrail": "pii",
+        "guardrail_id": "wwjmltbo1dt5",
+        "input_ms": {
+          "ci_p50": "167 [165, 170] (n=199, order-statistic, 95%)",
+          "ci_p90": "204.2 [194, 228] (n=199, order-statistic, 95%)",
+          "max": 1047.0,
+          "min": 144.0,
+          "n": 199,
+          "p50": 167.0,
+          "p90": 204.2,
+          "p99": null,
+          "why_no_p99": "a p99 needs n>=100 and a cell that pre-registered one; this series has neither, and a p99 printed beside a verdict gets quoted"
+        },
+        "is_primary": false,
+        "n_done": 199,
+        "n_failed": 1,
+        "n_policies": 31,
+        "output_ms": {
+          "ci_p50": "168 [165, 169] (n=199, order-statistic, 95%)",
+          "ci_p90": "234 [201, 459] (n=199, order-statistic, 95%)",
+          "max": 1155.0,
+          "min": 138.0,
+          "n": 199,
+          "p50": 168.0,
+          "p90": 234.0,
+          "p99": null,
+          "why_no_p99": "a p99 needs n>=100 and a cell that pre-registered one; this series has neither, and a p99 printed beside a verdict gets quoted"
+        },
+        "total_ms": {
+          "ci_p50": "734 [724, 749] (n=199, order-statistic, 95%)",
+          "ci_p90": "931.2 [841, 1186] (n=199, order-statistic, 95%)",
+          "max": 2088.0,
+          "min": 578.0,
+          "n": 199,
+          "p50": 734.0,
+          "p90": 931.2,
+          "p99": null,
+          "why_no_p99": "a p99 needs n>=100 and a cell that pre-registered one; this series has neither, and a p99 printed beside a verdict gets quoted"
+        },
+        "why": "thirty-one PII entity types"
+      }
+    ],
+    "scored": false,
+    "why_not_scored": "the sealed cell is n=1000 and no oracle in the pre-registration mentions configuration weight. Scoring it would be answering a question we never registered",
+    "why_recorded": "§6.1 gives ONE band for Hop #2 and one for Hop #6, with no mention of how much guardrail is configured. If the primary arm misses the band, this ladder decides whether the defect is in the number or in the silence — two different amendments"
+  },
+  "distribution": {
+    "ci_p50": "203 [203, 204] (n=1000, order-statistic, 95%)",
+    "ci_p90": "231 [227, 235] (n=1000, order-statistic, 95%)",
+    "ci_p99": "375 [317, 752] (n=1000, order-statistic, 95%)",
+    "max": 835.0,
+    "min": 177.0,
+    "n": 1000,
+    "p50": 203.0,
+    "p90": 231.0,
+    "p99": 375.03
+  },
+  "guard_detail": {
+    "arms_are_paired": {
+      "n_bare": 998,
+      "n_guarded": 1000,
+      "n_paired": 998,
+      "why": "the shift is over pairs. Two arms of equal SIZE but different trial ids would still pair index i of one against a different call of the other"
+    },
+    "guardrail_ran": {
+      "n_guarded": 1000,
+      "n_missing_input_latency": 0,
+      "why": "an absent trace field is indistinguishable from a fast hop, and a missing value silently shortens the series the p99 is taken over"
+    },
+    "no_intervention": {
+      "intervened_trials": [],
+      "n_intervened": 0,
+      "why": "a blocked call skips inference, so its latency belongs to a different population; one in the arm makes the distribution a mixture"
+    },
+    "output_side_complete": {
+      "gates": "F6-5 only",
+      "max_output_assessments_in_one_call": 1,
+      "n_without_output_assessment": 0,
+      "why": "F6-5 is a claim about output-side evaluation. A trial with no output assessment has no Hop #6 to measure, and counting it as 0 ms would invent a fast hop"
+    },
+    "trace_is_enabled": {
+      "n_without_trace": 0,
+      "why": "we asked for the instrument; this checks we got it"
+    }
+  },
+  "guard_names": [
+    "guardrail_ran",
+    "no_intervention",
+    "arms_are_paired",
+    "trace_is_enabled",
+    "output_side_complete"
+  ],
+  "guarded_total_ms": {
+    "ci_p50": "786 [781, 790] (n=1000, order-statistic, 95%)",
+    "ci_p90": "877 [868, 886] (n=1000, order-statistic, 95%)",
+    "ci_p99": "1211 [1085, 1428] (n=1000, order-statistic, 95%)",
+    "max": 1511.0,
+    "min": 600.0,
+    "n": 1000,
+    "p50": 786.0,
+    "p90": 877.0,
+    "p99": 1211.29
+  },
+  "guards": {
+    "arms_are_paired": true,
+    "guardrail_ran": true,
+    "no_intervention": true,
+    "output_side_complete": true,
+    "trace_is_enabled": true
+  },
+  "hop": "#2 (input guardrail)",
+  "is_smoke": false,
+  "kind": "BAND_CONTAINS",
+  "measured_field": "trace.guardrail.inputAssessment[gid].invocationMetrics.guardrailProcessingLatency",
+  "model": {
+    "model_id": "us.amazon.nova-micro-v1:0",
+    "why_it_barely_matters_here": "Hops #2 and #6 are the GUARDRAIL service evaluating text; the model does not run them. The substitution bites on Hop #3, and §6.1 labels that row model-specific itself",
+    "why_not_claude": "§1 says 'e.g., Claude'. Claude 3.5 Haiku raises ResourceNotFoundException in this account — a model-access fact, not a throttle. DEV-P4-06"
+  },
+  "oracle_text": "Measured p50/p90/p99 with distribution-free CIs at n=1000. FALSE for the ILLUSTRATIVE 100-500ms if the measured p50-p99 band lies outside it; the paired shift must also exclude 0, or the hop has no measurable cost and 6.1 overstates it",
+  "oracle_text_second_condition": {
+    "applied": true,
+    "direction": "can only turn TRUE into FALSE. The sealed kind checks the band alone, so implementing the oracle's full text tightens the test against the document",
+    "excludes_zero": true,
+    "shift_ci": [
+      410.0,
+      421.0
+    ],
+    "text": "the paired shift must also exclude 0, or the hop has no measurable cost and 6.1 overstates it"
+  },
+  "output_assessment_handling": {
+    "max_seen": 1,
+    "rule": "SUM over outputAssessments[<gid>][], count recorded",
+    "why": "the hop's cost is the total time the response spent in evaluation. Taking [0] would report a fraction whenever the service split the response, and would do it in the flattering direction"
+  },
+  "output_chars": {
+    "ci_p50": "109 [109, 109] (n=1000, order-statistic, 95%)",
+    "ci_p90": "109 [109, 109] (n=1000, order-statistic, 95%)",
+    "max": 113.0,
+    "min": 86.0,
+    "n": 1000,
+    "p50": 109.0,
+    "p90": 109.0,
+    "p99": null,
+    "why_no_p99": "a p99 needs n>=100 and a cell that pre-registered one; this series has neither, and a p99 printed beside a verdict gets quoted"
+  },
+  "paired_shift_total_ms": {
+    "bootstrap_ci": [
+      410.0,
+      421.0
+    ],
+    "definition": "median(total_ms guarded) - median(total_ms bare)",
+    "hodges_lehmann": 418.5,
+    "n_pairs": 998,
+    "why_the_total_and_not_the_sum_of_hops": "this is the whole cost of turning guardrails on. Comparing it against input_ms + output_ms is a RESIDUAL, and that is F6-7's question, not this one's",
+    "wilcoxon": {
+      "p_value": 2.8459484048588323e-162,
+      "statistic": 2003.5
+    }
+  },
+  "planned_n": 1000,
+  "prompt": {
+    "chars": 161,
+    "max_tokens": 64,
+    "text": "Reply with one short sentence about how a library card catalogue is organised. Keep the answer under thirty words and do not use any lists, headings or emphasis.",
+    "why_fixed": "length variance in the input would land inside the input-side hop, which is the quantity F6-2 publishes a p99 of; and text units are charged per 1,000 characters"
+  },
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F6-2",
+    "evidence": {
+      "band": [
+        100.0,
+        500.0
+      ],
+      "ci_p50": "203 [203, 204] (n=1000, order-statistic, 95%)",
+      "n": 1000,
+      "p50": 203.0,
+      "p90": 231.0,
+      "p99": 375.03,
+      "upper_end_open": false
+    },
+    "family": "exploratory_latency",
+    "kind": "BAND_CONTAINS",
+    "mutation_required": false,
+    "n_attempted": 1000,
+    "n_met": true,
+    "n_usable": 1000,
+    "notes": [],
+    "p_value": null,
+    "planned_n": 1000,
+    "thresholds": [
+      100.0,
+      500.0
+    ],
+    "verdict": "TRUE"
+  },
+  "region": "us-east-1",
+  "run_id": "r20260810T130945Z",
+  "verdict": "TRUE"
+}

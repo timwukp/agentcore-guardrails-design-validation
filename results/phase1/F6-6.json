@@ -6,61 +6,63 @@
     "botocore": "1.43.67"
   },
   "blockers": {
-    "blockers": [],
+    "blockers": [
+      "n_usable=999 is below the pre-registered 1000"
+    ],
     "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
     "case_id": "F6-6",
-    "clear_here": true
+    "clear_here": false
   },
   "case_id": "F6-6",
   "cell": "latency_arm_p99",
   "client_total": {
-    "ci_p50": "1483 [1474, 1491] (n=1000, order-statistic, 95%)",
-    "max": 2897.346,
-    "mean": 1522.008151,
-    "min": 1191.489,
-    "n": 1000,
-    "p50": 1482.811,
-    "p90": 1721.583,
-    "p99": 2107.2128999999995
+    "ci_p50": "1364 [1359, 1371] (n=999, order-statistic, 95%)",
+    "max": 5867.568,
+    "mean": 1408.0449779779779,
+    "min": 1154.374,
+    "n": 999,
+    "p50": 1363.966,
+    "p90": 1555.4176,
+    "p99": 2107.585359999999
   },
   "cloudwatch": {
     "GuardrailLatency": {
       "combinations_found": 1,
       "metric": "GuardrailLatency",
-      "p50": 386.4656532352717,
+      "p50": 322.28220892809804,
       "samples": 3002,
       "series": [
         {
-          "average": 405.47435043304466,
+          "average": 342.06562291805466,
           "dimensions": {
             "OperationName": "AuthorizeAction",
             "TargetResource": "grx-gw-r20260810t130945z-zpkfmpwo9n"
           },
-          "maximum": 1617.0,
-          "minimum": 253.0,
-          "p50": 386.4656532352717,
-          "p90": 519.2304414709545,
-          "p99": 767.4123125473837,
+          "maximum": 1449.0,
+          "minimum": 229.0,
+          "p50": 322.28220892809804,
+          "p90": 426.5497011657756,
+          "p99": 802.1374006275893,
           "sample_count": 3002.0,
-          "window_start": "2026-08-11T18:06:54.089958+00:00"
+          "window_start": "2026-08-19T04:29:35.161169+00:00"
         }
       ],
       "windows_queried": [
         {
-          "end": "2026-08-11T19:10:27.603538+00:00",
-          "period_s": 3840,
-          "start": "2026-08-11T18:06:54.089958+00:00"
+          "end": "2026-08-19T07:10:35.055201+00:00",
+          "period_s": 9660,
+          "start": "2026-08-19T04:29:35.161169+00:00"
         }
       ]
     },
     "Latency": {
       "combinations_found": 10,
       "metric": "Latency",
-      "p50": 503.4905594071247,
-      "samples": 12032,
+      "p50": 449.9828362808582,
+      "samples": 12035,
       "series": [
         {
-          "average": 14.833333333333334,
+          "average": 15.666666666666666,
           "dimensions": {
             "Method": "initialize",
             "Operation": "InvokeGateway",
@@ -68,61 +70,61 @@
             "Resource": "arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n"
           },
           "maximum": 22.0,
-          "minimum": 8.0,
+          "minimum": 10.0,
           "p50": 13.109994191499956,
           "p90": 21.46389955865374,
           "p99": 21.945792848569095,
           "sample_count": 6.0,
-          "window_start": "2026-08-11T18:06:54.089958+00:00"
+          "window_start": "2026-08-19T04:29:35.161169+00:00"
         },
         {
-          "average": 548.8207861425716,
+          "average": 500.8488178488179,
           "dimensions": {
             "Method": "tools/call",
             "Operation": "InvokeGateway",
             "Protocol": "MCP",
             "Resource": "arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n"
           },
-          "maximum": 1784.0,
-          "minimum": 358.0,
-          "p50": 532.01582179404,
-          "p90": 677.8383559232384,
-          "p99": 919.7607333841515,
-          "sample_count": 3002.0,
-          "window_start": "2026-08-11T18:06:54.089958+00:00"
+          "maximum": 1695.0,
+          "minimum": 27.0,
+          "p50": 481.58742136801004,
+          "p90": 602.742802884236,
+          "p99": 978.4035526159879,
+          "sample_count": 3003.0,
+          "window_start": "2026-08-19T04:29:35.161169+00:00"
         },
         {
-          "average": 20.333333333333332,
+          "average": 21.333333333333332,
           "dimensions": {
             "Method": "notifications/initialized",
             "Operation": "InvokeGateway",
             "Protocol": "MCP",
             "Resource": "arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n"
           },
-          "maximum": 24.0,
-          "minimum": 17.0,
-          "p50": 20.131196244377268,
-          "p90": 23.532044599361832,
-          "p99": 23.952788725097076,
+          "maximum": 28.0,
+          "minimum": 10.0,
+          "p50": 22.144315868814996,
+          "p90": 26.50171564131647,
+          "p99": 27.846436541778296,
           "sample_count": 6.0,
-          "window_start": "2026-08-11T18:06:54.089958+00:00"
+          "window_start": "2026-08-19T04:29:35.161169+00:00"
         },
         {
-          "average": 438.5666222518321,
+          "average": 376.81445702864755,
           "dimensions": {
             "OperationName": "AuthorizeAction",
             "TargetResource": "grx-gw-r20260810t130945z-zpkfmpwo9n"
           },
-          "maximum": 1663.0,
-          "minimum": 282.0,
-          "p50": 420.2026385227705,
-          "p90": 556.8630923278569,
-          "p99": 789.6785316507171,
+          "maximum": 1480.0,
+          "minimum": 265.0,
+          "p50": 357.1022816202137,
+          "p90": 462.9958007163389,
+          "p99": 848.0647132766612,
           "sample_count": 3002.0,
-          "window_start": "2026-08-11T18:06:54.089958+00:00"
+          "window_start": "2026-08-19T04:29:35.161169+00:00"
         },
         {
-          "average": 548.8207861425716,
+          "average": 500.8488178488179,
           "dimensions": {
             "Method": "tools/call",
             "Name": "grxecho___echo",
@@ -130,35 +132,35 @@
             "Protocol": "MCP",
             "Resource": "arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n"
           },
-          "maximum": 1784.0,
-          "minimum": 358.0,
-          "p50": 532.01582179404,
-          "p90": 677.8383559232384,
-          "p99": 919.7607333841515,
-          "sample_count": 3002.0,
-          "window_start": "2026-08-11T18:06:54.089958+00:00"
+          "maximum": 1695.0,
+          "minimum": 27.0,
+          "p50": 481.58742136801004,
+          "p90": 602.742802884236,
+          "p99": 978.4035526159879,
+          "sample_count": 3003.0,
+          "window_start": "2026-08-19T04:29:35.161169+00:00"
         },
         {
-          "average": 546.7057067020571,
+          "average": 498.9290215588723,
           "dimensions": {
             "Operation": "InvokeGateway",
             "Protocol": "MCP",
             "Resource": "arn:aws:bedrock-agentcore:us-east-1:<account>:gateway/grx-gw-r20260810t130945z-zpkfmpwo9n"
           },
-          "maximum": 1784.0,
-          "minimum": 8.0,
-          "p50": 531.5619272551879,
-          "p90": 677.4216782668833,
-          "p99": 919.234908382653,
-          "sample_count": 3014.0,
-          "window_start": "2026-08-11T18:06:54.089958+00:00"
+          "maximum": 1695.0,
+          "minimum": 10.0,
+          "p50": 481.2261381822941,
+          "p90": 602.3174158421944,
+          "p99": 977.4714786820075,
+          "sample_count": 3015.0,
+          "window_start": "2026-08-19T04:29:35.161169+00:00"
         }
       ],
       "windows_queried": [
         {
-          "end": "2026-08-11T19:10:27.603538+00:00",
-          "period_s": 3840,
-          "start": "2026-08-11T18:06:54.089958+00:00"
+          "end": "2026-08-19T07:10:35.055201+00:00",
+          "period_s": 9660,
+          "start": "2026-08-19T04:29:35.161169+00:00"
         }
       ]
     }
@@ -168,44 +170,25 @@
   "guard_detail": {
     "gateway_hop_measured": {
       "combinations_found": 10,
-      "guardrail_p50": 386.4656532352717,
+      "guardrail_p50": 322.28220892809804,
       "guardrail_samples": 3002,
       "min_samples": 100,
       "n_sending_windows": 1,
-      "p50": 503.4905594071247,
-      "samples": 12032,
+      "p50": 449.9828362808582,
+      "samples": 12035,
       "sending_windows": [
         {
-          "reconstructed_from": {
-            "archived_EndTime": "2026-08-11T19:10:27.603538+00:00",
-            "archived_StartTime": "2026-08-11T18:06:54.089958+00:00",
-            "arithmetic": "t0 = StartTime + 60s and t1 = EndTime - 60s, inverting the pad _cw_p50 applies to each side",
-            "evidence_dir": "f6_latency/F6-6_7_8",
-            "requests_read": [
-              "4621_get_metric_statistics_ok.json",
-              "4622_get_metric_statistics_ok.json",
-              "4623_get_metric_statistics_ok.json",
-              "4624_get_metric_statistics_ok.json",
-              "4625_get_metric_statistics_ok.json",
-              "4626_get_metric_statistics_ok.json",
-              "4627_get_metric_statistics_ok.json",
-              "4628_get_metric_statistics_ok.json",
-              "4629_get_metric_statistics_ok.json",
-              "4630_get_metric_statistics_ok.json",
-              "4632_get_metric_statistics_ok.json"
-            ],
-            "why": "the run that sent these 1,600 turns crashed in its analysis before the window was persisted; the window is recovered from that run's own archived CloudWatch requests rather than re-sending the arm"
-          },
-          "recorded_by": "recover_cw_window.py (RECONSTRUCTED)",
-          "t0_iso": "2026-08-11T18:07:54.089958+00:00",
-          "t1_iso": "2026-08-11T19:09:27.603538+00:00"
+          "n_turns_sent_by_this_process": 1599,
+          "recorded_by": "f6_latency/03_composition.py (live)",
+          "t0_iso": "2026-08-19T04:30:35.161169+00:00",
+          "t1_iso": "2026-08-19T07:09:35.055201+00:00"
         }
       ],
       "windows_queried": [
         {
-          "end": "2026-08-11T19:10:27.603538+00:00",
-          "period_s": 3840,
-          "start": "2026-08-11T18:06:54.089958+00:00"
+          "end": "2026-08-19T07:10:35.055201+00:00",
+          "period_s": 9660,
+          "start": "2026-08-19T04:29:35.161169+00:00"
         }
       ]
     },
@@ -214,14 +197,14 @@
         "corpus_id": "b976bbfa6a66",
         "denied": true,
         "outcome": "policy_denied",
-        "request_id": "972328e2-6ff4-4017-8303-1f16bf40ce4c",
+        "request_id": "c0fdfee8-28e6-4e51-a4f8-a7c55ca9a520",
         "when": "before"
       },
       {
         "corpus_id": "b976bbfa6a66",
         "denied": true,
         "outcome": "policy_denied",
-        "request_id": "7d6ce1c4-efda-4851-ab5d-91d69782c57d",
+        "request_id": "c5742ea2-f81f-436d-b7a7-9dfd4e1cc1da",
         "when": "after"
       }
     ],
@@ -318,8 +301,8 @@
     },
     "turns_completed": {
       "1": {
-        "done": 1000,
-        "failed": 0,
+        "done": 999,
+        "failed": 1,
         "planned": 1000
       },
       "2": {
@@ -353,18 +336,18 @@
   },
   "hop3_is_derived": "§6.1 row 3 names InvocationLatency in AWS/Bedrock, which publishes at 1-minute grain and cannot be read per request; so hop 3 is metrics.latencyMs minus hops 2 and 6 and is recorded as derived. F6-7's residual does NOT depend on the split: hops 2+3+6 enter the sum as metrics.latencyMs, which the service reports directly",
   "hop_breakdown_p50": {
-    "converse_server_total": 297.0,
-    "hop2_input_guardrail": 214.0,
-    "hop3_model_derived": 83.0,
+    "converse_server_total": 294.0,
+    "hop2_input_guardrail": 209.0,
+    "hop3_model_derived": 85.0,
     "hop6_output_guardrail": null,
     "hop6_reporting": {
-      "n_turns": 1000,
+      "n_turns": 999,
       "n_turns_with_an_output_assessment_latency": 0,
-      "n_turns_with_zero_output_assessments": 1000,
+      "n_turns_with_zero_output_assessments": 999,
       "why_it_matters": "hop 6 is one of the document's named hops. If the runtime never reports its latency for a passing response, the hop cannot be measured per turn at all and the §6.1 table's hop-6 row has no instrument behind it — which is an amendment candidate, not a missing measurement"
     },
-    "hops45_gateway_conservative": 889.9562126423964,
-    "hops45_gateway_nested": 503.4905594071247
+    "hops45_gateway_conservative": 772.2650452089563,
+    "hops45_gateway_nested": 449.9828362808582
   },
   "is_smoke": false,
   "kind": "BAND_CONTAINS",
@@ -385,21 +368,23 @@
         800.0,
         31000.0
       ],
-      "ci_p50": "1483 [1474, 1491] (n=1000, order-statistic, 95%)",
-      "n": 1000,
+      "ci_p50": "1364 [1359, 1371] (n=999, order-statistic, 95%)",
+      "n": 999,
       "note_open": "the document writes an open-ended upper bound, so no measured value can exceed it; only the floor is falsifiable",
-      "p50": 1482.811,
-      "p90": 1721.583,
-      "p99": 2107.2128999999995,
+      "p50": 1363.966,
+      "p90": 1555.4176,
+      "p99": 2107.585359999999,
       "upper_end_open": true
     },
     "family": "exploratory_latency",
     "kind": "BAND_CONTAINS",
     "mutation_required": false,
     "n_attempted": 1600,
-    "n_met": true,
-    "n_usable": 1000,
-    "notes": [],
+    "n_met": false,
+    "n_usable": 999,
+    "notes": [
+      "n_usable=999 is below the pre-registered 1000; the verdict stands on the data collected but its interval is wider than the design promised, so it does not clear the amendment bar"
+    ],
     "p_value": null,
     "planned_n": 1000,
     "thresholds": [
@@ -411,14 +396,14 @@
   "region": "us-east-1",
   "run_id": "r20260810T130945Z",
   "server_total": {
-    "ci_p50": "1187 [1184, 1190] (n=1000, order-statistic, 95%)",
-    "max": 2220.956212642396,
-    "mean": 1223.1872126423964,
-    "min": 1083.9562126423964,
-    "n": 1000,
-    "p50": 1186.9562126423964,
-    "p90": 1332.9562126423964,
-    "p99": 1808.9962126423964
+    "ci_p50": "1066 [1065, 1068] (n=999, order-statistic, 95%)",
+    "max": 1812.2650452089563,
+    "mean": 1077.7595397034506,
+    "min": 978.2650452089563,
+    "n": 999,
+    "p50": 1066.2650452089563,
+    "p90": 1114.4650452089563,
+    "p99": 1506.2850452089563
   },
   "straddle_rule": {
     "rule": "if the client and server totals fall on opposite sides of the floor the verdict is INCONCLUSIVE: a verdict that depends on which instrument was picked is not a verdict",

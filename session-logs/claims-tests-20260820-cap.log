@@ -1,0 +1,65 @@
+........E............................................................... [ 16%]
+........................................................................ [ 32%]
+.......F................................................................ [ 48%]
+........................................................................ [ 64%]
+........................................................................ [ 81%]
+........................................................................ [ 97%]
+...........                                                              [100%]
+==================================== ERRORS ====================================
+_ ERROR at teardown of test_the_subset_yields_the_same_observation_days_as_the_full_tree _
+the live results tree changed while this test ran:
+  MODIFIED results/FINDING-P1-REDACTION-ENCODING.md
+
+This test made no such write in-process, but it spawned 2 subprocess(es) (/Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python), whose writes an audit hook in THIS interpreter cannot see. A child process is a write this test caused, so it is charged here rather than excused: pass the child a tmp_path root, or assert on its output without letting it write into the live tree.
+
+A checkpoint written by a test makes a live run resume trials it never ran, and `Checkpoint.load`'s case_id/cell guard cannot see it because the test chose those values. Pass a `tmp_path`-based root — `lib/tests/test_arms.py` has a `roots` fixture that does exactly this — rather than letting the default `Path('results')/'checkpoints'` apply.
+This guard was added after results/checkpoints/T__main.json was found in the live tree carrying a StubClient's 'stub exhausted' failure.
+=================================== FAILURES ===================================
+________________ test_every_prose_count_matches_a_derived_count ________________
+
+    def test_every_prose_count_matches_a_derived_count():
+        total = len(_items())
+        tiers = _tiers()
+        tier_sizes = {len(v) for v in tiers.values()}
+        sites, bad = [], []
+        for path, sentence in _claim_sites():
+            for m in COUNT_RE.finditer(sentence):
+                claimed = int(m.group(1))
+                where = f"{path.relative_to(ROOT)}: …{' '.join(sentence.split())[:110]}…"
+                sites.append(where)
+                # A sentence naming a tier may legitimately state that tier's size instead.
+                allowed = {total} | (tier_sizes if re.search(r"\btier\b", sentence, re.I) else set())
+                if claimed not in allowed:
+                    bad.append(f"{where}\n      claims {claimed}, derived {sorted(allowed)}")
+>       assert not bad, (
+            "prose states a register count that no derivation supports:\n    " + "\n    ".join(bad))
+E       AssertionError: prose states a register count that no derivation supports:
+E             RECONNECT.md: …- **`FUTURE-WORK.md` is now 34 items** (was 21, then 22, then 28, then 31).…
+E               claims 34, derived [35]
+E             RECONNECT.md: …- **`FUTURE-WORK.md`** — the deficiency list, **34 items** in 5 tiers, each with derived evidence (this paragr…
+E               claims 34, derived [35]
+E             WHITEPAPER.md: …The full 34-item deficiency register, tiered by severity, is `FUTURE-WORK.md`.…
+E               claims 34, derived [35]
+E       assert not ['RECONNECT.md: …- **`FUTURE-WORK.md` is now 34 items** (was 21, then 22, then 28, then 31).…\n      claims 34, derive...R.md: …The full 34-item deficiency register, tiered by severity, is `FUTURE-WORK.md`.…\n      claims 34, derived [35]']
+
+claims/tests/test_future_work_register.py:178: AssertionError
+============================== concurrent writer ===============================
+1 change(s) under results/ or evidence/ during this session were made by ANOTHER PROCESS.
+  No test wrote to a watched tree in this interpreter (audit hook: 0 charged writes) and no test spawned a child that could have. A live run is almost certainly in flight. Not charged to any test.
+  But the tree-diff channel is VOID for this session — only the audit channel was in force. Re-run with no live run active for full two-channel coverage.
+  MODIFIED results/FINDING-P1-REDACTION-ENCODING.md
+============================= slowest 10 durations =============================
+365.69s call     claims/tests/test_amendment_evidence_subset.py::test_the_subset_yields_the_same_observation_days_as_the_full_tree
+85.47s call     claims/tests/test_redaction_gate.py::test_gate_passes_on_the_real_tree
+79.00s call     claims/tests/test_amendment_evidence_subset.py::test_the_manifest_moves_when_the_declared_cases_do
+68.81s call     claims/tests/test_v13_candidates.py::test_no_candidate_may_be_measured_ready_before_two_days
+65.45s call     claims/tests/test_finding_numbers.py::test_redaction_figures_in_the_finding_are_lower_bounds_and_hold
+44.86s call     claims/tests/test_redaction_gate.py::test_the_gate_fails_if_a_waived_fixture_is_removed_from_its_file
+9.85s setup    claims/tests/test_amendment_evidence_subset.py::test_the_declared_provenance_is_read_from_the_findings
+9.58s teardown claims/tests/test_verify_phase0_gates_every_test_directory.py::test_the_gate_counts_its_directories_instead_of_stating_a_number
+8.16s call     claims/tests/test_prereg_verifier.py::test_kills_an_entity_screen_exclusion_count_that_absorbs_a_changed_negative
+7.23s call     claims/tests/test_prereg_verifier.py::test_kills_confirmatory_family_grown_without_realpha
+=========================== short test summary info ============================
+FAILED claims/tests/test_future_work_register.py::test_every_prose_count_matches_a_derived_count
+ERROR claims/tests/test_amendment_evidence_subset.py::test_the_subset_yields_the_same_observation_days_as_the_full_tree
+1 failed, 441 passed, 1 error in 1154.14s (0:19:14)

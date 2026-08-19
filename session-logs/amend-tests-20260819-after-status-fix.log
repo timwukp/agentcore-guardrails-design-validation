@@ -1,0 +1,54 @@
+..................E..E............F.......F.......                       [100%]
+==================================== ERRORS ====================================
+_ ERROR at teardown of test_kills_a_rule_whose_wording_no_longer_states_the_threshold _
+the live results tree changed while this test ran:
+  ADDED    results/phase1/archive/F6-2__day2_indecisive_2026-08-19.json
+  ADDED    results/phase1/archive/F6-5__day2_indecisive_2026-08-19.json
+  ADDED    results/phase1/archive/F6-8__day2_indecisive_2026-08-19.json
+  MODIFIED results/FINDING-F6-DAY2-DECISIVENESS.md
+  MODIFIED results/phase1/F6-2.json
+  MODIFIED results/phase1/F6-5.json
+  MODIFIED results/phase1/F6-8.json
+
+This test made no such write in-process, but it spawned 1 subprocess(es) (/Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python), whose writes an audit hook in THIS interpreter cannot see. A child process is a write this test caused, so it is charged here rather than excused: pass the child a tmp_path root, or assert on its output without letting it write into the live tree.
+
+A checkpoint written by a test makes a live run resume trials it never ran, and `Checkpoint.load`'s case_id/cell guard cannot see it because the test chose those values. Pass a `tmp_path`-based root — `lib/tests/test_arms.py` has a `roots` fixture that does exactly this — rather than letting the default `Path('results')/'checkpoints'` apply.
+This guard was added after results/checkpoints/T__main.json was found in the live tree carrying a StubClient's 'stub exhausted' failure.
+______ ERROR at teardown of test_a_missing_results_dir_is_rc2_not_a_pass _______
+the live results tree changed while this test ran:
+  ADDED    results/CITATION-POLICY.md
+
+This test made no such write in-process, but it spawned 1 subprocess(es) (/Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python), whose writes an audit hook in THIS interpreter cannot see. A child process is a write this test caused, so it is charged here rather than excused: pass the child a tmp_path root, or assert on its output without letting it write into the live tree.
+
+A checkpoint written by a test makes a live run resume trials it never ran, and `Checkpoint.load`'s case_id/cell guard cannot see it because the test chose those values. Pass a `tmp_path`-based root — `lib/tests/test_arms.py` has a `roots` fixture that does exactly this — rather than letting the default `Path('results')/'checkpoints'` apply.
+This guard was added after results/checkpoints/T__main.json was found in the live tree carrying a StubClient's 'stub exhausted' failure.
+=================================== FAILURES ===================================
+________________ test_a_subset_copy_is_bounded_above_and_below _________________
+claims/tests/test_amendment_evidence_subset.py:234: in test_a_subset_copy_is_bounded_above_and_below
+    assert size <= EVIDENCE_SUBSET_CEILING_KB, (
+E   AssertionError: the evidence subset is 77130 KB; the ceiling is 40000 KB. 26 arms at this size is how the whole-tree copy reached ~4.9 GB — find what got copied, do not raise the bound
+E   assert 77130 <= 40000
+________________ test_every_prose_count_matches_a_derived_count ________________
+claims/tests/test_future_work_register.py:178: in test_every_prose_count_matches_a_derived_count
+    assert not bad, (
+E   AssertionError: prose states a register count that no derivation supports:
+E         RECONNECT.md: …- **`FUTURE-WORK.md` is now 34 items** (was 21, then 22, then 28, then 31).…
+E           claims 34, derived [35]
+E         RECONNECT.md: …- **`FUTURE-WORK.md`** — the deficiency list, **34 items** in 5 tiers, each with derived evidence (this paragr…
+E           claims 34, derived [35]
+E         WHITEPAPER.md: …The full 34-item deficiency register, tiered by severity, is `FUTURE-WORK.md`.…
+E           claims 34, derived [35]
+E   assert not ['RECONNECT.md: …- **`FUTURE-WORK.md` is now 34 items** (was 21, then 22, then 28, then 31).…\n      claims 34, derive...R.md: …The full 34-item deficiency register, tiered by severity, is `FUTURE-WORK.md`.…\n      claims 34, derived [35]']
+============================== concurrent writer ===============================
+2 change(s) under results/ or evidence/ during this session were made by ANOTHER PROCESS.
+  No test wrote to a watched tree in this interpreter (audit hook: 0 charged writes) and no test spawned a child that could have. A live run is almost certainly in flight. Not charged to any test.
+  But the tree-diff channel is VOID for this session — only the audit channel was in force. Re-run with no live run active for full two-channel coverage.
+  ADDED    results/FINDING-P1-REDACTION-ENCODING.md
+  MODIFIED results/phase1/F5-7b.json
+=========================== short test summary info ============================
+FAILED claims/tests/test_amendment_evidence_subset.py::test_a_subset_copy_is_bounded_above_and_below
+FAILED claims/tests/test_future_work_register.py::test_every_prose_count_matches_a_derived_count
+ERROR claims/tests/test_amendment_gate.py::test_kills_a_rule_whose_wording_no_longer_states_the_threshold
+ERROR claims/tests/test_amendment_gate.py::test_a_missing_results_dir_is_rc2_not_a_pass
+2 failed, 46 passed, 2 errors in 4024.95s (1:07:04)
+rc=1

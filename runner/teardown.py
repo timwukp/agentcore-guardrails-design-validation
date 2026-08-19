@@ -119,6 +119,16 @@ def main() -> int:
             time.sleep(5)
 
     # 4. The bucket, only on request.
+    #
+    # The bucket NAME is never printed. It lives in `runner/.state/`, which is gitignored
+    # precisely because a resolved infrastructure id is a redaction target, and printing it puts
+    # the same string into a terminal transcript and — the moment anyone redirects stdout — into a
+    # `session-logs/*.log` file that is not gitignored at all. That is not hypothetical: on
+    # 2026-08-20, when `check_redaction.py` stopped selecting files by extension,
+    # `session-logs/runner-teardown-20260819.log` was one of the two files it convicted, on the
+    # bucket name this line used to print. There is exactly one runner bucket and its name is
+    # derivable from the state file, so the name carries no information the operator lacks —
+    # it only carries it somewhere it should not go (`feedback_fix_producer_not_janitor`).
     if args.delete_bucket:
         n = 0
         for page in s3.get_paginator("list_object_versions").paginate(Bucket=st["bucket"]):
@@ -128,10 +138,12 @@ def main() -> int:
                 s3.delete_objects(Bucket=st["bucket"], Delete={"Objects": objs[i:i + 1000]})
                 n += len(objs[i:i + 1000])
         s3.delete_bucket(Bucket=st["bucket"])
-        did.append(f"bucket s3://{st['bucket']} deleted ({n} object versions)")
+        did.append(f"runner bucket deleted ({n} object versions) — name deliberately not "
+                   f"printed; `aws s3 ls` lists it")
     else:
-        did.append(f"bucket s3://{st['bucket']} KEPT — it holds the evidence archive; "
-                   "re-run with --delete-bucket once the output is merged")
+        did.append("runner bucket KEPT — it holds the evidence archive; re-run with "
+                   "--delete-bucket once the output is merged. Name deliberately not "
+                   "printed; `aws s3 ls` lists it")
 
     PV.STATE_PATH.unlink(missing_ok=True)
     print("\n".join(f"  {line}" for line in did))

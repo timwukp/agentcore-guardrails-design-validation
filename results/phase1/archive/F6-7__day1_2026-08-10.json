@@ -1,0 +1,273 @@
+{
+  "action_id": "grxecho___echo",
+  "alpha": 0.05,
+  "alternative": {
+    "hop45_ms": 503.4905594071247,
+    "reading": "Latency alone, assuming GuardrailLatency nests inside it",
+    "residual_ci": "758.6 [738.8, 782.7] (n=1600, bootstrap-percentile(B=10000,seed=20260809), 95%)",
+    "scored": false
+  },
+  "ambient_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F6-7",
+    "clear_here": true
+  },
+  "case_id": "F6-7",
+  "cell": "latency_arm_p50_p90_only",
+  "conservative": {
+    "hop45_ms": 889.9562126423964,
+    "reading": "Latency + GuardrailLatency, assumed disjoint",
+    "residual_ci": "265.3 [258.8, 273] (n=1600, bootstrap-percentile(B=10000,seed=20260809), 95%)",
+    "why_primary": "if the two gateway metrics in fact nest, this double-counts, making the hop sum larger and the residual smaller — so its failure mode is a false FALSE, never a false TRUE"
+  },
+  "gateway_id": "grx-gw-r20260810t130945z-zpkfmpwo9n",
+  "guard_detail": {
+    "gateway_hop_measured": {
+      "combinations_found": 10,
+      "guardrail_p50": 386.4656532352717,
+      "guardrail_samples": 3002,
+      "min_samples": 100,
+      "n_sending_windows": 1,
+      "p50": 503.4905594071247,
+      "samples": 12032,
+      "sending_windows": [
+        {
+          "reconstructed_from": {
+            "archived_EndTime": "2026-08-11T19:10:27.603538+00:00",
+            "archived_StartTime": "2026-08-11T18:06:54.089958+00:00",
+            "arithmetic": "t0 = StartTime + 60s and t1 = EndTime - 60s, inverting the pad _cw_p50 applies to each side",
+            "evidence_dir": "f6_latency/F6-6_7_8",
+            "requests_read": [
+              "4621_get_metric_statistics_ok.json",
+              "4622_get_metric_statistics_ok.json",
+              "4623_get_metric_statistics_ok.json",
+              "4624_get_metric_statistics_ok.json",
+              "4625_get_metric_statistics_ok.json",
+              "4626_get_metric_statistics_ok.json",
+              "4627_get_metric_statistics_ok.json",
+              "4628_get_metric_statistics_ok.json",
+              "4629_get_metric_statistics_ok.json",
+              "4630_get_metric_statistics_ok.json",
+              "4632_get_metric_statistics_ok.json"
+            ],
+            "why": "the run that sent these 1,600 turns crashed in its analysis before the window was persisted; the window is recovered from that run's own archived CloudWatch requests rather than re-sending the arm"
+          },
+          "recorded_by": "recover_cw_window.py (RECONSTRUCTED)",
+          "t0_iso": "2026-08-11T18:07:54.089958+00:00",
+          "t1_iso": "2026-08-11T19:09:27.603538+00:00"
+        }
+      ],
+      "windows_queried": [
+        {
+          "end": "2026-08-11T19:10:27.603538+00:00",
+          "period_s": 3840,
+          "start": "2026-08-11T18:06:54.089958+00:00"
+        }
+      ]
+    },
+    "guardrail_live_before_and_after": [
+      {
+        "corpus_id": "b976bbfa6a66",
+        "denied": true,
+        "outcome": "policy_denied",
+        "request_id": "972328e2-6ff4-4017-8303-1f16bf40ce4c",
+        "when": "before"
+      },
+      {
+        "corpus_id": "b976bbfa6a66",
+        "denied": true,
+        "outcome": "policy_denied",
+        "request_id": "7d6ce1c4-efda-4851-ab5d-91d69782c57d",
+        "when": "after"
+      }
+    ],
+    "guardrail_ran_on_every_turn": {
+      "n_missing": 0,
+      "why": "hop 2 is only reported when the guardrail actually evaluated the input; a turn with no inputAssessment latency has no hop 2 and cannot enter a total"
+    },
+    "probe_policy_removed": {
+      "attempts": 1,
+      "deleted": true,
+      "errors": []
+    },
+    "testbed_intact_after_restore": {
+      "checks": [
+        {
+          "detail": "",
+          "name": "policy-engine/main present in ledger",
+          "ok": true
+        },
+        {
+          "detail": "grx_pe_r20260810T130945Z-t6hqadrspf status=ACTIVE",
+          "name": "policy-engine ACTIVE",
+          "ok": true
+        },
+        {
+          "detail": "",
+          "name": "policy/baseline present in ledger",
+          "ok": true
+        },
+        {
+          "detail": "status=ACTIVE enforcementMode=ACTIVE",
+          "name": "policy/baseline ACTIVE",
+          "ok": true
+        },
+        {
+          "detail": "verbatim from our §3.1",
+          "name": "policy/baseline statement unchanged",
+          "ok": true
+        },
+        {
+          "detail": "",
+          "name": "gateway/main present in ledger",
+          "ok": true
+        },
+        {
+          "detail": "grx-gw-r20260810t130945z-zpkfmpwo9n status=READY",
+          "name": "gateway/main READY",
+          "ok": true
+        },
+        {
+          "detail": "",
+          "name": "gateway/main url matches ledger",
+          "ok": true
+        },
+        {
+          "detail": "mode=ENFORCE arn=ours",
+          "name": "gateway/main -> our policy engine",
+          "ok": true
+        },
+        {
+          "detail": "",
+          "name": "gateway/nopolicy present in ledger",
+          "ok": true
+        },
+        {
+          "detail": "grx-gw-nopolicy-r20260810t130945z-x1gqmvenpz status=READY",
+          "name": "gateway/nopolicy READY",
+          "ok": true
+        },
+        {
+          "detail": "",
+          "name": "gateway/nopolicy url matches ledger",
+          "ok": true
+        },
+        {
+          "detail": "",
+          "name": "gateway/nopolicy has NO engine",
+          "ok": true
+        },
+        {
+          "detail": "shared prefix, tail == gatewayId",
+          "name": "workloadIdentityDetails is identity only (PAIR_IGNORE justification)",
+          "ok": true
+        },
+        {
+          "detail": "identical except policyEngineConfiguration",
+          "name": "F6 pairing still valid",
+          "ok": true
+        }
+      ],
+      "n_fail": 0,
+      "n_pass": 15,
+      "ok": true
+    },
+    "turns_completed": {
+      "1": {
+        "done": 1000,
+        "failed": 0,
+        "planned": 1000
+      },
+      "2": {
+        "done": 200,
+        "failed": 0,
+        "planned": 200
+      },
+      "3": {
+        "done": 200,
+        "failed": 0,
+        "planned": 200
+      },
+      "5": {
+        "done": 200,
+        "failed": 0,
+        "planned": 200
+      }
+    }
+  },
+  "guardrail_id": "pd6blbae0jty",
+  "guardrail_key": "cf-medium",
+  "guardrail_version": "DRAFT",
+  "guards": {
+    "both_hop_readings_agree_in_sign": true,
+    "gateway_hop_measured": true,
+    "guardrail_live_before_and_after": true,
+    "guardrail_ran_on_every_turn": true,
+    "probe_policy_removed": true,
+    "testbed_intact_after_restore": true,
+    "turns_completed": true
+  },
+  "hop3_is_derived": "§6.1 row 3 names InvocationLatency in AWS/Bedrock, which publishes at 1-minute grain and cannot be read per request; so hop 3 is metrics.latencyMs minus hops 2 and 6 and is recorded as derived. F6-7's residual does NOT depend on the split: hops 2+3+6 enter the sum as metrics.latencyMs, which the service reports directly",
+  "is_smoke": false,
+  "kind": "NONNEG_RESIDUAL",
+  "max_tokens": 40,
+  "model_id": "us.amazon.nova-micro-v1:0",
+  "n_exceeds_planned": {
+    "planned": 200,
+    "used": 1600,
+    "why": "every level's turns enter the residual, so F6-7 gets more than its cell requires. Recorded rather than silently enjoyed: the cell is a floor, not a target"
+  },
+  "n_requested": 1600,
+  "n_used": 1600,
+  "oracle_text": "TRUE if the residual eps >= 0 within CI; FALSE if significantly negative, which means hops overlap and falsifies the decomposition model underlying 6.1, 6.3 AND 6.4 — a structural finding, not a number tweak",
+  "planned_n": 200,
+  "planned_n_cell": 200,
+  "policy_engine_id": "grx_pe_r20260810T130945Z-t6hqadrspf",
+  "prompt_len": 97,
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F6-7",
+    "evidence": {
+      "residual_ci": [
+        258.76468103640536,
+        273.0498498576035
+      ],
+      "structural": "a significantly negative residual means the hops overlap and falsifies the decomposition model behind §6.1, §6.3 and §6.4"
+    },
+    "family": "exploratory_latency",
+    "kind": "NONNEG_RESIDUAL",
+    "mutation_required": false,
+    "n_attempted": 1600,
+    "n_met": true,
+    "n_usable": 1600,
+    "notes": [],
+    "p_value": null,
+    "planned_n": 200,
+    "thresholds": [],
+    "verdict": "TRUE"
+  },
+  "region": "us-east-1",
+  "residual_definition": "client_total_ms - converse_server_ms - N * gateway_server_ms_per_call. The total is OUR clock and the parts are the SERVICES' clocks, so the sign is not guaranteed by construction; a same-clock decomposition would be",
+  "run_id": "r20260810T130945Z",
+  "turn_shape": {
+    "direction_of_bias": "a scripted turn omits the model round-trips a tool-using agent adds, and nova-micro is the fastest model available, so the total is biased DOWN — against the 800ms floor",
+    "hops_per_turn": {
+      "1": "not separable from hop 5 in this service — DEV-P4-07",
+      "2": "Converse guardrailConfig inputAssessment",
+      "3": "Converse metrics.latencyMs minus hops 2 and 6 (DERIVED)",
+      "4": "gateway Cedar authorization",
+      "5": "gateway guardrail evaluation, once per tool call",
+      "6": "Converse guardrailConfig outputAssessments, SUMMED"
+    },
+    "orchestration": "scripted, not model-directed",
+    "why_scripted": "no agent runtime exists in this testbed and the pre-existing harness_* runtimes are out of scope, so the turn is assembled by this script in the document's own hop order"
+  },
+  "unaccounted_fraction_p50": 0.1637458467678245,
+  "verdict": "TRUE",
+  "why_the_fraction_matters": "the sign check is the sealed oracle, but the fraction is the amendment-relevant number: it is the share of the end-to-end total that §6.1's table does not name"
+}

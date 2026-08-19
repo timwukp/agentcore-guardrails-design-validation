@@ -54,10 +54,12 @@ returned SHA differs from a locally computed `git hash-object`. No change was ne
 - **7 of 8 figures drawn**, `tools/whitepaper_figures.py` under **`.venv-figs`** (matplotlib 3.11.1
   — a separate venv so the sealed oracle's pinned botocore is untouched). `--check` compares the
   **numbers**, never the PNG bytes, so a matplotlib bump cannot red the gate while a stale figure
-  does. Figure 6 is **BLOCKED, not drawn**: `results/CROSSMAP-ACG-THREATS.json` grounds only 5 of
-  the 17 OWASP Agentic v1.1 threat titles, and shading the other 12 "not established" would report
-  *our* missing source as *AgentCore's* missing coverage. Recorded in the manifest, in §2.3, and as
-  FUTURE-WORK item 28.
+  does. Figure 6 is **BLOCKED, not drawn**: only 5 of the 17 OWASP Agentic v1.1 threat titles are
+  grounded in a source we hold — they are the `Cross-map` lines on the Part II control headers — and
+  shading the other 12 "not established" would report *our* missing source as *AgentCore's* missing
+  coverage. The per-cell file the figure would read, `results/CROSSMAP-ACG-THREATS.json`, **does not
+  exist yet**; authoring it from the pinned v1.1 PDF is the closing condition. Recorded in the
+  manifest, in §2.3, and as FUTURE-WORK item 28.
 - **A generated figure is not verified until the image is inspected.** Four defects passed a clean
   script run: figure 4 drew censored points as bars 44.2 tall (readable as a count of 44, four from
   the real 48); figure 5's axis ran to 1.28 on a proportion scale; figure 7 drew one timeline for
@@ -65,14 +67,35 @@ returned SHA differs from a locally computed `git hash-object`. No change was ne
   when the measured `chain.flip.http_status` is **202**, and plotted only day 2. All fixed.
 - **New result in the paper**: F5-2's `data_plane_reconvergence` — first denial 305.8 s / 325.0 s,
   three consecutive denials 326.4 s / 345.6 s, `n_that_were_still_authorized: 0`. §11.4.
-- **`FUTURE-WORK.md` is now 31 items** (was 21, then 22, then 28). Item 28 is figure 6's missing source;
-  item 29 is the same-run_id roll-up overwrite found on 2026-08-16; item 30 is Tier 5's citation
+- **`FUTURE-WORK.md` is now 36 items** (was 21, then 22, then 28, then 31, then 35). Item 28 is figure 6's missing
+  source; item 29 is the same-run_id roll-up overwrite found on 2026-08-16; item 30 is Tier 5's citation
   anchors, which had existed unnumbered since the tier was written; item 31 is the gate's runtime, which
   this file had stated three different ways — **rewritten 2026-08-17 from a timed run, because the
   "≈ 6 hours" the item was filed with was itself an extrapolation and wrong by a factor of four**.
+  Items 32–34 came out of the F6 day-2 replication on 2026-08-19: 32 is Tier 1 (the latency oracles
+  score a confidence interval that straddles the threshold as TRUE), 33 is the driver's `--run-id`
+  not being honoured by the producers, 34 is the transient-failure guard missing a read timeout.
+  Item 35 is the redaction leak, filed 2026-08-19 and extended 2026-08-20 with its third instance:
+  the gate selected files by a nine-extension allowlist, which was skipping **87 files / 701,558
+  bytes** — all 56 `.jsonl` corpora and 22 `.log` files among them — with **7 unwaived identifiers**
+  sitting in two of them. Inclusion is now a predicate with no filename test at all, and the gate no
+  longer prints the identifiers it catches, because 10 of the first 11 findings were in the redaction
+  machinery's own output.
   `claims/tests/test_future_work_register.py`
   derives the count from the headings and fails any file that states a different one, so this line is checked.
-- **`DEVIATIONS.md` gained DEV-P4-41 and DEV-P4-42** — 42 `DEV-P4-*` entries.
+- **`DEVIATIONS.md` gained DEV-P4-41 through DEV-P4-44** — 44 `DEV-P4-*` entries. The count is
+  now derived and the prose checked against it (`claims/tests/test_deviation_register.py`); this
+  sentence was one short for a day because nothing looked, and it went stale again the moment
+  DEV-P4-44 landed — that time a test said so.
+- **DEV-P4-44 — the same class as P4-43, one artefact type over.** `results/FINDING-F6-DAY2-DECISIVENESS.md`
+  §6.3 recorded six sha256 values as, in its own words, the only way to tell which day a live F6
+  verdict file holds; one of the six was elided one character short of the end of the hash and
+  matched nothing that exists. 21 elided-hash citations were in scope and none had ever been
+  checked. `claims/tests/test_hash_citations.py` now resolves every one against the hashes the
+  repository can derive or has recorded (18 of 21 resolved on sight; 2 are a deliberately
+  unretained pre-fix value, registered with that reason), and checks the F6 table's pairings
+  outright — live file byte-identical to its day-1 archive, each hash the file it is printed beside,
+  and the row's verdict column equal to the verdict inside the file.
 - **`./verify_phase0.sh`: 2 failed / 3143 passed / 9 skipped in 1:14:23** → both fixed, then 84
   passed across the eight affected scanner tests and 72 passed across the deviation-structure tests.
   Both failures were caused by this session's own additions and both were real:
@@ -89,17 +112,29 @@ returned SHA differs from a locally computed `git hash-object`. No change was ne
 
 ### Still open, in the order I would take them
 
-1. ~~Wait for the merge, then verify `main`'s tree.~~ **DONE 2026-08-16** — see the banner. The
-   highest-priority open item is now **FUTURE-WORK item 24**, because it is the only one with a
-   deadline that destroys data: F10-3's and F3-11_snapshot's **day-1 call records exist ONLY in the
-   runner's S3 bucket**, whose lifecycle `expire-90d` (Enabled, prefix `""`, `Expiration {Days: 90}`)
-   deletes every object **~2026-11-11 to ~2026-11-13**. Two published verdicts would then have no
-   primary evidence at any level of scrutiny. Blocked on the user, because the only pull path in the
-   repo is `runner/sync.py pull`, **declined twice** — the alternative is a plain `aws s3 cp
-   --recursive` of the four `out/<ts>/` prefixes, which is a different mechanism and costs about
-   **$0.03**. Closes when both prefixes are in `evidence/` and verified by object count + sha256, or
-   a recorded lifecycle exception is added.
-2. **Seven day-2 replications**: F6-1…F6-5, F6-8, F4-6 (needs `--state` or a rebuilt testbed).
+1. ~~Wait for the merge, then verify `main`'s tree.~~ **DONE 2026-08-16** — see the banner.
+   ~~**FUTURE-WORK item 24** — F10-3's and F3-11_snapshot's day-1 call records exist ONLY in the
+   runner's S3 bucket, whose lifecycle deletes every object ~2026-11-11.~~ **CLOSED 2026-08-19**:
+   324 objects / 1,721,352 bytes pulled with `aws s3 cp --recursive` (not `runner/sync.py pull`,
+   which the user declined twice) from the single prefix `out/20260815T061609Z/`, because the
+   `out/<ts>/` prefixes turned out to be **cumulative re-publishes** — each run id has exactly one
+   object-set signature across every prefix holding it, so one prefix carries the whole set. Verified
+   three ways: MD5 == ETag on all 324 (every ETag single-part), byte sizes equal, and set equality in
+   **both** directions. Durable sha256s recorded in `results/ITEM24-PULL-MANIFEST.json`; the 90-day
+   lifecycle deliberately left in place. Cost ~$0.03.
+2. **Day-2 replications.** The **F6 batch ran 2026-08-19** — all nine F6 cases, 9,448 billable calls,
+   through `tools/day2_replicate.py`. Six agree, and **F6-2, F6-5 and F6-8 disagree with day 1**
+   (FALSE → TRUE), which per the pre-registration is a **finding, not a fix-up**: no amendment.
+   Read `results/FINDING-F6-DAY2-DECISIVENESS.md` before citing any F6 tail number — every flip rests
+   on a confidence interval that straddles the threshold, and the same run established a real
+   server-side guardrail speedup of 8.7–38.3 % between the two days. The driver returned **rc 2 over a
+   real measurement** (register item 33: the producers ignore `--run-id`), so the adjudication was
+   recovered by `tools/day2_adjudicate_offline.py` and every row it wrote carries
+   `provenance.derived_offline`.
+
+   **Still owed: F4-6 and F2-1 only** (F4-6 needs `--state` or a rebuilt testbed). Both are
+   **blocked** until item 33 is fixed — the driver would false-negative them the same way — and F4-6's
+   day-1 ledger `expires_at` is **2026-08-13, already past**.
 
    **Correction, measured 2026-08-15: ALL of F6 must run on the LAPTOP, not just F6-8.** Earlier
    notes said F6-1…F6-5 could ride the runner. Every F6 day-1 `environment.json` records
@@ -112,24 +147,34 @@ returned SHA differs from a locally computed `git hash-object`. No change was ne
    laptop-only rule for F6-8 is a *stronger* argument for the same conclusion, not a narrower one.
 
    **Blocker to raise with the user before launching any runner job:** output lands on the instance
-   and the only merge path is `runner/sync.py pull`, which the **user rejected twice — ask first**.
-   More jobs would pile up unpullable output. (F5-8's day-2 `20260815T061609Z` is *not* hostage to
-   the instance, though — verified 2026-08-15: it is in the bucket under
+   and the only merge path in the repo is `runner/sync.py pull`, which the **user rejected twice — ask
+   first**. More jobs would pile up unpullable output. Item 24 was discharged around this with a plain
+   `aws s3 cp`, which is a workaround for one pull and not a fix: `runner/sync.py pull` is still
+   unrepaired (item 16), so this blocker stands for F4-6 and F2-1. (F5-8's day-2 `20260815T061609Z`
+   is *not* hostage to the instance — verified 2026-08-15: it is in the bucket under
    `out/20260815T061609Z/`, **31,989 objects / 177 MB**, including 54 F5-8 paths.)
 3. **Three user decisions**, unchanged: the F8-5 / DEV-P4-40 erratum bundle (item 27); F10-1's
    disposition; whether to fix `runner/sync.py pull`.
-4. Re-sync `~/Downloads/AgentCore-guardrails-closed-loop-practices/` — its README still says
-   "**21** named deficiencies" in two places (now **28**); then patch `MANIFEST.sha256`, `shasum -c`.
-5. `runner/teardown.py` when the batch is done — with `--keep-bucket` (the default). The bucket
-   holds the only copies of F10-3's and F3-11_snapshot's call records. `teardown.py` **terminates the
-   instance**, so anything living only on its disk dies with it; the F5-8 check above was run for
-   exactly that reason, and it came back safe.
-   With F6 now laptop-only (item 2), **nothing in the remaining batch needs the runner except F4-6
-   and F2-1** — so the teardown decision is available earlier than the batch's end.
+4. Re-sync `~/Downloads/AgentCore-guardrails-closed-loop-practices/` with
+   `tools/sync_handover_bundle.py` — its README says "**31** named deficiencies" in two places while
+   the register now holds **34**; the script reports the mismatch rather than rewriting the sentence,
+   so a human fixes the prose around the derived number. Then patch `MANIFEST.sha256`, `shasum -c`.
+   Do this **after** the day-2 PR lands, not before: the bundle README states the commit it mirrors,
+   and bumping a count past the commit it claims to be current with trades one stale number for
+   another.
+5. `runner/teardown.py` — with `--keep-bucket` (the default). The bucket still holds the runner-side
+   copies of F10-3's and F3-11_snapshot's call records; item 24 pulled them local, so the local tree
+   is no longer dependent on it, but `--keep-bucket` remains the standing instruction.
+   `teardown.py` **terminates the instance**, so anything living only on its disk dies with it; the
+   F5-8 check above was run for exactly that reason and came back safe.
+   **The decision is live now:** F6 is laptop-only and its batch has run, so the only remaining work
+   that needs a Linux host is F4-6 and F2-1 — and those are blocked on item 33, not on capacity. The
+   instance has been RUNNING since 2026-08-15 at ~$0.50/day with no task it can currently perform.
 6. A **zh-TW edition** of the whitepaper, once the English edition stabilises.
 
-**The runner `i-0f90ac6377bba523b` is still RUNNING** (~$0.58/day). It is safe to leave up, and it
-is the only recurring cost.
+**The runner `i-0f90ac6377bba523b` is still RUNNING** (~$0.58/day) and is the only recurring cost.
+Safe to leave up, but as of 2026-08-19 there is no work it can do (item 5) — re-derive its state with
+`describe-instances` rather than reading it here.
 
 ---
 
@@ -167,15 +212,18 @@ deficiencies. Research and design are done; drafting has not started.
   reproduction** — ACM reserves both *Reproduced* and *Replicated* for non-authors, so **no independent
   party has re-run anything here** — and our `TRUE/FALSE/INCONCLUSIVE/RECORDED` taxonomy has **no located
   precedent** and must be defined, not cited.
-- **`FUTURE-WORK.md`** — the deficiency list, **31 items** in 5 tiers, each with derived evidence
-  (this paragraph was first written at 22; items 23–28 were added on 2026-08-15, items 29–30 on 2026-08-16).
+- **`FUTURE-WORK.md`** — the deficiency list, **36 items** in 5 tiers, each with derived evidence
+  (this paragraph was first written at 22; items 23–28 were added on 2026-08-15, items 29–30 on 2026-08-16,
+  items 32–35 on 2026-08-19).
   Only the current count is stated as a count: a historical one cannot be derived, so it cannot be
   checked, and a reader has no way to tell it apart from a stale one.
   Item numbers are stable identifiers, not positions. **Tier-1 item 1 is CLOSED** (both prevention
   overclaims rewritten in both editions, Appendix D correction item 23). Still open in Tier 1: the
   single-day amendments (**item 2 — 5 of 12 discharged 2026-08-15, 7 remain**); F5-8's undiagnosed
-  2-of-3-session day-2 fault; and **item 19**, that this study says "reproduction" where the accepted
-  vocabulary says "repeatability". New **item 22**, in Tier 4: `check_amendment_readiness.py` reads
+  2-of-3-session day-2 fault; **item 19**, that this study says "reproduction" where the accepted
+  vocabulary says "repeatability"; and new **item 32**, that `BAND_CONTAINS` and `CI_OVERLAPS` score an
+  interval straddling the threshold as TRUE, which is what flipped F6-2, F6-5 and F6-8 on 2026-08-19
+  (`results/FINDING-F6-DAY2-DECISIVENESS.md`). New **item 22**, in Tier 4: `check_amendment_readiness.py` reads
   only FINDING-doc provenance blocks, and **none of item 2's twelve cases appears in one**, so the
   gate is silent on the study's largest replication debt.
 
@@ -362,13 +410,21 @@ by one footnote per slide pointing back at the document.
     Accelerator/NDA citation for public evidence), **F4-6**, **F2-1** — owed already. F4-6 and F2-1
     also need `--state` or a rebuilt testbed: `lib.testbed.State.load_or_new` refuses a state file
     written under a different run id.
-  - **Still owed of the 12 — seven**: F6-1…F6-5, F6-8 (F4-6 is in the line above).
-    **F6-8 runs on the laptop** per DEV-P4-37; the rest of the live ones ride the runner. The six F6-*
-    cases are the whole remainder of the batch.
+  - **DONE 2026-08-19, WITH A DISAGREEMENT — all nine F6 cases** (three producers, sequential, 52 min
+    + 36 min + 2 h 41 min, ~9,448 billable calls, **on the laptop** — every F6 case, not just F6-8;
+    an earlier version of this line said "the rest of the live ones ride the runner" and that was
+    wrong, see item 2 of the banner). Six agree; **F6-2, F6-5, F6-8 flipped FALSE → TRUE**, which is a
+    **finding, not a fix-up**: `results/FINDING-F6-DAY2-DECISIVENESS.md`, register item 32. Two
+    defects in the machinery came out of it: the driver returned **rc 2 over a real measurement**
+    because the producers ignore `--run-id` (item 33 — this **blocks F4-6 and F2-1**), and
+    `transient_failures()` reported a clean observation over a run containing a 70-second read timeout
+    (item 34). The adjudication was recovered offline by `tools/day2_adjudicate_offline.py`.
+  - **Still owed of the 12 — two**: F4-6 and F2-1, both blocked on item 33 as well as on `--state`.
   - The replication gate does **not** cover these twelve — see `FUTURE-WORK.md` item 22. Its
     passing or failing says nothing about them.
 - `f5_redteam/tests/test_route_credential_reachability.py` — F5-8 has no test file.
-- `F3-11 --compare` on **2026-08-18** and **2026-09-10**.
+- `F3-11 --compare` on **2026-08-18** — **the gate slipped, unrun** (register item 13) — and
+  **2026-09-10**.
 - `runner/sync.py pull` exits 0 after an `EndpointConnectionError`. Deferred deliberately as its own
   change; do not fold it into unrelated work.
 
@@ -383,8 +439,10 @@ that is the last operational step of this phase, not an optional one.
 An earlier revision of this section said the instance was stopped. It was true when written and was
 published in that state in PR #31; treat any instance state in a document as a claim to re-derive.
 
-Restart, if it is ever stopped again, with `runner/provision.py` (it knows the instance id). The one
-thing that needs it is the live half of the queued day-2 batch above; everything else (the decks, the
+Restart, if it is ever stopped again, with `runner/provision.py` (it knows the instance id). As of
+2026-08-19 the only thing that needs it is **F4-6 and F2-1**, and those are blocked on register item
+33 — so the instance is currently up with no task it can perform, which is the teardown decision in
+banner item 5. Everything else (the decks, the F6 batch, the
 publication steps) is laptop-only by design — python-pptx is on the system python3, and the instance
 deliberately holds no GitHub credential. Do **not** run `runner/sync.py` while a live case runs:
 `_state()` repairs the instance profile on every subcommand and can rotate credentials mid-job.

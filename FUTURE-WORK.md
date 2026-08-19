@@ -976,17 +976,18 @@ reported columns still line up), which restores the boundary around CJK and high
 ASCII-flanked digests protected. `scan_forms()` now returns `(form, note)` pairs rather than a list
 whose label a caller derived from its index, because two independent reasons to add a form now exist.
 New labels: `(non-ASCII blanked)` and the composed `(url-decoded ×1 + non-ASCII blanked)`.
-**Zero new findings on the current tree** — rc 0 over 745 files / 48,061,072 bytes, 67.4 s. **Still
-blind, knowingly:** an account ID flanked by ASCII letters on both sides, asserted by an arm so the
-limit is visible rather than inferred.
+**Zero new findings on the current tree** — rc 0 over 745 files / 48,061,072 bytes, 67.4 s, that
+denominator being what the then-current nine-extension allowlist admitted (see the third instance
+below, which replaced it). **Still blind, knowingly:** an account ID flanked by ASCII letters on both
+sides, asserted by an arm so the limit is visible rather than inferred.
 
 **Closes when.** (a) the fix is in `main` — a PR, since the published blob is what a reader fetches;
 (b) it is stated plainly, in the PR and here, that **rewriting history is not part of the remedy**:
 the pre-fix blob stays reachable by SHA for as long as the repository exists, so masking forward does
 not un-write it. Because the repository is private, that is a **decision point before any future flip
-to public** — not a completed disclosure — and it belongs in whatever checklist governs that flip,
-together with the still-open `.log` instance recorded below. Masking forward is proportionate rather
-than sufficient precisely because an account ID **is not a credential**;
+to public** — not a completed disclosure — and it belongs in whatever checklist governs that flip.
+Masking forward is proportionate rather than sufficient precisely because an account ID **is not a
+credential**;
 (c) a test asserts the gate's patterns are applied to more than one form of each line, so a future
 performance-minded simplification that drops the decoded form reds the suite; (d) the **encoding
 family is enumerated rather than assumed closed** — URL escaping is the one that shipped, but JSON
@@ -1000,18 +1001,65 @@ of a 12-digit run, which is the 281-of-11,679-digest trade recorded above and as
 item does not close on that residual being closed — it closes on it being *stated*, because closing it
 would cost 281 false findings, and a gate whose output is mostly noise is a gate nobody reads.
 
-**A second, still-open instance of the same class, found while writing this item.** The gate's
-`SCAN_EXT` covers `.csv .json .md .py .sh .sql .txt .yaml .yml`. It does **not** cover `.log` — and
-`session-logs/` **is pushed to the repository** (4 files on `main` as of 2026-08-19; `.gitignore` has
-no rule for the
-directory or the extension). Locally there are 7 `.log` files there and none contains the account ID,
-which is luck rather than a guard: producer logs and gate output are exactly the text most likely to
-quote an ARN, and this window's own failing gate run wrote one of them. The extension list is a name
-list with no ceiling (`feedback_scope_as_namelist`), so the closing condition is a **predicate, not a
-longer list**: scan every file under a published directory unless its extension is on an explicit
-binary/skip list, and assert that the set of extensions actually present in the tree minus the scanned
-set is empty — so a new extension reds the suite instead of quietly arriving unscanned. Until that
-lands, treat "the gate passed" as a statement about nine extensions, not about the tree.
+**A third instance, and it was about the denominator rather than the pattern — FIXED 2026-08-20.**
+The first two instances are both about which *forms* of a line the patterns see. This one is about
+which *files* the gate opens at all. `SCAN_EXT` covered `.csv .json .md .py .sh .sql .txt .yaml .yml`
+and nothing else, which is a floor with no ceiling (`feedback_scope_as_namelist`), and the version of
+this paragraph written on 2026-08-19 said only that `.log` was missing and that the 7 local logs
+"happen to be clean, which is luck". Measured before anything was changed, the gap was far wider than
+that and the luck had already run out. The allowlist was skipping **87 files / 701,558 bytes**: **56
+`.jsonl`** corpora under `corpora/` and `corpora_deviation/` — the PII, prompt-attack and multilingual
+fixtures, i.e. the files that hold identifier shapes *by design*; **22 `.log` + 3 `.rc`** under
+`session-logs/`; **4 renamed checkpoints** (`F2-2__tau_floor.json.smoke-20260812` and siblings), JSON
+that left the scan the instant a suffix was appended to its name; and `PREREGISTRATION.sha256` plus
+`.gitignore`. Scanning them: **44 hits in the corpora, every one already excused by a pre-existing
+path-independent rule (zero new waivers), and 7 unwaived identifiers in 2 session logs.** So the
+allowlist was not sparing the gate any noise — it was simply not looking.
+
+**Fixed as a predicate, not a tenth extension.** `SCAN_EXT` is gone; there is no filename test of any
+kind, and a file that will not decode as UTF-8 is read as **latin-1** rather than skipped, because
+skipping what does not decode is the same defect wearing a different hat. This is the shape
+`platform/build/gate_payload.py` was built with from birth — and it was *that module's docstring*,
+written as an explicit scope claim about the repo gate, that got the gap measured
+(`feedback_guard_scope_is_a_claim`). `f1_config/.wheel_cache/` became an honest directory skip: 15
+gitignored third-party `.whl` zips, unreachable by a reader, whose compressed bytes read as latin-1
+can match a shape-based pattern by chance. Verified **rc 0 over 838 files / 49,393,045 bytes / 10,952
+reviewed exceptions**, against 745 files / 48,085,034 bytes / 10,912 for the last allowlisted run of
+the same day — **+93 files and +1,308,011 bytes the gate had never read**.
+
+**And the gate was itself a leak channel, which is the part that generalises.** The first run with the
+new predicate returned 11 findings, **10 of them inside the redaction machinery's own diagnostic
+output**: 4 in `session-logs/redaction-gate-20260819-pctfix.log` — this gate's own earlier output,
+convicted on identifiers it had printed itself, because a finding was reported as
+`form.strip()[:120]` — and 6 in a `pytest -v` log that were nothing but **test ids**, because
+`parametrize` stringifies its arguments and the canary suite had assembled its fixtures at runtime to
+keep shapes out of its *source* while putting them straight into its *output*. Waiving those 10 would
+have moved the gap rather than closed it, so each was fixed at its producer
+(`feedback_fix_producer_not_janitor`): `_snippet()` now masks every occurrence of **every** pattern
+(not only the one that fired — `arn` stops before the account field, so it was printing the digits
+that the `aws-account-id` finding one line below was masking); the three `parametrize` sites take the
+dict key and look the fixture up inside the test; and `runner/teardown.py` stopped printing the runner
+bucket name, which lives in gitignored `runner/.state/` precisely because it is a redaction target.
+The two historical logs were retro-masked with a stamp naming the date, the reason and the producer
+fix — they are cited evidence, so the file/line/pattern/count columns are untouched.
+
+**Closes when** (this third instance): (a) the predicate is in `main`; (b) arms exist that would have
+failed before it — **`lib/tests/test_redaction_scan_predicate.py`, 24 arms**, of which 8 plant an
+identifier in one of each shape the allowlist skipped and 8 more assert that shape's suffix was
+absent from the nine, so the first 8 are a regression test rather than an assertion (each passed
+*vacuously* before, since the gate never opened the file); one reads `files()` by AST and requires
+that it consults no filename attribute, because 8 fixtures cannot notice a *deny*list or a
+`MIN_SIZE`; one asserts the latin-1 path convicts rather than returning "cannot read"; and four cover
+the report; (c) the guard against the gate being a leak channel is a **property, not a list of
+values** — the last arm runs the gate's own patterns over the gate's own output and requires zero
+unwaived hits, so a leak shape nobody has enumerated is covered the day the report grows a line;
+(d) four mutations are killed by exactly the arms that claim them, with the no-mutant control run
+first: restoring the nine-extension allowlist (16 red), removing the latin-1 fallback (1), masking
+only the firing pattern (2), masking only the first occurrence (1). All four verified 2026-08-20 with
+the subject's sha256 checked back to its pre-mutation value
+(`feedback_killed_harness_races_next`). **(a)–(d) are met; this instance closes with the PR that
+carries them.** The two residuals recorded above — the unretractable pre-fix blob and the
+ASCII-flanked digit run — keep the item open.
 
 ---
 
@@ -1045,6 +1093,39 @@ a live number; do not claim AWS has a fixed prose template (four such claims wer
 survived only 1-2); and check whether the **OWASP Top 10 for Agentic Applications 2026**
 (2025-12-09) supersedes T1–T17 as the mapping target before building Chapter 2 on v1.1 alone — it
 was sampled for cross-mapping evidence but was **not itself researched**.
+
+### 36. An elided hash cited in prose is now proven to be a *real* hash, and still not proven to be the *right* one
+
+**Found** 2026-08-20, while verifying a table before pushing it. `results/FINDING-F6-DAY2-DECISIVENESS.md`
+§6.3 records six sha256 values and says in the same breath that they are the only way to tell which
+day a live F6 verdict file holds. One of the six was elided one character short of the end of the hash
+and matched no sha256 in existence (DEV-P4-44). Twenty-one elided-hash citations were in scope across
+twelve documents; none had ever been checked.
+
+**Closed by** `claims/tests/test_hash_citations.py`: every elided citation must resolve against a
+universe of the sha256 of every in-scope file plus every 64-hex value the study has recorded, with
+deliberately-unretained values registered and asserted in both directions. 9 arms, four mutations, one
+of them against the live document.
+
+**What stays open, and it is the interesting half.** Resolution proves a cited hash is *real*. It does
+not prove the sentence attributes it to the right file, because deriving which file a prose hash refers
+to is not mechanically possible in general — the surrounding sentence carries that, and some citations
+name evidence that is not in this tree. Exactly one table is checked that far: the F6 restore table,
+where the pairing *is* the claim, so live-file/day-1-archive identity, per-file hash agreement, and the
+verdict column are all asserted. The other eighteen citations could each be a real hash printed beside
+the wrong filename and every gate would pass.
+
+**Closes when** either (a) hash citations carry the path they describe in a machine-readable form — a
+convention, not a rewrite: `` `<path>` `<hash-elision>` `` adjacent in one sentence is enough for a
+resolver to check the pairing — and a test enforces it for every citation of a path that exists in the
+tree; or (b) the class is shown to be empty by a one-time audit of all eighteen, recorded with its
+date and denominator, in which case what remains open is only the *next* citation. (a) is preferable:
+(b) expires the day someone writes the nineteenth.
+
+**Why it is registered rather than left implied by a passing suite.** The gate's reach is narrower than
+its name suggests, and a docstring saying so is where the next instance hides
+(`feedback_guard_scope_is_a_claim`). This register is the only place a reader looks for what a green
+suite does *not* cover.
 
 ---
 

@@ -1,0 +1,62 @@
+# NOTE 2026-08-20: the identifier values in this log's snippet column were masked post-hoc.
+# This is the output of a FAILING redaction run, so by construction it quoted the identifiers it
+# had just caught — and on 2026-08-20, when check_redaction.py stopped selecting files by extension,
+# it convicted this file on four of them. check_redaction._snippet now masks the matched span at the
+# source, so no future run writes a log like this. 4 line(s) rewritten here; the file, line, pattern
+# and count columns — which is everything the citing documents use — are untouched.
+
+FAIL — 45 unredacted identifier(s):
+
+  lib/redact.py:84  [arn (url-decoded ×1)]  # the public repository — inside `…/runtimes/<arn>us-east-1:<12
+  site/data/cases/F5-7b.json:83  [aws-account-id (url-decoded ×1)]  "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn:aws:bed
+  site/data/cases/F5-7b.json:83  [arn (url-decoded ×1)]  "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn:aws:bed
+  site/data/cases/F5-7b.json:114  [aws-account-id (url-decoded ×1)]  "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn:aws:bed
+  site/data/cases/F5-7b.json:114  [arn (url-decoded ×1)]  "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn:aws:bed
+  site/data/cases/F5-7b.json:145  [aws-account-id (url-decoded ×1)]  "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn:aws:bed
+  site/data/cases/F5-7b.json:145  [arn (url-decoded ×1)]  "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn:aws:bed
+  site/data/cases/F5-7b.json:180  [private-ip]  "instrument": "A VPC built for this case alone: <private-ip>/16, a public subnet holding a NAT gateway and a private subnet
+  site/data/cases/F5-7b.json:219  [private-ip]  "DestinationCidrBlock": "<private-ip>/16",
+  site/data/cases/F5-7b.json:230  [aws-account-id (url-decoded ×1)]  "why": "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch
+  site/data/cases/F5-7b.json:230  [arn (url-decoded ×1)]  "why": "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch
+  site/data/cases/F5-7b.json:234  [aws-account-id (url-decoded ×1)]  "why": "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch
+  site/data/cases/F5-7b.json:234  [arn (url-decoded ×1)]  "why": "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch
+  site/data/cases/F5-7b.json:238  [aws-account-id (url-decoded ×1)]  "why": "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch
+  site/data/cases/F5-7b.json:238  [arn (url-decoded ×1)]  "why": "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch
+  site/data/cases/F5-7b.json:256  [aws-account-id (url-decoded ×1)]  "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn:aws:bed
+  site/data/cases/F5-7b.json:256  [arn (url-decoded ×1)]  "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn:aws:bed
+  site/data/cases/F5-7b.json:287  [aws-account-id (url-decoded ×1)]  "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn:aws:bed
+  site/data/cases/F5-7b.json:287  [arn (url-decoded ×1)]  "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn:aws:bed
+  site/data/cases/F5-7b.json:318  [aws-account-id (url-decoded ×1)]  "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn:aws:bed
+  site/data/cases/F5-7b.json:318  [arn (url-decoded ×1)]  "error_message": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn:aws:bed
+  site/data/cases/F5-7b.json:344  [aws-account-id (url-decoded ×1)]  "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any
+  site/data/cases/F5-7b.json:344  [arn (url-decoded ×1)]  "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any
+  site/data/cases/F5-7b.json:348  [aws-account-id (url-decoded ×1)]  "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any
+  site/data/cases/F5-7b.json:348  [arn (url-decoded ×1)]  "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any
+  site/data/cases/F5-7b.json:352  [aws-account-id (url-decoded ×1)]  "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any
+  site/data/cases/F5-7b.json:352  [arn (url-decoded ×1)]  "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name the fetch or any
+  site/data/cases/F5-7b.json:379  [private-ip]  "DestinationCidrBlock": "<private-ip>/16",
+  site/data/cases/F5-7b.json:395  [aws-account-id (url-decoded ×1)]  "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn:aws:bedrock-agen
+  site/data/cases/F5-7b.json:395  [arn (url-decoded ×1)]  "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn:aws:bedrock-agen
+  site/data/cases/F5-7b.json:407  [aws-account-id (url-decoded ×1)]  "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn:aws:bedrock-agen
+  site/data/cases/F5-7b.json:407  [arn (url-decoded ×1)]  "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn:aws:bedrock-agen
+  site/data/cases/F5-7b.json:419  [aws-account-id (url-decoded ×1)]  "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn:aws:bedrock-agen
+  site/data/cases/F5-7b.json:419  [arn (url-decoded ×1)]  "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn:aws:bedrock-agen
+  site/data/cases/F5-7b.json:423  [aws-account-id (url-decoded ×1)]  "why_no_route": "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name 
+  site/data/cases/F5-7b.json:423  [arn (url-decoded ×1)]  "why_no_route": "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot name 
+  site/data/cases/F5-7b.json:424  [aws-account-id (url-decoded ×1)]  "why_with_route": "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot nam
+  site/data/cases/F5-7b.json:424  [arn (url-decoded ×1)]  "why_with_route": "the invoke never received an HTTP response at all (no status, no request id, 70.1s), so it cannot nam
+  site/data/cases/F5-7b.json:526  [aws-account-id (url-decoded ×1)]  "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn:aws:bedrock-agen
+  site/data/cases/F5-7b.json:526  [arn (url-decoded ×1)]  "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn:aws:bedrock-agen
+  site/data/cases/F5-7b.json:538  [aws-account-id (url-decoded ×1)]  "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn:aws:bedrock-agen
+  site/data/cases/F5-7b.json:538  [arn (url-decoded ×1)]  "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn:aws:bedrock-agen
+  site/data/cases/F5-7b.json:550  [aws-account-id (url-decoded ×1)]  "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn:aws:bedrock-agen
+  site/data/cases/F5-7b.json:550  [arn (url-decoded ×1)]  "text": "Read timeout on endpoint URL: \"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/arn:aws:bedrock-agen
+  site/data/findings.json:182  [private-ip]  "body_md": "# FINDING F5-7b — The VPC egress case ran, and did not measure what it exists to measure\n\n**Status:** **AM
+
+Redact these, or add a narrow reviewed exception to ALLOW with a written reason.
+redaction gate: 841 file(s) under grx-validation/
+  extensions ['.csv', '.json', '.md', '.py', '.sh', '.sql', '.txt', '.yaml', '.yml']
+  OOXML ['.docx', '.pptx', '.xlsx'] — 2 package(s) unzipped: agentcore_guardrails_best_practices_v1.4.pptx, agentcore_guardrails_best_practices_v1.4.zh-TW.pptx
+  skipped dirs ['.git', '.pytest_cache', '.staging', '.state', '__pycache__', 'evidence', 'node_modules'] + any dir starting with ['.venv']
+  52,678,701 bytes read, 13297 reviewed exception(s) waived
+rc=1

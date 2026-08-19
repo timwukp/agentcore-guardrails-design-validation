@@ -7796,6 +7796,254 @@ entries — "masking five other families' scripts at once is a change to working
 
 ---
 
+## DEV-P4-43 — three documents cited evidence that is not in the repository, because a path inside prose is checked by nobody
+
+**Date:** 2026-08-20. **Discovered by:** writing `claims/tests/test_cited_paths_exist.py`, a guard that
+did not exist. **Result:** 11 reported paths, of which **1** was this defect and **10** were the guard's
+own imprecision — a ratio that is itself the finding.
+
+### What failed
+
+`FUTURE-WORK.md` item 33 and `results/FINDING-F6-DAY2-DECISIVENESS.md` both cited
+`session-logs/f6-day2-REAL-20260819.log` as **Evidence**, and a third document cited
+`session-logs/2026-08-15-grx-whitepaper-v1-figures-scan-scope.md`. Both files existed. Neither was in
+the repository.
+
+There are **two directories named `session-logs/`**: this repo's, and the outer cross-device
+`~/Downloads/session-logs/`. The cited artifacts were in the outer one. A reader who clones the
+repository and follows the citation finds nothing.
+
+That is worse than a broken hyperlink. This project's entire discipline is that a claim names the
+artifact it rests on, so a citation a reader cannot fetch is **a claim with no evidence that reads
+exactly like a claim with evidence**. `feedback_prose_is_not_verified` in path form: every number in a
+justification string is unchecked, and so is every path.
+
+Nothing noticed for five days. The redaction gate reads these files byte by byte and had no reason to
+care; the register gate derives counts from headings; `check_amendment_readiness.py` checks evidence
+*records*, not the prose that points at them. Eleven gates walk this tree and none of them asked
+whether a backticked path resolves.
+
+### Why "every cited path must exist" is the wrong invariant
+
+The first run reported 11 paths. **Ten of them were correct citations of files that do not, and in most
+cases should not, exist** — and in every one of the ten the surrounding sentence says so in words:
+
+| Class | Example | The sentence's own words |
+|---|---|---|
+| **specification** | `f5_redteam/tests/test_route_credential_reachability.py` | "does not exist. It must pin, at minimum: …" |
+| **specification** | `results/CROSSMAP-ACG-THREATS.json` | "then author `…`" — register item 28's closing condition |
+| **local-only runtime file** | `runner/.state/runner.json` | "gitignored", "deliberately not written down" |
+| **quoted output** | `results/checkpoints/T__main.json` | the path inside a reproduced `StubClient` error |
+
+A guard enforcing the literal reading would push an author to create a stub file to satisfy it, or to
+stop naming the file the work must produce. Both are worse than the defect. So the invariant is: **a
+path cited as evidence resolves, and a path cited as absent is registered as absent** — six entries in
+`ABSENT_BY_DESIGN`, each with a written reason, each asserted to be still missing *and* still cited, so
+the list cannot rot in either direction.
+
+Ten false positives out of eleven is also the reason this is written down rather than fixed quietly.
+False positives are how a guard gets deleted instead of repaired, and a guard added on a day when
+someone is already annoyed by it does not survive the week.
+
+### The two real defects, and neither was the one the guard was written for
+
+The originating three citations had already been fixed by copying the artifacts in. What the guard
+caught on its first live run was two others:
+
+* `results/FINDING-P1-REDACTION-ENCODING.md` §4c cited a verbose full-suite log **written and deleted
+  the same day, by the author of that section**. Deleting it was correct — the log's only content of
+  interest was the identifiers it should not have held — but the citation outlived the file by four
+  hours. Fixed by citing the *fix* (`claims/tests/test_redaction_gate.py:81-90`) and stating that the
+  log is neither retained nor re-derivable, because the producer was repaired.
+* `RECONNECT.md` attributed figure 6's blocked state to `results/CROSSMAP-ACG-THREATS.json` in the
+  **present tense** — "grounds only 5 of the 17 threat titles" — for a file that does not exist. Every
+  other site says the file is to be authored. The 5 of 17 are grounded in the `Cross-map` lines on the
+  Part II control headers, which is what the sentence now says.
+
+### Precision, and where its ceiling is stated
+
+A backticked token is a citation only if it is **anchored** (first component is a real top-level entry)
+**and** its last component ends in a suffix **derived from the suffixes actually present in the tree**.
+The second rule is what separates a path from the three things that look like one, all real examples:
+module-qualified symbols (`lib/mcp.classify`), MCP JSON-RPC method names (`tools/call`), and evidence
+subdirectory ids (`f10_billing/02`). Derived rather than listed, for DEV-P4-42's reason: a `.parquet`
+dropped into `results/` becomes checkable the day it lands, while `.classify` never does. A trailing
+`:123` or `:12-34` is stripped, because the citation is the file the line reference points at.
+
+**Dated records under `session-logs/` are out of scope**, via `scan_scope.is_dated_record`. A log
+citing a since-renamed artifact is an accurate record of what was true on its date; editing it to agree
+with today would falsify it. The predicate is over the *evidence* of being dated — a date in the
+filename — not over the directory name, because a bare directory skip is the shape
+`check_redaction.py` spent this same day removing.
+
+### The cost of the derived suffix set, and one shared walker
+
+Deriving the suffix set means reading every file's name, and `ROOT.rglob("*")` filtered afterwards walks
+into `evidence/` and every `.venv-*` before the filter sees a path — a scan of the ~840 files this repo
+owns paying for the ~200k it does not. The first run did not finish inside two minutes. `scan_scope.py`
+gained `walk_in_scope()`, which prunes as it descends, and its correctness is asserted against the slow
+path rather than assumed: the `.py` files it yields must equal `py_files()` exactly, both directions.
+That equality is what would catch pruning on the wrong relative path — a mutation removing the prune
+leaves it red on 4,662 lines of disagreement.
+
+### Mutation-checked, control first
+
+Six mutations, each killed by exactly the arms that claim it, with the no-mutant control run first and
+the subject's sha256 verified back to its pre-mutation value after every restore
+(`feedback_killed_harness_races_next`):
+
+| Mutation | Red |
+|---|---|
+| `ABSENT_BY_DESIGN` emptied | the existence arm — the six entries are live |
+| derived-suffix filter removed | the existence arm **and** the false-positive arm |
+| line-suffix stripping removed | the dangling-citation arm, on its `<repo-dir>/gone.py:12-19` fixture |
+| a file that exists registered as absent | the liveness arm |
+| a path nothing cites registered as absent | the liveness arm |
+| `walk_in_scope`'s pruning removed | the walker's equality arm |
+
+Plus a floor on the guard's own denominator — 300 citations across 15 documents, measured at over a
+thousand across forty — because an extractor that has stopped matching reports clean over prose it is
+not reading.
+
+### One more finding, in the gate's own source
+
+Re-running `check_redaction.py` after these edits returned **1** finding, in a docstring written the
+same day: an example IAM role ARN whose account field was written `<12 digits>`. The ARN excuse
+recognises the placeholder form `<[a-z_-]+>` only, and that spelling has a digit and a space in it, so
+the excuse refused — correctly, since that narrowness is what stops a real 12-digit account from posing
+as a placeholder. Fixed in the docstring, by spelling the field `<account-id>`, and not in the excuse.
+`feedback_self_scanning_guard`: the gate's own documentation is inside the gate's scan — and so is this
+paragraph, which is why it describes the offending spelling instead of reproducing the ARN.
+
+### The same defect one file over, found while writing this entry
+
+`RECONNECT.md` stated a `DEV-P4` entry count that was one short: adding the entry above made it stale
+the moment it landed, and nothing would have noticed — the register gate derives `FUTURE-WORK.md`'s
+size and checks the prose that states it, and no equivalent existed for this file. (The count is
+described rather than quoted here for the reason the paragraph above gives: a write-up that reproduces
+the stale number it fixed re-creates it, and this file is inside the new gate's scan.)
+`claims/tests/test_deviation_register.py`
+now derives per-family entry counts from the `## DEV-<family>-<n>` headings, asserts ids are unique
+and contiguous within each family (all five were already contiguous, and the sizes are derived rather
+than restated here for the same reason), and
+binds each prose count to the family it names, so two numbers in one sentence cannot validate against
+each other's family (`feedback_two_numbers_two_claims`). Families are derived, not listed. The count
+of claim-sites is asserted **exactly**, so a rewording that escapes the regex fails rather than
+silently narrowing coverage; and the dated-record exclusion is *measured* at zero excluded sites
+rather than left as a waiver whose effect nobody knows.
+
+Verified against a live document, not only a monkeypatched string: setting that sentence back to 42
+fails with `claims 42, derived 43`, and `RECONNECT.md`'s sha256 was restored and checked afterwards.
+
+### Post-fix state
+
+`check_redaction.py` rc **0** over **846** files / 10,953 reviewed exceptions; log
+`session-logs/redaction-gate-20260820-citations.log`. `claims/tests/test_cited_paths_exist.py` 6 passed;
+`claims/tests/test_deviation_register.py` 8 passed; `claims/tests/test_future_work_register.py` 13
+passed; `lib/tests/test_scan_scope.py` 6 passed.
+
+The full suite's run this day also surfaced one unrelated pre-existing gap: `platform/build/gate_payload.py`
+registered its by-path module under a **function-local** constant, invisible to
+`test_module_name_collisions.py`'s AST reader, which had therefore stopped checking that name for
+collisions. Hoisted to a module-level constant and passed at the call site directly — an alias is still
+opaque, which the first attempt at that fix demonstrated.
+
+---
+
+## DEV-P4-44 — a table whose stated purpose was to identify a file by its hash had a row that identified nothing
+
+**Date:** 2026-08-20
+**Class:** unchecked prose, second instance in one day (see DEV-P4-43 for the first)
+**Artifacts:** `results/FINDING-F6-DAY2-DECISIVENESS.md` §6.3, `claims/tests/test_hash_citations.py`
+
+### What failed
+
+`results/FINDING-F6-DAY2-DECISIVENESS.md` §6.3 records six sha256 values for the three F6 verdicts
+that disagreed across days, under a sentence stating they are "the **only** way to tell which day a
+live F6 file holds" — both days' F6 files carry the same `run_id` (§0 of that finding), so the hash is
+the identifier of last resort and the archive filename is a label, not evidence.
+
+F6-5's day-2 entry ended in the eight hex characters `9f32df51`. The file's hash ends `f32df51c`. The
+published value was the characters at positions −9 to −2: one place short of the end, matching no
+sha256 in existence. One of the six rows of the table could not identify the file it named.
+
+It was found by hand, while verifying the table's claims before pushing them — which is the method
+that does not scale. There are **21** elided-hash citations across 12 in-scope documents and nothing
+had ever checked one.
+
+### Why it was invisible
+
+The six elisions were **7, 8 and 9 trailing characters** long, with no stated rule. Against a table
+where every row's length differs, a row that is one character short reads as just another length. A
+convention that is not written down cannot be violated visibly — the same reason
+`test_deviation_register.py` asserts its prose-site count exactly rather than as a floor.
+
+### The invariant, and why it is not "the hash is correct"
+
+Deriving *which* file a hash in a sentence refers to is not mechanically possible: the surrounding
+prose carries that, and some citations name evidence that is not in this tree at all. So the gate
+checks the strongest thing that needs no authoring — **a cited hash must be a prefix-and-suffix of
+some hash this repository can derive** — against a universe of two derived sets:
+
+| set | size 2026-08-20 | why it belongs |
+|---|---|---|
+| sha256 of every in-scope file | 841 | a hash of a repository artefact is checkable the day it lands |
+| every 64-hex string recorded in an in-scope text file | 435 | `PREREGISTRATION.sha256`, `meta.oracle_registry`, a verdict file's provenance — a document may cite the hash of something that is not a file here, and if the study recorded it, the citation is still checkable |
+
+**Precision, measured before the gate was written:** 21 citations, **18 resolve**. Of the three that do
+not, one is this defect and two are a single deliberately-unretained value — `results/phase1/F5-7b.json`
+as it stood *before* the 2026-08-20 redaction fix, cited as the "before" side of a before → after pair
+in `FUTURE-WORK.md` and `results/FINDING-P1-REDACTION-ENCODING.md`. Those bytes carried 20 unredacted
+account ids and are retained nowhere, so that hash *resolving* would itself be a P1 finding. It is
+registered in `SUPERSEDED_HASHES` with that reason, and asserted in both directions: still cited, and
+still unresolvable.
+
+Measuring precision first is the lesson DEV-P4-43 paid for — a guard with ten false positives gets
+deleted rather than repaired.
+
+### Where the gate goes further, and where it stops
+
+For the F6 table alone, the *pairing* is the claim, so it is checked as one: each row's live
+`results/phase1/<case>.json` must be byte-identical to its `__day1_` archive, the day-2 archive the row
+names must exist, each cited hash must be exactly the first-eight … last-eight of that file's real
+sha256, and the row's "live now" verdict column must equal the verdict inside the live file. That is
+the published warrant for *a disagreement licenses no change to the published record*: were the live
+F6-2 file quietly the day-2 TRUE, `census.py` would derive TRUE 49 / FALSE 20 and the whitepaper's
+headline mix would be wrong.
+
+Everywhere else the gate proves a hash is **real**, not that a sentence attributes it correctly. That
+ceiling is stated in the test's docstring and carried as an open register item rather than left as an
+implication of a passing suite (`feedback_guard_scope_is_a_claim`).
+
+### Mutation-checked, control first
+
+| # | mutation | expected | observed |
+|---|---|---|---|
+| C | no mutant | 9 passed | 9 passed |
+| M1 | the off-by-one value put back into the live document | resolve arm **and** F6-table arm red | both red, 7 passed |
+| M2 | elision taken from positions −9..−2 (in-test) | no resolution | asserted in `test_the_guard_catches_a_truncation_shifted_off_the_END_of_the_hash` |
+| M3 | a cited hash shifted, rows patched | `check the END of` | red |
+| M4 | the live verdict file replaced by the day-2 archive, in a scratch tree | `NOT byte-identical` | red |
+
+M1 ran against the real document; its sha256 was captured before, and after the restore compared
+equal — `ebe77ed2…13f85ddf`.
+
+### One more finding in the gate's own explanation
+
+The paragraph added to §6.3 to explain the defect **quoted the bad value in full citation shape**, and
+the new test convicted the explanation along with the defect. `feedback_self_scanning_guard`, third
+occurrence in two days (the other two are in DEV-P4-43). Fixed by quoting the two halves separately
+and describing the difference, not by waiving the string — the same resolution as the ARN placeholder
+in DEV-P4-43, and for the same reason: a waiver would also excuse the next real one.
+
+### Post-fix state
+
+`claims/tests/test_hash_citations.py` **9 passed**. §6.3 now states its elision rule — first eight …
+last eight, uniformly — so a reader can check any row with one `shasum -a 256`, and the rule is
+asserted rather than described.
+
+---
+
 ## Analysis-time deviations
 
 *(None yet — this section is populated during Phase 9. Each entry states the

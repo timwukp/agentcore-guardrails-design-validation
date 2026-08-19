@@ -17,9 +17,37 @@ files scanned is a FAILURE, not a pass (feedback_zero_file_scan_is_error).
 
 What is scanned, and what is deliberately not
 ---------------------------------------------
-Everything that could be published: source, generated Markdown, CSV, and the JSON
-under ``results/``. Binary and cache paths are skipped by extension, and the skip
-list is printed so it cannot quietly grow to cover a leak.
+**Every file that is not inside a skipped directory** — the inclusion rule names no
+extensions at all. Until 2026-08-20 it did: ``SCAN_EXT`` listed nine extensions, and
+a file whose suffix was not among them left the scan in silence. That is
+``feedback_scope_as_namelist`` — a list of names cannot notice a new name — and it
+was not hypothetical. Measured on the tree the day it was replaced, the allowlist
+was skipping **87 files / 701,558 bytes**:
+
+  * **56 ``.jsonl``** under ``corpora/`` and ``corpora_deviation/`` — the PII,
+    prompt-attack and multilingual corpora, i.e. the files that contain identifier
+    shapes *by design* and are the least safe thing in the tree to leave unread;
+  * **22 ``.log`` and 3 ``.rc``** under ``session-logs/``, a directory with no
+    ``.gitignore`` rule and four files already on ``main``;
+  * **4 renamed checkpoints** (``F2-2__tau_floor.json.smoke-20260812`` and
+    siblings) — JSON that left the scan the moment a suffix was appended to its
+    name, which is the failure mode in its purest form;
+  * ``PREREGISTRATION.sha256`` and ``.gitignore``.
+
+Scanning them found **7 unwaived identifiers in 2 session logs**, so the gap was
+live rather than theoretical. Register item 35 records the history.
+
+A file that will not decode as UTF-8 is read as **latin-1**, never skipped: an ASCII
+identifier inside a PNG text chunk or a compiled bundle is still an identifier, and
+"binary" is not a reason not to look. This is the predicate
+``platform/build/gate_payload.py`` was built with from birth, and the two gates now
+agree — sharing the *implementation* while differing in *scope* is the safe
+arrangement, and it is why that module imports from this one rather than restating it.
+
+Directories are still skipped, by name and by prefix, and the list is printed so it
+cannot quietly grow to cover a leak. Every entry is a directory that cannot reach a
+reader, which ``lib/tests/test_redaction_gate_skips.py`` checks against
+``.gitignore`` rather than trusting.
 
 ``evidence/`` is skipped **by decision, not by oversight**, and this paragraph
 exists because an earlier version of this docstring said "JSON evidence" was
@@ -55,7 +83,11 @@ import redact as _redact  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent
 
-SCAN_EXT = {".py", ".md", ".csv", ".json", ".yaml", ".yml", ".txt", ".sh", ".sql"}
+# There is deliberately NO `SCAN_EXT`. Inclusion is not keyed on the file's name in any
+# way — see the docstring for the 87 files the nine-extension allowlist was skipping on
+# the day it was removed, and `platform/build/gate_payload.py`, which was built this way
+# from the start and whose docstring named this gap as register item 35.
+#
 # An OOXML file is a zip of XML, so reading its bytes finds nothing and an extension
 # skip would have been indistinguishable from a pass. The two v1.4 decks are built from
 # the Markdown and distributed alongside it, so a leak in the source reaches a reader
@@ -66,7 +98,14 @@ SCAN_EXT = {".py", ".md", ".csv", ".json", ".yaml", ".yml", ".txt", ".sh", ".sql
 # across two <a:t> elements.
 OOXML_EXT = {".pptx", ".docx", ".xlsx"}
 SKIP_DIRS = {".git", ".pytest_cache", "__pycache__", "node_modules", "evidence",
-             ".state", ".staging"}
+             ".state", ".staging", ".wheel_cache"}
+# `.wheel_cache` joined the list on 2026-08-20, when the extension allowlist was removed. It holds
+# 15 third-party `.whl` files — zip archives of dependencies, gitignored at
+# `f1_config/.wheel_cache/`, which cannot reach a reader. It was previously excluded by the
+# accident of `.whl` not being in `SCAN_EXT`, which is not a reason: scanning compressed bytes as
+# latin-1 yields random characters that can match a shape-based pattern by chance, so reading them
+# would trade a silent gap for a noisy one. A directory skip is the honest instrument, and the
+# `.gitignore` check below is what keeps it honest.
 # Virtualenvs are matched by PREFIX, not enumerated. Enumerating them is how this gate
 # already failed once: DEVIATIONS records a version where `".venv" not in p.parts` never
 # matched `.venv-oracle`, so the scan read 1,272 files of site-packages and its own
@@ -698,7 +737,15 @@ def scan_forms(line: str) -> list[tuple[str, str]]:
 
 
 def units(path: Path) -> list[tuple[str, str]]:
-    """``(label, text)`` pairs to scan for one file — several for an OOXML package."""
+    """``(label, text)`` pairs to scan for one file — several for an OOXML package.
+
+    Nothing is refused for being undecodable. UTF-8 is tried first because it is what
+    everything in this tree is, and latin-1 is the fallback because it never fails and maps
+    every byte to a character, so an ASCII identifier survives inside bytes that are not text
+    at all. The alternative — skipping what does not decode — is how a scan reports clean on
+    files it did not read, which is the same defect as skipping by extension wearing a
+    different hat.
+    """
     rel = str(path.relative_to(ROOT))
     if path.suffix.lower() in OOXML_EXT:
         out = []
@@ -711,13 +758,61 @@ def units(path: Path) -> list[tuple[str, str]]:
         if not out:
             raise OSError("no readable XML part inside the package")
         return out
-    return [(rel, path.read_text(encoding="utf-8"))]
+    raw = path.read_bytes()
+    try:
+        return [(rel, raw.decode("utf-8"))]
+    except UnicodeDecodeError:
+        return [(f"{rel} (latin-1)", raw.decode("latin-1"))]
+
+
+def _snippet(name: str, form: str) -> str:
+    """The matching line with every identifier of **every** pattern replaced by ``<name>``.
+
+    THE GATE MUST NOT BE A LEAK CHANNEL. Until 2026-08-20 this printed ``form.strip()[:120]``
+    verbatim, so a failing run's stderr was a list of the identifiers it had just caught — and
+    that output goes into a redirected log, a PR body, a terminal transcript and a screenshot.
+    The proof it mattered: the run that removed the extension allowlist convicted
+    ``session-logs/redaction-gate-20260819-pctfix.log``, which is *this gate's own earlier
+    output*, on four identifiers it had printed itself. A gate that creates the finding it is
+    looking for closes no gap; it moves it (`feedback_fix_producer_not_janitor`).
+    ``session-logs/full-suite-*-verbose.log`` is the same defect from the test side, and
+    ``claims/tests/test_redaction_gate.py`` fixes it there.
+
+    Every occurrence is replaced rather than the one span ``search()`` returned, because the
+    offsets of a match found in a url-decoded or non-ASCII-blanked form do not index the bytes
+    as written, and a snippet that masked one of two account IDs would be worse than one that
+    masked neither — it would read as though the remaining one had been reviewed.
+
+    And **every pattern** is applied, not only the one that fired, because one line raises one
+    finding per pattern and each of those findings prints the same line. The first version of
+    this function took the firing ``rx`` and masked only its own matches, which leaks on the
+    commonest shape in this tree: for ``Role arn:aws:iam::<account-id>:role/x`` the ``arn``
+    pattern is ``\\barn:aws[a-z-]*:[a-z0-9-]*:`` — it stops *before* the account field — so the
+    ``arn`` finding printed the account ID in full while the ``aws-account-id`` finding, one
+    line below it in the same report, masked it. Nothing is lost by masking all of them: the
+    pattern that fired is the ``[name]`` column, so a reader still knows which one to act on.
+    Substituting in sequence is safe because every replacement is ``<name>`` — it carries no
+    digits, so it can neither be mistaken for an identifier nor fuse two digit runs into one.
+
+    What survives is what a reader needs to act: the file, the line, the pattern, and the
+    surrounding words. What does not survive is any value.
+    """
+    out = form
+    for pname, prx, _desc in PATTERNS:
+        out = prx.sub(f"<{pname}>", out)
+    return out.strip()[:120]
 
 
 def files() -> list[Path]:
+    """Every file under ROOT that is not inside a skipped directory.
+
+    No extension filter, by design — see the module docstring. The only name-based exclusions
+    are directories, and each one is checked against `.gitignore` by
+    `lib/tests/test_redaction_gate_skips.py`.
+    """
     out = []
     for p in sorted(ROOT.rglob("*")):
-        if not p.is_file() or p.suffix.lower() not in SCAN_EXT | OOXML_EXT:
+        if not p.is_file():
             continue
         parts = p.relative_to(ROOT).parts
         if any(part in SKIP_DIRS for part in parts):
@@ -739,7 +834,11 @@ def main(argv: list[str] | None = None) -> int:
 
     paths = files()
     print(f"redaction gate: {len(paths)} file(s) under {ROOT.name}/")
-    print(f"  extensions {sorted(SCAN_EXT)}")
+    # Printed as a sentence rather than a list, because there is no list: the absence of an
+    # extension allowlist is the thing a reader most needs to be told, and a reader who has
+    # seen the old `extensions [...]` line will otherwise assume one is still in force.
+    print("  extensions: ALL — inclusion is not keyed on the filename; a file that will not "
+          "decode as UTF-8 is read as latin-1, not skipped")
     # Printed separately, and printed at all, because a reader checking whether the
     # decks were covered has only this line to go on.
     ooxml = [str(p.relative_to(ROOT)) for p in paths if p.suffix.lower() in OOXML_EXT]
@@ -791,7 +890,7 @@ def main(argv: list[str] | None = None) -> int:
                                 print(f"  waived {label}:{lineno} [{name}] — {why}")
                             break
                         shown = name if not note else f"{name} ({note})"
-                        findings.append((label, lineno, shown, form.strip()[:120]))
+                        findings.append((label, lineno, shown, _snippet(name, form)))
                         break
 
     print(f"  {scanned_bytes:,} bytes read, {waived} reviewed exception(s) waived")

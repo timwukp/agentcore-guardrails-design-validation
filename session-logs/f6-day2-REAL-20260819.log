@@ -1,0 +1,162 @@
+===== START F6-2,F6-5 via day2_replicate 2026-08-19T03:01:36Z =====
+F6-2/F6-5 — model-side guardrail hops, run_id=r20260810T130945Z, region=us-east-1
+  model us.amazon.nova-micro-v1:0  primary guardrail 'billing' (s5vk53hdnahz)
+  arms: guarded n=1000, bare n=1000, ladder 4x n=200
+    100/1000 pairs  (27 pairs/min)  guarded=100 bare=100
+    200/1000 pairs  (28 pairs/min)  guarded=200 bare=200
+    300/1000 pairs  (29 pairs/min)  guarded=300 bare=300
+    400/1000 pairs  (29 pairs/min)  guarded=400 bare=400
+    500/1000 pairs  (26 pairs/min)  guarded=500 bare=500
+    600/1000 pairs  (26 pairs/min)  guarded=600 bare=600
+    700/1000 pairs  (27 pairs/min)  guarded=700 bare=698
+    800/1000 pairs  (27 pairs/min)  guarded=800 bare=798
+    900/1000 pairs  (27 pairs/min)  guarded=900 bare=898
+    1000/1000 pairs  (27 pairs/min)  guarded=1000 bare=998
+    ladder topic    ( 1 policies): input p50=215.5 output p50=215.0
+    ladder words    ( 3 policies): input p50=131.0 output p50=130.0
+    ladder billing  ( 5 policies): input p50=201.0 output p50=200.0
+    ladder pii      (31 policies): input p50=167.0 output p50=168.0
+
+  verdict: TRUE   (BAND_CONTAINS)
+  wrote results/phase1/F6-2.json
+  F6-2: TRUE  hop #2 (input guardrail)  p50=203.0 p90=231.0 p99=375.03 ms (band (100.0, 500.0))
+
+  verdict: TRUE   (BAND_CONTAINS)
+  wrote results/phase1/F6-5.json
+  F6-5: TRUE  hop #6 (output guardrail)  p50=202.0 p90=233.0 p99=466.38 ms (band (100.0, 500.0))
+NOT REPLICATED — the producer exited 0 but wrote no evidence record dated today. That is the checkpoint-resume failure mode this driver exists to catch: a re-derived verdict is not a second observation.
+day-2 replication — UTC today 2026-08-19, new run_id r20260819T030137Z
+  F6-2     day 1 2026-08-10   verdict FALSE
+  F6-5     day 1 2026-08-10   verdict FALSE
+  day-1 checkpoints found: 6 -> ['F6-2__bare.json', 'F6-2__guarded.json', 'F6-2__ladder_billing.json', 'F6-2__ladder_pii.json']…
+  command: .venv-oracle/bin/python f6_latency/01_model_hops.py --run-id r20260819T030137Z
+  pre-run snapshot: 98 verdict file(s) -> runner/.staging/day2_pre_r20260819T030137Z (local-only)
+  moved 6 checkpoint(s) to results/checkpoints/day1_2026-08-10
+  producer rc: 0
+  observation proof: 0 call record(s) dated 2026-08-19
+  verdict files changed: 2 ['F6-2.json', 'F6-5.json']
+  archived 2 day-1 verdict file(s) to results/phase1/archive
+===== END F6-2,F6-5 rc=2 2026-08-19T03:53:52Z =====
+===== START F6-1,F6-3,F6-4 via day2_replicate 2026-08-19T03:53:52Z =====
+F6-1/3/4/9 — gateway hops, run_id=r20260810T130945Z, region=us-east-1
+  gateway grx-gw-r20260810t130945z-zpkfmpwo9n  engine grx_pe_r20260810T130945Z-t6hqadrspf  action grxecho___echo
+  arms: cedar_only n=1000, guardrail n=1000 (half HATE)
+  [cedar_only] n=1000
+    done: 1000 trials, 0 failures
+    probe policy grx_f6_guardrail_r20260810T130945Z-11i09w2svc ACTIVE (ACTIVE)
+  [guardrail] n=1000  (500 benign / 500 HATE, interleaved)
+    done: 1000 trials, 0 failures
+  settling 300s for the span delivery, then joining
+    cedar_only: joined 1000/1000 (100.0%, 25 queries)
+    guardrail: joined 1000/1000 (100.0%, 25 queries)
+    window[cedar_only]: source=spans usable=True width=648.859s
+    window[guardrail]: source=spans usable=True width=999.706s
+    probe policy deleted (attempt 1)
+  restore: blocking checks 15 pass / 0 fail
+
+  verdict: FALSE   (BAND_CONTAINS)
+  wrote results/phase1/F6-3.json
+  F6-3: FALSE  {'n': 1000, 'min': 34.0, 'max': 268.0, 'p50': 59.0, 'p90': 73.0, 'ci_p50': '59 [58, 60] (n=1000, order-statistic, 95%)', 'ci_p90': '73 [71, 75] (n=1000, order-statistic, 95%)', 'p99': 96.06, 'ci_p99': '96.06 [93, 114] (n=1000, order-statistic, 95%)'}  (band (5.0, 50.0))
+
+  verdict: FALSE   (BAND_CONTAINS)
+  wrote results/phase1/F6-1.json
+  F6-1: FALSE  hop p50=362.0 p99=831.13  cw p50=357.5454486283894 p99=841.556123645111  (band (50.0, 200.0))
+
+  verdict: FALSE   (BAND_CONTAINS)
+  wrote results/phase1/F6-4.json
+  F6-4: FALSE  hop p50=362.0 p99=831.13  cw p50=357.5454486283894 p99=841.556123645111  (band (50.0, 200.0))
+
+  verdict: TRUE   (SHIFT_EXCLUDES_ZERO)
+    note: n_usable=457 is below the pre-registered 1000; the verdict stands on the data collected but its interval is wider than the design promised, so it does not clear the amendment bar
+  wrote results/phase1/F6-9.json
+  F6-9: TRUE  blocked p50=757.957 passed p50=808.639  shift=61.816 ci=51.88 [37.9, 66.23] (n=457, paired-bootstrap(B=10000,seed=20260809), 95%)
+NOT REPLICATED — the producer exited 0 but wrote no evidence record dated today. That is the checkpoint-resume failure mode this driver exists to catch: a re-derived verdict is not a second observation.
+day-2 replication — UTC today 2026-08-19, new run_id r20260819T035352Z
+  F6-1     day 1 2026-08-10   verdict FALSE
+  F6-3     day 1 2026-08-10   verdict FALSE
+  F6-4     day 1 2026-08-10   verdict FALSE
+  day-1 checkpoints found: 2 -> ['F6-1__cedar_only.json', 'F6-1__guardrail.json']
+  command: .venv-oracle/bin/python f6_latency/02_gateway_hops.py --run-id r20260819T035352Z
+  pre-run snapshot: 98 verdict file(s) -> runner/.staging/day2_pre_r20260819T035352Z (local-only)
+  moved 2 checkpoint(s) to results/checkpoints/day1_2026-08-10
+  producer rc: 0
+  observation proof: 0 call record(s) dated 2026-08-19
+  verdict files changed: 4 ['F6-1.json', 'F6-3.json', 'F6-4.json', 'F6-9.json']
+  archived 4 day-1 verdict file(s) to results/phase1/archive
+===== END F6-1,F6-3,F6-4 rc=2 2026-08-19T04:29:59Z =====
+===== START F6-6,F6-7,F6-8 via day2_replicate 2026-08-19T04:29:59Z =====
+F6-6/7/8 — §6.1 total, additivity, per-call increment. run_id=r20260810T130945Z
+  model us.amazon.nova-micro-v1:0  guardrail cf-medium (pd6blbae0jty)
+  gateway grx-gw-r20260810t130945z-zpkfmpwo9n  engine grx_pe_r20260810T130945Z-t6hqadrspf  action grxecho___echo
+  levels: N=1 n=1000, N=2 n=200, N=3 n=200, N=5 n=200  (1600 turns, 3000 tool calls)
+    probe policy grx_f6c_guardrail_r20260810T130945Z-j8hh7k3he0 ACTIVE (ACTIVE)
+  probe grx_f6c_guardrail_r20260810T130945Z-j8hh7k3he0 ACTIVE; liveness before: denied=True
+  [N=1] n=1000
+      [1 call(s)] 51/1000
+      [1 call(s)] 101/1000
+      [1 call(s)] 151/1000
+      [1 call(s)] 201/1000
+      [1 call(s)] 251/1000
+      [1 call(s)] 301/1000
+      [1 call(s)] 351/1000
+      [1 call(s)] 400/1000
+      [1 call(s)] 450/1000
+      [1 call(s)] 500/1000
+      [1 call(s)] 550/1000
+      [1 call(s)] 600/1000
+      [1 call(s)] 650/1000
+      [1 call(s)] 700/1000
+      [1 call(s)] 750/1000
+      [1 call(s)] 800/1000
+      [1 call(s)] 850/1000
+      [1 call(s)] 900/1000
+      [1 call(s)] 950/1000
+    done: 999 turns, 1 failures
+  [N=2] n=200
+      [2 call(s)] 51/200
+      [2 call(s)] 101/200
+      [2 call(s)] 151/200
+    done: 200 turns, 0 failures
+  [N=3] n=200
+      [3 call(s)] 51/200
+      [3 call(s)] 101/200
+      [3 call(s)] 151/200
+    done: 200 turns, 0 failures
+  [N=5] n=200
+      [5 call(s)] 51/200
+      [5 call(s)] 101/200
+      [5 call(s)] 151/200
+    done: 200 turns, 0 failures
+  sending window: 1599 turns sent by this process; 1 window(s) on record
+  liveness after: denied=True
+  restore: probe deleted=True
+  restore: blocking checks 15 pass / 0 fail
+  settling 90s for the metric publish, then reading CloudWatch over 1 window(s)
+    Latency p50=449.9828362808582 (n=12035), GuardrailLatency p50=322.28220892809804 (n=3002)
+
+  verdict: TRUE   (BAND_CONTAINS)
+    note: n_usable=999 is below the pre-registered 1000; the verdict stands on the data collected but its interval is wider than the design promised, so it does not clear the amendment bar
+  wrote results/phase1/F6-6.json
+  F6-6: TRUE  client p50=1363.966 server p50=1066.2650452089563 floor=800 straddle=False
+
+  verdict: TRUE   (NONNEG_RESIDUAL)
+  wrote results/phase1/F6-7.json
+  F6-7: TRUE  residual p50=289.8 ms CI=(285.1, 296.2)
+
+  verdict: TRUE   (CI_OVERLAPS)
+  wrote results/phase1/F6-8.json
+  F6-8: TRUE  slope p50=747.7 ms/call CI=(736.4, 757.5) vs stated [165, 750]
+NOT REPLICATED — the producer exited 0 but wrote no evidence record dated today. That is the checkpoint-resume failure mode this driver exists to catch: a re-derived verdict is not a second observation.
+day-2 replication — UTC today 2026-08-19, new run_id r20260819T042959Z
+  F6-6     day 1 2026-08-10   verdict TRUE
+  F6-7     day 1 2026-08-10   verdict TRUE
+  F6-8     day 1 2026-08-10   verdict FALSE
+  day-1 checkpoints found: 5 -> ['F6-6__cw_windows.json', 'F6-6__turns_n1.json', 'F6-6__turns_n2.json', 'F6-6__turns_n3.json']…
+  command: .venv-oracle/bin/python f6_latency/03_composition.py --run-id r20260819T042959Z
+  pre-run snapshot: 98 verdict file(s) -> runner/.staging/day2_pre_r20260819T042959Z (local-only)
+  moved 5 checkpoint(s) to results/checkpoints/day1_2026-08-10
+  producer rc: 0
+  observation proof: 0 call record(s) dated 2026-08-19
+  verdict files changed: 3 ['F6-6.json', 'F6-7.json', 'F6-8.json']
+  archived 3 day-1 verdict file(s) to results/phase1/archive
+===== END F6-6,F6-7,F6-8 rc=2 2026-08-19T07:11:16Z =====
