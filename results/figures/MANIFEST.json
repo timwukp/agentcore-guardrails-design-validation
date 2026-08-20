@@ -136,14 +136,41 @@
     },
     "fig-03-latency-vs-bands": {
       "F6-1": {
-        "quantiles": {
-          "block": "record.evidence",
-          "ci_p50": "401 [396, 406] (n=1000, order-statistic, 95%)",
-          "n": 1000,
-          "p50": 401.0,
-          "p90": 528.1,
-          "p99": 779.06
-        },
+        "days": [
+          {
+            "archived_as": null,
+            "date": "2026-08-10",
+            "day": "day1",
+            "is_record": false,
+            "quantiles": {
+              "block": "record.evidence",
+              "ci_p50": "401 [396, 406] (n=1000, order-statistic, 95%)",
+              "n": 1000,
+              "p50": 401.0,
+              "p90": 528.1,
+              "p99": 779.06
+            },
+            "source": "results/phase1/archive/F6-1__day1_2026-08-10.json",
+            "verdict": "FALSE"
+          },
+          {
+            "archived_as": null,
+            "date": "2026-08-19",
+            "day": "day2",
+            "is_record": true,
+            "quantiles": {
+              "block": "record.evidence",
+              "ci_p50": "362 [356, 367] (n=1000, order-statistic, 95%)",
+              "n": 1000,
+              "p50": 362.0,
+              "p90": 600.1,
+              "p99": 831.1299999999999
+            },
+            "source": "results/phase1/F6-1.json",
+            "verdict": "FALSE"
+          }
+        ],
+        "record_day": "day2",
         "thresholds": [
           50.0,
           200.0
@@ -151,14 +178,41 @@
         "verdict": "FALSE"
       },
       "F6-2": {
-        "quantiles": {
-          "block": "record.evidence",
-          "ci_p50": "231 [226, 235] (n=1000, order-statistic, 95%)",
-          "n": 1000,
-          "p50": 231.0,
-          "p90": 374.20000000000005,
-          "p99": 622.03
-        },
+        "days": [
+          {
+            "archived_as": null,
+            "date": "2026-08-10",
+            "day": "day1",
+            "is_record": true,
+            "quantiles": {
+              "block": "record.evidence",
+              "ci_p50": "231 [226, 235] (n=1000, order-statistic, 95%)",
+              "n": 1000,
+              "p50": 231.0,
+              "p90": 374.20000000000005,
+              "p99": 622.03
+            },
+            "source": "results/phase1/archive/F6-2__day1_2026-08-10.json",
+            "verdict": "FALSE"
+          },
+          {
+            "archived_as": "indecisive",
+            "date": "2026-08-19",
+            "day": "day2",
+            "is_record": false,
+            "quantiles": {
+              "block": "record.evidence",
+              "ci_p50": "203 [203, 204] (n=1000, order-statistic, 95%)",
+              "n": 1000,
+              "p50": 203.0,
+              "p90": 231.0,
+              "p99": 375.03
+            },
+            "source": "results/phase1/archive/F6-2__day2_indecisive_2026-08-19.json",
+            "verdict": "TRUE"
+          }
+        ],
+        "record_day": "day1",
         "thresholds": [
           100.0,
           500.0
@@ -166,14 +220,41 @@
         "verdict": "FALSE"
       },
       "F6-3": {
-        "quantiles": {
-          "block": "record.evidence",
-          "ci_p50": "55 [54, 56] (n=1000, order-statistic, 95%)",
-          "n": 1000,
-          "p50": 55.0,
-          "p90": 70.0,
-          "p99": 94.03999999999996
-        },
+        "days": [
+          {
+            "archived_as": null,
+            "date": "2026-08-10",
+            "day": "day1",
+            "is_record": false,
+            "quantiles": {
+              "block": "record.evidence",
+              "ci_p50": "55 [54, 56] (n=1000, order-statistic, 95%)",
+              "n": 1000,
+              "p50": 55.0,
+              "p90": 70.0,
+              "p99": 94.03999999999996
+            },
+            "source": "results/phase1/archive/F6-3__day1_2026-08-10.json",
+            "verdict": "FALSE"
+          },
+          {
+            "archived_as": null,
+            "date": "2026-08-19",
+            "day": "day2",
+            "is_record": true,
+            "quantiles": {
+              "block": "record.evidence",
+              "ci_p50": "59 [58, 60] (n=1000, order-statistic, 95%)",
+              "n": 1000,
+              "p50": 59.0,
+              "p90": 73.0,
+              "p99": 96.05999999999995
+            },
+            "source": "results/phase1/F6-3.json",
+            "verdict": "FALSE"
+          }
+        ],
+        "record_day": "day2",
         "thresholds": [
           5.0,
           50.0
@@ -181,14 +262,41 @@
         "verdict": "FALSE"
       },
       "F6-5": {
-        "quantiles": {
-          "block": "record.evidence",
-          "ci_p50": "234 [228, 238] (n=1000, order-statistic, 95%)",
-          "n": 1000,
-          "p50": 234.0,
-          "p90": 366.1,
-          "p99": 662.2399999999998
-        },
+        "days": [
+          {
+            "archived_as": null,
+            "date": "2026-08-10",
+            "day": "day1",
+            "is_record": true,
+            "quantiles": {
+              "block": "record.evidence",
+              "ci_p50": "234 [228, 238] (n=1000, order-statistic, 95%)",
+              "n": 1000,
+              "p50": 234.0,
+              "p90": 366.1,
+              "p99": 662.2399999999998
+            },
+            "source": "results/phase1/archive/F6-5__day1_2026-08-10.json",
+            "verdict": "FALSE"
+          },
+          {
+            "archived_as": "indecisive",
+            "date": "2026-08-19",
+            "day": "day2",
+            "is_record": false,
+            "quantiles": {
+              "block": "record.evidence",
+              "ci_p50": "202 [202, 203] (n=1000, order-statistic, 95%)",
+              "n": 1000,
+              "p50": 202.0,
+              "p90": 233.0,
+              "p99": 466.37999999999965
+            },
+            "source": "results/phase1/archive/F6-5__day2_indecisive_2026-08-19.json",
+            "verdict": "TRUE"
+          }
+        ],
+        "record_day": "day1",
         "thresholds": [
           100.0,
           500.0
@@ -196,19 +304,50 @@
         "verdict": "FALSE"
       },
       "F6-6": {
-        "quantiles": {
-          "block": "record.evidence",
-          "ci_p50": "1483 [1474, 1491] (n=1000, order-statistic, 95%)",
-          "n": 1000,
-          "p50": 1482.811,
-          "p90": 1721.583,
-          "p99": 2107.2128999999995
-        },
+        "days": [
+          {
+            "archived_as": null,
+            "date": "2026-08-10",
+            "day": "day1",
+            "is_record": false,
+            "quantiles": {
+              "block": "record.evidence",
+              "ci_p50": "1483 [1474, 1491] (n=1000, order-statistic, 95%)",
+              "n": 1000,
+              "p50": 1482.811,
+              "p90": 1721.583,
+              "p99": 2107.2128999999995
+            },
+            "source": "results/phase1/archive/F6-6__day1_2026-08-10.json",
+            "verdict": "TRUE"
+          },
+          {
+            "archived_as": null,
+            "date": "2026-08-19",
+            "day": "day2",
+            "is_record": true,
+            "quantiles": {
+              "block": "record.evidence",
+              "ci_p50": "1364 [1359, 1371] (n=999, order-statistic, 95%)",
+              "n": 999,
+              "p50": 1363.966,
+              "p90": 1555.4176,
+              "p99": 2107.585359999999
+            },
+            "source": "results/phase1/F6-6.json",
+            "verdict": "TRUE"
+          }
+        ],
+        "record_day": "day2",
         "thresholds": [
           800.0,
           31000.0
         ],
         "verdict": "TRUE"
+      },
+      "day_dates": {
+        "day1": "2026-08-10",
+        "day2": "2026-08-19"
       }
     },
     "fig-04-censored-score-lattice": {

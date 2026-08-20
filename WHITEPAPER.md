@@ -33,7 +33,7 @@ zero are unexplained**.
 
 | # | Open item | State | Consequence for this paper |
 |---|---|---|---|
-| 1 | **Seven day-2 replications** — F6-1, F6-2, F6-3, F6-4, F6-5, F6-8, F4-6 | queued; 5 of the original 12 discharged 2026-08-15 | Chapter 10's latency numbers and ACG-01-BP05 rest on **one calendar day** of data. The replication gate exists, is executable, and currently blocks the corresponding amendments. |
+| 1 | **Day-2 replications: 1 still owed, 3 discharged, 3 in disagreement** — owed: F4-6. Discharged 2026-08-19: F6-1, F6-3, F6-4. Disagreed, so no amendment is licensed on any of them: F6-2, F6-5, F6-8 | 5 of the original 12 discharged 2026-08-15; the nine F6 cases re-measured 2026-08-19 | Chapter 10's latency numbers now rest on **two** calendar days, and five of them moved — the record for the six agreeing cases is the 2026-08-19 file (§10.1.1). ACG-01-BP05 (F4-6) still rests on one day. F6-2/F6-5/F6-8's comparisons against the documented tail are **not established in either direction**, and F6-6 agrees but fell one usable observation short of its pre-registered 1,000, so it does not clear the amendment bar either. |
 | 2 | **F10-1 — NOT MEASURED** | needs a decision, not a run | The billing-asymmetry question (does an input block avoid the model inference charge?) is unanswered. Cost Explorer's daily granularity cannot supply the delta the sealed oracle requires. §10.4 states the gap and nothing more. |
 | 3 | **F9-1 — untestable by its own sealed oracle** | closed as untestable | Whether policy-evaluation timeout yields automatic DENY cannot be decided: AgentCore exposes no fault-injection surface for policy evaluation. Chapter 11 is explicit that only the *missing-permission* failure mode was observed. |
 | 4 | **Appendix D — figure and statistical conventions** | BLOCKED | Eight sources are located but unadjudicated (censoring, binomial intervals at zero successes, colour-blind-safe three-state encoding). Until they are verified, Appendix D states conventions as **authorial judgment**, not as citations. |
@@ -996,8 +996,9 @@ bucket-attribution defect (DEV-P4-35) that day 1's arrangement of the clock had 
 datapoint is bucketed by the service's own emit time, which follows the log event by up to the publish
 lag, so a bucket set taken from the log rows alone under-counted the metric by exactly one sample.
 **The agreement is therefore a repaired result, not a lucky one.** For F6-1/F6-4, span-derived and CloudWatch-derived
-distributions agreed on the verdict-relevant question (CloudWatch p50 397.7 ms vs span-derived
-401 ms; `agree: true`), under a rule **pre-committed before any number was seen**: if the two
+distributions agreed on the verdict-relevant question (CloudWatch p50 357.5 ms vs span-derived
+362 ms on the day of record; 397.7 vs 401 ms on day 1; `agree: true` on both), under a rule
+**pre-committed before any number was seen**: if the two
 instruments disagreed about whether the distribution lay inside the band, the verdict would be
 INCONCLUSIVE.
 
@@ -1030,25 +1031,38 @@ operations (F7-4, TRUE).
 
 ### 10.1 The measured hops against the document's stated bands
 
-All figures are p50/p90/p99 at n=1,000 with order-statistic confidence intervals; the F6-1/F6-4
+Every row below is the **verdict of record in `results/phase1/`**, and the last column says which
+calendar day that record was measured on, because after the 2026-08-19 replication the two are no
+longer the same day for every case (§10.1.1). All figures are p50/p90/p99 with order-statistic
+confidence intervals at n = 1,000 — except **F6-6 at n = 999**, one usable observation short of its
+pre-registered 1,000 because two TCP resets landed in its producer; that shortfall costs F6-6 its
+amendment eligibility and is why its row is a measurement without a licence attached. The F6-1/F6-4
 figures are baseline-subtracted against a paired no-policy arm. **Six of the nine cases in this family
 are FALSE**, and four of those are the enforcement-latency bands.
 
-| Case | Document band | Measured p50 [95% CI] | p90 | p99 | Verdict |
-|---|---|---|---|---|---|
-| F6-1 / F6-4 (gateway guardrail evaluation) | 50–200 ms | **401 [396, 406]** | 528.1 | 779.1 | **FALSE** |
-| F6-2 (Bedrock input guardrail) | 100–500 ms | 231 [226, 235] | 374.2 | 622.0 | **FALSE** — p99 outside |
-| F6-3 (Cedar policy) | 5–50 ms | **55 [54, 56]** | 70.0 | 94.0 | **FALSE** |
-| F6-5 (output guardrail) | 100–500 ms | 234 [228, 238] | 366.1 | 662.2 | **FALSE** — p99 outside |
-| F6-6 (end-to-end total) | ~800 ms – 31 s+ | 1483 [1474, 1491] | 1721.6 | 2107.2 | **TRUE** |
+| Case | Document band | Measured p50 [95% CI] | p90 | p99 | Verdict | Record measured |
+|---|---|---|---|---|---|---|
+| F6-1 / F6-4 (gateway guardrail evaluation) | 50–200 ms | **362 [356, 367]** | 600.1 | 831.1 | **FALSE** | 2026-08-19 |
+| F6-2 (Bedrock input guardrail) | 100–500 ms | 231 [226, 235] | 374.2 | 622.0 | **FALSE** at p50/p90; **the p99 comparison is not established** | 2026-08-10 |
+| F6-3 (Cedar policy) | 5–50 ms | **59 [58, 60]** | 73.0 | 96.1 | **FALSE** | 2026-08-19 |
+| F6-5 (output guardrail) | 100–500 ms | 234 [228, 238] | 366.1 | 662.2 | **FALSE** at p50/p90; **the p99 comparison is not established** | 2026-08-10 |
+| F6-6 (end-to-end total, n=999) | ~800 ms – 31 s+ | 1364 [1359, 1371] | 1555.4 | 2107.6 | **TRUE** | 2026-08-19 |
 
 The oracles are `BAND_CONTAINS` over the **p50–p99 band**, not over the median alone. F6-2 and F6-5
-have medians inside their bands and p99s outside them, and that is the correct thing to fail on: an
-enforcement budget that holds at the median and breaks at the tail is a budget that breaks under load.
+have medians inside their bands and p99s outside them, and on the day of record that is the correct
+thing to fail on: an enforcement budget that holds at the median and breaks at the tail is a budget
+that breaks under load. What the second day then established is that **at n = 1,000 this study cannot
+adjudicate a 500 ms p99 threshold at all** — the day-2 p99 confidence intervals are 435 ms and 375 ms
+wide, each about as wide as the 400 ms band being judged. The p50 and p90 comparisons are decisive on
+both days and in the same direction; only the tail claim fails, and it fails for want of precision
+rather than in either direction. **F6-2 and F6-5 must therefore not be cited as evidence that the
+documented tail does hold, nor that it does not** — see `results/CITATION-POLICY.md`.
 
-![Figure 3 — measured p50–p99 against each documented band, log scale. The grey block is the band the
-document states; the coloured segment is what was measured. F6-2 and F6-5 start inside their bands and
-end outside them.](results/figures/fig-03-latency-vs-bands.png)
+![Figure 3 — measured enforcement latency against each documented band, log scale, with **both
+measurement days drawn on every row**. The grey block is the band the document states; each marker
+triple is one day's p50/p90/p99, coloured by that day's own verdict, and an arrow marks the day
+`results/phase1/` keeps as the verdict of record. F6-2 and F6-5 are the two rows whose two days
+disagree.](results/figures/fig-03-latency-vs-bands.png)
 
 Figure 3 is drawn on a log axis for a reason that matters to the reading: the four bands span 5 ms to
 31 s, and on a linear axis the Cedar band (5–50 ms) collapses to a hairline next to the end-to-end one.
@@ -1065,29 +1079,67 @@ segment sits comfortably inside it wherever it fell.
    corroboration.
 2. **F6-6's TRUE is weaker than it looks.** The document writes an open-ended upper bound
    ("~800 ms – 31 s+"), so **no measured value could exceed it**; only the floor was falsifiable. A
-   band with an open end is not a prediction. The measured 1,483 ms p50 is the useful number here, not
+   band with an open end is not a prediction. The measured 1,364 ms p50 is the useful number here, not
    the verdict.
+
+### 10.1.1 What a second calendar day did to this table
+
+The nine F6 cases were re-measured on **2026-08-19**, one calendar day apart from the first
+(2026-08-10/11), through `tools/day2_replicate.py`. No sealed field moved in any case, so both days
+evaluated the same pre-registered test. **Six cases agree and three disagree** (F6-2, F6-5, F6-8), and
+`PREREGISTRATION.yaml` makes a disagreement a *finding* rather than a fix-up: the published record does
+not move, so those three keep their day-1 verdicts and the day-2 files are retained under an
+`__day2_indecisive_` label. The six agreeing cases publish their day-2 files, which is why five of this
+chapter's numbers changed without any verdict changing. The full adjudication, including a driver
+defect that reported "did not observe" over 9,448 real call records, is
+`results/FINDING-F6-DAY2-DECISIVENESS.md`.
+
+Two consequences a reader should carry out of this chapter, and they point in opposite directions.
+
+**The measurements have a shelf life of days.** Two independent instruments — the service's own
+`guardrailProcessingLatency`, read out of the Bedrock trace, and our client-side paired shift — agree
+that guardrail evaluation got **8.7% to 38.3% faster** between the two days, with disjoint
+order-statistic confidence intervals at p50 and p90. The server-reported instrument cannot be moved by
+our client OS or our network position, so the most parsimonious explanation is a change on the AWS
+side. That is precisely the class of drift a one-day study cannot see, and it is the strongest argument
+in this paper for continuous re-validation rather than a dated snapshot.
+
+**Three of the nine verdicts cannot be repaired by running it again.** The flips are faithful
+applications of their sealed oracles, and every one of them is indecisive: on day 1 the confidence
+interval lay wholly on the refuting side of the threshold, and on day 2 it straddled it — whereupon
+`BAND_CONTAINS`, which adjudicates on the point estimate, scored TRUE. `CI_OVERLAPS` has the same
+weakness: it treats F6-8's 13.6 ms overlap and a total containment as one outcome. The defect is in our
+own `kind` definitions, not in the service and not in the run, and `PREREGISTRATION.yaml` is sealed
+against retrofitting them. A successor oracle needs a decisiveness requirement — a third value for
+"the interval spans the threshold", which `INCONCLUSIVE` already provides elsewhere in this study —
+and that is scoped to future pre-registrations only, as register item 32(c).
 
 ### 10.2 The decomposition model survives; the per-tool-call slope does not
 
 - **F6-7 TRUE.** The additivity model (`Duration = GuardrailLatency + TargetExecutionTime + ε`) holds:
-  the residual ε is non-negative within its CI, **[258.8, 273.0] ms**. A significantly negative
+  the residual ε is non-negative within its CI, **[285.1, 296.2] ms** on the 2026-08-19 record and
+  [258.8, 273.0] ms on day 1 — non-negative on both, so the verdict replicates. A significantly negative
   residual would have meant the hops overlap and would have falsified the decomposition behind three
   of the document's sections at once. It did not.
-  *But* the residual is 259–273 ms of **unattributed** time at the median, so the model is
+  *But* the residual is 285–296 ms of **unattributed** time at the median, so the model is
   structurally sound and not tight.
 - **F6-8 FALSE.** The per-additional-tool-invocation slope's bootstrap CI is **[838.7, 862.7] ms**,
   disjoint from the documented 165–750 ms — high by roughly 100 ms at the lower end and by more than
-  the width of the documented range at the upper. **(test pending — day-2 replication owed, and this
-  case must run on the laptop rather than the runner, per DEV-P4-37.)**
+  the width of the documented range at the upper. **The 2026-08-19 replication disagreed and settled
+  nothing:** the day-2 CI was [736.4, 757.5], which overlaps the documented range by 13.6 ms while 36%
+  of it still lies above 750 ms, and `CI_OVERLAPS` scored that TRUE for touching. The day-1 FALSE
+  therefore remains the record, and **F6-8 may not be cited in either direction on the slope
+  comparison** (§10.1.1, `results/CITATION-POLICY.md`). Any further run must execute on the laptop
+  rather than the runner, per DEV-P4-37.
 
 ### 10.3 Early blocking is cheaper, and by how much
 
 **F6-9 TRUE.** Blocked-request latency is significantly below passed-request latency; the
-Hodges-Lehmann shift is **[30.2, 57.0] ms** (95% CI, Wilcoxon). Blocking at the first enforcement
-point saves that much downstream latency — a real effect, and a small one relative to the 401 ms the
-gateway evaluation itself costs. **Do not design for early blocking as a performance optimisation.**
-Design for it as a containment property, and take the 30–57 ms as a bonus.
+Hodges-Lehmann shift is **[37.9, 66.2] ms** (95% CI, Wilcoxon) on the 2026-08-19 record, and
+[30.2, 57.0] ms on day 1 — the two intervals overlap and the verdict replicates. Blocking at the first
+enforcement point saves that much downstream latency — a real effect, and a small one relative to the
+362 ms the gateway evaluation itself costs. **Do not design for early blocking as a performance
+optimisation.** Design for it as a containment property, and take the 38–66 ms as a bonus.
 
 ### 10.4 Cost
 
@@ -1232,10 +1284,15 @@ properties.
 
 ### 12.2 Conclusion validity
 
-**Single-day measurement on seven cases.** Seven cases owe a replication and the gate visibly blocks
-them. *Threatens:* Chapter 10's entire latency table (F6-1 through F6-5, F6-8) and ACG-01-BP05
-(F4-6). This is the largest open conclusion-validity threat in the paper, and it is concentrated in
-one chapter.
+**Single-day measurement, now partly discharged and partly replaced by a worse problem.** One case
+still owes a replication (F4-6, ACG-01-BP05) and the gate visibly blocks it. The nine F6 cases were
+re-measured on 2026-08-19: three discharged cleanly (F6-1, F6-3, F6-4), F6-7 and F6-9 replicated their
+verdicts, F6-6 agreed but lost its `n_met`, and **three disagreed indecisively (F6-2, F6-5, F6-8)**.
+*Threatens:* the tail comparisons in Chapter 10's latency table, which are now established in neither
+direction, and ACG-01-BP05. Two things got worse rather than better under replication. The 8.7–38.3%
+between-day speed-up (§10.1.1) means **any single-day latency number in this paper is dated, not
+wrong** — including the ones now published from the second day. And the three disagreements are a
+defect in our own sealed oracles, which no further run can repair.
 
 **Repeatability is not reproduction.** Our second-day runs are our own harness, run by us — ACM's
 **Repeatability (same team, same setup)**, which carries no badge; *Reproduced* and *Replicated* are
@@ -1316,7 +1373,10 @@ The ledger, quantified. None of these is hedging; each is a number.
    no truth value. The parts of a guardrails document that tell you what to do are precisely the parts
    an oracle cannot decide — and OWASP's agentic standard has the same property (Chapter 2), so this
    is structural rather than a local failure.
-5. **7 cases owe a day-2 replication**, concentrated in Chapter 10 (F6-1…F6-5, F6-8) plus F4-6.
+5. **1 case owes a day-2 replication** (F4-6), and **3 have one that disagreed** (F6-2, F6-5, F6-8) —
+   a finding, not a fix-up, and one that no further run can repair because the weakness is in our own
+   sealed oracles (§10.1.1). Replication also showed the numbers themselves drifting 8.7–38.3% in nine
+   days.
 6. **1 published correction is contested** — F8-5 / §3.4 (ACG-06-BP04). The re-test is designed, costs
    $0, and has not run.
 7. **1 TRUE verdict is non-publishable** — F5-3b, guard failure.
@@ -1354,9 +1414,9 @@ FALSE is what keeps 20 undecided cases from being quietly counted as either; and
 control to state what it does **not** establish is what keeps a measured document from becoming a
 prescriptive one.
 
-The honest summary of this first edition is in §0 and Chapter 13: seven replications owed, one
-correction contested, one figure blocked on a source we do not hold, and no independent party has
-re-run any of it.
+The honest summary of this first edition is in §0 and Chapter 13: one replication owed and three that
+came back in disagreement, one correction contested, one figure blocked on a source we do not hold, and
+no independent party has re-run any of it.
 
 ---
 
@@ -1397,6 +1457,7 @@ text.
 | Change | Description | Date |
 |---|---|---|
 | Initial publication (draft) | First edition. 91 of 92 verdict-eligible propositions published; 7 day-2 replications outstanding; Appendix D conventions unadjudicated; 7 of 8 figures drawn and figure 6 blocked; F8-5 erratum open. | 2026-08-15 |
+| Chapter 10 re-stated against the 2026-08-19 replication | No verdict changed and no sealed field moved. Five of Chapter 10's measured values now come from the 2026-08-19 record rather than day 1, because the six agreeing F6 cases publish their day-2 files: F6-1/F6-4 p50 401→362 ms, F6-3 55→59 ms, F6-6 1483→1364 ms at n=999, F6-7 residual [258.8, 273.0]→[285.1, 296.2] ms, F6-9 shift [30.2, 57.0]→[37.9, 66.2] ms. New §10.1.1 records the replication, the 8.7–38.3% between-day speed-up measured by two independent instruments, and the citation restriction on F6-2/F6-5/F6-8, whose two days disagree indecisively. Figure 3 redrawn to show both days per row with the record marked. §0 item 1, §12.2, §13 item 5 and Appendix D's interval example re-stated to match. | 2026-08-20 |
 
 ---
 
@@ -1503,7 +1564,7 @@ F2-3 and F2-4 (§12.3) and Appendix B's uneven coverage.
 1. **Distribution results get a distributional form.** Reporting a median without any indication of
    variance is a named antipattern, and effect sizes without confidence intervals likewise. So the
    latency figure is a CDF or quantile plot, **not** a bar of means, and every p50 in this paper
-   carries an interval. Chapter 10's Hodges-Lehmann shift with 95% CI [30.2, 57.0] meets this.
+   carries an interval. Chapter 10's Hodges-Lehmann shift with 95% CI [37.9, 66.2] meets this.
 2. **No truncated bars.** Using truncated bars to exaggerate differences is a named axis antipattern.
 
 Everything else — censoring notation for §9.4, the display of binomial intervals at zero successes
