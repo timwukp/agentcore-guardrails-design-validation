@@ -1,35 +1,16 @@
 {
   "provenance": [
     {
-      "reconstructed_from": {
-        "archived_EndTime": "2026-08-11T19:10:27.603538+00:00",
-        "archived_StartTime": "2026-08-11T18:06:54.089958+00:00",
-        "arithmetic": "t0 = StartTime + 60s and t1 = EndTime - 60s, inverting the pad _cw_p50 applies to each side",
-        "evidence_dir": "f6_latency/F6-6_7_8",
-        "requests_read": [
-          "4621_get_metric_statistics_ok.json",
-          "4622_get_metric_statistics_ok.json",
-          "4623_get_metric_statistics_ok.json",
-          "4624_get_metric_statistics_ok.json",
-          "4625_get_metric_statistics_ok.json",
-          "4626_get_metric_statistics_ok.json",
-          "4627_get_metric_statistics_ok.json",
-          "4628_get_metric_statistics_ok.json",
-          "4629_get_metric_statistics_ok.json",
-          "4630_get_metric_statistics_ok.json",
-          "4632_get_metric_statistics_ok.json"
-        ],
-        "why": "the run that sent these 1,600 turns crashed in its analysis before the window was persisted; the window is recovered from that run's own archived CloudWatch requests rather than re-sending the arm"
-      },
-      "recorded_by": "recover_cw_window.py (RECONSTRUCTED)",
-      "t0_iso": "2026-08-11T18:07:54.089958+00:00",
-      "t1_iso": "2026-08-11T19:09:27.603538+00:00"
+      "n_turns_sent_by_this_process": 1599,
+      "recorded_by": "f6_latency/03_composition.py (live)",
+      "t0_iso": "2026-08-19T04:30:35.161169+00:00",
+      "t1_iso": "2026-08-19T07:09:35.055201+00:00"
     }
   ],
   "windows": [
     [
-      1786471674.089958,
-      1786475367.603538
+      1787113835.1611688,
+      1787123375.055201
     ]
   ]
 }

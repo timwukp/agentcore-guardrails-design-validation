@@ -34,7 +34,9 @@ What is checked, and why each one
   `feedback_scope_as_namelist`). A NEW site likewise fails until it is checked once by hand.
 
 Scope comes from `lib/tests/scan_scope.py`, the same predicate the repo-wide `*.py` scanners use, so a
-new virtualenv cannot make this test read a dependency's markdown (DEV-P4-42).
+new virtualenv cannot make this test read a dependency's markdown (DEV-P4-42). One narrowing on top of
+it, added 2026-08-20 and bounded by its own arm: a **dated record under `session-logs/` is not a live
+claim** — see `HISTORICAL_RE`.
 """
 from __future__ import annotations
 
@@ -46,7 +48,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "lib" / "tests"))
-from scan_scope import out_of_scope  # noqa: E402  shared scope predicate; see its docstring
+from scan_scope import is_dated_record, out_of_scope  # noqa: E402  shared predicates; see docstrings
 
 REGISTER = ROOT / "FUTURE-WORK.md"
 
@@ -89,13 +91,41 @@ def _tiers() -> dict[str, list[int]]:
     return out
 
 
+# A DATED RECORD IS NOT A LIVE CLAIM — `scan_scope.is_dated_record`, whose docstring carries the
+# reasoning. The instance that made it necessary was here: `session-logs/2026-08-15-grx-whitepaper-
+# v1-figures-scan-scope.md` says "`FUTURE-WORK.md` is a **28-item** register", which was true on
+# 2026-08-15. It surfaced on 2026-08-20, when that file was copied into the distributable tree so
+# that two documents citing it would stop dangling. "Correcting" it would falsify a log.
 def _md_files() -> list[Path]:
     files = sorted(p for p in ROOT.rglob("*.md")
-                   if not out_of_scope(p.relative_to(ROOT)))
+                   if not out_of_scope(p.relative_to(ROOT))
+                   and not is_dated_record(p.relative_to(ROOT)))
     assert len(files) > 20, (
         f"only {len(files)} markdown file(s) in scope — a near-empty scan would report clean over the "
         f"whole repo, so this is an error and not a pass")
     return files
+
+
+def test_the_historical_exclusion_is_real_and_bounded():
+    """Per `feedback_vacuous_test_check`, an exclusion nobody measures is an exclusion nobody bounds.
+
+    Two directions. It must exclude something — otherwise it is dead prose and the reasoning above
+    has quietly stopped applying. And everything it excludes must be a dated file under
+    `session-logs/` — a pattern that also matched a live deliverable would silence the guard over
+    exactly the documents it exists to check.
+    """
+    excluded = sorted(p.relative_to(ROOT).as_posix() for p in ROOT.rglob("*.md")
+                      if not out_of_scope(p.relative_to(ROOT))
+                      and is_dated_record(p.relative_to(ROOT)))
+    assert excluded, (
+        "is_dated_record() now matches no markdown file. If `session-logs/` no longer holds dated "
+        "records, delete the exclusion rather than leaving a waiver that does nothing.")
+    for rel in excluded:
+        assert rel.startswith("session-logs/"), rel
+    for live in ("WHITEPAPER.md", "RECONNECT.md", "FUTURE-WORK.md", "README.md"):
+        assert not is_dated_record(Path(live)), (
+            f"the exclusion matches {live}, a live deliverable — the guard would stop reading the "
+            f"documents it exists to check")
 
 
 def _sentences(text: str) -> list[str]:

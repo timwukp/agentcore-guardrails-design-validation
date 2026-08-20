@@ -1,0 +1,13 @@
+# NOTE 2026-08-20: the runner bucket NAME was masked post-hoc. `runner/teardown.py` used to
+# print it; it no longer does, because the name lives in the gitignored `runner/.state/` for
+# exactly the reason a redirected stdout defeats — see the comment above step 4 there.
+# 1 line(s) rewritten. Everything else, including the object counts, is untouched.
+terminating i-0f90ac6377bba523b …
+  instance i-0f90ac6377bba523b terminated
+  instance profile grx-runner-ec2 deleted
+  role grx-runner-ec2 deleted (this is the privilege revocation)
+  security group grx-runner-sg deleted
+  bucket <bucket> KEPT — it holds the evidence archive; re-run with --delete-bucket once the output is merged
+
+runner cost after this: $0 for compute, ~$0.02/month for the retained bucket (90-day expiry is already set)
+rc=0

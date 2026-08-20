@@ -74,8 +74,23 @@ CANARY_LINES = {
 }
 
 
-@pytest.mark.parametrize("name,line", sorted(CANARY_LINES.items()))
-def test_every_pattern_matches_its_canary(name, line):
+# PARAMETRIZED ON THE KEY, NEVER ON THE FIXTURE.
+#
+# Assembling the canaries at runtime keeps the shapes out of this file's SOURCE, and for a long
+# time that looked like the whole job. It is not: pytest builds each test id by stringifying every
+# parameter, so `parametrize("name,line", …)` put the canary itself into the id — and `-v` prints
+# ids. On 2026-08-20, when `check_redaction.py` stopped selecting files by extension, the gate
+# convicted that day's `-v` full-suite log on six identifiers that were nothing but this file's own
+# test ids. The source was clean and the OUTPUT was the leak. That log is deliberately not retained
+# (see `results/FINDING-P1-REDACTION-ENCODING.md` §4c) and so is not named here: a path cited in a
+# comment is a claim like any other, and this one would now dangle.
+#
+# So the parameter is the dict key, and the fixture is looked up inside the test. The keys are
+# prose. Failure messages quote the fixture, which is correct — a failing arm needs it, a failing
+# run is read by a human, and only a passing run's log gets kept.
+@pytest.mark.parametrize("name", sorted(CANARY_LINES))
+def test_every_pattern_matches_its_canary(name):
+    line = CANARY_LINES[name]
     rx = next(r for n, r, _d in redact.PATTERNS if n == name)
     assert rx.search(line), f"pattern {name!r} does not match its own canary: {line!r}"
 
@@ -310,8 +325,9 @@ REPORTED_ARN_LINES = {
 }
 
 
-@pytest.mark.parametrize("label,line", sorted(EXCUSED_ARN_LINES.items()))
-def test_arn_excuse_waives_a_line_that_carries_no_identifier(label, line):
+@pytest.mark.parametrize("label", sorted(EXCUSED_ARN_LINES))
+def test_arn_excuse_waives_a_line_that_carries_no_identifier(label):
+    line = EXCUSED_ARN_LINES[label]        # looked up, not parametrized — see CANARY_LINES above
     rx = next(r for n, r, _d in redact.PATTERNS if n == "arn")
     assert rx.search(line), (
         f"{label}: the fixture no longer trips the arn pattern, so this arm proves nothing "
@@ -323,9 +339,10 @@ def test_arn_excuse_waives_a_line_that_carries_no_identifier(label, line):
         f"wholesale by the next person. Fixture: {line!r}")
 
 
-@pytest.mark.parametrize("label,line", sorted(REPORTED_ARN_LINES.items()))
-def test_arn_excuse_never_waives_a_line_it_has_not_fully_parsed(label, line):
+@pytest.mark.parametrize("label", sorted(REPORTED_ARN_LINES))
+def test_arn_excuse_never_waives_a_line_it_has_not_fully_parsed(label):
     """The direction that matters. Each fixture failed against the original `for/else`."""
+    line = REPORTED_ARN_LINES[label]       # looked up, not parametrized — see CANARY_LINES above
     assert _excuse(line) is None, (
         f"{label}: the ARN excuse waived this line. Fixture: {line!r}")
 

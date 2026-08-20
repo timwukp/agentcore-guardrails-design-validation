@@ -2,9 +2,9 @@
   "action_id": "grxecho___echo",
   "alpha": 0.05,
   "alternative": {
-    "hop45_ms": 503.4905594071247,
+    "hop45_ms": 449.9828362808582,
     "reading": "Latency alone, assuming GuardrailLatency nests inside it",
-    "residual_ci": "758.6 [738.8, 782.7] (n=1600, bootstrap-percentile(B=10000,seed=20260809), 95%)",
+    "residual_ci": "701.2 [684, 720.3] (n=1599, bootstrap-percentile(B=10000,seed=20260809), 95%)",
     "scored": false
   },
   "ambient_sdk": {
@@ -20,53 +20,34 @@
   "case_id": "F6-7",
   "cell": "latency_arm_p50_p90_only",
   "conservative": {
-    "hop45_ms": 889.9562126423964,
+    "hop45_ms": 772.2650452089563,
     "reading": "Latency + GuardrailLatency, assumed disjoint",
-    "residual_ci": "265.3 [258.8, 273] (n=1600, bootstrap-percentile(B=10000,seed=20260809), 95%)",
+    "residual_ci": "289.8 [285.1, 296.2] (n=1599, bootstrap-percentile(B=10000,seed=20260809), 95%)",
     "why_primary": "if the two gateway metrics in fact nest, this double-counts, making the hop sum larger and the residual smaller — so its failure mode is a false FALSE, never a false TRUE"
   },
   "gateway_id": "grx-gw-r20260810t130945z-zpkfmpwo9n",
   "guard_detail": {
     "gateway_hop_measured": {
       "combinations_found": 10,
-      "guardrail_p50": 386.4656532352717,
+      "guardrail_p50": 322.28220892809804,
       "guardrail_samples": 3002,
       "min_samples": 100,
       "n_sending_windows": 1,
-      "p50": 503.4905594071247,
-      "samples": 12032,
+      "p50": 449.9828362808582,
+      "samples": 12035,
       "sending_windows": [
         {
-          "reconstructed_from": {
-            "archived_EndTime": "2026-08-11T19:10:27.603538+00:00",
-            "archived_StartTime": "2026-08-11T18:06:54.089958+00:00",
-            "arithmetic": "t0 = StartTime + 60s and t1 = EndTime - 60s, inverting the pad _cw_p50 applies to each side",
-            "evidence_dir": "f6_latency/F6-6_7_8",
-            "requests_read": [
-              "4621_get_metric_statistics_ok.json",
-              "4622_get_metric_statistics_ok.json",
-              "4623_get_metric_statistics_ok.json",
-              "4624_get_metric_statistics_ok.json",
-              "4625_get_metric_statistics_ok.json",
-              "4626_get_metric_statistics_ok.json",
-              "4627_get_metric_statistics_ok.json",
-              "4628_get_metric_statistics_ok.json",
-              "4629_get_metric_statistics_ok.json",
-              "4630_get_metric_statistics_ok.json",
-              "4632_get_metric_statistics_ok.json"
-            ],
-            "why": "the run that sent these 1,600 turns crashed in its analysis before the window was persisted; the window is recovered from that run's own archived CloudWatch requests rather than re-sending the arm"
-          },
-          "recorded_by": "recover_cw_window.py (RECONSTRUCTED)",
-          "t0_iso": "2026-08-11T18:07:54.089958+00:00",
-          "t1_iso": "2026-08-11T19:09:27.603538+00:00"
+          "n_turns_sent_by_this_process": 1599,
+          "recorded_by": "f6_latency/03_composition.py (live)",
+          "t0_iso": "2026-08-19T04:30:35.161169+00:00",
+          "t1_iso": "2026-08-19T07:09:35.055201+00:00"
         }
       ],
       "windows_queried": [
         {
-          "end": "2026-08-11T19:10:27.603538+00:00",
-          "period_s": 3840,
-          "start": "2026-08-11T18:06:54.089958+00:00"
+          "end": "2026-08-19T07:10:35.055201+00:00",
+          "period_s": 9660,
+          "start": "2026-08-19T04:29:35.161169+00:00"
         }
       ]
     },
@@ -75,14 +56,14 @@
         "corpus_id": "b976bbfa6a66",
         "denied": true,
         "outcome": "policy_denied",
-        "request_id": "972328e2-6ff4-4017-8303-1f16bf40ce4c",
+        "request_id": "c0fdfee8-28e6-4e51-a4f8-a7c55ca9a520",
         "when": "before"
       },
       {
         "corpus_id": "b976bbfa6a66",
         "denied": true,
         "outcome": "policy_denied",
-        "request_id": "7d6ce1c4-efda-4851-ab5d-91d69782c57d",
+        "request_id": "c5742ea2-f81f-436d-b7a7-9dfd4e1cc1da",
         "when": "after"
       }
     ],
@@ -179,8 +160,8 @@
     },
     "turns_completed": {
       "1": {
-        "done": 1000,
-        "failed": 0,
+        "done": 999,
+        "failed": 1,
         "planned": 1000
       },
       "2": {
@@ -219,11 +200,11 @@
   "model_id": "us.amazon.nova-micro-v1:0",
   "n_exceeds_planned": {
     "planned": 200,
-    "used": 1600,
+    "used": 1599,
     "why": "every level's turns enter the residual, so F6-7 gets more than its cell requires. Recorded rather than silently enjoyed: the cell is a floor, not a target"
   },
   "n_requested": 1600,
-  "n_used": 1600,
+  "n_used": 1599,
   "oracle_text": "TRUE if the residual eps >= 0 within CI; FALSE if significantly negative, which means hops overlap and falsifies the decomposition model underlying 6.1, 6.3 AND 6.4 — a structural finding, not a number tweak",
   "planned_n": 200,
   "planned_n_cell": 200,
@@ -234,8 +215,8 @@
     "case_id": "F6-7",
     "evidence": {
       "residual_ci": [
-        258.76468103640536,
-        273.0498498576035
+        285.1009547910437,
+        296.1529547910436
       ],
       "structural": "a significantly negative residual means the hops overlap and falsifies the decomposition model behind §6.1, §6.3 and §6.4"
     },
@@ -244,7 +225,7 @@
     "mutation_required": false,
     "n_attempted": 1600,
     "n_met": true,
-    "n_usable": 1600,
+    "n_usable": 1599,
     "notes": [],
     "p_value": null,
     "planned_n": 200,
@@ -267,7 +248,7 @@
     "orchestration": "scripted, not model-directed",
     "why_scripted": "no agent runtime exists in this testbed and the pre-existing harness_* runtimes are out of scope, so the turn is assembled by this script in the document's own hop order"
   },
-  "unaccounted_fraction_p50": 0.1637458467678245,
+  "unaccounted_fraction_p50": 0.19791024139417407,
   "verdict": "TRUE",
   "why_the_fraction_matters": "the sign check is the sealed oracle, but the fraction is the amendment-relevant number: it is the share of the end-to-end total that §6.1's table does not name"
 }

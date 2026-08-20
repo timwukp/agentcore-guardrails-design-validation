@@ -1,0 +1,12 @@
+payload gate: 104 file(s) under /Users/tmwu/Downloads/grx-site-payload
+  4,773,209 characters read
+  2406 hit(s) excused by SHAPE — the identifier position is already a placeholder, a wildcard, or an AWS-owned value; no reviewed exception involved
+  0 file(s) needed a lossy decode and were scanned as latin-1
+  4 hit(s) INHERITED a reviewed exception from a named source:
+     cases/F5-7b.json:180 [private-ip] <- results/phase1/F5-7b.json: the same run-scoped RFC1918 CIDR as the producer and finding entries a
+     cases/F5-7b.json:219 [private-ip] <- results/phase1/F5-7b.json: the same run-scoped RFC1918 CIDR as the producer and finding entries a
+     cases/F5-7b.json:379 [private-ip] <- results/phase1/F5-7b.json: the same run-scoped RFC1918 CIDR as the producer and finding entries a
+     findings.json:182 [private-ip] <- results/FINDING-F5-7B.md: the RFC1918 CIDR of a VPC created and destroyed inside one run, named 
+
+PASSED — no unredacted cloud identifiers in 104 payload files.
+payload_gate_rc=0

@@ -39,6 +39,8 @@ before it is created.
 
 from __future__ import annotations
 
+import os
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -65,6 +67,46 @@ def out_of_scope(rel: Path, extra_names: frozenset[str] | set[str] = frozenset()
         if any(part.startswith(p) for p in SKIP_DIR_PREFIXES):
             return True
     return False
+
+
+# A DATED RECORD IS NOT A LIVE CLAIM.
+#
+# `session-logs/` holds append-only session records. They state what was true on their own date —
+# "`FUTURE-WORK.md` is a 28-item register" was correct on 2026-08-15 — and two guards check live
+# prose against today's derivation (`claims/tests/test_future_work_register.py`,
+# `claims/tests/test_cited_paths_exist.py`). Editing a log to agree with today would falsify the
+# record, and a log whose numbers track the present is worth nothing as evidence.
+#
+# The predicate is over the EVIDENCE of being a dated record — a date in the filename — and not over
+# the directory name alone, so a live document dropped into `session-logs/` under an undated name is
+# still checked. A bare directory skip is the shape `check_redaction.py` spent 2026-08-20 removing
+# (`feedback_scope_as_namelist`); repeating it here would be the same mistake in a second place.
+#
+# It lives in this module, beside `out_of_scope`, because two test files need it and a regex copied
+# into both is a regex that drifts in one of them (`feedback_second_instance_bugs`).
+_DATED = "(?:\\d{4}-\\d{2}-\\d{2}|\\d{8})"
+
+
+def is_dated_record(rel: Path) -> bool:
+    """Is `rel` (repo-relative) an append-only session record stamped with its own date?"""
+    posix = rel.as_posix()
+    return bool(re.match(rf"^session-logs/.*{_DATED}", posix))
+
+
+def walk_in_scope(extra_names: frozenset[str] | set[str] = frozenset()):
+    """Yield every in-scope file under ROOT, PRUNING out-of-scope directories as it descends.
+
+    `ROOT.rglob("*")` filtered by `out_of_scope` gives the same answer and is unusable: rglob walks
+    into `evidence/` and every `.venv-*` before the filter ever sees a path, so a scan of the ~800
+    files this repo owns pays for the ~200k it does not. A caller that needs one cheap property of
+    every file (its suffix, its size) uses this; a caller matching a narrow glob can keep rglob.
+    """
+    for dirpath, dirnames, filenames in os.walk(ROOT):
+        rel_dir = Path(dirpath).relative_to(ROOT)
+        dirnames[:] = [d for d in dirnames
+                       if not out_of_scope(rel_dir / d, extra_names)]
+        for name in filenames:
+            yield Path(dirpath) / name
 
 
 def py_files(extra_names: frozenset[str] | set[str] = frozenset(), floor: int = 50) -> list[Path]:

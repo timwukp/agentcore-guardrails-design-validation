@@ -1,0 +1,74 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.12, pytest-9.1.1, pluggy-1.6.0 -- /Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/tmwu/Downloads/grx-validation
+collecting ... collected 22 items
+
+platform/build/tests/test_gate_payload.py::test_no_mutant_control_a_clean_payload_passes PASSED [  4%]
+platform/build/tests/test_gate_payload.py::test_a_literal_account_id_in_the_payload_fails PASSED [  9%]
+platform/build/tests/test_gate_payload.py::test_a_percent_encoded_account_id_in_the_payload_fails PASSED [ 13%]
+platform/build/tests/test_gate_payload.py::test_an_account_id_in_a_log_file_fails PASSED [ 18%]
+platform/build/tests/test_gate_payload.py::test_an_account_id_inside_an_undecodable_file_fails FAILED [ 22%]
+platform/build/tests/test_gate_payload.py::test_the_bare_runner_bucket_name_is_already_covered_by_the_account_pattern PASSED [ 27%]
+platform/build/tests/test_gate_payload.py::test_a_sources_reviewed_waiver_is_inherited PASSED [ 31%]
+platform/build/tests/test_gate_payload.py::test_an_unrelated_sources_waiver_does_not_excuse PASSED [ 36%]
+platform/build/tests/test_gate_payload.py::test_a_waiver_never_excuses_an_account_id PASSED [ 40%]
+platform/build/tests/test_gate_payload.py::test_a_shape_excused_hit_needs_no_source_at_all PASSED [ 45%]
+platform/build/tests/test_gate_payload.py::test_a_payload_below_the_file_floor_fails PASSED [ 50%]
+platform/build/tests/test_gate_payload.py::test_an_empty_payload_fails PASSED [ 54%]
+platform/build/tests/test_gate_payload.py::test_a_missing_manifest_fails PASSED [ 59%]
+platform/build/tests/test_gate_payload.py::test_a_file_on_disk_that_the_manifest_does_not_declare_fails PASSED [ 63%]
+platform/build/tests/test_gate_payload.py::test_a_declared_file_missing_from_disk_fails PASSED [ 68%]
+platform/build/tests/test_gate_payload.py::test_content_that_drifted_from_the_manifest_fails PASSED [ 72%]
+platform/build/tests/test_gate_payload.py::test_a_file_with_no_provenance_fails PASSED [ 77%]
+platform/build/tests/test_gate_payload.py::test_the_manifest_itself_needs_provenance PASSED [ 81%]
+platform/build/tests/test_gate_payload.py::test_an_upload_list_that_differs_from_what_was_scanned_fails PASSED [ 86%]
+platform/build/tests/test_gate_payload.py::test_a_matching_upload_list_passes PASSED [ 90%]
+platform/build/tests/test_gate_payload.py::test_a_payload_inside_the_repository_is_refused PASSED [ 95%]
+platform/build/tests/test_gate_payload.py::test_the_real_payload_passes_if_it_has_been_built PASSED [100%]
+
+=================================== FAILURES ===================================
+_____________ test_an_account_id_inside_an_undecodable_file_fails ______________
+
+gp = <module '_gp_gate_payload' from '/Users/tmwu/Downloads/grx-validation/platform/build/gate_payload.py'>
+tmp_path = PosixPath('/private/var/folders/tj/b_8cr0tx1rjbn74zdt5rqxp00000gq/T/pytest-of-tmwu/pytest-32/test_an_account_id_inside_an_u0')
+
+    def test_an_account_id_inside_an_undecodable_file_fails(gp, tmp_path):
+        """"Binary" is not a reason not to look. A PNG text chunk or a compiled bundle is ASCII inside."""
+        root = make_payload(tmp_path, {"cases/X-1.json": "{}\n"}, {})
+        blob = root / "assets" / "logo.png"
+        blob.parent.mkdir(parents=True, exist_ok=True)
+        raw = b"\x89PNG\r\n\x1a\n\xff\xfe" + FAKE_ACCOUNT.encode() + b"\xc0\xc1"
+        blob.write_bytes(raw)
+        man = json.loads((root / "MANIFEST.json").read_text())
+        man["outputs_sha256"]["assets/logo.png"] = hashlib.sha256(raw).hexdigest()
+        man["provenance"]["assets/logo.png"] = ["PREREGISTRATION.yaml"]
+        (root / "MANIFEST.json").write_text(json.dumps(man, indent=1) + "\n", encoding="utf-8")
+>       assert run(gp, root) == 1
+E       AssertionError: assert 0 == 1
+E        +  where 0 = run(<module '_gp_gate_payload' from '/Users/tmwu/Downloads/grx-validation/platform/build/gate_payload.py'>, PosixPath('/private/var/folders/tj/b_8cr0tx1rjbn74zdt5rqxp00000gq/T/pytest-of-tmwu/pytest-32/test_an_account_id_inside_an_u0/payload'))
+
+platform/build/tests/test_gate_payload.py:167: AssertionError
+----------------------------- Captured stdout call -----------------------------
+payload gate: 48 file(s) under /private/var/folders/tj/b_8cr0tx1rjbn74zdt5rqxp00000gq/T/pytest-of-tmwu/pytest-32/test_an_account_id_inside_an_u0/payload
+  8,501 characters read
+  0 hit(s) excused by SHAPE — the identifier position is already a placeholder, a wildcard, or an AWS-owned value; no reviewed exception involved
+  1 file(s) needed a lossy decode and were scanned as latin-1: ['assets/logo.png']
+  0 hit(s) INHERITED a reviewed exception from a named source:
+
+PASSED — no unredacted cloud identifiers in 48 payload files.
+============================= slowest 10 durations =============================
+3.22s setup    platform/build/tests/test_gate_payload.py::test_no_mutant_control_a_clean_payload_passes
+3.07s teardown platform/build/tests/test_gate_payload.py::test_the_real_payload_passes_if_it_has_been_built
+0.81s call     platform/build/tests/test_gate_payload.py::test_the_real_payload_passes_if_it_has_been_built
+0.09s call     platform/build/tests/test_gate_payload.py::test_a_literal_account_id_in_the_payload_fails
+0.08s teardown platform/build/tests/test_gate_payload.py::test_a_payload_below_the_file_floor_fails
+0.06s call     platform/build/tests/test_gate_payload.py::test_a_matching_upload_list_passes
+0.06s call     platform/build/tests/test_gate_payload.py::test_an_unrelated_sources_waiver_does_not_excuse
+0.05s call     platform/build/tests/test_gate_payload.py::test_no_mutant_control_a_clean_payload_passes
+0.05s call     platform/build/tests/test_gate_payload.py::test_a_shape_excused_hit_needs_no_source_at_all
+0.05s call     platform/build/tests/test_gate_payload.py::test_an_account_id_inside_an_undecodable_file_fails
+=========================== short test summary info ============================
+FAILED platform/build/tests/test_gate_payload.py::test_an_account_id_inside_an_undecodable_file_fails
+======================== 1 failed, 21 passed in 13.56s =========================
+pytest_rc=1

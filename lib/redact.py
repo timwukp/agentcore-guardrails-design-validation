@@ -79,6 +79,28 @@ _ARN_ACCOUNT = re.compile(
 
 ACCOUNT_PLACEHOLDER = "<account>"
 
+# The same ARN, PERCENT-ENCODED inside a URL path — a runtime ARN used as a path segment of an
+# AgentCore invoke URL, so every colon in it arrives as an escape. Measured 2026-08-19 in
+# `results/phase1/F5-7b.json`, which pushed the live account ID twenty times to the repository
+# (private today), inside a botocore read-timeout message quoting that URL. Every pass above missed it
+# because the escape for a colon ENDS IN A LETTER, so there is no word boundary before the digits:
+# `_ARN_ACCOUNT` needs literal colons, and the registered-token pass below was anchored on `\b`,
+# which cannot match after a letter. The gate missed it for exactly the same reason, and now scans
+# each line URL-decoded as well (`check_redaction.scan_forms`).
+#
+# The encoded literal is deliberately NOT quoted here. An earlier draft of this comment spelled it
+# out and the gate raised a finding on this file within the hour, because a URL-decoded copy of that
+# text is a well-formed ARN — the same self-scanning trap `_ARN_ACCOUNT_TRUNCATED` below and
+# `check_redaction.py`'s own ALLOW comment each record falling into. The pattern is the
+# specification; `lib/tests/test_redact.py` holds the literal as data.
+#
+# Anchored on the four encoded ARN fields before the account, so it is shape-based and
+# registry-free like `_ARN_ACCOUNT`: it must be able to protect an account nobody registered.
+# The hex digits are matched case-insensitively, because percent-encoding permits either case and a
+# client library choosing lowercase must not defeat the mask.
+_ARN_ACCOUNT_PCT = re.compile(
+    r"(arn%3[Aa]aws[a-z-]*%3[Aa][a-z0-9-]*%3[Aa][a-z0-9-]*%3[Aa])(\d{12})(%3[Aa])")
+
 # An ARN whose account field was CUT SHORT by a length-based slice upstream. Measured
 # 2026-08-12 in `results/phase1/F3-10.json`: a sample log message truncated to 400 characters
 # ended inside the account field of a `policyEngineArn`, leaving eleven of the live account's
@@ -259,8 +281,22 @@ def mask_text(s: str) -> str:
     """Replace the account field of every ARN in `s`, and every registered account ID.
 
     Idempotent: the placeholder contains no digits, so a second pass finds nothing to
-    replace. The bare-token pass is anchored on `\\b` at both ends, so a 12-digit account ID
-    embedded in a longer digit run is left alone — such a run is not an account reference.
+    replace. The bare-token pass is bounded by `(?<!\\d)` and `(?!\\d)`, so a 12-digit account ID
+    embedded in a longer DIGIT run is left alone — such a run is not an account reference — while
+    one embedded in surrounding LETTERS is still masked.
+
+    WHY DIGIT BOUNDARIES RATHER THAN `\\b`
+    --------------------------------------
+    Measured 2026-08-19: `results/phase1/F5-7b.json` carried the live account ID twenty times, in
+    a commit pushed to the repository (private today), inside a percent-encoded ARN in a URL path
+    (`…%3A<12 digits>%3A…`). `\\b{aid}\\b` cannot match there, because the character before the
+    digits is the `A` of `%3A` — a word character, so there is no boundary to assert. `\\b` encodes
+    "not next to a letter, digit or underscore", but the property that actually matters is only
+    "not part of a longer number": the reason the bare-token pass is bounded at all is the
+    `US_BANK_ACCOUNT_NUMBER` corpus and 12-digit timestamps, both of which are digit runs. Letters
+    around an account ID never make it less of a disclosure, and percent-encoding is the ordinary
+    way a colon becomes a letter. `_ARN_ACCOUNT_PCT` covers the same encoding registry-free, so an
+    unregistered account in an encoded ARN is masked too.
 
     A TRUNCATED ACCOUNT ID IS STILL AN ACCOUNT ID
     ---------------------------------------------
@@ -296,11 +332,12 @@ def mask_text(s: str) -> str:
     start with the same digits cannot match.
     """
     out = _ARN_ACCOUNT.sub(rf"\g<1>{ACCOUNT_PLACEHOLDER}\g<3>", s)
+    out = _ARN_ACCOUNT_PCT.sub(rf"\g<1>{ACCOUNT_PLACEHOLDER}\g<3>", out)
     out = _ARN_ACCOUNT_TRUNCATED.sub(
         rf"\g<1>{ACCOUNT_PLACEHOLDER}:{ARN_TRUNCATED_PLACEHOLDER}", out)
     for aid in _KNOWN:
         if aid in out:
-            out = re.sub(rf"\b{aid}\b", ACCOUNT_PLACEHOLDER, out)
+            out = re.sub(rf"(?<!\d){aid}(?!\d)", ACCOUNT_PLACEHOLDER, out)
         out = _ACCOUNT_FIELD.sub(
             lambda m: (m.group(1) + ACCOUNT_PLACEHOLDER) if aid.startswith(m.group(2))
             else m.group(0), out)

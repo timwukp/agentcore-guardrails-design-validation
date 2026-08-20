@@ -1,0 +1,70 @@
+........................................................................ [  5%]
+........................................................................ [ 10%]
+........................................................................ [ 15%]
+........................................................................ [ 20%]
+........................................................................ [ 25%]
+........................................................................ [ 30%]
+........................................................................ [ 35%]
+........................................................................ [ 40%]
+........................................................................ [ 45%]
+........................................................................ [ 50%]
+........................................................................ [ 55%]
+.....................................................................F.. [ 60%]
+........................................................................ [ 65%]
+........................................................................ [ 70%]
+..................s...........................s......................... [ 75%]
+........................................................................ [ 80%]
+........................................................................ [ 85%]
+........................................................................ [ 90%]
+........................................................................ [ 95%]
+.......s....................................................             [100%]
+=================================== FAILURES ===================================
+____ test_every_loader_call_is_either_resolvable_or_listed_as_unresolvable _____
+
+    def test_every_loader_call_is_either_resolvable_or_listed_as_unresolvable():
+        """A gate that silently skips what it cannot parse is the vacuous-test defect.
+    
+        Three loaders build their `sys.modules` name at run time: two `_load(stem, name)`
+        helpers whose literals sit at the call sites, and the stats mutation harness's
+        `f"_mutant_{name}"`. Each is named in `UNRESOLVABLE` with its reason, and the count is
+        DERIVED from that table rather than written as a tolerance — per
+        feedback_prose_is_not_verified, "at most 3 unresolvable" would not say whether the third
+        is the known helper or a new blind spot.
+        """
+        resolvable = len(loader_registrations())
+        total = 0
+        unresolved_files: set[str] = set()
+        for path in _py_files():
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+            consts = _string_constants(tree)
+            for node in _loader_calls(tree):
+                total += 1
+                arg = node.args[0]
+                ok = (isinstance(arg, ast.Constant) and isinstance(arg.value, str)) or (
+                    isinstance(arg, ast.Name) and arg.id in consts)
+                if not ok:
+                    unresolved_files.add(str(path.relative_to(ROOT)))
+    
+        assert total >= 12, (
+            f"found only {total} by-path loader call(s); the gate has stopped matching the call "
+            "shape it is written against, so it is no longer checking anything")
+>       assert unresolved_files == set(UNRESOLVABLE), (
+            "the set of loaders whose registered name cannot be read statically has changed.\n"
+            f"  now unresolvable: {sorted(unresolved_files)}\n"
+            f"  documented:       {sorted(UNRESOLVABLE)}\n"
+            "Pass a literal or a module-level string constant, or add the file to UNRESOLVABLE "
+            "with a reason why its name cannot collide.")
+E       AssertionError: the set of loaders whose registered name cannot be read statically has changed.
+E           now unresolvable: ['f3_efficacy/tests/test_f3_helpers.py', 'f3_efficacy/tests/test_log_surface_join.py', 'f3_efficacy/tests/test_score_label_join.py', 'f5_redteam/tests/test_injection_tool_response.py', 'f8_regional/tests/test_f8_helpers.py', 'f8_regional/tests/test_policy_engine_regions.py', 'infra/tests/infra_by_path.py', 'lib/tests/test_f7_metric_tables.py', 'lib/tests/test_stats_mutation.py', 'platform/build/gate_payload.py']
+E           documented:       ['f3_efficacy/tests/test_f3_helpers.py', 'f3_efficacy/tests/test_log_surface_join.py', 'f3_efficacy/tests/test_score_label_join.py', 'f5_redteam/tests/test_injection_tool_response.py', 'f8_regional/tests/test_f8_helpers.py', 'f8_regional/tests/test_policy_engine_regions.py', 'infra/tests/infra_by_path.py', 'lib/tests/test_f7_metric_tables.py', 'lib/tests/test_stats_mutation.py']
+E         Pass a literal or a module-level string constant, or add the file to UNRESOLVABLE with a reason why its name cannot collide.
+E       assert {'f3_efficacy...ions.py', ...} == {'f3_efficacy...ions.py', ...}
+E         
+E         Extra items in the left set:
+E         'platform/build/gate_payload.py'
+E         Use -v to get more diff
+
+lib/tests/test_module_name_collisions.py:330: AssertionError
+=========================== short test summary info ============================
+FAILED lib/tests/test_module_name_collisions.py::test_every_loader_call_is_either_resolvable_or_listed_as_unresolvable
+1 failed, 1424 passed, 3 skipped in 2274.81s (0:37:54)

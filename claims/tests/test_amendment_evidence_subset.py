@@ -39,9 +39,9 @@ from pathlib import Path
 
 import pytest
 
-from evidence_subset import (BLOCK_RE, EVIDENCE_SUBSET_CEILING_KB,
-                             EVIDENCE_SUBSET_FLOOR_KB, GATE, ROOT, _GATE,
-                             copy_evidence_subset, declared_provenance, subset_manifest)
+from evidence_subset import (BLOCK_RE, EVIDENCE_SUBSET_CEILING_KB, GATE, RECORDS_PER_CASE_DAY,
+                             ROOT, _GATE, case_days, copy_evidence_subset, declared_provenance,
+                             subset_manifest)
 
 EVIDENCE = ROOT / "evidence"
 
@@ -158,6 +158,63 @@ def test_an_unreadable_record_is_kept_not_dropped(tmp_path):
         "what makes the copy look like the original")
 
 
+def test_redundant_records_of_one_case_day_are_capped(tmp_path):
+    """The cap, checked where the real archive cannot check it: at the boundary.
+
+    The real tree has thousands of records per F6 case-day, so an arm over it can only say "fewer
+    than before". This says the exact number, which is the only way a cap that quietly kept three
+    or dropped to one would be visible.
+    """
+    n = RECORDS_PER_CASE_DAY + 3
+    recs = {f"{i:04d}_call.json": json.dumps({"case_id": "C-1",
+                                              "t_start_utc": f"2026-01-01T0{i}:00:00Z"})
+            for i in range(1, n + 1)}
+    root = _fake_root(tmp_path, recs)
+    kept = sorted(p.name for p in subset_manifest(root=root))
+    assert len(kept) == RECORDS_PER_CASE_DAY, (
+        f"{n} records of one (case, day) produced {len(kept)} kept: {kept}. Each one after the "
+        f"first cannot change the day SET the gate derives, so keeping them is scratch copied "
+        f"once per mutation arm")
+    assert kept[0].startswith("0001_"), (
+        f"the kept records are {kept}; the arms that template a synthetic day-2 record do "
+        f"`next(rglob('0001_*.json'))`")
+
+
+def test_the_cap_never_costs_a_day(tmp_path):
+    """Two days of one case, more records per day than the cap: both days must survive.
+
+    This is the property the whole cap rests on, stated at the boundary rather than only over the
+    real archive. If the cap were counted per CASE instead of per (case, day) — one plausible
+    slip — this reds and `test_a_subset_copy_is_bounded_above_and_below` might not, because the
+    real tree's F6 case-days are far apart in sort order.
+    """
+    recs = {}
+    for day in ("2026-01-01", "2026-01-02"):
+        for i in range(1, RECORDS_PER_CASE_DAY + 3):
+            recs[f"{day}_{i:04d}.json"] = json.dumps(
+                {"case_id": "C-1", "t_start_utc": f"{day}T0{i}:00:00Z"})
+    root = _fake_root(tmp_path, recs)
+    assert case_days(root=root) == {("C-1", "2026-01-01"), ("C-1", "2026-01-02")}
+    got = {json.loads((root / p).read_text())["t_start_utc"][:10]
+           for p in subset_manifest(root=root)}
+    assert got == {"2026-01-01", "2026-01-02"}, (
+        f"the cap kept records from {sorted(got)} only; a dropped day is a dropped gate answer")
+
+
+def test_a_declared_cases_record_with_no_timestamp_is_kept(tmp_path):
+    """A `summary.json`-shaped aggregate contributes no day but does contribute `n_matched`.
+
+    The gate has two distinct failures — "no record carries a declared case_id" and "no day could
+    be established" — and a cap keyed on the day would have nowhere to put a record with none.
+    Dropping it would move a mutant from one message to the other.
+    """
+    root = _fake_root(tmp_path, {
+        "0001_call.json": json.dumps({"case_id": "C-1", "t_start_utc": "2026-01-01T00:00:00Z"}),
+        "summary.json": json.dumps({"case_id": "C-1", "n_trials": 300}),
+    })
+    assert "summary.json" in {p.name for p in subset_manifest(root=root)}
+
+
 # --------------------------------------------------------------------------- the equivalence
 
 def test_the_subset_yields_the_same_observation_days_as_the_full_tree(tmp_path):
@@ -229,15 +286,47 @@ def test_the_subset_keeps_the_sibling_cases_that_make_a_lost_case_filter_visible
 # --------------------------------------------------------------------------- the bound
 
 def test_a_subset_copy_is_bounded_above_and_below(tmp_path):
+    """Above by size; below by COVERAGE — every (case, day) pair the archive holds.
+
+    The floor used to be `EVIDENCE_SUBSET_FLOOR_KB = 8_000`, and it was the wrong instrument in
+    both directions: one large record satisfies it, and it reds the moment the subset legitimately
+    shrinks. On 2026-08-20 `RECORDS_PER_CASE_DAY` made the subset shrink on purpose — the ceiling
+    had fired at 77,130 KB after an authorized F6 day-2 added 9,448 records that could not move any
+    gate answer — so a size floor would have had to be lowered in the same commit that lowered the
+    size, which is a floor that only ever agrees with whatever was measured last.
+
+    What the arms actually depend on is that no observation day was lost, and that is derivable:
+    `case_days()` reads the archive before the cap has any say. Re-derived here from the COPIED
+    bytes rather than from the manifest, so a cap that kept the right paths in the manifest and a
+    copy loop that dropped them are still two different outcomes.
+    """
     dst = copy_evidence_subset(tmp_path / "repo")
     size = _kb(dst)
     assert size <= EVIDENCE_SUBSET_CEILING_KB, (
         f"the evidence subset is {size} KB; the ceiling is {EVIDENCE_SUBSET_CEILING_KB} KB. "
         f"26 arms at this size is how the whole-tree copy reached ~4.9 GB — find what got "
         f"copied, do not raise the bound")
-    assert size >= EVIDENCE_SUBSET_FLOOR_KB, (
-        f"the evidence subset is only {size} KB; the derivation has stopped selecting records "
-        f"and every amendment arm would fail for the wrong reason")
+
+    expected = case_days()
+    assert expected, (
+        "case_days() is empty, so the floor below asserts nothing — the derivation has stopped "
+        "reading the archive (`feedback_zero_file_scan_is_error`)")
+    copied: set[tuple[str, str]] = set()
+    for p in dst.rglob("*.json"):
+        if p.name == "environment.json":
+            continue
+        try:
+            rec = json.loads(p.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            continue
+        if not isinstance(rec, dict) or not rec.get("t_start_utc"):
+            continue
+        copied.add((str(rec.get("case_id")), str(rec["t_start_utc"])[:10]))
+    assert copied == expected, (
+        f"the copy does not reproduce the archive's observation days.\n"
+        f"lost: {sorted(expected - copied)}\ninvented: {sorted(copied - expected)}\n"
+        f"A lost pair means RECORDS_PER_CASE_DAY or the copy loop dropped a day the gate reads; "
+        f"an invented one means the copy is not a subset.")
 
 
 def test_the_ceiling_would_have_caught_the_whole_tree_copy():

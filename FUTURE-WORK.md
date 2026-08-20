@@ -234,6 +234,49 @@ Separately, the strongest honest badge-equivalent claim for a self-executed re-r
 question** (`RESEARCH-evidence-presentation-20260815.md` §6.4) — Artifacts Available and Artifacts
 Evaluated remain earnable on their own terms even when Results Validated is not.
 
+### 32. Two sealed oracle kinds adjudicate a threshold with no decisiveness requirement, and three verdicts flipped on it
+
+**Evidence.** `results/FINDING-F6-DAY2-DECISIVENESS.md`, from the 2026-08-19 day-2 replication of all
+nine F6 cases. `BAND_CONTAINS` computes and publishes an order-statistic CI for each percentile and then
+adjudicates on the **point estimate**; `CI_OVERLAPS` treats any non-empty intersection as TRUE regardless
+of how small it is. Neither can express "the interval spans the threshold, so this measurement decides
+nothing", even though `INCONCLUSIVE` exists elsewhere in the study.
+
+Three cases flipped FALSE → TRUE on replication, and in all three the day-1 CI lay wholly on the
+refuting side of the threshold while the day-2 CI straddles it:
+
+| Case | day-1 interval vs threshold | day-2 interval vs threshold |
+|---|---|---|
+| F6-2 | p99 CI [551, 689], wholly above 500 | p99 CI [317, 752], **straddles** 500; scored TRUE on p99 = 375 |
+| F6-5 | p99 CI [541, 858], wholly above 500 | p99 CI [347, 722], **straddles** 500; scored TRUE on p99 = 466 |
+| F6-8 | slope CI [838.7, 862.7], disjoint above [165, 750] | slope CI [736.4, 757.5], overlaps by **13.6 ms**; 36% still above 750 |
+
+The day-2 p99 CIs are 435 ms and 375 ms wide — each about as wide as the 400 ms band being adjudicated.
+Every day-2 verdict is a **faithful** application of its sealed oracle; all five guards pass and F6-2's
+second condition holds on both days. Nothing was mis-scored. The `kind` is underpowered for the
+threshold it is asked to decide.
+
+**Why this is Tier 1.** The paper's Chapter 10 table cites F6-2 and F6-5 as **FALSE — p99 outside**, and
+§10.1 argues explicitly that failing on the tail is "the correct thing to fail on". That argument needs
+a tail estimate precise enough to fail on, and at n = 1,000 it is not. As written the paper asserts a
+refutation its own confidence intervals cannot carry on a second day.
+
+**Closes when.** (a) a citation qualification is recorded — **not** in `results/ERRATA.md`, whose
+opening paragraphs scope it to "factual errors in what a sealed file says … and not for verdicts,
+which live in `results/` and the findings"; nothing here is a wrong statement inside a sealed file, so
+an entry there would be the first violation of that file's own charter. The two existing citation
+restrictions (F5-3b non-publishable, F1-19 not a verdict) live as prose in
+`results/CENSUS-NOT-MEASURED.md` and this register respectively, which means there is **no single place
+a reader can check before citing a case** — so the closing condition is a `results/CITATION-POLICY.md`
+holding all three restrictions plus this one, derived-checked against the case list the way the census
+is, and it is the same artifact the GRX Live plan calls `citation_policy.json`. The statement it must
+record for F6-2, F6-5 and F6-8: neither TRUE nor FALSE may be cited on the tail comparison, because
+n = 1,000 cannot adjudicate a 500 ms p99 threshold at this dispersion. (b) Chapter 10's table and Figure 3 carry the qualification, and
+the "correct thing to fail on" paragraph is rewritten to distinguish the p50/p90 claims (decisive on
+both days, inside the band on both days) from the p99 claim (not established either way); and (c) a
+successor `kind` with a decisiveness requirement is specified for any **future** pre-registration —
+`PREREGISTRATION.yaml` is sealed, so these cases cannot be re-scored and must not be.
+
 ---
 
 ## Tier 2 — structural gaps that make the paper unreviewable as science
@@ -608,6 +651,21 @@ sha256, **or** a lifecycle exception is added for them and recorded. Blocked on 
 (item 16), so the pull may have to be done with the AWS CLI instead. **This has a date on it** — unlike
 every other item here, doing nothing eventually destroys evidence.
 
+**CLOSED 2026-08-19 — pulled and verified.** Manifest: `results/ITEM24-PULL-MANIFEST.json`. The premise
+that the records were "spread across four `out/<ts>/` prefixes" was wrong in a way that made the job
+smaller: the prefixes are **cumulative re-publishes**, not increments. Each run id's object set was
+compared across every prefix holding it and found to have exactly **one** signature — 14 objects for
+`r20260813T145248Z` (in 9 prefixes) and 310 for `r20260814T031052Z` (in 5) — so the latest prefix alone
+is complete. Pulled `out/20260815T061609Z/evidence/{r20260813T145248Z,r20260814T031052Z}/` with
+`aws s3 cp --recursive`: **324 objects, 1,721,352 bytes**. The `runner/sync.py pull` path was not used,
+so item 16 stays open. Verified three ways — every object's local MD5 equals its S3 ETag (all 324 are
+single-part, so the ETag *is* an MD5); every local size equals the listed size; and the local file set
+equals the listed key set **in both directions**, so nothing extra arrived and nothing is missing. A
+sha256 per object is recorded in the manifest as the durable digest, because an ETag is S3's own and
+would not outlive the objects. F10-3's and F3-11_snapshot's day-1 call records now exist outside the
+expiring bucket. The `expire-90d` lifecycle is deliberately left in place: extending retention of
+unredacted evidence would be a liability, not a safeguard.
+
 ### 25. Two published run ids cannot be dated from their own name
 
 **Evidence.** F8-5 (FALSE) and F8-8 (TRUE) carry `run_id` `smoke20260810T0305Z`, which
@@ -763,6 +821,246 @@ policy deliberately (it changes nothing the sealed oracle imports) or the eviden
 given a derived subset in the manner of `claims/tests/evidence_subset.py`, whose whole purpose was this
 problem one size ago. **Do not close it by deleting evidence.**
 
+### 33. The day-2 driver's `--run-id` is not honoured, so its observation proof reads an empty directory and reports "did not observe"
+
+**Evidence.** `session-logs/f6-day2-REAL-20260819.log`. `tools/day2_replicate.py` mints a fresh run id,
+appends `--run-id <new>` to the producer command, and afterwards calls
+`fresh_records(<new>, today)` as its proof that the producer observed something. State-loading producers
+ignore the flag: `lib.testbed.State.load_or_new` reads `state.json` and adopts the run id recorded
+there. All three F6 producers on 2026-08-19 printed `run_id=r20260810T130945Z` under a command line
+reading `--run-id r20260819T030137Z`. Measured:
+
+| | |
+|---|---|
+| `fresh_records("r20260819T030137Z", "2026-08-19")` — what the driver proved on | **0** |
+| `fresh_records("r20260810T130945Z", "2026-08-19")` — where the records went | **9,448** |
+| `evidence/r20260819*` directories | **none** |
+
+So three producers that ran 52 min, 36 min and 2 h 41 min of real measurement each returned **rc 2 —
+"did not observe"**. The early `return 2` fires before the per-case comparison loop, so
+`results/day2_replication_<day>.json` was never written either; it was reconstructed afterwards by
+`tools/day2_adjudicate_offline.py` from the driver's own pre-run snapshots.
+
+**Why it matters beyond one wasted signal.** This is the *second* failure in one week caused by a stale
+run id in `state.json`, in the opposite direction: on the morning of 2026-08-19 a hand-run replayed
+day-1 checkpoints and produced a confident verdict from no measurement. The driver exists to prevent
+that one; this defect makes it produce a confident "nothing happened" over a real observation. Both
+sit in the same place and neither is caught by a gate. It also **blocks the remaining day-2 work** —
+F4-6 and F2-1 are gateway-dependent and will adopt their day-1 run id the same way.
+
+**Closes when.** (a) the driver determines the **effective** run id after the producer returns — from
+the run id recorded in the verdict files the producer re-emitted, the way `evidence_date()` already
+prefers a record's own timestamp over a name — and scopes `fresh_records`, `zero_call_capture` and
+`transient_failures` to that; (b) it prints loudly when the effective id differs from the one it
+asked for, because "the producer ignored `--run-id`" is itself a fact worth publishing, and refuses if
+the effective id is neither the minted one nor a known day-1 one; (c) the `run_id` guard at the top
+(which refuses a minted id naming a day-1 date, and refuses if `evidence/<minted>` exists) is
+re-examined, since it protects a directory the producer may never write to; and (d) a test drives a
+double producer that writes under a *different* run id than the flag it was given and requires the
+driver to adjudicate rather than return 2 — an echoing double would never reach this path.
+
+### 34. The guard against counting a failed probe as an observation missed all eight of a run's failed calls, for three independent reasons
+
+**Evidence.** `transient_failures()` was written after F8-5 (2026-08-15) precisely so a throttled probe
+cannot be scored as evidence. On 2026-08-19 it reported `clean_observation: true` for **all nine** F6
+cases over a run with **8 failed calls in 9,448** — derived by a predicate over each record's own `ok`
+flag, un-scoped, in `tools/day2_adjudicate_offline.py::failed_calls_run_wide`:
+
+| directory | failures |
+|---|---|
+| `f6_latency/F6-2_5/` | 1 × `ReadTimeoutError` @ **70,003 ms**; 3 × `ClientError` / HTTP **500** |
+| `f6_latency/F6-6_7_8/` | 3 × `ProtocolError` (`RemoteDisconnected`, `ConnectionResetError(54)` ×2); 1 × HTTP **404** on `mcp:tools/call` with an empty message |
+
+Plus one *successful* `converse` at **59,722 ms**. The F6-2/F6-5 bare arm went from `n_done 1000,
+n_failed 0` to `998 / 2`, and `bare_total_ms.max` from 942 ms to 37,234 ms. Three independent causes,
+any one sufficient alone:
+
+1. **`TRANSIENT_ERRORS` is a name list.** It holds `RequestTimeout`, `RequestTimeoutException` and
+   `ModelTimeoutException` but not botocore's actual read-timeout class `ReadTimeoutError`, and has no
+   entry for a bare HTTP `500`. Third instance this month of a name list failing to cover the next
+   member of a family a predicate would have caught.
+2. **`_scoped()` cannot match a shared per-producer directory.** It requires a path component to *be*
+   the case id or start `<case>-`. These records live under `F6-2_5` and `F6-6_7_8`, because one
+   producer serves several cases, so no case id matches and the scan is empty whatever the error codes
+   are. Note this silently narrows `evidence_date()` and `fresh_records()` for the same directories.
+   A **third** consumer is affected in the opposite direction: the records themselves stamp `case_id`
+   with the *producer group's* name (`F6-1_3_4_9`, `F6-2_5`, `F6-6_7_8` — 4,033 / 5,631 / 9,287
+   records), so `check_amendment_readiness.observation_days()`, whose whole purpose is to scope
+   replication days to the case under test, can only be satisfied by declaring a group id. Its scoping
+   then degrades from per-case to per-producer, which is safe for these producers only because a
+   group's members are always observed in one invocation. Declaring a real verdict id such as `F6-6`
+   matches zero records and the gate fails loudly — the right direction for the wrong reason, and the
+   reason `FINDING-F6-DAY2-DECISIVENESS.md` has to carry a `cases_note` explaining a nine-case finding
+   whose `cases` list holds three strings, none of which is a case.
+3. **Four of the eight records carry no `error_code` and no `error_class` at all.** The `F6-6_7_8`
+   aborts record their failure only in `error_message`, and the 404 only in `http_status` with an empty
+   message. Any classifier keyed on an error *code* is blind to them regardless of how long its list
+   grows — which is why (a) below cannot be satisfied by extending the list.
+
+**Why this is not only bookkeeping.** Two of those four aborts are the whole reason **F6-6 lost its
+amendment bar**: `n_usable` 1000 → **999** against `planned_n` 1000, so `n_met` went true → false,
+while F6-7 lost one it could afford (1600 → 1599). F6-8's `n_attempted` and `n_usable` are identical
+across the two days, so the aborts did **not** touch the case that flipped. A guard reporting "clean"
+is therefore hiding the difference between "the platform behaved differently" and "two TCP connections
+were reset".
+
+**Closes when.** (a) transient classification is a predicate over the record's own success flag first
+(`ok is False`) and only then refined by shape — botocore connection/timeout exception classes, any 5xx
+`http_status`/`ResponseMetadata.HTTPStatusCode` — with `TRANSIENT_ERRORS` kept only as an explicit
+extra rather than as the gate; (b) `_scoped` also matches a component that names the case as one of
+several joined by `_` (`F6-2_5` → F6-2, F6-5; `F6-6_7_8` → F6-6, F6-7, F6-8), and a test asserts the F6
+directories resolve to the cases whose records they hold, and the same resolution is applied to a
+record's `case_id` so that `check_amendment_readiness.observation_days()` can be given real verdict ids
+and still match — a finding about F6-6 should not have to name F6-7's records to be checkable;
+(c) a mutation check confirms the guard fires
+on **this run's** records — all eight, not just the named ones — since a guard that reported clean over
+a 70-second timeout is indistinguishable from no guard at all until it is shown to fail on the real
+data.
+
+### 35. The redaction gate read every published byte for five days and could not see the account ID in twenty of them, because both guards anchored the identifier on `\b`
+
+**Severity: this one got past the gate and into a commit.** The live AWS account ID was present
+**twenty times** in `results/phase1/F5-7b.json`, from the only commit that ever touched that path
+(`3f3c398b`, 2026-08-14T17:02:41Z) until it was masked on 2026-08-19 — so it was in the pushed tree
+for the file's entire life, not introduced by a later edit. The repository is **private** (verified by
+API on 2026-08-19: `private: true`, 0 forks, 0 watchers, 0 subscribers, one collaborator), so no
+third-party read is evidenced; the severity is unchanged all the same, because what failed is a
+**pre-publication** gate whose whole job is to be correct *before* visibility is ever widened. Full
+write-up in
+`results/FINDING-P1-REDACTION-ENCODING.md`; recorded here because the defect is a property of the
+guards, not of the case.
+
+**What happened.** F5-7b's instrument invokes an AgentCore runtime whose ARN is a **path segment of
+the invoke URL**, so every colon in it arrives percent-escaped. A botocore read-timeout message quotes
+that URL verbatim, and the record keeps the message. `check_redaction.py`'s account pattern is
+`\b\d{12}\b`; the character before those digits was the trailing letter of an escape, so **the word
+boundary could not exist** and the pattern did not fire. The same one-character property defeats
+`arn`, `private-ip`, `vpc-or-subnet-id` and `s3-uri` — five of the gate's patterns and both of
+`lib/redact.py`'s ARN passes, from a single cause.
+
+**Why neither of the two layers caught it, which is the part worth keeping.** This project's stated
+defence is that a masker (`lib/redact.py`) and a gate that reads the bytes (`check_redaction.py`) are
+independent, so what lives in the gap is only "an identifier shape the masker does not cover". Here
+they were **not independent**: both anchored the account ID on `\b`, and both broke on the same input
+for the same reason. Two layers with a shared assumption are one layer. The gate also *did* fire on
+this exact file for `private-ip` and carried a reviewed ALLOW for it — so the file was known to the
+gate, reviewed by a human, and still shipped the account ID.
+
+**Fixed 2026-08-19** (both root causes, not the instance): `check_redaction.scan_forms()` applies
+every pattern to each line as written **and** URL-decoded, so the whole class closes in one place and
+each pattern keeps being written against the identifier's real shape; `lib/redact._ARN_ACCOUNT_PCT`
+masks the encoded ARN registry-free; and the registered-token pass moved from `\b…\b` to
+`(?<!\d)…(?!\d)`, because the property that actually matters is "not part of a longer *number*" — the
+`US_BANK_ACCOUNT_NUMBER` corpus and 12-digit epochs are digit runs — and letters around an account ID
+never make it less of a disclosure. **24 arms** in `lib/tests/test_redaction_gate_encoding.py`,
+including two that assert the OLD anchors were structurally blind (so the suite distinguishes a fix
+from a claim), a no-mutant control, a mutant that restores the identifier and requires conviction, and
+two that assert the widening did **not** start masking 12-digit corpus values or epochs. Measured
+2026-08-20 over the six redaction-related suites: 114 arms pass, 90 of them pre-existing and unchanged.
+`results/phase1/F5-7b.json` `38e0ba4a…0de9635c` → `1d45454a…069a3414b7`, 20 occurrences → 0, verdict
+and every other field byte-identical.
+
+**The `%3A` fix was not the whole cause — a second instance, 2026-08-20.** `\b` was left in place and
+`%3A` was only one way to break it. Mutation-testing the new payload gate
+(`platform/build/gate_payload.py`, 22 arms) produced an arm that puts the account ID inside a file that
+will not decode as UTF-8, and it **failed**: Python's `\w` is Unicode-aware, so a latin-1 high byte is a
+word character and `\b\d{12}\b` has no leading boundary — exactly `%3A`'s property. The general case is
+worse here than the binary one, because this repository ships zh-TW prose and two 61-slide zh-TW decks:
+CJK either side of twelve digits with no separator is equally invisible. Adopting `lib/redact.py`'s
+`(?<!\d)…(?!\d)` was **measured before being rejected**: of **11,679** hex digests in scanned files,
+**281** hold a run of exactly twelve digits, so that boundary would raise 281 findings that are sha256
+characters. `\b` is load-bearing there; the asymmetry is that the masker matches a *known literal*
+account while the gate matches any 12-digit *shape*. Fixed as a **form, not a pattern**: `scan_forms()`
+also yields each form with every non-ASCII character replaced by a space (one character for one, so
+reported columns still line up), which restores the boundary around CJK and high bytes while leaving
+ASCII-flanked digests protected. `scan_forms()` now returns `(form, note)` pairs rather than a list
+whose label a caller derived from its index, because two independent reasons to add a form now exist.
+New labels: `(non-ASCII blanked)` and the composed `(url-decoded ×1 + non-ASCII blanked)`.
+**Zero new findings on the current tree** — rc 0 over 745 files / 48,061,072 bytes, 67.4 s, that
+denominator being what the then-current nine-extension allowlist admitted (see the third instance
+below, which replaced it). **Still blind, knowingly:** an account ID flanked by ASCII letters on both
+sides, asserted by an arm so the limit is visible rather than inferred.
+
+**Closes when.** (a) the fix is in `main` — a PR, since the published blob is what a reader fetches;
+(b) it is stated plainly, in the PR and here, that **rewriting history is not part of the remedy**:
+the pre-fix blob stays reachable by SHA for as long as the repository exists, so masking forward does
+not un-write it. Because the repository is private, that is a **decision point before any future flip
+to public** — not a completed disclosure — and it belongs in whatever checklist governs that flip.
+Masking forward is proportionate rather than sufficient precisely because an account ID **is not a
+credential**;
+(c) a test asserts the gate's patterns are applied to more than one form of each line, so a future
+performance-minded simplification that drops the decoded form reds the suite; (d) the **encoding
+family is enumerated rather than assumed closed** — URL escaping is the one that shipped, but JSON
+`:`, HTML entities and base64 are the same defect wearing a different alphabet, and the register
+should say which of them the gate does *not* cover rather than leave a reader to infer it. As of
+2026-08-19 the gate covers URL escaping only, to two decode rounds; (e) the **neighbour-character
+family** is enumerated the same way, now that `\b`'s claim is written down — *a pattern anchored on `\b`
+asserts something about every character class that can neighbour the identifier*. As of 2026-08-20 the
+gate covers non-ASCII neighbours (blanked form) and does **not** cover ASCII letters touching both ends
+of a 12-digit run, which is the 281-of-11,679-digest trade recorded above and asserted by an arm. This
+item does not close on that residual being closed — it closes on it being *stated*, because closing it
+would cost 281 false findings, and a gate whose output is mostly noise is a gate nobody reads.
+
+**A third instance, and it was about the denominator rather than the pattern — FIXED 2026-08-20.**
+The first two instances are both about which *forms* of a line the patterns see. This one is about
+which *files* the gate opens at all. `SCAN_EXT` covered `.csv .json .md .py .sh .sql .txt .yaml .yml`
+and nothing else, which is a floor with no ceiling (`feedback_scope_as_namelist`), and the version of
+this paragraph written on 2026-08-19 said only that `.log` was missing and that the 7 local logs
+"happen to be clean, which is luck". Measured before anything was changed, the gap was far wider than
+that and the luck had already run out. The allowlist was skipping **87 files / 701,558 bytes**: **56
+`.jsonl`** corpora under `corpora/` and `corpora_deviation/` — the PII, prompt-attack and multilingual
+fixtures, i.e. the files that hold identifier shapes *by design*; **22 `.log` + 3 `.rc`** under
+`session-logs/`; **4 renamed checkpoints** (`F2-2__tau_floor.json.smoke-20260812` and siblings), JSON
+that left the scan the instant a suffix was appended to its name; and `PREREGISTRATION.sha256` plus
+`.gitignore`. Scanning them: **44 hits in the corpora, every one already excused by a pre-existing
+path-independent rule (zero new waivers), and 7 unwaived identifiers in 2 session logs.** So the
+allowlist was not sparing the gate any noise — it was simply not looking.
+
+**Fixed as a predicate, not a tenth extension.** `SCAN_EXT` is gone; there is no filename test of any
+kind, and a file that will not decode as UTF-8 is read as **latin-1** rather than skipped, because
+skipping what does not decode is the same defect wearing a different hat. This is the shape
+`platform/build/gate_payload.py` was built with from birth — and it was *that module's docstring*,
+written as an explicit scope claim about the repo gate, that got the gap measured
+(`feedback_guard_scope_is_a_claim`). `f1_config/.wheel_cache/` became an honest directory skip: 15
+gitignored third-party `.whl` zips, unreachable by a reader, whose compressed bytes read as latin-1
+can match a shape-based pattern by chance. Verified **rc 0 over 838 files / 49,393,045 bytes / 10,952
+reviewed exceptions**, against 745 files / 48,085,034 bytes / 10,912 for the last allowlisted run of
+the same day — **+93 files and +1,308,011 bytes the gate had never read**.
+
+**And the gate was itself a leak channel, which is the part that generalises.** The first run with the
+new predicate returned 11 findings, **10 of them inside the redaction machinery's own diagnostic
+output**: 4 in `session-logs/redaction-gate-20260819-pctfix.log` — this gate's own earlier output,
+convicted on identifiers it had printed itself, because a finding was reported as
+`form.strip()[:120]` — and 6 in a `pytest -v` log that were nothing but **test ids**, because
+`parametrize` stringifies its arguments and the canary suite had assembled its fixtures at runtime to
+keep shapes out of its *source* while putting them straight into its *output*. Waiving those 10 would
+have moved the gap rather than closed it, so each was fixed at its producer
+(`feedback_fix_producer_not_janitor`): `_snippet()` now masks every occurrence of **every** pattern
+(not only the one that fired — `arn` stops before the account field, so it was printing the digits
+that the `aws-account-id` finding one line below was masking); the three `parametrize` sites take the
+dict key and look the fixture up inside the test; and `runner/teardown.py` stopped printing the runner
+bucket name, which lives in gitignored `runner/.state/` precisely because it is a redaction target.
+The two historical logs were retro-masked with a stamp naming the date, the reason and the producer
+fix — they are cited evidence, so the file/line/pattern/count columns are untouched.
+
+**Closes when** (this third instance): (a) the predicate is in `main`; (b) arms exist that would have
+failed before it — **`lib/tests/test_redaction_scan_predicate.py`, 24 arms**, of which 8 plant an
+identifier in one of each shape the allowlist skipped and 8 more assert that shape's suffix was
+absent from the nine, so the first 8 are a regression test rather than an assertion (each passed
+*vacuously* before, since the gate never opened the file); one reads `files()` by AST and requires
+that it consults no filename attribute, because 8 fixtures cannot notice a *deny*list or a
+`MIN_SIZE`; one asserts the latin-1 path convicts rather than returning "cannot read"; and four cover
+the report; (c) the guard against the gate being a leak channel is a **property, not a list of
+values** — the last arm runs the gate's own patterns over the gate's own output and requires zero
+unwaived hits, so a leak shape nobody has enumerated is covered the day the report grows a line;
+(d) four mutations are killed by exactly the arms that claim them, with the no-mutant control run
+first: restoring the nine-extension allowlist (16 red), removing the latin-1 fallback (1), masking
+only the firing pattern (2), masking only the first occurrence (1). All four verified 2026-08-20 with
+the subject's sha256 checked back to its pre-mutation value
+(`feedback_killed_harness_races_next`). **(a)–(d) are met; this instance closes with the PR that
+carries them.** The two residuals recorded above — the unretractable pre-fix blob and the
+ASCII-flanked digit run — keep the item open.
+
 ---
 
 ## Tier 5 — citation hygiene, before anything is published
@@ -795,6 +1093,39 @@ a live number; do not claim AWS has a fixed prose template (four such claims wer
 survived only 1-2); and check whether the **OWASP Top 10 for Agentic Applications 2026**
 (2025-12-09) supersedes T1–T17 as the mapping target before building Chapter 2 on v1.1 alone — it
 was sampled for cross-mapping evidence but was **not itself researched**.
+
+### 36. An elided hash cited in prose is now proven to be a *real* hash, and still not proven to be the *right* one
+
+**Found** 2026-08-20, while verifying a table before pushing it. `results/FINDING-F6-DAY2-DECISIVENESS.md`
+§6.3 records six sha256 values and says in the same breath that they are the only way to tell which
+day a live F6 verdict file holds. One of the six was elided one character short of the end of the hash
+and matched no sha256 in existence (DEV-P4-44). Twenty-one elided-hash citations were in scope across
+twelve documents; none had ever been checked.
+
+**Closed by** `claims/tests/test_hash_citations.py`: every elided citation must resolve against a
+universe of the sha256 of every in-scope file plus every 64-hex value the study has recorded, with
+deliberately-unretained values registered and asserted in both directions. 9 arms, four mutations, one
+of them against the live document.
+
+**What stays open, and it is the interesting half.** Resolution proves a cited hash is *real*. It does
+not prove the sentence attributes it to the right file, because deriving which file a prose hash refers
+to is not mechanically possible in general — the surrounding sentence carries that, and some citations
+name evidence that is not in this tree. Exactly one table is checked that far: the F6 restore table,
+where the pairing *is* the claim, so live-file/day-1-archive identity, per-file hash agreement, and the
+verdict column are all asserted. The other eighteen citations could each be a real hash printed beside
+the wrong filename and every gate would pass.
+
+**Closes when** either (a) hash citations carry the path they describe in a machine-readable form — a
+convention, not a rewrite: `` `<path>` `<hash-elision>` `` adjacent in one sentence is enough for a
+resolver to check the pairing — and a test enforces it for every citation of a path that exists in the
+tree; or (b) the class is shown to be empty by a one-time audit of all eighteen, recorded with its
+date and denominator, in which case what remains open is only the *next* citation. (a) is preferable:
+(b) expires the day someone writes the nineteenth.
+
+**Why it is registered rather than left implied by a passing suite.** The gate's reach is narrower than
+its name suggests, and a docstring saying so is where the next instance hides
+(`feedback_guard_scope_is_a_claim`). This register is the only place a reader looks for what a green
+suite does *not* cover.
 
 ---
 

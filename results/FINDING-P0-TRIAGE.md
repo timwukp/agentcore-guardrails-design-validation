@@ -265,9 +265,16 @@ python3 claims/check_coverage.py                 # 15 checks over 546 claims
 python3 claims/check_coverage.py --self-test     # 14 mutations + control arm
 python3 claims/03_exclusion_register.py --check  # register matches the triage
 python3 -m pytest claims/tests/ -q               # 381 tests
-python3 check_redaction.py                       # >=32 files, >=800KB, no identifiers
+python3 check_redaction.py                       # >=800 files, >=45000KB, no identifiers
 python3 claims/02_check_references.py            # 24/24, live HTTP
 ```
+
+The redaction floors are stated as `>=` and checked against a live run by
+`claims/tests/test_finding_numbers.py`, never pinned. They were `>=32 files, >=800KB` until
+2026-08-20, when `check_redaction.py` stopped selecting files by extension and the real denominator
+turned out to be **838 files / 49,393 KB** — a floor 26× below actual is a floor that cannot notice
+a broken file list, which is the one thing it exists to notice
+(`results/FINDING-P1-REDACTION-ENCODING.md` §4c).
 
 The self-test is the load-bearing one. It mutates the triage in memory 14 ways —
 bad class, dropped case, unknown case, missing reason, short reason, untested

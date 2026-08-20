@@ -1,0 +1,164 @@
+....F.....FF.EFF........................................................ [ 16%]
+........................................................................ [ 32%]
+........................................................................ [ 48%]
+........................................................................ [ 65%]
+........................................................................ [ 81%]
+........................................................................ [ 98%]
+........                                                                 [100%]
+==================================== ERRORS ====================================
+____________ ERROR at teardown of test_kills_a_single_day_amendment ____________
+the live results tree changed while this test ran:
+  MODIFIED results/day2_replication_2026-08-19.json
+
+This test made no such write in-process, but it spawned 1 subprocess(es) (/Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python), whose writes an audit hook in THIS interpreter cannot see. A child process is a write this test caused, so it is charged here rather than excused: pass the child a tmp_path root, or assert on its output without letting it write into the live tree.
+
+A checkpoint written by a test makes a live run resume trials it never ran, and `Checkpoint.load`'s case_id/cell guard cannot see it because the test chose those values. Pass a `tmp_path`-based root — `lib/tests/test_arms.py` has a `roots` fixture that does exactly this — rather than letting the default `Path('results')/'checkpoints'` apply.
+This guard was added after results/checkpoints/T__main.json was found in the live tree carrying a StubClient's 'stub exhausted' failure.
+=================================== FAILURES ===================================
+______ test_the_subset_yields_the_same_observation_days_as_the_full_tree _______
+
+tmp_path = PosixPath('/private/var/folders/tj/b_8cr0tx1rjbn74zdt5rqxp00000gq/T/pytest-of-tmwu/pytest-23/test_the_subset_yields_the_sam0')
+
+    def test_the_subset_yields_the_same_observation_days_as_the_full_tree(tmp_path):
+        """THE load-bearing arm: the gate must not be able to tell the subset from the archive.
+    
+        Run against the real repo (read-only, no copy) and against a subset tree, then compared
+        row by row. Everything else in this file is about size; this is the arm that says the
+        saving cost nothing. Asserted by running the gate rather than by re-deriving the days
+        here, because a re-derivation in the test would share the very filter under test.
+        """
+        real = _run_gate(ROOT)
+>       assert real.returncode == 0, (
+            f"the gate does not pass against the real tree, so there is no reference to compare "
+            f"the subset against:\n{real.stderr[-800:]}")
+E       AssertionError: the gate does not pass against the real tree, so there is no reference to compare the subset against:
+E         FAILED — 1 problem(s) in 98 assertions:
+E           - FINDING-F6-DAY2-DECISIVENESS.md: status 'OBSERVED' is not one of ['AMENDED', 'AMENDMENT_DEFERRED', 'CONFIRMS_DOCUMENT', 'INTERNAL', 'OBSERVATIONS_COMPLETE', 'READY_TO_AMEND', 'RESOLVED']
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python', '/Users/tmwu/Downloads/grx-vali...DED', 'AMENDMENT_DEFERRED', 'CONFIRMS_DOCUMENT', 'INTERNAL', 'OBSERVATIONS_COMPLETE', 'READY_TO_AMEND', 'RESOLVED']\n").returncode
+
+claims/tests/test_amendment_evidence_subset.py:172: AssertionError
+__________________ test_control_arm_the_unmutated_tree_passes __________________
+
+tree = PosixPath('/private/var/folders/tj/b_8cr0tx1rjbn74zdt5rqxp00000gq/T/pytest-of-tmwu/pytest-23/test_control_arm_the_unmutated0/repo')
+
+    def test_control_arm_the_unmutated_tree_passes(tree: Path) -> None:
+        res = run(tree)
+>       assert res.returncode == 0, f"clean tree must pass:\n{res.stderr}"
+E       AssertionError: clean tree must pass:
+E         FAILED — 1 problem(s) in 98 assertions:
+E           - FINDING-F6-DAY2-DECISIVENESS.md: status 'OBSERVED' is not one of ['AMENDED', 'AMENDMENT_DEFERRED', 'CONFIRMS_DOCUMENT', 'INTERNAL', 'OBSERVATIONS_COMPLETE', 'READY_TO_AMEND', 'RESOLVED']
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python', '/private/var/folders/tj/b_8cr0...DED', 'AMENDMENT_DEFERRED', 'CONFIRMS_DOCUMENT', 'INTERNAL', 'OBSERVATIONS_COMPLETE', 'READY_TO_AMEND', 'RESOLVED']\n").returncode
+
+claims/tests/test_amendment_gate.py:110: AssertionError
+_______________ test_control_arm_every_finding_is_actually_read ________________
+
+tree = PosixPath('/private/var/folders/tj/b_8cr0tx1rjbn74zdt5rqxp00000gq/T/pytest-of-tmwu/pytest-23/test_control_arm_every_finding0/repo')
+
+    def test_control_arm_every_finding_is_actually_read(tree: Path) -> None:
+        """A gate that silently skipped a finding would still print OK.
+    
+        Pins the count in the summary against the files on disk, so a `continue` added in
+        the wrong place cannot shrink the scan unnoticed.
+        """
+        res = run(tree)
+        n = len(list((tree / "results").glob("FINDING-*.md")))
+>       assert f"over {n} findings" in res.stdout, res.stdout
+E       AssertionError: 
+E       assert 'over 18 findings' in ''
+E        +  where '' = CompletedProcess(args=['/Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python', '/private/var/folders/tj/b_8cr0...DED', 'AMENDMENT_DEFERRED', 'CONFIRMS_DOCUMENT', 'INTERNAL', 'OBSERVATIONS_COMPLETE', 'READY_TO_AMEND', 'RESOLVED']\n").stdout
+
+claims/tests/test_amendment_gate.py:122: AssertionError
+_____ test_control_arm_the_real_finding_is_two_day_and_passes_as_amendable _____
+
+tree = PosixPath('/private/var/folders/tj/b_8cr0tx1rjbn74zdt5rqxp00000gq/T/pytest-of-tmwu/pytest-23/test_control_arm_the_real_find0/repo')
+
+    def test_control_arm_the_real_finding_is_two_day_and_passes_as_amendable(tree: Path) -> None:
+        """The complement of the arm above, on the artifact as it actually stands.
+    
+        Without this, every arm here could be satisfied by a gate that refuses ALL
+        amendments — and the mutations above deliberately manufacture single-day states, so
+        none of them would notice. This pins that F5-7A's real, unmutated provenance
+        (2026-08-09 + 2026-08-10) is what lets READY_TO_AMEND through.
+        """
+        f = tree / "results" / "FINDING-F5-7A.md"
+        meta = read_meta(f)
+        assert meta["status"] == "READY_TO_AMEND", (
+            f"this arm describes the finding's real state; it now reads {meta['status']!r}")
+        assert sorted(meta["evidence_runs"]) == sorted([DAY1, DAY2])
+        res = run(tree)
+>       assert res.returncode == 0, res.stderr
+E       AssertionError: FAILED — 1 problem(s) in 98 assertions:
+E           - FINDING-F6-DAY2-DECISIVENESS.md: status 'OBSERVED' is not one of ['AMENDED', 'AMENDMENT_DEFERRED', 'CONFIRMS_DOCUMENT', 'INTERNAL', 'OBSERVATIONS_COMPLETE', 'READY_TO_AMEND', 'RESOLVED']
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python', '/private/var/folders/tj/b_8cr0...DED', 'AMENDMENT_DEFERRED', 'CONFIRMS_DOCUMENT', 'INTERNAL', 'OBSERVATIONS_COMPLETE', 'READY_TO_AMEND', 'RESOLVED']\n").returncode
+
+claims/tests/test_amendment_gate.py:160: AssertionError
+________________ test_a_second_day_of_evidence_lifts_the_block _________________
+
+tree = PosixPath('/private/var/folders/tj/b_8cr0tx1rjbn74zdt5rqxp00000gq/T/pytest-of-tmwu/pytest-23/test_a_second_day_of_evidence_0/repo')
+
+    def test_a_second_day_of_evidence_lifts_the_block(tree: Path) -> None:
+        """The complement: with two days of records the same status passes.
+    
+        Without this the suite would prove only that the gate says no. A gate that can
+        never say yes is not a gate, it is a wall -- and the reason task #3 is deferred
+        rather than abandoned is that the block is liftable by evidence.
+        """
+        f = tree / "results" / "FINDING-F5-7A.md"
+        single_day(f, status="READY_TO_AMEND",
+                   evidence_runs=[DAY1, "r20260810T090000Z"])
+    
+        # A synthetic day-2 run, shaped like a real record: the gate reads t_start_utc. Kept
+        # synthetic even though a real day-2 run now exists, so the arm still measures "a
+        # second day of records lifts the block" rather than "the tree happens to contain
+        # one" — the two stop being distinguishable if this reuses r20260810T001115Z.
+        src = next((tree / "evidence" / DAY1).rglob("0001_*.json"))
+        dst = tree / "evidence" / "r20260810T090000Z" / "f5" / "F5-7A"
+        dst.mkdir(parents=True)
+        rec = json.loads(src.read_text(encoding="utf-8"))
+        rec["t_start_utc"] = "2026-08-10T09:00:00.000000+00:00"
+        (dst / "0001_replication.json").write_text(json.dumps(rec), encoding="utf-8")
+    
+        res = run(tree)
+>       assert res.returncode == 0, f"two days of evidence must satisfy the rule:\n{res.stderr}"
+E       AssertionError: two days of evidence must satisfy the rule:
+E         FAILED — 1 problem(s) in 98 assertions:
+E           - FINDING-F6-DAY2-DECISIVENESS.md: status 'OBSERVED' is not one of ['AMENDED', 'AMENDMENT_DEFERRED', 'CONFIRMS_DOCUMENT', 'INTERNAL', 'OBSERVATIONS_COMPLETE', 'READY_TO_AMEND', 'RESOLVED']
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python', '/private/var/folders/tj/b_8cr0...DED', 'AMENDMENT_DEFERRED', 'CONFIRMS_DOCUMENT', 'INTERNAL', 'OBSERVATIONS_COMPLETE', 'READY_TO_AMEND', 'RESOLVED']\n").returncode
+
+claims/tests/test_amendment_gate.py:188: AssertionError
+============================== concurrent writer ===============================
+4 change(s) under results/ or evidence/ during this session were made by ANOTHER PROCESS.
+  No test wrote to a watched tree in this interpreter (audit hook: 0 charged writes), and a live run WAS found in the process table, so the diff cannot be attributed. Not charged to any test.
+  But the tree-diff channel is VOID for this session — only the audit channel was in force. Re-run with no live run active for full two-channel coverage.
+  ADDED    results/day2_replication_2026-08-19.json
+  MODIFIED results/FINDING-F6-DAY2-DECISIVENESS.md
+  MODIFIED results/day2_replication_2026-08-19.json
+  REMOVED  results/day2_replication_2026-08-19.json
+
+  the writer was identified in the process table, outside this pytest process tree:
+    pid 1417  tools/day2_adjudicate_offline.py --pre-dir runner/.staging/day2_pre_r20260819T035352Z --after-dir runner/.staging/day2_pre_r20260819T042959Z
+    pid 2267  tools/day2_adjudicate_offline.py --pre-dir runner/.staging/day2_pre_r20260819T042959Z --day 2026-08-19 --cases F6-6 F6-7 F6-8 --reason drive
+    pid 491  tools/day2_adjudicate_offline.py --pre-dir runner/.staging/day2_pre_r20260819T035352Z --after-dir runner/.staging/day2_pre_r20260819T042959Z
+    pid 99554  tools/day2_adjudicate_offline.py --pre-dir runner/.staging/day2_pre_r20260819T030137Z --after-dir runner/.staging/day2_pre_r20260819T035352Z
+
+  2 test(s) spawned subprocesses during that window and are UNCLEARED, not cleared:
+    claims/tests/test_amendment_evidence_subset.py::test_the_subset_yields_the_same_observation_days_as_the_full_tree
+    claims/tests/test_amendment_gate.py::test_control_arm_the_unmutated_tree_passes
+  A child that really did write into the live tree is indistinguishable from the foreign run's writes while that run is in flight. These tests are neither charged nor exonerated; re-run with nothing live to settle them.
+=========================== short test summary info ============================
+FAILED claims/tests/test_amendment_evidence_subset.py::test_the_subset_yields_the_same_observation_days_as_the_full_tree
+FAILED claims/tests/test_amendment_gate.py::test_control_arm_the_unmutated_tree_passes
+FAILED claims/tests/test_amendment_gate.py::test_control_arm_every_finding_is_actually_read
+FAILED claims/tests/test_amendment_gate.py::test_control_arm_the_real_finding_is_two_day_and_passes_as_amendable
+FAILED claims/tests/test_amendment_gate.py::test_a_second_day_of_evidence_lifts_the_block
+ERROR claims/tests/test_amendment_gate.py::test_kills_a_single_day_amendment
+5 failed, 434 passed, 1 error in 1625.64s (0:27:05)
+rc=1

@@ -19,7 +19,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from scan_scope import ROOT, SKIP_DIR_NAMES, SKIP_DIR_PREFIXES, out_of_scope, py_files  # noqa: E402
+from scan_scope import (ROOT, SKIP_DIR_NAMES, SKIP_DIR_PREFIXES,  # noqa: E402
+                        out_of_scope, py_files, walk_in_scope)
 
 
 def test_every_virtualenv_actually_on_this_disk_is_out_of_scope():
@@ -73,6 +74,29 @@ def test_py_files_reads_the_repo_and_nothing_else():
     # this long before it could be mistaken for growth.
     assert 100 < len(files) < 900, \
         f"{len(files)} python files in scope — outside the band this repo has ever occupied"
+
+
+def test_walk_in_scope_prunes_rather_than_filters_and_agrees_with_py_files():
+    """`walk_in_scope` exists only to be cheap, so its correctness is asserted against the slow path.
+
+    It prunes directories as it descends instead of filtering afterwards, and pruning is the kind of
+    optimisation that changes the answer: prune with the wrong relative path and the whole tree comes
+    back, including every `.venv-*`. That failure is quiet in its first caller — the derived suffix set
+    in `claims/tests/test_cited_paths_exist.py` would simply widen, admitting `.pyi`/`.so`/`.dist-info`
+    and with them whatever those make look like a citable path. So the walk is cross-checked against
+    `py_files()`, which reaches the same files by the filtered route, and the two must agree exactly.
+    """
+    walked = {p for p in walk_in_scope() if p.suffix == ".py"}
+    assert walked == set(py_files()), (
+        "walk_in_scope() and py_files() disagree on this repo's own python files; "
+        f"walk-only={sorted(str(p.relative_to(ROOT)) for p in walked - set(py_files()))[:5]}, "
+        f"filter-only={sorted(str(p.relative_to(ROOT)) for p in set(py_files()) - walked)[:5]}")
+
+    # And the direction the equality above cannot see: py_files() is itself pruned by nothing, so if
+    # both routes broke together this is what still notices.
+    for p in walk_in_scope():
+        rel = p.relative_to(ROOT)
+        assert not out_of_scope(rel), f"walk_in_scope yielded an out-of-scope path: {rel}"
 
 
 def test_no_scanner_carries_its_own_virtualenv_name_list():

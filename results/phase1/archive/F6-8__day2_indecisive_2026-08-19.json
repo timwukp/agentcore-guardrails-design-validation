@@ -1,0 +1,280 @@
+{
+  "action_id": "grxecho___echo",
+  "alpha": 0.05,
+  "ambient_sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F6-8",
+    "clear_here": true
+  },
+  "case_id": "F6-8",
+  "cell": "latency_arm_p50_p90_only",
+  "estimator": "median over the POOLED per-turn increments (dur_N - dur_1)/(N-1), paired by trial id. A difference, not a fit: the claim states a per-additional-call increment",
+  "gateway_id": "grx-gw-r20260810t130945z-zpkfmpwo9n",
+  "gateway_only_cross_check": {
+    "median_ms": 752.8376249999999,
+    "scored": false,
+    "why": "the whole-turn increment should equal the gateway-only increment, since the Converse half happens once per turn regardless of N. A gap between them is client-side overhead per call, not service time"
+  },
+  "guard_detail": {
+    "gateway_hop_measured": {
+      "combinations_found": 10,
+      "guardrail_p50": 322.28220892809804,
+      "guardrail_samples": 3002,
+      "min_samples": 100,
+      "n_sending_windows": 1,
+      "p50": 449.9828362808582,
+      "samples": 12035,
+      "sending_windows": [
+        {
+          "n_turns_sent_by_this_process": 1599,
+          "recorded_by": "f6_latency/03_composition.py (live)",
+          "t0_iso": "2026-08-19T04:30:35.161169+00:00",
+          "t1_iso": "2026-08-19T07:09:35.055201+00:00"
+        }
+      ],
+      "windows_queried": [
+        {
+          "end": "2026-08-19T07:10:35.055201+00:00",
+          "period_s": 9660,
+          "start": "2026-08-19T04:29:35.161169+00:00"
+        }
+      ]
+    },
+    "guardrail_live_before_and_after": [
+      {
+        "corpus_id": "b976bbfa6a66",
+        "denied": true,
+        "outcome": "policy_denied",
+        "request_id": "c0fdfee8-28e6-4e51-a4f8-a7c55ca9a520",
+        "when": "before"
+      },
+      {
+        "corpus_id": "b976bbfa6a66",
+        "denied": true,
+        "outcome": "policy_denied",
+        "request_id": "c5742ea2-f81f-436d-b7a7-9dfd4e1cc1da",
+        "when": "after"
+      }
+    ],
+    "guardrail_ran_on_every_turn": {
+      "n_missing": 0,
+      "why": "hop 2 is only reported when the guardrail actually evaluated the input; a turn with no inputAssessment latency has no hop 2 and cannot enter a total"
+    },
+    "probe_policy_removed": {
+      "attempts": 1,
+      "deleted": true,
+      "errors": []
+    },
+    "testbed_intact_after_restore": {
+      "checks": [
+        {
+          "detail": "",
+          "name": "policy-engine/main present in ledger",
+          "ok": true
+        },
+        {
+          "detail": "grx_pe_r20260810T130945Z-t6hqadrspf status=ACTIVE",
+          "name": "policy-engine ACTIVE",
+          "ok": true
+        },
+        {
+          "detail": "",
+          "name": "policy/baseline present in ledger",
+          "ok": true
+        },
+        {
+          "detail": "status=ACTIVE enforcementMode=ACTIVE",
+          "name": "policy/baseline ACTIVE",
+          "ok": true
+        },
+        {
+          "detail": "verbatim from our §3.1",
+          "name": "policy/baseline statement unchanged",
+          "ok": true
+        },
+        {
+          "detail": "",
+          "name": "gateway/main present in ledger",
+          "ok": true
+        },
+        {
+          "detail": "grx-gw-r20260810t130945z-zpkfmpwo9n status=READY",
+          "name": "gateway/main READY",
+          "ok": true
+        },
+        {
+          "detail": "",
+          "name": "gateway/main url matches ledger",
+          "ok": true
+        },
+        {
+          "detail": "mode=ENFORCE arn=ours",
+          "name": "gateway/main -> our policy engine",
+          "ok": true
+        },
+        {
+          "detail": "",
+          "name": "gateway/nopolicy present in ledger",
+          "ok": true
+        },
+        {
+          "detail": "grx-gw-nopolicy-r20260810t130945z-x1gqmvenpz status=READY",
+          "name": "gateway/nopolicy READY",
+          "ok": true
+        },
+        {
+          "detail": "",
+          "name": "gateway/nopolicy url matches ledger",
+          "ok": true
+        },
+        {
+          "detail": "",
+          "name": "gateway/nopolicy has NO engine",
+          "ok": true
+        },
+        {
+          "detail": "shared prefix, tail == gatewayId",
+          "name": "workloadIdentityDetails is identity only (PAIR_IGNORE justification)",
+          "ok": true
+        },
+        {
+          "detail": "identical except policyEngineConfiguration",
+          "name": "F6 pairing still valid",
+          "ok": true
+        }
+      ],
+      "n_fail": 0,
+      "n_pass": 15,
+      "ok": true
+    },
+    "turns_completed": {
+      "1": {
+        "done": 999,
+        "failed": 1,
+        "planned": 1000
+      },
+      "2": {
+        "done": 200,
+        "failed": 0,
+        "planned": 200
+      },
+      "3": {
+        "done": 200,
+        "failed": 0,
+        "planned": 200
+      },
+      "5": {
+        "done": 200,
+        "failed": 0,
+        "planned": 200
+      }
+    }
+  },
+  "guardrail_id": "pd6blbae0jty",
+  "guardrail_key": "cf-medium",
+  "guardrail_version": "DRAFT",
+  "guards": {
+    "gateway_hop_measured": true,
+    "guardrail_live_before_and_after": true,
+    "guardrail_ran_on_every_turn": true,
+    "probe_policy_removed": true,
+    "testbed_intact_after_restore": true,
+    "turns_completed": true
+  },
+  "hop3_is_derived": "§6.1 row 3 names InvocationLatency in AWS/Bedrock, which publishes at 1-minute grain and cannot be read per request; so hop 3 is metrics.latencyMs minus hops 2 and 6 and is recorded as derived. F6-7's residual does NOT depend on the split: hops 2+3+6 enter the sum as metrics.latencyMs, which the service reports directly",
+  "is_smoke": false,
+  "kind": "CI_OVERLAPS",
+  "levels": {
+    "1": 1000,
+    "2": 200,
+    "3": 200,
+    "5": 200
+  },
+  "max_tokens": 40,
+  "model_id": "us.amazon.nova-micro-v1:0",
+  "n_pairs": 600,
+  "n_requested": 200,
+  "n_unpaired_dropped": 0,
+  "oracle_text": "TRUE if the regression slope b's bootstrap CI overlaps [165,750]; FALSE if disjoint",
+  "per_level_secondary": {
+    "2": {
+      "gateway_only_median_ms": 738.1949999999999,
+      "median_increment_ms": 711.1745000000001,
+      "n_pairs": 200,
+      "scored": false,
+      "why_not_scored": "secondary. The verdict reads the POOLED increment declared in the docstring; picking the level whose CI overlaps best would be choosing the answer after seeing it"
+    },
+    "3": {
+      "gateway_only_median_ms": 753.77,
+      "median_increment_ms": 752.7025,
+      "n_pairs": 200,
+      "scored": false,
+      "why_not_scored": "secondary. The verdict reads the POOLED increment declared in the docstring; picking the level whose CI overlaps best would be choosing the answer after seeing it"
+    },
+    "5": {
+      "gateway_only_median_ms": 759.325125,
+      "median_increment_ms": 753.654125,
+      "n_pairs": 200,
+      "scored": false,
+      "why_not_scored": "secondary. The verdict reads the POOLED increment declared in the docstring; picking the level whose CI overlaps best would be choosing the answer after seeing it"
+    }
+  },
+  "planned_n": 200,
+  "planned_n_cell": 200,
+  "policy_engine_id": "grx_pe_r20260810T130945Z-t6hqadrspf",
+  "prompt_len": 97,
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F6-8",
+    "evidence": {
+      "slope_ci": [
+        736.39725,
+        757.5426249999999
+      ],
+      "stated": [
+        165.0,
+        750.0
+      ]
+    },
+    "family": "exploratory_latency",
+    "kind": "CI_OVERLAPS",
+    "mutation_required": false,
+    "n_attempted": 1600,
+    "n_met": true,
+    "n_usable": 600,
+    "notes": [],
+    "p_value": null,
+    "planned_n": 200,
+    "thresholds": [
+      165.0,
+      750.0
+    ],
+    "verdict": "TRUE"
+  },
+  "region": "us-east-1",
+  "run_id": "r20260810T130945Z",
+  "slope_ci": "747.7 [736.4, 757.5] (n=600, bootstrap-percentile(B=10000,seed=20260809), 95%)",
+  "stated_range_ms": [
+    165.0,
+    750.0
+  ],
+  "turn_shape": {
+    "direction_of_bias": "a scripted turn omits the model round-trips a tool-using agent adds, and nova-micro is the fastest model available, so the total is biased DOWN — against the 800ms floor",
+    "hops_per_turn": {
+      "1": "not separable from hop 5 in this service — DEV-P4-07",
+      "2": "Converse guardrailConfig inputAssessment",
+      "3": "Converse metrics.latencyMs minus hops 2 and 6 (DERIVED)",
+      "4": "gateway Cedar authorization",
+      "5": "gateway guardrail evaluation, once per tool call",
+      "6": "Converse guardrailConfig outputAssessments, SUMMED"
+    },
+    "orchestration": "scripted, not model-directed",
+    "why_scripted": "no agent runtime exists in this testbed and the pre-existing harness_* runtimes are out of scope, so the turn is assembled by this script in the document's own hop order"
+  },
+  "verdict": "TRUE"
+}
