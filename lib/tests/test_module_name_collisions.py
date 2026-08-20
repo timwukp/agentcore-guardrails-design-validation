@@ -40,9 +40,12 @@ is a property of the source, so it is asserted against the source.
 from __future__ import annotations
 
 import ast
+import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from scan_scope import ROOT, py_files  # noqa: E402  sibling helper; see its docstring
+
 LIB = ROOT / "lib"
 
 # Registered names that are allowed to equal an importable module name — currently none.
@@ -52,15 +55,29 @@ ALLOWED_COLLISIONS: dict[str, str] = {}
 
 
 def _py_files() -> list[Path]:
-    # `p.parts` never equals ".venv": the venvs are `.venv-oracle` and `.venv-baseline`, so an
-    # equality test let site-packages in and the scan read 1,272 files instead of 78 — which
-    # made the non-empty floor below pass on the wrong tree entirely. Prefix match, and the
-    # floor is now tight enough to notice if it ever widens again.
-    return sorted(
-        p for p in ROOT.rglob("*.py")
-        if not any(part.startswith(".venv") for part in p.parts)
-        and "__pycache__" not in p.parts
-    )
+    """This scanner's scope, which is `scan_scope`'s and no longer its own.
+
+    The private walk this replaces was the FIFTH copy of a scope rule, and the one
+    `lib/tests/scan_scope.py`'s docstring credits with teaching the lesson — an equality test on
+    `.venv` let site-packages in and the scan read 1,272 files instead of 78. It was fixed here,
+    the fix was never propagated, `scan_scope.py` was written to end the copying, and this file
+    was left holding its own version anyway (`feedback_fix_producer_not_janitor`, again).
+
+    What that cost, measured 2026-08-20: installing the CDK toolchain put
+    `platform/infra/node_modules/aws-cdk/lib/init-templates/` in the tree, whose `.py` files are
+    Jinja-ish templates (`class %name.PascalCased%Stack(Stack):`) and are not parseable Python.
+    The private walk skipped `.venv*` and `__pycache__` but not `node_modules`, so all four tests
+    in this file died on `SyntaxError` — a crash, not a finding, in a check whose whole value is
+    that its findings are ours. `scan_scope.SKIP_DIR_NAMES` has held `node_modules` since it was
+    written; the fix was available before the breakage existed.
+
+    Note what did NOT catch this: `test_scan_scope.py::test_no_scanner_carries_its_own_virtualenv_name_list`
+    fires on a literal holding TWO OR MORE `.venv`-prefixed strings, and the walk above named
+    exactly one (`".venv"`, as a prefix). Its scope claim was "a private list of venv NAMES", and a
+    private walk that gets the venv rule right and the rest wrong sits underneath it
+    (`feedback_guard_scope_is_a_claim`). Importing is the only fix that covers both.
+    """
+    return py_files()
 
 
 def importable_names() -> set[str]:
