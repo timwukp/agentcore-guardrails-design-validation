@@ -178,7 +178,117 @@ def test_report_drift_truncates_but_still_states_the_total():
     assert "and 6 more" in proc.stderr, proc.stderr
 
 
-# --------------------------------------------------------------- 3. the flag reaches the gate
+# --------------------------------------------------------------- 3. headline() must not crop
+
+# Figure 3's two title lines as of 2026-08-20, joined into ONE paragraph. That is the shape that
+# cropped: `headline()` wraps each input line independently, so what overflowed was a line the WRAP
+# produced at the naive budget of `int(8.6 / _CHAR_IN)` = 125 characters, on a canvas that fits about
+# 112 at TITLE_PT. The published PNG ended a line "…and th" and resumed the next at "marks", with
+# "e arrow" simply gone. Nothing failed: `savefig` returned, `--check` was green, and the defect was
+# visible only by looking at the image.
+#
+# The exact pre-fix string is NOT reproduced here, because it was replaced before it was recorded and
+# a test that claimed to be it would be asserting something unverified. What is reproduced is the
+# condition, which is the part that generalises: a mean advance width over-budgets any line whose
+# letters run wider than average, so a filled 125-character line of ordinary prose overruns. The
+# control below proves this input really does trip that, so the regression cannot go vacuous quietly.
+LONG_TITLE = ("Figure 3 — Measured enforcement latency against the stated bands, both days "
+              "colour is that day's own verdict; the arrow marks the day results/phase1/ keeps "
+              "as the verdict of record")
+
+
+def _headline_extent(size, text: str) -> subprocess.CompletedProcess:
+    """Render `text` as a headline on a `size` canvas; print its line count and overrun in px."""
+    return _drive(f"""
+        import matplotlib.pyplot as plt
+        fig = plt.figure(figsize={tuple(size)!r})
+        n = wf.headline(fig, {text!r})
+        limit = fig.get_window_extent().x1 - 3
+        widest = max(a.get_window_extent(fig.canvas.get_renderer()).x1 for a in fig.texts)
+        print("lines=%d overrun=%.1f top=%.12f" % (n, widest - limit, fig._wp_top))
+    """)
+
+
+def test_headline_fits_a_title_long_enough_to_have_cropped():
+    """The regression, asserted on the RENDERED extent rather than on a character count.
+
+    A character count is the thing that was broken, so a test written in characters would agree with
+    the defect. `overrun` is how far the drawn glyphs exceed the canvas: at or below zero is the whole
+    correctness condition, and it is measured from the same renderer `savefig` uses.
+    """
+    proc = _headline_extent((8.6, 4.2), LONG_TITLE)
+    assert proc.returncode == 0, f"headline() raised on a title that can be made to fit:\n{proc.stderr}"
+    overrun = float(proc.stdout.split("overrun=")[1].split()[0])
+    assert overrun <= 0, (
+        f"the title overruns the canvas by {overrun:.1f} device px, so matplotlib will crop it and "
+        f"the figure will publish a truncated sentence:\n{proc.stdout}")
+
+
+def test_the_naive_character_estimate_would_have_cropped_it():
+    """The control: without this, the arm above could pass because the title got shorter.
+
+    Reproduces `headline()`'s FIRST guess — `int(figwidth / _CHAR_IN)` characters per line, the value
+    the function used to commit to — and asserts that guess really does overrun on this input. If a
+    font or a constant changes such that the naive estimate stops overflowing, this fails and says so
+    rather than leaving the regression above quietly testing nothing.
+    """
+    proc = _drive(f"""
+        import textwrap
+        import matplotlib.pyplot as plt
+        fig = plt.figure(figsize=(8.6, 4.2))
+        per_line = max(40, int(fig.get_figwidth() / wf._CHAR_IN))
+        wrapped = textwrap.fill({LONG_TITLE!r}, per_line)
+        a = fig.text(0.008, 0.99, wrapped, fontsize=wf.TITLE_PT, ha="left", va="top")
+        limit = fig.get_window_extent().x1 - 3
+        print("per_line=%d overrun=%.1f" % (
+            per_line, a.get_window_extent(fig.canvas.get_renderer()).x1 - limit))
+    """)
+    assert proc.returncode == 0, proc.stderr
+    overrun = float(proc.stdout.split("overrun=")[1])
+    assert overrun > 0, (
+        "the naive mean-advance-width estimate no longer overflows on this input, so "
+        f"test_headline_fits_a_title_long_enough_to_have_cropped is now vacuous:\n{proc.stdout}")
+
+
+def test_headline_refuses_a_title_that_would_squash_the_axes():
+    """The height bound, and the arm that found the width fix was only half a fix.
+
+    A 200-character unbreakable token is the case that showed `SystemExit` was unreachable:
+    `textwrap.fill` breaks long words, so narrowing the wrap fits anything, and the old code returned
+    normally after wrapping it to six lines — then clamped `_wp_top` to 0.45 and handed back a figure
+    whose axes had been silently reduced to under half the canvas. Refusing is the only honest
+    outcome, because choosing between a shorter title and a taller figure is a human's call.
+    """
+    proc = _headline_extent((3.0, 1.6), "x" * 200)
+    assert proc.returncode != 0, (
+        f"headline() returned on a title that cannot fit — the axes were silently squashed to make "
+        f"room:\n{proc.stdout}")
+    assert "does not fit" in proc.stderr, proc.stderr
+    assert "canvas height" in proc.stderr, (
+        "the refusal does not name the bound that failed, so an operator cannot tell whether to "
+        "shorten the title or make the figure wider:\n" + proc.stderr)
+    assert "shorten" in proc.stderr, (
+        "the failure does not tell the operator what to do about it:\n" + proc.stderr)
+
+
+def test_headline_reserves_exactly_what_it_wrapped_and_never_clamps():
+    """`_wp_top` must be the complement of the space the title actually took.
+
+    The old `max(0.45, …)` made `_wp_top` disagree with `n_lines` for any tall title, so `finish()`
+    reserved a strip the title did not fit inside. Asserted as an identity against the returned line
+    count, which is the only other output, so the two cannot drift apart (`feedback_two_numbers_two_claims`).
+    """
+    proc = _headline_extent((8.6, 4.2), LONG_TITLE)
+    assert proc.returncode == 0, proc.stderr
+    out = dict(kv.split("=") for kv in proc.stdout.split())
+    n_lines, top = int(out["lines"]), float(out["top"])
+    expected = 1.0 - (n_lines * 0.20 + 0.14) / 4.2
+    assert abs(top - expected) < 1e-9, (
+        f"_wp_top {top:.4f} is not the complement of the {n_lines} lines drawn "
+        f"(expected {expected:.4f}) — something clamped or rounded it")
+
+
+# --------------------------------------------------------------- 4. the flag reaches the gate
 
 def test_check_sets_the_flag_before_building():
     """`WRITE_PNGS` is read inside `finish()`, so an assignment after `build()` would be a no-op.

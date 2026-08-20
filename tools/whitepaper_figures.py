@@ -57,6 +57,8 @@ sys.path.insert(0, str(ROOT))
 import matplotlib  # noqa: E402
 matplotlib.use("Agg")  # no display in this environment, and determinism matters more than interactivity
 import matplotlib.pyplot as plt  # noqa: E402
+from matplotlib.lines import Line2D  # noqa: E402
+from matplotlib.patches import Patch  # noqa: E402
 
 import whitepaper_data  # noqa: E402  sibling in tools/; ROOT is on the path
 
@@ -105,6 +107,8 @@ def dig(d: dict, path: str):
 TITLE_PT = 10.0
 _LINE_IN = 0.20          # rendered height of one TITLE_PT line, plus leading
 _CHAR_IN = 0.0685        # mean advance width of one TITLE_PT character in this font
+_TITLE_MAX_FRAC = 0.34   # the most of a canvas's height a title may claim before headline() refuses
+_PER_LINE_FLOOR = 24     # the narrowest wrap headline() will try before it refuses on width
 
 
 def headline(fig, text: str) -> int:
@@ -119,15 +123,59 @@ def headline(fig, text: str) -> int:
 
     Explicit line breaks in `text` are preserved; each resulting line is wrapped independently.
     Returns the number of rendered lines, which `finish` needs in order to reserve the top strip.
+
+    `_CHAR_IN` is a MEAN advance width, so the character budget it yields is an estimate, and on
+    2026-08-20 figure 3's rewritten title overran it: the wrap put 123 characters on a line the canvas
+    fits about 112 of, and matplotlib cropped the remainder mid-word — "…and th" followed by the next
+    line, with "e arrow" simply gone. Nothing failed. That is the same silent-crop failure this
+    function was written to end, one level down: the anchor was fixed and the WIDTH was still guessed.
+    So the estimate is now only a starting point. The rendered extent is measured and the wrap
+    tightened until it fits.
+
+    **Both ways of not fitting are refused, because the first fix only closed one of them.** Writing
+    the width check produced a `SystemExit` that could not fire and a silent failure in the other
+    axis, and a test written for that raise is what found them:
+
+    * `textwrap.fill` breaks long words by default, so narrowing `per_line` fits ANY text eventually —
+      a 200-character unbreakable token wrapped to six lines and returned normally. The documented
+      "a title that cannot be made to fit raises" was unreachable code (`feedback_unreachable_branch_in_fake`).
+      A narrow canvas made it worse than unreachable: `per_line` started at its 40 floor, went negative
+      after ten iterations, and `textwrap.fill(width=-12)` raises `ValueError` — a traceback in place
+      of the message written to explain the problem.
+    * `max(0.45, 1.0 - reserved)` meant a title that fit only by growing tall silently ate the axes
+      down to 45% of the canvas. Measuring the width and then clamping the height is half a fix; the
+      clamp is where the next cropped figure would have hidden.
+
+    So a title must fit BOTH bounds — the canvas width after re-wrapping, and `_TITLE_MAX_FRAC` of the
+    canvas height — and failing either raises with which one failed. There is no clamp left to absorb
+    an oversized title, which is the point: the fix for a title too big for its figure is to shorten
+    it or widen the figure, and only a human can choose.
     """
     per_line = max(40, int(fig.get_figwidth() / _CHAR_IN))
-    wrapped = "\n".join(textwrap.fill(line, per_line) for line in text.split("\n"))
-    n_lines = wrapped.count("\n") + 1
-    reserved = (n_lines * _LINE_IN + 0.14) / fig.get_figheight()
-    fig.text(0.008, 1.0 - 0.02 / fig.get_figheight(), wrapped,
-             fontsize=TITLE_PT, ha="left", va="top")
-    fig._wp_top = max(0.45, 1.0 - reserved)
-    return n_lines
+    limit = fig.get_window_extent().x1 - 3          # device px; 3 px of right-hand air
+    while True:
+        wrapped = "\n".join(textwrap.fill(line, per_line) for line in text.split("\n"))
+        n_lines = wrapped.count("\n") + 1
+        reserved = (n_lines * _LINE_IN + 0.14) / fig.get_figheight()
+        artist = fig.text(0.008, 1.0 - 0.02 / fig.get_figheight(), wrapped,
+                          fontsize=TITLE_PT, ha="left", va="top")
+        overrun = artist.get_window_extent(fig.canvas.get_renderer()).x1 - limit
+        if overrun <= 0 and reserved <= _TITLE_MAX_FRAC:
+            fig._wp_top = 1.0 - reserved
+            return n_lines
+        artist.remove()
+        if overrun > 0 and per_line > _PER_LINE_FLOOR:
+            per_line -= 4
+            continue
+        why = (f"it is {overrun:.0f} device px too wide at the narrowest wrap this function will "
+               f"try ({_PER_LINE_FLOOR} characters)" if overrun > 0 else
+               f"wrapping it to {n_lines} lines would claim {reserved:.0%} of the "
+               f"{fig.get_figheight()}in canvas height, over the {_TITLE_MAX_FRAC:.0%} a title may "
+               f"take, and squashing the axes to fit is how a figure gets published unreadable")
+        raise SystemExit(
+            f"the title does not fit the {fig.get_figwidth()}x{fig.get_figheight()}in canvas: {why}. "
+            f"Cropping or squashing it silently is what this function exists to prevent, so shorten "
+            f"it or widen the figure:\n  {text!r}")
 
 
 def footer(ax, sources: list[str]) -> None:
@@ -262,40 +310,143 @@ def _quantiles(d: dict) -> dict:
             "p99": ev.get("p99"), "ci_p50": ev.get("ci_p50"), "n": ev.get("n")}
 
 
-def fig03() -> dict:
-    rows, data = [], {}
-    for cid in ("F6-1", "F6-2", "F6-3", "F6-5", "F6-6"):
-        d = load(f"{cid}.json")
-        q = _quantiles(d)
-        band = dig(d, "record.thresholds")
-        rows.append((cid, F6_BANDS[cid], q, band, d["verdict"]))
-        data[cid] = {"verdict": d["verdict"], "quantiles": q, "thresholds": band}
+FIG03_CASES = ("F6-1", "F6-2", "F6-3", "F6-5", "F6-6")
 
-    fig, ax = plt.subplots(figsize=(8.6, 3.0))
-    for i, (cid, label, q, band, verdict) in enumerate(rows):
+
+def _f6_day_dates() -> dict[str, str]:
+    """`{"day1": "2026-08-10", "day2": "2026-08-19"}`, read off the F6 archive filenames.
+
+    The archive filenames are the ONLY day stamps this study has for F6. Both days' verdict files
+    carry `run_id: r20260810T130945Z` and neither carries a `t_start_utc`, so nothing inside a file
+    distinguishes them — a defect filed 2026-08-20, and the reason this helper reads names instead of
+    contents. Each day label must resolve to exactly one date across the family, so a second date
+    appearing under one label fails here rather than mislabelling a row.
+    """
+    dates: dict[str, set[str]] = {}
+    for path in sorted((PHASE1 / "archive").glob("F6-*__day*.json")):
+        stem = path.name.split("__", 1)[1][: -len(".json")]      # "day2_indecisive_2026-08-19"
+        dates.setdefault(stem.split("_", 1)[0], set()).add(stem.rsplit("_", 1)[-1])
+    conflicting = {d: sorted(v) for d, v in dates.items() if len(v) != 1}
+    if conflicting:
+        raise SystemExit(f"an F6 day label maps to more than one date: {conflicting}")
+    return {day: v.pop() for day, v in dates.items()}
+
+
+def _f6_days(cid: str, family_dates: dict[str, str]) -> list[dict]:
+    """Every calendar day this case was measured on, and which one is the verdict of record.
+
+    Figure 3 draws BOTH days per row — decided 2026-08-20 — because the alternative was a row set
+    that silently mixed them. F6-1/F6-3/F6-6 replicated on 2026-08-19 and their live verdict files
+    hold day 2; F6-2/F6-5 *disagreed* on replication, so `results/phase1/` deliberately keeps day 1
+    as the verdict of record (`results/FINDING-F6-DAY2-DECISIVENESS.md`). Drawn identically, five
+    rows in one figure showed two instruments as one, across a difference that same finding measures
+    at 8.7-38.3%.
+
+    Which day is the record is **derived, never listed**: the record is whichever day carries the
+    same `record.evidence` quantiles as the live `results/phase1/<cid>.json`. Exactly one may, and
+    the assertion is the point — a hand-kept list of which cases were re-pinned goes stale in
+    silence, whereas re-pinning F6-2 to day 2 must move the label on this figure without anyone
+    remembering that it should.
+
+    A case whose live file matches no ARCHIVED day is itself an unarchived day: the agreeing cases
+    were re-pinned to day 2 and no `__day2_` copy was written for them, because the live file already
+    was it. That day is identified as the family day label this case has no archive for, and it must
+    resolve to exactly one — inferring "the other day" is only sound while there are two.
+    """
+    live_q = _quantiles(load(f"{cid}.json"))
+    days = []
+    for path in sorted((PHASE1 / "archive").glob(f"{cid}__day*.json")):
+        stem = path.name.split("__", 1)[1][: -len(".json")]
+        label, date = stem.split("_", 1)[0], stem.rsplit("_", 1)[-1]
+        middle = stem.split("_", 1)[1].rsplit("_", 1)[0] if stem.count("_") > 1 else None
+        d = json.loads(path.read_text(encoding="utf-8"))
+        q = _quantiles(d)
+        days.append({"day": label, "date": date, "archived_as": middle,
+                     "source": str(path.relative_to(ROOT)), "verdict": d["verdict"],
+                     "quantiles": q, "is_record": q == live_q})
+
+    if not any(day["is_record"] for day in days):
+        unarchived = sorted(set(family_dates) - {day["day"] for day in days})
+        if len(unarchived) != 1:
+            raise SystemExit(
+                f"{cid}: the live verdict file matches no archived day, and {len(unarchived)} day "
+                f"label(s) {unarchived} have no archive for this case — which day the live file "
+                f"holds cannot be derived. Archive it under its own day before drawing figure 3.")
+        live = load(f"{cid}.json")
+        days.append({"day": unarchived[0], "date": family_dates[unarchived[0]],
+                     "archived_as": None, "source": f"results/phase1/{cid}.json",
+                     "verdict": live["verdict"], "quantiles": live_q, "is_record": True})
+
+    records = [day["day"] for day in days if day["is_record"]]
+    if len(records) != 1:
+        raise SystemExit(
+            f"{cid}: {len(records)} day(s) {records} carry the live file's quantiles. Exactly one "
+            f"must, or the figure cannot say which day is the verdict of record.")
+    return sorted(days, key=lambda day: day["day"])
+
+
+def fig03() -> dict:
+    family_dates = _f6_day_dates()
+    rows, data = [], {"day_dates": family_dates}
+    for cid in FIG03_CASES:
+        live = load(f"{cid}.json")
+        band = dig(live, "record.thresholds")
+        days = _f6_days(cid, family_dates)
+        rows.append((cid, F6_BANDS[cid], band, days))
+        data[cid] = {"verdict": live["verdict"], "thresholds": band,
+                     "record_day": next(d["day"] for d in days if d["is_record"]),
+                     "days": days}
+
+    # Day 1 above the row centre and day 2 below it, both inside the grey band's height, so a row
+    # reads as one comparison against one documented band rather than as two rows.
+    OFFSET = 0.19
+    fig, ax = plt.subplots(figsize=(8.6, 4.2))
+    for i, (cid, label, band, days) in enumerate(rows):
         lo, hi = _band_bounds(band)
-        if lo is not None:
-            ax.plot([lo, hi], [i, i], lw=9, color="#cfd8e3", solid_capstyle="butt",
-                    zorder=1, label="documented band" if i == 0 else None)
-        colour = "#a8322d" if verdict == "FALSE" else "#2b7a4b"
-        ax.plot([q["p50"], q["p99"]], [i, i], lw=2.4, color=colour, zorder=3,
-                label="measured p50-p99" if i == 0 else None)
-        ax.plot([q["p50"]], [i], "o", ms=6, color=colour, zorder=4)
-        ax.plot([q["p90"]], [i], "|", ms=11, color=colour, zorder=4)
-        ax.plot([q["p99"]], [i], "s", ms=4.5, color=colour, zorder=4)
-        ax.text(q["p99"] * 1.04, i, f"{verdict}", va="center", fontsize=8, color=colour)
+        ax.barh(i, hi - lo, left=lo, height=2 * OFFSET + 0.26, color="#cfd8e3", zorder=1)
+        for day in days:
+            q = day["quantiles"]
+            y = i + (-OFFSET if day["day"] == "day1" else OFFSET)
+            colour = VERDICT_STYLE.get(day["verdict"], VERDICT_STYLE["INCONCLUSIVE"])["color"]
+            # Day 1 dashed and hollow, day 2 solid and filled: the two days must stay separable in
+            # greyscale and for a red-green-blind reader, because the colour already carries the
+            # verdict and cannot also carry the day. The DATE rides the legend rather than each of
+            # the ten row tags — repeating it per tag is what pushed the axis out to 10^5 and shrank
+            # every measurement into the left third of the canvas.
+            dashed = day["day"] == "day1"
+            ax.plot([q["p50"], q["p99"]], [y, y], lw=2.2, color=colour, zorder=3,
+                    ls=(0, (3, 1.6)) if dashed else "-")
+            ax.plot([q["p50"]], [y], "o", ms=5.6, color=colour, zorder=4,
+                    mfc="white" if dashed else colour)
+            ax.plot([q["p90"]], [y], "|", ms=10, color=colour, zorder=4)
+            ax.plot([q["p99"]], [y], "s", ms=4.2, color=colour, zorder=4,
+                    mfc="white" if dashed else colour)
+            tag = day["verdict"] + ("  ← record" if day["is_record"] else "")
+            ax.text(q["p99"] * 1.06, y, tag, va="center", fontsize=7,
+                    color=colour, fontweight="bold" if day["is_record"] else "normal")
     ax.set_yticks(range(len(rows)))
     ax.set_yticklabels([f"{cid}  {lab}" for cid, lab, *_ in rows], fontsize=8)
     ax.invert_yaxis()
     ax.set_xscale("log")
-    ax.set_xlabel("milliseconds (log scale) — dot p50, tick p90, square p99", fontsize=9)
-    headline(fig,"Figure 3 — Measured enforcement latency against the document's stated bands\n"
-                 "the oracle is BAND_CONTAINS over the p50-p99 band, not over the median alone",
-                 )
-    ax.set_ylim(len(rows) - 0.45, -0.9)  # invert, and leave a strip at the top for the legend
-    ax.legend(fontsize=8, loc="upper left", frameon=False, ncol=2)
+    ax.set_xlabel("milliseconds (log scale) — dot p50, tick p90, square p99; "
+                  "dashed hollow = day 1, solid filled = day 2", fontsize=8.5)
+    headline(fig, "Figure 3 — Measured enforcement latency against the stated bands, both days\n"
+                  "colour is that day's own verdict; the arrow marks the day results/phase1/ keeps "
+                  "as the verdict of record")
+    ax.set_xlim(right=ax.get_xlim()[1] * 1.45)  # room for the right-hand verdict tags
+    ax.set_ylim(len(rows) - 0.35, -0.95)        # invert, and leave a strip at the top for the legend
+    # Neutral proxy handles, not the drawn artists. Labelling a real line would put the FIRST row's
+    # verdict colour on a swatch that means "day 1", and a red swatch labelled with a date teaches
+    # that the day is the thing the colour encodes. Here hue means verdict and nothing else.
+    ax.legend(handles=[
+        Patch(facecolor="#cfd8e3", label="documented band"),
+        Line2D([], [], color="#555555", lw=2.0, ls=(0, (3, 1.6)), marker="o", ms=5.6, mfc="white",
+               label=f"day 1 · {family_dates['day1']}"),
+        Line2D([], [], color="#555555", lw=2.0, marker="o", ms=5.6,
+               label=f"day 2 · {family_dates['day2']}"),
+    ], fontsize=8, loc="upper left", frameon=False, ncol=3)
     ax.spines[["top", "right"]].set_visible(False)
-    footer(ax, ["results/phase1/F6-*.json"])
+    footer(ax, ["results/phase1/F6-*.json", "results/phase1/archive/F6-*__day*.json"])
     finish(fig, "fig-03-latency-vs-bands.png")
     return data
 
