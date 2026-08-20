@@ -331,6 +331,80 @@ def test_a_payload_inside_the_repository_is_refused(gp, tmp_path):
 
 
 # --------------------------------------------------------------------------------------------
+# `--also-scan`: the built SPA. The bundle is served from the same distribution as the payload, so a
+# gate that read only the payload would leave the one file a build-time env var can leak into unread.
+# These arms exist because the flag has no natural failure in normal operation — a clean bundle passes
+# whether the gate reads it or not, which is precisely the shape of a check nobody notices is dead.
+# --------------------------------------------------------------------------------------------
+
+def make_bundle(tmp_path: Path, js: str, *, n_files: int = 3, name: str = "dist") -> Path:
+    """A minimal Vite-shaped build: index.html + one JS + one CSS, no manifest and no provenance."""
+    d = tmp_path / name / "assets"
+    d.mkdir(parents=True, exist_ok=True)
+    (tmp_path / name / "index.html").write_text(
+        '<!doctype html><script src="/assets/index-abc.js"></script>\n', encoding="utf-8")
+    (d / "index-abc.js").write_text(js, encoding="utf-8")
+    if n_files >= 3:
+        (d / "index-abc.css").write_text(":root{--fg:#111}\n", encoding="utf-8")
+    return tmp_path / name
+
+
+def test_no_mutant_control_a_clean_bundle_passes(gp, tmp_path):
+    root = make_payload(tmp_path, {"census.json": "{}\n"}, {})
+    bundle = make_bundle(tmp_path, 'const V=["TRUE","FALSE","INCONCLUSIVE","RECORDED"];\n')
+    assert run(gp, root, "--also-scan", str(bundle)) == 0
+
+
+def test_an_account_id_baked_into_the_bundle_fails(gp, tmp_path):
+    """The leak path this flag exists for: a build-time env var compiled into the JS."""
+    root = make_payload(tmp_path, {"census.json": "{}\n"}, {})
+    bundle = make_bundle(tmp_path, 'const POOL="us-east-1_x";const ACCT="' + FAKE_ACCOUNT + '";\n')
+    assert run(gp, root, "--also-scan", str(bundle)) == 1
+
+
+def test_a_bundle_hit_cannot_inherit_a_payload_waiver(gp, tmp_path):
+    """No provenance means no source, so the reviewed exception that excuses the CIDR in the payload
+    does not reach the bundle. Same value, two verdicts, and that asymmetry is the design."""
+    root = make_payload(tmp_path, {"cases/F5-7b.json": '{"cidr": "' + _CIDR + '"}\n'},
+                        {"cases/F5-7b.json": [SRC_WITH_WAIVER]})
+    assert run(gp, root) == 0, "the payload arm must pass, or this proves nothing about the bundle"
+    bundle = make_bundle(tmp_path, 'const NET="' + _CIDR + '";\n')
+    assert run(gp, root, "--also-scan", str(bundle)) == 1
+
+
+def test_an_unbuilt_bundle_directory_fails_the_floor(gp, tmp_path):
+    root = make_payload(tmp_path, {"census.json": "{}\n"}, {})
+    bundle = make_bundle(tmp_path, "const a=1;\n", n_files=2)
+    with pytest.raises(gp.GateError, match="below the floor"):
+        run(gp, root, "--also-scan", str(bundle))
+
+
+def test_a_missing_bundle_directory_fails(gp, tmp_path):
+    root = make_payload(tmp_path, {"census.json": "{}\n"}, {})
+    with pytest.raises(gp.GateError, match="not a directory"):
+        run(gp, root, "--also-scan", str(tmp_path / "never-built"))
+
+
+def test_symlinked_files_do_not_count_toward_the_bundle_floor(gp, tmp_path):
+    """A file the gate did not build must not help the floor be met.
+
+    The local preview harness symlinks `site/dist/data -> ~/grx-site-payload`, which is what raised the
+    question. A symlinked DIRECTORY turns out not to matter: `Path.rglob` does not descend into one on
+    3.12 (measured: `site/dist` yields 3 files with that link in place) and 3.13 made the same outcome
+    explicit for `**`. A symlinked FILE is different — `is_file()` follows the link — so it is the arm
+    worth holding, and the assertion below first proves `walk()` DOES see those files, so that the pass
+    is attributable to the gate's filter rather than to a stdlib behaviour that could change again.
+    """
+    root = make_payload(tmp_path, {"census.json": "{}\n"}, {})
+    bundle = make_bundle(tmp_path, "const a=1;\n", n_files=2)
+    for i in range(5):
+        (bundle / f"linked-{i}.json").symlink_to(root / "MANIFEST.json")
+    assert len(gp.walk(bundle)) >= 7, "fixture: walk() must see the symlinked files for this to bite"
+    with pytest.raises(gp.GateError, match="below the floor"):
+        run(gp, root, "--also-scan", str(bundle))
+
+
+# --------------------------------------------------------------------------------------------
 # The real payload, when one has been built.
 # --------------------------------------------------------------------------------------------
 
