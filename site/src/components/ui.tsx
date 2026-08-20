@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { PayloadError } from "../lib/data";
+import { T, useT } from "../lib/i18n";
 import { VERDICTS } from "../lib/types";
 import type { CitationRestriction, Verdict } from "../lib/types";
 import { Markdown } from "../lib/md";
@@ -29,27 +30,37 @@ export function useAsync<T>(load: () => Promise<T>, deps: readonly unknown[]): A
   return res;
 }
 
+/** `what` is already-translated text naming the thing being fetched, supplied by the calling view —
+ *  the view knows which payload file it is waiting for, and the sentence around it has to inflect
+ *  differently per language, so the whole sentence is one dictionary entry with `{what}` in it. */
 export function Loading({ what }: { what: string }) {
-  return <div className="loading">Loading {what}…</div>;
+  const t = useT();
+  return <div className="loading">{t("ui.loading", { what })}</div>;
 }
 
 export function ErrorPanel({ error }: { error: unknown }) {
   const p = error instanceof PayloadError ? error : null;
+  const t = useT();
   return (
     <div className="err">
       <h3>
-        {p
-          ? p.kind === "missing"
-            ? "A file this view needs is not in the published payload"
-            : p.kind === "not-json"
-              ? "A file this view needs was not served as JSON"
-              : "Could not read a file this view needs"
-          : "This view could not be rendered"}
+        {t(
+          p
+            ? p.kind === "missing"
+              ? "ui.err.missing"
+              : p.kind === "not-json"
+                ? "ui.err.notJson"
+                : "ui.err.other"
+            : "ui.err.generic",
+        )}
       </h3>
-      <p className="mono">{error instanceof Error ? error.message : String(error)}</p>
+      {/* The message itself is the thrown error's own text — a fetch status, a path, a parse position.
+          It is diagnostic output, not prose, and translating it would make it unsearchable. */}
+      <p className="mono" lang="en">
+        {error instanceof Error ? error.message : String(error)}
+      </p>
       <p style={{ marginBottom: 0, color: "var(--fg-dim)" }}>
-        This is a defect in the published build, not a state you can navigate out of. The repository
-        markdown and JSON remain the citable form of every number this dashboard shows.
+        <T k="ui.err.note" />
       </p>
     </div>
   );
@@ -65,18 +76,22 @@ export function ErrorPanel({ error }: { error: unknown }) {
  * a fifth verdict. Coercing it to a colour would file it under a vocabulary it does not belong to;
  * dropping it would hide that the archive and the live register speak slightly different languages. */
 export function VerdictBadge({ v }: { v: Verdict | string | null }) {
-  if (v === null || v === "") return <span className="badge v-none">no verdict</span>;
+  const t = useT();
+  if (v === null || v === "") return <span className="badge v-none">{t("ui.verdict.none")}</span>;
   const known = (VERDICTS as readonly string[]).includes(v);
   if (!known)
     return (
-      <span
-        className="badge v-none"
-        title="not one of the four verdict values — a state recorded by the file itself"
-      >
+      <span className="badge v-none" title={t("ui.verdict.unknown")} lang="en">
         {v} *
       </span>
     );
-  return <span className={`badge v-${v}`}>{v}</span>;
+  // TRUE / FALSE / INCONCLUSIVE / RECORDED are never translated: they are the literal tokens in
+  // `results/phase1/<case>.json`, and a reader comparing the page to the file searches for the token.
+  return (
+    <span className={`badge v-${v}`} lang="en">
+      {v}
+    </span>
+  );
 }
 
 export function Chips({ items, cls }: { items: string[]; cls?: string }) {
@@ -95,6 +110,7 @@ export function Chips({ items, cls }: { items: string[]; cls?: string }) {
 /** Citation restrictions render as data, never as copy — the rule lives in `citation_policy.json`
  *  so that changing what may be cited is a change to an artifact, not to a component. */
 export function Restrictions({ items }: { items: CitationRestriction[] }) {
+  const t = useT();
   if (!items.length) return null;
   return (
     <>
@@ -102,26 +118,43 @@ export function Restrictions({ items }: { items: CitationRestriction[] }) {
         <div className="note warn" key={n}>
           <div>
             <span className="badge restrict">{r.restriction}</span>{" "}
-            {r.subject ? <strong>{r.subject}</strong> : null}
+            {r.subject ? (
+              <strong lang="en">{r.subject}</strong>
+            ) : null}
           </div>
-          <div style={{ marginTop: 6 }}>{r.reason}</div>
+          {/* `reason`, `citable_as` and `not_citable_as` are `citation_policy.json`'s own wording —
+              the rule as the artifact states it. The labels around them are this SPA's. */}
+          <div style={{ marginTop: 6 }} lang="en">
+            {r.reason}
+          </div>
           {r.citable_as?.length ? (
             <div style={{ marginTop: 6 }}>
-              <strong>May be cited as:</strong> {r.citable_as.join("; ")}
+              <strong>{t("ui.restrict.citableAs")}</strong>{" "}
+              <span lang="en">{r.citable_as.join("; ")}</span>
             </div>
           ) : null}
           {r.not_citable_as?.length ? (
             <div style={{ marginTop: 4 }}>
-              <strong>May not be cited as:</strong> {r.not_citable_as.join("; ")}
+              <strong>{t("ui.restrict.notCitableAs")}</strong>{" "}
+              <span lang="en">{r.not_citable_as.join("; ")}</span>
             </div>
           ) : null}
           {r.verdict_on_disk ? (
             <div style={{ marginTop: 4, color: "var(--fg-faint)" }}>
-              Verdict recorded on disk: <span className="mono">{r.verdict_on_disk}</span>
+              {t("ui.restrict.onDisk")}{" "}
+              <span className="mono" lang="en">
+                {r.verdict_on_disk}
+              </span>
             </div>
           ) : null}
           <div style={{ marginTop: 6, color: "var(--fg-faint)", fontSize: 11.5 }}>
-            source: <span className="mono">{r.source}</span>
+            {/* A list of repository paths. Marked English for the same reason the census cards mark
+                `derived_from`: a path is a string to be typed into a shell, and a screen reader
+                inheriting `zh-TW` reads it with the wrong phonology. */}
+            {t("ui.restrict.source")}{" "}
+            <span className="mono" lang="en">
+              {r.source}
+            </span>
           </div>
         </div>
       ))}
@@ -150,7 +183,10 @@ export function RawJson({ label, value }: { label: string; value: unknown }) {
     <details className="raw">
       <summary>{label}</summary>
       <div>
-        <pre>
+        {/* `lang="en"` because this is the bytes on disk: the keys are the artifact's own field names
+            and the strings are its own English. A reader comparing it to
+            `results/phase1/<case>.json` is reading a file, not a translation. */}
+        <pre lang="en">
           <code>{JSON.stringify(value, null, 2)}</code>
         </pre>
       </div>

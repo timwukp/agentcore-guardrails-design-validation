@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { HashRouter } from "react-router-dom";
 import App from "./App";
+import { LocaleProvider } from "./lib/i18n";
 import "./styles.css";
 
 // HashRouter, not BrowserRouter, and the choice is load-bearing rather than a convenience.
@@ -19,8 +20,12 @@ if (!root) throw new Error("#root missing from index.html");
 
 createRoot(root).render(
   <StrictMode>
-    <HashRouter>
-      <App />
-    </HashRouter>
+    {/* The language choice sits OUTSIDE the router: it is a property of the reader, not of the route,
+        so switching language must not navigate and a deep link must not carry a language. */}
+    <LocaleProvider>
+      <HashRouter>
+        <App />
+      </HashRouter>
+    </LocaleProvider>
   </StrictMode>,
 );

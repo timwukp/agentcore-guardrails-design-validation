@@ -28,6 +28,26 @@ WHAT TO CHECK IN THE BROWSER (the part a test cannot do)
     on `cssRules`, so a number here is proof the stylesheet was applied, not merely fetched
   * `[...document.querySelectorAll('img')].every(i => i.naturalWidth > 0)` — `img-src` blocks show
     up as a zero-width image, not as an exception
+  * IN THE CHINESE LOCALE, that no English prose inherits `zh-TW`. Switch with the 中文 toggle, then
+    walk every route and look for a text node of English prose whose nearest `[lang]` ancestor is not
+    English:
+
+        const HAN = /[㐀-䶿一-鿿豈-﫿]/;
+        const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+        const bad = [];
+        for (let n = w.nextNode(); n; n = w.nextNode()) {
+          const s = (n.nodeValue || '').trim();
+          if (!s || HAN.test(s) || s.split(/\s+/).length < 4) continue;   // 4+ words = prose, not a token
+          if (!n.parentElement?.closest('[lang="en"]')) bad.push([n.parentElement.tagName, s.slice(0, 60)]);
+        }
+        bad;   // must be empty on every route
+
+    This is the ONE arm of the verbatim rule that no gate can hold, and the reason it is written out
+    here rather than left to memory: `check_site_invariants.py`'s `MIN_VERBATIM_MARKS` counts marks in
+    the bundle, where one `lang="en"` on a container is a single occurrence no matter how much of the
+    page it governs, so a container that stopped marking its subtree moves that count by one and
+    publishes. Run over 18 routes on 2026-08-21 this found six such surfaces — every rendered markdown
+    body among them — and reports empty after the fix.
 """
 
 from __future__ import annotations

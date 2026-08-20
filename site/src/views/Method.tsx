@@ -12,15 +12,28 @@
 // The two gaps this page currently reports, both derived and neither previously written down anywhere:
 // most verdicts carry no statement of what they do not prove, and a handful of guards were recorded
 // with no name at all. They are rendered as warnings, not hidden behind a total.
+//
+// WHAT IS TRANSLATED HERE AND WHAT IS NOT
+//
+// This page is almost entirely this platform's own prose about its own procedure, so almost all of it is
+// translated. The exceptions are the sentences that belong to something else and are quoted: `method.json`'s
+// `note` and `why_this_is_counted`, and `families.yaml`'s `why`, `replication_requirement` and
+// `ui_state_note`. Those render verbatim in English in both languages, as does every vocabulary the
+// payload keys on — the four verdict words, the oracle-kind names, the guard names, the family ids and
+// the cost/runner/mutates vocabularies.
 
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { loadFamilies, loadMethod } from "../lib/data";
 import { ErrorPanel, KV, Loading, useAsync } from "../components/ui";
+import { T, useT, VerbatimNote } from "../lib/i18n";
 import { byCaseId } from "../lib/sort";
 import type { Method } from "../lib/types";
 
+/** The bucket `build_site_data.py` files a nameless guard under. It is a KEY into the payload, not a
+ *  label — it is looked up and then excluded from the table, never displayed — so it stays byte-identical
+ *  to the producer's string in both languages. */
 const UNNAMED_GUARD = "(guard recorded without a name)";
 
 function Step({ n, title, children }: { n: number; title: string; children: ReactNode }) {
@@ -56,20 +69,23 @@ function CaseList({ ids }: { ids: string[] }) {
  *  happen to use this oracle shape", which is a property of what was worth measuring, not a magnitude
  *  anyone should compare across kinds. */
 function KindTable({ kinds }: { kinds: Record<string, number> }) {
+  const t = useT();
   const rows = Object.entries(kinds).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   return (
     <div className="scroll" style={{ maxHeight: 360 }}>
       <table className="grid">
         <thead>
           <tr>
-            <th>oracle kind</th>
-            <th>cases</th>
+            <th>{t("mth.kind.th.kind")}</th>
+            <th>{t("mth.kind.th.cases")}</th>
           </tr>
         </thead>
         <tbody>
           {rows.map(([k, n]) => (
             <tr key={k}>
-              <td className="mono">{k}</td>
+              <td className="mono" lang="en">
+                {k}
+              </td>
               <td className="num">{n}</td>
             </tr>
           ))}
@@ -81,6 +97,7 @@ function KindTable({ kinds }: { kinds: Record<string, number> }) {
 
 function Guards({ m }: { m: Method }) {
   const [q, setQ] = useState("");
+  const t = useT();
   const entries = Object.entries(m.guard_names).filter(([k]) => k !== UNNAMED_GUARD);
   const unnamed = m.guard_names[UNNAMED_GUARD] ?? 0;
   const needle = q.trim().toLowerCase();
@@ -92,63 +109,61 @@ function Guards({ m }: { m: Method }) {
   return (
     <>
       <p>
-        A guard is a condition the measurement had to satisfy before its result was allowed to count —
-        that the two arms were disjoint, that the blocking policy was load-bearing before the mutation,
-        that the restore was verified afterwards. Guards are named per case, and the case page prints
-        each one's <code>test</code> and <code>why</code> beside whether it held.
+        <T
+          k="mth.g.body"
+          v={{ test: <code>test</code>, why: <code>why</code> }}
+        />
       </p>
       <div className="cards" style={{ marginBottom: 14 }}>
         <div className="card">
           <div className="n">{entries.length}</div>
-          <div className="k">distinct named guards</div>
-          <div className="def">
-            Across every published verdict. Guards are written per case rather than drawn from a fixed
-            list, which is why there are this many.
-          </div>
+          <div className="k">{t("mth.g.card.distinct")}</div>
+          <div className="def">{t("mth.g.card.distinct.def")}</div>
         </div>
         <div className="card">
           <div className="n">{once}</div>
-          <div className="k">named by exactly one case</div>
-          <div className="def">
-            A guard used once is not a weaker guard; it means the condition that could have invalidated
-            that one measurement was specific to it.
-          </div>
+          <div className="k">{t("mth.g.card.once")}</div>
+          <div className="def">{t("mth.g.card.once.def")}</div>
         </div>
       </div>
 
       {unnamed ? (
         <div className="note warn">
-          <strong>{unnamed} guard(s) are recorded without a name.</strong> Their records carry a test
-          and a result but no identifier, so they cannot be counted as any of the {entries.length} named
-          guards above and cannot be searched for here. The build files them under an explicit bucket
-          rather than coercing the record into a name — a guard census that silently invented one would
-          disagree with the case pages, which show these guards exactly as stored. Recording a guard
-          without a name is a defect in the producer, and this is the number.
+          <strong>{t("mth.g.unnamed.head", { n: unnamed })}</strong>{" "}
+          {t("mth.g.unnamed.body", { named: entries.length })}
         </div>
       ) : null}
 
       <div className="facets">
         <div className="facet">
-          <label>search guards</label>
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="e.g. restore, arms, seal" />
+          <label>{t("mth.g.search")}</label>
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder={t("mth.g.placeholder")}
+          />
         </div>
         <div className="facet">
           <label>&nbsp;</label>
-          <span className="count mono">{shown.length} shown</span>
+          <span className="count mono">{t("mth.g.shown", { n: shown.length })}</span>
         </div>
       </div>
       <div className="scroll" style={{ maxHeight: 420 }}>
         <table className="grid">
           <thead>
             <tr>
-              <th>guard</th>
-              <th>cases naming it</th>
+              <th>{t("mth.g.th.guard")}</th>
+              <th>{t("mth.g.th.cases")}</th>
             </tr>
           </thead>
           <tbody>
             {shown.map(([k, n]) => (
               <tr key={k}>
-                <td className="mono">{k}</td>
+                {/* A guard's name is the producer's identifier, and the case pages print it as stored.
+                    A translated name here would be a name that exists on no record. */}
+                <td className="mono" lang="en">
+                  {k}
+                </td>
                 <td className="num">{n}</td>
               </tr>
             ))}
@@ -161,44 +176,53 @@ function Guards({ m }: { m: Method }) {
 
 function Caveats({ m }: { m: Method }) {
   const c = m.caveats;
+  const t = useT();
   return (
     <>
       <p>
-        A verdict answers exactly one question. What it does <em>not</em> answer is the part a reader
-        will get wrong, and the record has a field for it: <code>what_true_does_not_prove</code> and{" "}
-        <code>what_false_does_not_prove</code>. Every case page renders that section whether or not the
-        record fills it in, so an absent caveat is visible on the case rather than only in this total.
+        <T
+          k="mth.cav.body"
+          v={{
+            t: <code>what_true_does_not_prove</code>,
+            f: <code>what_false_does_not_prove</code>,
+          }}
+        />
       </p>
       <div className="cards" style={{ marginBottom: 14 }}>
         <div className="card">
           <div className="n">
             {c.cases_with_what_false_does_not_prove} / {c.false_verdicts}
           </div>
-          <div className="k">FALSE verdicts stating what they do not prove</div>
-          <div className="def">
-            A FALSE verdict says published guidance did not hold under this measurement. It does not say
-            the control is useless, nor that the failure generalises past the configuration measured.
+          <div className="k">
+            <T k="mth.cav.card.false" v={{ v: <span lang="en">FALSE</span> }} />
           </div>
+          <div className="def">{t("mth.cav.card.false.def")}</div>
         </div>
         <div className="card">
           <div className="n">
             {c.cases_with_what_true_does_not_prove} / {c.true_verdicts}
           </div>
-          <div className="k">TRUE verdicts stating what they do not prove</div>
-          <div className="def">
-            A TRUE verdict says the stated condition held in the configuration measured, on the days
-            measured. Anything wider than that is an inference the reader is making, not one recorded.
+          <div className="k">
+            <T k="mth.cav.card.true" v={{ v: <span lang="en">TRUE</span> }} />
           </div>
+          <div className="def">{t("mth.cav.card.true.def")}</div>
         </div>
       </div>
       <div className="note warn">
-        <strong>This is a gap in the corpus, not a rendering choice.</strong> {c.why_this_is_counted}
+        {/* `why_this_is_counted` is `method.json`'s own sentence, quoted. */}
+        <strong>{t("mth.cav.gap.head")}</strong> <span lang="en">{c.why_this_is_counted}</span>
         <div style={{ marginTop: 8 }}>
-          FALSE without the caveat ({c.false_verdicts_without_the_caveat.length}):{" "}
+          {t("mth.cav.without", {
+            v: "FALSE",
+            n: c.false_verdicts_without_the_caveat.length,
+          })}{" "}
           <CaseList ids={c.false_verdicts_without_the_caveat} />
         </div>
         <div style={{ marginTop: 6 }}>
-          TRUE without the caveat ({c.true_verdicts_without_the_caveat.length}):{" "}
+          {t("mth.cav.without", {
+            v: "TRUE",
+            n: c.true_verdicts_without_the_caveat.length,
+          })}{" "}
           <CaseList ids={c.true_verdicts_without_the_caveat} />
         </div>
       </div>
@@ -207,6 +231,7 @@ function Caveats({ m }: { m: Method }) {
 }
 
 function Replication({ m }: { m: Method }) {
+  const t = useT();
   const twoDay = Object.entries(m.archive_days_by_case)
     .filter(([, d]) => new Set(d).size >= 2)
     .map(([c]) => c);
@@ -217,34 +242,29 @@ function Replication({ m }: { m: Method }) {
   return (
     <>
       <p>
-        A measurement made once is a measurement, not a replication. The study keeps day-1 verdict files
-        under <span className="mono">results/phase1/archive/</span>, and a case counts as replicated only
-        when two <strong>distinct UTC calendar days</strong> exist — one day repeated is a re-run, and it
-        cannot distinguish a stable property from a property of that day.
+        <T
+          k="mth.rep.body"
+          v={{
+            dir: <span className="mono">results/phase1/archive/</span>,
+            days: <strong>{t("mth.rep.distinctDays")}</strong>,
+          }}
+        />
       </p>
       <div className="cards" style={{ marginBottom: 14 }}>
         <div className="card">
           <div className="n">{m.n_cases_with_an_archive}</div>
-          <div className="k">cases with at least one archived run</div>
-          <div className="def">
-            An archive exists for the case. This number alone establishes nothing about replication.
-          </div>
+          <div className="k">{t("mth.rep.card.archive")}</div>
+          <div className="def">{t("mth.rep.card.archive.def")}</div>
         </div>
         <div className="card">
           <div className="n">{m.n_cases_with_two_distinct_archive_days}</div>
-          <div className="k">cases with archives from two distinct UTC days</div>
-          <div className="def">
-            The only cases where the archive itself can support the word "replicated". Counted from the
-            dates in the archive filenames, not from any status field.
-          </div>
+          <div className="k">{t("mth.rep.card.twoDays")}</div>
+          <div className="def">{t("mth.rep.card.twoDays.def")}</div>
         </div>
         <div className="card">
           <div className="n">{m.archives_disagreeing_with_the_live_verdict.length}</div>
-          <div className="k">archives whose verdict differs from the live one</div>
-          <div className="def">
-            A disagreement is a finding. It is not resolved by preferring the newer run, and nothing here
-            silently prefers one.
-          </div>
+          <div className="k">{t("mth.rep.card.disagree")}</div>
+          <div className="def">{t("mth.rep.card.disagree.def")}</div>
         </div>
       </div>
 
@@ -252,10 +272,10 @@ function Replication({ m }: { m: Method }) {
         <table className="grid" style={{ marginBottom: 14 }}>
           <thead>
             <tr>
-              <th>case</th>
-              <th>archived verdict</th>
-              <th>live verdict</th>
-              <th>archive label</th>
+              <th>{t("mth.rep.th.case")}</th>
+              <th>{t("mth.rep.th.archived")}</th>
+              <th>{t("mth.rep.th.live")}</th>
+              <th>{t("mth.rep.th.label")}</th>
             </tr>
           </thead>
           <tbody>
@@ -266,8 +286,12 @@ function Replication({ m }: { m: Method }) {
                   <td className="mono">
                     <Link to={`/case/${d.case}`}>{d.case}</Link>
                   </td>
-                  <td className="mono">{d.archived_verdict}</td>
-                  <td className="mono">{d.live_verdict ?? "—"}</td>
+                  <td className="mono" lang="en">
+                    {d.archived_verdict}
+                  </td>
+                  <td className="mono" lang="en">
+                    {d.live_verdict ?? "—"}
+                  </td>
                   <td className="mono">{d.label}</td>
                 </tr>
               ))}
@@ -277,8 +301,8 @@ function Replication({ m }: { m: Method }) {
 
       <KV
         rows={[
-          ["two distinct UTC days", twoDay.length ? <CaseList ids={twoDay} /> : "none"],
-          ["archive on one day only", oneDay.length ? <CaseList ids={oneDay} /> : "none"],
+          [t("mth.rep.kv.twoDays"), twoDay.length ? <CaseList ids={twoDay} /> : t("mth.rep.none")],
+          [t("mth.rep.kv.oneDay"), oneDay.length ? <CaseList ids={oneDay} /> : t("mth.rep.none")],
         ]}
       />
     </>
@@ -286,8 +310,9 @@ function Replication({ m }: { m: Method }) {
 }
 
 function FamilyTable() {
+  const t = useT();
   const res = useAsync(loadFamilies, []);
-  if (res.state === "loading") return <Loading what="the family classification" />;
+  if (res.state === "loading") return <Loading what={t("mth.fam.loading")} />;
   if (res.state === "error") return <ErrorPanel error={res.error} />;
   const f = res.data;
   const rows = Object.entries(f.families).sort((a, b) =>
@@ -297,25 +322,22 @@ function FamilyTable() {
   return (
     <>
       <p>
-        Re-running a measurement is not uniformly safe or uniformly free, so each family carries an
-        authored classification in <span className="mono">platform/curation/families.yaml</span>: what a
-        re-run costs, where it must run, what it mutates, and whether it may be scheduled at all. The
-        build refuses to emit this file if a registered family is missing from it <em>or</em> if it
-        classifies a family that does not exist — a family added later must be classified before it can
-        be scheduled, rather than becoming schedulable by omission. A family marked not schedulable must
-        state why, in the file.
+        <T
+          k="mth.fam.body"
+          v={{ file: <span className="mono">platform/curation/families.yaml</span> }}
+        />
       </p>
       <div className="scroll">
         <table className="grid">
           <thead>
             <tr>
-              <th>family</th>
-              <th>cases</th>
-              <th>cost class</th>
-              <th>runner</th>
-              <th>mutates</th>
-              <th>schedulable</th>
-              <th>why not / note</th>
+              <th>{t("mth.fam.th.family")}</th>
+              <th>{t("mth.fam.th.cases")}</th>
+              <th>{t("mth.fam.th.cost")}</th>
+              <th>{t("mth.fam.th.runner")}</th>
+              <th>{t("mth.fam.th.mutates")}</th>
+              <th>{t("mth.fam.th.schedulable")}</th>
+              <th>{t("mth.fam.th.whyNot")}</th>
             </tr>
           </thead>
           <tbody>
@@ -323,13 +345,23 @@ function FamilyTable() {
               <tr key={id}>
                 <td className="mono">{id}</td>
                 <td className="num">{x.n_cases}</td>
-                <td className="mono">{x.cost}</td>
-                <td className="mono" style={x.runner === "macbook_only" ? { color: "var(--warn)" } : undefined}>
+                {/* The cost, runner and mutates values are `families.yaml`'s closed vocabularies, listed
+                    verbatim in the note below the table. They stay in the words the file uses. */}
+                <td className="mono" lang="en">
+                  {x.cost}
+                </td>
+                <td
+                  className="mono"
+                  lang="en"
+                  style={x.runner === "macbook_only" ? { color: "var(--warn)" } : undefined}
+                >
                   {x.runner}
                 </td>
-                <td className="mono">{x.mutates}</td>
-                <td className="mono">{x.schedulable ? "yes" : "no"}</td>
-                <td style={{ minWidth: 320 }}>
+                <td className="mono" lang="en">
+                  {x.mutates}
+                </td>
+                <td className="mono">{x.schedulable ? t("mth.fam.yes") : t("mth.fam.no")}</td>
+                <td style={{ minWidth: 320 }} lang="en">
                   {x.why_not_schedulable ?? x.calendar_gate ?? x.note ?? (
                     <span style={{ color: "var(--fg-faint)" }}>—</span>
                   )}
@@ -340,11 +372,13 @@ function FamilyTable() {
         </table>
       </div>
       <p style={{ color: "var(--fg-faint)", fontSize: 12, marginTop: 8 }}>
-        <code>cost</code> here is a class, never a dollar figure — money has exactly one source in this
-        project, and it is not this file. Vocabularies:{" "}
-        {Object.entries(f.vocabularies)
-          .map(([k, v]) => `${k} ∈ {${v.join(", ")}}`)
-          .join("; ")}
+        <T k="mth.fam.costNote" v={{ cost: <code>cost</code> }} />{" "}
+        {t("mth.fam.vocabularies")}{" "}
+        <span lang="en">
+          {Object.entries(f.vocabularies)
+            .map(([k, v]) => `${k} ∈ {${v.join(", ")}}`)
+            .join("; ")}
+        </span>
         .
       </p>
 
@@ -352,11 +386,20 @@ function FamilyTable() {
         .filter(([, x]) => x.network_position_sensitive)
         .map(([id, x]) => (
           <div className="note warn" key={id}>
-            <strong>{id} is network-position sensitive.</strong> {x.why}
-            <div style={{ marginTop: 6 }}>{x.replication_requirement}</div>
+            {/* `why`, `replication_requirement` and `ui_state_note` are the authored classification's
+                own sentences: this is the banner `check_scenarios.py` requires, and it must say what the
+                file says rather than a paraphrase of it. */}
+            <strong>{t("mth.fam.netPos", { id })}</strong> <span lang="en">{x.why}</span>
+            <div style={{ marginTop: 6 }} lang="en">
+              {x.replication_requirement}
+            </div>
             {x.ui_state_note ? (
               <div style={{ marginTop: 6, color: "var(--fg-dim)" }}>
-                UI state when old: <span className="mono">{x.ui_state_when_old}</span> — {x.ui_state_note}
+                <T
+                  k="mth.fam.uiState"
+                  v={{ state: <span className="mono">{x.ui_state_when_old}</span> }}
+                />{" "}
+                <span lang="en">{x.ui_state_note}</span>
               </div>
             ) : null}
           </div>
@@ -367,85 +410,92 @@ function FamilyTable() {
 
 export default function MethodView() {
   const res = useAsync(loadMethod, []);
-  if (res.state === "loading") return <Loading what="the method census" />;
+  const t = useT();
+  if (res.state === "loading") return <Loading what={t("mth.loading")} />;
   if (res.state === "error") return <ErrorPanel error={res.error} />;
   const m = res.data;
 
   return (
     <>
-      <h2 className="view">How a verdict is made</h2>
-      <p className="lede">
-        The chain every case travels, from a sentence in the design document to a verdict that may be
-        cited — with the count, at each step, of how many cases actually satisfy the step as described.
-      </p>
+      <h2 className="view">{t("nav.method")}</h2>
+      <VerbatimNote />
+      <p className="lede">{t("mth.lede")}</p>
 
       <div className="note seal">
-        {m.note} Nothing on this page is authored prose about the data; the prose describes the
-        procedure, and every number beside it is counted from the verdict files at build time.
+        <span lang="en">{m.note}</span> {t("mth.note")}
       </div>
 
-      <Step n={1} title="A claim is extracted and sealed">
+      <Step n={1} title={t("mth.s1.title")}>
         <p>
-          Each unit of the design document becomes a row in <span className="mono">claims/triage.csv</span>{" "}
-          with its classification, its anchor, and the document line it came from. That file is{" "}
-          <strong>sealed</strong>: it was fixed before any measurement ran, so a claim cannot be quietly
-          reworded to match what was later found. The <Link to="/claims">claim triage</Link> view renders
-          it exactly as stored.
+          <T
+            k="mth.s1.body"
+            v={{
+              file: <span className="mono">claims/triage.csv</span>,
+              sealed: <strong>{t("mth.sealed")}</strong>,
+              claims: <Link to="/claims">{t("nav.claims")}</Link>,
+            }}
+          />
         </p>
       </Step>
 
-      <Step n={2} title="An oracle is written before the measurement, and hashed">
+      <Step n={2} title={t("mth.s2.title")}>
         <p>
-          For each case an oracle states, in advance, the condition under which the claim counts as held —
-          a threshold, an enumeration, an interval relation. The oracle text is registered in{" "}
-          <span className="mono">PREREGISTRATION.yaml</span> and hashed; the build re-verifies those hashes
-          on every run, so a drifted seal fails the publish rather than reaching this page. Case pages quote{" "}
-          <code>oracle_text</code> verbatim and never paraphrase it, because a paraphrase of a sealed
-          oracle is a new oracle.
+          <T
+            k="mth.s2.body"
+            v={{
+              pre: <span className="mono">PREREGISTRATION.yaml</span>,
+              oracle: <code>oracle_text</code>,
+            }}
+          />
         </p>
-        <p>
-          The {Object.keys(m.kinds).length} oracle shapes in use, and how many cases use each:
-        </p>
+        <p>{t("mth.s2.kinds", { n: Object.keys(m.kinds).length })}</p>
         <KindTable kinds={m.kinds} />
       </Step>
 
-      <Step n={3} title="An instrument runs, and guards decide whether its output counts">
+      <Step n={3} title={t("mth.s3.title")}>
         <Guards m={m} />
       </Step>
 
-      <Step n={4} title="A verdict is read off the oracle — one of four values">
+      <Step n={4} title={t("mth.s4.title")}>
+        {/* The pass-rate denial. The publish gate requires that every occurrence of the phrase in the
+            shipped bundle be a denial, in each language, so the Chinese sentence cannot be dropped
+            without failing the build — a zh page whose only statement about a pass rate was its silence
+            would be a different platform from this one. */}
         <p>
-          <strong>TRUE</strong> and <strong>FALSE</strong> are readings of the sealed condition.{" "}
-          <strong>INCONCLUSIVE</strong> is a first-class outcome, not a weak TRUE and not a soft FALSE: it
-          says the measurement did not establish the condition either way, and it licenses no amendment in
-          either direction. <strong>RECORDED</strong> is a written observation that was never adjudicated
-          against an oracle at all, and may not be cited as a verdict. There is no pass rate anywhere in
-          this platform, because a ratio over four values that do not share an axis would not mean
-          anything — and the FALSE verdicts, which locate where published guidance did not hold, are the
-          most valuable output the study has.
+          <T
+            k="mth.s4.body"
+            v={{
+              t: <strong lang="en">TRUE</strong>,
+              f: <strong lang="en">FALSE</strong>,
+              i: <strong lang="en">INCONCLUSIVE</strong>,
+              r: <strong lang="en">RECORDED</strong>,
+            }}
+          />
         </p>
       </Step>
 
-      <Step n={5} title="What the verdict does not prove is stated — or its absence is counted">
+      <Step n={5} title={t("mth.s5.title")}>
         <Caveats m={m} />
       </Step>
 
-      <Step n={6} title="Replication is two distinct days, or it is not replication">
+      <Step n={6} title={t("mth.s6.title")}>
         <Replication m={m} />
       </Step>
 
-      <Step n={7} title="Re-running is classified before it is permitted">
+      <Step n={7} title={t("mth.s7.title")}>
         <FamilyTable />
       </Step>
 
-      <Step n={8} title="Only then may a document change be proposed">
+      <Step n={8} title={t("mth.s8.title")}>
         <p>
-          An amendment to the design document must rest on a verdict that survived replication, and the
-          gate between "measured" and "proposed" is a script, not a judgment call. An INCONCLUSIVE verdict
-          produces zero proposed lines. What may and may not be cited from a given verdict is data, in{" "}
-          <Link to="/citations">the citation policy</Link>, rendered on each case page from the same file —
-          so the rule and its display cannot drift apart. Where the study falls short of all of this, it is
-          written down in <Link to="/register">the deficiency register</Link> rather than fixed silently.
+          <T
+            k="mth.s8.body"
+            v={{
+              i: <span lang="en">INCONCLUSIVE</span>,
+              citations: <Link to="/citations">{t("nav.citations")}</Link>,
+              register: <Link to="/register">{t("nav.register")}</Link>,
+            }}
+          />
         </p>
       </Step>
     </>

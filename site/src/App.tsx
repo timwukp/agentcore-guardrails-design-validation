@@ -1,5 +1,7 @@
 import { NavLink, Route, Routes } from "react-router-dom";
 import { loadManifest } from "./lib/data";
+import { LocaleToggle, T, useT } from "./lib/i18n";
+import type { Key } from "./lib/strings";
 import { useAsync } from "./components/ui";
 import Overview from "./views/Overview";
 import CaseDetail from "./views/CaseDetail";
@@ -15,38 +17,56 @@ import Audit from "./views/Audit";
 import Report from "./views/Report";
 import Architecture from "./views/Architecture";
 
-const NAV: [string, string, string][] = [
-  ["Results", "/", "Census"],
-  ["Results", "/findings", "Findings"],
-  ["Results", "/figures", "Figures"],
-  ["Method", "/architecture", "Design diagrams"],
-  ["Method", "/method", "How a verdict is made"],
-  ["Method", "/claims", "Claim triage"],
-  ["Method", "/citations", "Citation policy"],
-  ["Pipeline", "/pipeline", "Pipeline state"],
-  ["Audit your design", "/audit", "Submit a design"],
-  ["Audit your design", "/report", "Report and example"],
-  ["Governance", "/register", "Deficiency register"],
-  ["Governance", "/provenance", "Build provenance"],
+/** The name in the heading is the REPOSITORY name, not a product name.
+ *
+ *  "GRX Live" was a label that existed only here — nothing a reader could look up, check out, or file
+ *  an issue against. `agentcore-guardrails-design-validation` is the thing itself: the repository whose
+ *  artifacts every number on every page below is derived from, so a reader who wants the citable form
+ *  of what they are looking at already has its address. It stays in `mono` and untranslated in both
+ *  languages for the same reason a case identifier does — it is a string you search for, not a phrase.
+ *
+ *  Deliberately NOT renamed: the CDK stack id and the CloudFront/S3 resource names under
+ *  `platform/infra/`. A stack id is a physical identity — changing it replaces the distribution and
+ *  the bucket rather than relabelling them — and the operator scripts' own console output is not a
+ *  page a reader visits. The name a reader sees and the name AWS holds are allowed to differ; a
+ *  destroyed distribution to make them match is not a rename. */
+const REPO_NAME = "agentcore-guardrails-design-validation";
+
+const NAV: [Key, string, Key][] = [
+  ["nav.group.results", "/", "nav.census"],
+  ["nav.group.results", "/findings", "nav.findings"],
+  ["nav.group.results", "/figures", "nav.figures"],
+  ["nav.group.method", "/architecture", "nav.architecture"],
+  ["nav.group.method", "/method", "nav.method"],
+  ["nav.group.method", "/claims", "nav.claims"],
+  ["nav.group.method", "/citations", "nav.citations"],
+  ["nav.group.pipeline", "/pipeline", "nav.pipeline"],
+  ["nav.group.audit", "/audit", "nav.audit"],
+  ["nav.group.audit", "/report", "nav.report"],
+  ["nav.group.governance", "/register", "nav.register"],
+  ["nav.group.governance", "/provenance", "nav.provenance"],
 ];
 
 function Side() {
   const man = useAsync(loadManifest, []);
+  const t = useT();
   const groups = [...new Set(NAV.map(([g]) => g))];
   return (
     <aside className="side">
-      <h1>GRX Live</h1>
+      <h1 className="repo" lang="en">
+        {REPO_NAME}
+      </h1>
+      <LocaleToggle />
       <p className="sub">
-        A standing validation of the AgentCore end-to-end security design guidance, derived from its
-        own artifacts at every build.
+        <T k="app.tagline" />
       </p>
       <nav>
         {groups.map((g) => (
           <div key={g}>
-            <div className="navgroup">{g}</div>
+            <div className="navgroup">{t(g)}</div>
             {NAV.filter(([gg]) => gg === g).map(([, to, label]) => (
               <NavLink key={to} to={to} end={to === "/"} className={({ isActive }) => (isActive ? "on" : "")}>
-                {label}
+                {t(label)}
               </NavLink>
             ))}
           </div>
@@ -55,12 +75,12 @@ function Side() {
       <div className="build">
         {man.state === "ok" ? (
           <>
-            build <span className="mono">{man.data.build_stamp}</span>
+            {t("app.build.label")} <span className="mono">{man.data.build_stamp}</span>
             <br />
-            {man.data.n_inputs} inputs → {man.data.n_outputs} files
+            {t("app.build.files", { n_inputs: man.data.n_inputs, n_outputs: man.data.n_outputs })}
           </>
         ) : man.state === "error" ? (
-          <span style={{ color: "var(--warn)" }}>build stamp unavailable</span>
+          <span style={{ color: "var(--warn)" }}>{t("app.build.unavailable")}</span>
         ) : (
           "…"
         )}
@@ -92,9 +112,11 @@ export default function App() {
             path="*"
             element={
               <div className="err">
-                <h3>No such view</h3>
+                <h3>
+                  <T k="app.404.title" />
+                </h3>
                 <p style={{ marginBottom: 0 }}>
-                  Nothing is published at this route. Use the navigation on the left.
+                  <T k="app.404.body" />
                 </p>
               </div>
             }

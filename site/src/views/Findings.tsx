@@ -8,35 +8,39 @@
 
 import { useState } from "react";
 import { loadFindings } from "../lib/data";
+import { useT, VerbatimNote } from "../lib/i18n";
 import { Body, ErrorPanel, Loading, RawJson, useAsync } from "../components/ui";
 
-function statusOf(p: Record<string, unknown>): string {
+/** `absent` is the already-translated words for "the artifact recorded no status" — the ABSENCE is
+ *  this platform's observation, so it is translated, while any status the artifact does carry is the
+ *  artifact's own token and is not. */
+function statusOf(p: Record<string, unknown>, absent: string): string {
   const s = p["status"];
-  return typeof s === "string" && s.trim() ? s : "no status recorded";
+  return typeof s === "string" && s.trim() ? s : absent;
 }
 
 export default function Findings() {
   const res = useAsync(loadFindings, []);
   const [open, setOpen] = useState<string | null>(null);
+  const t = useT();
 
-  if (res.state === "loading") return <Loading what="findings" />;
+  if (res.state === "loading") return <Loading what={t("fnd.loading")} />;
   if (res.state === "error") return <ErrorPanel error={res.error} />;
   const items = [...res.data.findings].sort((a, b) => a.file.localeCompare(b.file));
+  const absent = t("fnd.noStatus");
 
   return (
     <>
-      <h2 className="view">Findings</h2>
-      <p className="lede">
-        {items.length} findings, each rendered from the markdown file it is stored as, with the hash of
-        those bytes. A finding is where a verdict's meaning is bounded; the summary is not the finding.
-      </p>
+      <h2 className="view">{t("nav.findings")}</h2>
+      <VerbatimNote />
+      <p className="lede">{t("fnd.lede", { n: items.length })}</p>
 
       <table className="grid" style={{ marginBottom: 22 }}>
         <thead>
           <tr>
-            <th>file</th>
-            <th>status</th>
-            <th>title</th>
+            <th>{t("fnd.th.file")}</th>
+            <th>{t("fnd.th.status")}</th>
+            <th>{t("fnd.th.title")}</th>
           </tr>
         </thead>
         <tbody>
@@ -55,9 +59,9 @@ export default function Findings() {
                 </a>
               </td>
               <td>
-                <span className="chip">{statusOf(f.provenance)}</span>
+                <span className="chip">{statusOf(f.provenance, absent)}</span>
               </td>
-              <td>{f.title}</td>
+              <td lang="en">{f.title}</td>
             </tr>
           ))}
         </tbody>
@@ -71,24 +75,28 @@ export default function Findings() {
               that says what was found. The filename stays, as a chip, because it is the citable name. */}
           {/* Not uppercased: `h3` shouts by default, which suits a short section label and not a
               100-character sentence. */}
-          <h3 style={{ textTransform: "none" }}>{f.title}</h3>
+          <h3 style={{ textTransform: "none" }} lang="en">
+            {f.title}
+          </h3>
           <div style={{ marginBottom: 10 }}>
             <span className="chip mono" style={{ textTransform: "none" }}>
               {f.file}
             </span>
-            <span className="chip">{statusOf(f.provenance)}</span>
+            <span className="chip">{statusOf(f.provenance, absent)}</span>
             <span className="chip mono">sha256 {f.sha256.slice(0, 16)}…</span>
           </div>
           {typeof f.provenance["note"] === "string" ? (
-            <div className="note">{String(f.provenance["note"])}</div>
+            <div className="note" lang="en">
+              {String(f.provenance["note"])}
+            </div>
           ) : null}
-          <RawJson label="provenance" value={f.provenance} />
+          <RawJson label={t("fnd.provenance")} value={f.provenance} />
           <div style={{ marginTop: 12 }}>
             {open === f.file || items.length <= 8 ? (
               <Body src={f.body_md} />
             ) : (
               <details className="raw" open={open === f.file}>
-                <summary>read the finding</summary>
+                <summary>{t("fnd.read")}</summary>
                 <div>
                   <Body src={f.body_md} />
                 </div>

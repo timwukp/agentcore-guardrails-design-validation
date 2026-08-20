@@ -30,23 +30,32 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { loadAudit, loadControls } from "../lib/data";
 import { compose, obsClass, statusClass } from "../lib/audit";
+import { T, useT, VerbatimNote } from "../lib/i18n";
 import { ErrorPanel, Loading, useAsync } from "../components/ui";
 import type { AuditPage, Control, ControlsDoc } from "../lib/types";
 
+/** The status and observation words are `controls.json`'s own vocabularies — `not_measured`,
+ *  `NOT_DECLARED` — and the styling gate keys on them. They stay in English in both languages, like the
+ *  verdict tokens: what they MEAN is translated in the prose around them. */
 export function StatusBadge({ s, label }: { s: string; label?: string }) {
   return (
-    <span className={`badge ${statusClass(s)}`} title={label ?? s}>
+    <span className={`badge ${statusClass(s)}`} title={label ?? s} lang="en">
       {s.replace(/_/g, " ")}
     </span>
   );
 }
 
 export function ObsBadge({ o }: { o: string }) {
-  return <span className={`badge ${obsClass(o)}`}>{o}</span>;
+  return (
+    <span className={`badge ${obsClass(o)}`} lang="en">
+      {o}
+    </span>
+  );
 }
 
 function CommandBlock({ lines }: { lines: string[] }) {
   const [copied, setCopied] = useState<"no" | "yes" | "failed">("no");
+  const t = useT();
   const text = lines.join("\n");
   return (
     <div>
@@ -69,17 +78,20 @@ function CommandBlock({ lines }: { lines: string[] }) {
             );
           }}
         >
-          Copy the three commands
+          {t("aud.copy", { n: lines.length })}
         </button>
         <span style={{ color: "var(--fg-faint)", fontSize: 12 }}>
           {copied === "yes"
-            ? "copied"
+            ? t("aud.copy.done")
             : copied === "failed"
-              ? "the browser refused clipboard access — select the text below instead"
-              : "or select it below"}
+              ? t("aud.copy.refused")
+              : t("aud.copy.orSelect")}
         </span>
       </div>
-      <pre className="verbatim">
+      {/* A shell command, so `lang="en"` is not a nicety: this is the one block on the page a reader
+          is meant to copy and run, and it must never be read — by a person or a screen reader — as
+          anything but the literal bytes. */}
+      <pre className="verbatim" lang="en">
         <code>{text}</code>
       </pre>
     </div>
@@ -87,6 +99,7 @@ function CommandBlock({ lines }: { lines: string[] }) {
 }
 
 function ControlRow({ c }: { c: Control }) {
+  const t = useT();
   const hints = Array.isArray(c.detect.type_hint)
     ? c.detect.type_hint
     : c.detect.type_hint
@@ -95,7 +108,7 @@ function ControlRow({ c }: { c: Control }) {
   return (
     <tr>
       <td className="mono">{c.id}</td>
-      <td>
+      <td lang="en">
         <div>{c.label}</div>
         <div style={{ color: "var(--fg-dim)", fontSize: 12, marginTop: 3 }}>{c.question}</div>
       </td>
@@ -110,7 +123,9 @@ function ControlRow({ c }: { c: Control }) {
           <span style={{ color: "var(--fg-faint)" }}>—</span>
         )}
         {c.why_not_measured ? (
-          <div style={{ color: "var(--fg-dim)", fontSize: 12, marginTop: 4 }}>{c.why_not_measured}</div>
+          <div style={{ color: "var(--fg-dim)", fontSize: 12, marginTop: 4 }} lang="en">
+            {c.why_not_measured}
+          </div>
         ) : null}
       </td>
       <td>
@@ -118,26 +133,47 @@ function ControlRow({ c }: { c: Control }) {
           c.measured_by.map((m) => (
             <Link key={m.case} to={`/case/${m.case}`} className="chip" title={m.title}>
               {m.case}
-              {m.verdict ? ` · ${m.verdict}` : " · no verdict"}
+              {m.verdict ? ` · ${m.verdict}` : ` · ${t("ui.verdict.none")}`}
               {m.restrictions.length ? " ⚠" : ""}
             </Link>
           ))
         ) : (
-          <span style={{ color: "var(--fg-faint)" }}>no case measured this</span>
+          <span style={{ color: "var(--fg-faint)" }}>{t("aud.noCase")}</span>
         )}
       </td>
       <td style={{ fontSize: 11.5 }}>
-        <div className="mono" style={{ wordBreak: "break-all" }}>
+        {/* API field paths out of the botocore model — `targetconfiguration.mcp.lambda` and the like.
+            Never translated, so marked English rather than left to inherit the page's locale. */}
+        <div className="mono" lang="en" style={{ wordBreak: "break-all" }}>
           {(c.detect.paths ?? []).join("  ")}
         </div>
         {hints.length ? (
           <div style={{ color: "var(--fg-faint)", marginTop: 3 }}>
-            on a resource whose type contains: <span className="mono">{hints.join(", ")}</span>
+            <T
+              k="aud.typeHint"
+              v={{
+                hints: (
+                  <span className="mono" lang="en">
+                    {hints.join(", ")}
+                  </span>
+                ),
+              }}
+            />
           </div>
         ) : null}
         {c.detect.paths_source ? (
           <div style={{ color: "var(--fg-faint)", marginTop: 3 }}>
-            model: <span className="mono">{c.detect.paths_source}</span>
+            {/* The API operation these paths were read out of — an SDK model name, English always. */}
+            <T
+              k="aud.model"
+              v={{
+                model: (
+                  <span className="mono" lang="en">
+                    {c.detect.paths_source}
+                  </span>
+                ),
+              }}
+            />
           </div>
         ) : null}
       </td>
@@ -150,11 +186,13 @@ export default function Audit() {
   const aud = useAsync(loadAudit, []);
   const [target, setTarget] = useState("");
   const [asOf, setAsOf] = useState("");
+  const t = useT();
 
   const commands = aud.state === "ok" ? aud.data.tools.commands : [];
   const composed = useMemo(() => compose(commands, target, asOf), [commands, target, asOf]);
 
-  if (ctl.state === "loading" || aud.state === "loading") return <Loading what="the audit tooling" />;
+  if (ctl.state === "loading" || aud.state === "loading")
+    return <Loading what={t("aud.loading")} />;
   if (ctl.state === "error") return <ErrorPanel error={ctl.error} />;
   if (aud.state === "error") return <ErrorPanel error={aud.error} />;
   const c: ControlsDoc = ctl.data;
@@ -164,36 +202,41 @@ export default function Audit() {
 
   return (
     <>
-      <h2>Audit a design of your own</h2>
-      <p className="lede">
-        This study measured {c.n_controls} controls of an AgentCore deployment. Two programs in the
-        repository read a repository's infrastructure-as-code, report which of those {c.n_controls} it
-        declares, and state — per control, citing the case — what was measured about the value it
-        declares. Everything runs on your machine.
-      </p>
+      <h2>{t("aud.title")}</h2>
+      <VerbatimNote />
+      <p className="lede">{t("aud.lede", { n: c.n_controls })}</p>
 
-      <h3>What this page will not do</h3>
+      <h3>{t("aud.h.willNotDo")}</h3>
       <div className="cards">
         {a.boundaries.map((b) => (
           <div className="card" key={b.claim}>
-            <div className="k" style={{ color: "var(--fg)", fontSize: 13.5, marginBottom: 6 }}>
+            <div
+              className="k"
+              style={{ color: "var(--fg)", fontSize: 13.5, marginBottom: 6 }}
+              lang="en"
+            >
               {b.claim}
             </div>
-            <div className="def">{b.how}</div>
+            <div className="def" lang="en">
+              {b.how}
+            </div>
           </div>
         ))}
       </div>
 
-      <h3>Point the tools at your repository</h3>
+      <h3>{t("aud.h.point")}</h3>
       <p style={{ color: "var(--fg-dim)" }}>
-        Fill either field and the commands below change. They are the commands as{" "}
-        <span className="mono">{a.tools.parse}</span> and <span className="mono">{a.tools.report}</span>{" "}
-        define them, read from the payload rather than typed into this page. Nothing you enter is sent
-        anywhere: there is no endpoint on this site that accepts a request body.
+        <T
+          k="aud.point.body"
+          v={{
+            parse: <span className="mono">{a.tools.parse}</span>,
+            report: <span className="mono">{a.tools.report}</span>,
+          }}
+        />
       </p>
       <div className="intake">
         <label>
-          <span>Your repository — a git URL or a local path</span>
+          <span>{t("aud.field.repo")}</span>
           <input
             type="text"
             value={target}
@@ -203,44 +246,44 @@ export default function Audit() {
           />
         </label>
         <label>
-          <span>Report date (optional)</span>
+          <span>{t("aud.field.date")}</span>
           <input
             type="text"
             value={asOf}
             spellCheck={false}
-            placeholder="YYYY-MM-DD — leave empty for a byte-identical report"
+            placeholder={t("aud.field.datePlaceholder")}
             onChange={(e) => setAsOf(e.target.value)}
           />
         </label>
       </div>
-      {composed.refusal ? <div className="note warn">{composed.refusal}</div> : null}
+      {/* The refusal arrives from `lib/audit.ts` as a key plus the reader's own value, and is rendered
+          here — that module decides WHAT to refuse, this one decides in which language to say so. */}
+      {composed.refusal ? (
+        <div className="note warn">{t(composed.refusal.key, composed.refusal.vars)}</div>
+      ) : null}
       <CommandBlock lines={composed.lines} />
       <p style={{ color: "var(--fg-dim)", marginTop: 10 }}>
-        The second command writes <span className="mono">inventory.json</span> — what the parser saw,
-        with a file and line for every site, and no reference to this study. The third joins it to the
-        study and writes the report as both JSON and Markdown.{" "}
-        <Link to="/report">See the worked example</Link>, which is that output for a synthetic
-        submission in this repository, produced by the same two programs at build time. The report view
-        will also render a <span className="mono">report.json</span> you produce yourself, without
-        uploading it.
+        <T
+          k="aud.afterCommands"
+          v={{
+            inventory: <span className="mono">inventory.json</span>,
+            example: <Link to="/report">{t("aud.afterCommands.exampleLink")}</Link>,
+            report: <span className="mono">report.json</span>,
+          }}
+        />
       </p>
 
-      <h3>What this study can look for</h3>
-      <p style={{ color: "var(--fg-dim)" }}>
-        The property paths are shown because they are the whole of what a DECLARED result rests on: a
-        control is found when a template carries that path, and reported NOT_DECLARED when the parsed
-        files do not — which is never evidence that the control is absent from a system. Paths are
-        lower-cased and dot-joined, because a template may spell them in camelCase or PascalCase.
-      </p>
+      <h3>{t("aud.h.canLookFor")}</h3>
+      <p style={{ color: "var(--fg-dim)" }}>{t("aud.canLookFor.body")}</p>
       <div className="scroll">
         <table className="grid">
           <thead>
             <tr>
-              <th style={{ width: 150 }}>Control</th>
-              <th>What it is</th>
-              <th style={{ width: 190 }}>What this study established</th>
-              <th style={{ width: 210 }}>Cases</th>
-              <th style={{ width: 260 }}>Detected by</th>
+              <th style={{ width: 150 }}>{t("aud.th.control")}</th>
+              <th>{t("aud.th.whatItIs")}</th>
+              <th style={{ width: 190 }}>{t("aud.th.established")}</th>
+              <th style={{ width: 210 }}>{t("aud.th.cases")}</th>
+              <th style={{ width: 260 }}>{t("aud.th.detectedBy")}</th>
             </tr>
           </thead>
           <tbody>
@@ -251,7 +294,7 @@ export default function Audit() {
         </table>
       </div>
 
-      <h3>Coverage of the {c.n_controls} controls, by what was established</h3>
+      <h3>{t("aud.h.coverage", { n: c.n_controls })}</h3>
       <div className="cards">
         {(c.vocabularies.status ?? []).map((s) => (
           <div className="card" key={s}>
@@ -263,38 +306,60 @@ export default function Audit() {
         ))}
       </div>
       <div className="note" style={{ marginTop: 12 }}>
-        These counts do not sum to {c.n_controls} and no denominator over them means anything: a single
-        control can carry a <span className="mono">measured_true</span> finding for one declared value
-        and a <span className="mono">measured_false</span> finding for another, and it is counted under
-        both. For the same reason there is no pass rate on this page, or on any other here.
+        <T
+          k="aud.noDenominator"
+          v={{
+            n: String(c.n_controls),
+            t: <span className="mono">measured_true</span>,
+            f: <span className="mono">measured_false</span>,
+          }}
+        />
       </div>
 
-      <h3>Paths this study names but cannot verify against the service model</h3>
+      <h3>{t("aud.h.unverifiable")}</h3>
       <p style={{ color: "var(--fg-dim)" }}>
-        Detection paths were checked against the pinned instrument —{" "}
-        <span className="mono">{c.field_paths.instrument}</span>, derived{" "}
-        <span className="mono">{c.field_paths.derived_on}</span>. The paths below are matched anyway,
-        and they are listed here because the reason they cannot be checked is itself worth knowing
-        before you trust a result that rests on one.
+        <T
+          k="aud.unverifiable.body"
+          v={{
+            // The instrument's own description of itself, out of `controls.json` — a pinned SDK
+            // version and a venv path, quoted rather than translated.
+            instrument: (
+              <span className="mono" lang="en">
+                {c.field_paths.instrument}
+              </span>
+            ),
+            derived: (
+              <span className="mono" lang="en">
+                {c.field_paths.derived_on}
+              </span>
+            ),
+          }}
+        />
       </p>
       <table className="grid">
         <thead>
           <tr>
-            <th style={{ width: 300 }}>Path</th>
-            <th>Why it cannot be verified against an API model</th>
+            <th style={{ width: 300 }}>{t("aud.th.path")}</th>
+            <th>{t("aud.th.whyUnverifiable")}</th>
           </tr>
         </thead>
         <tbody>
           {c.unverifiable_paths.map((u) => (
             <tr key={u.path}>
               <td className="mono">{u.path}</td>
-              <td style={{ whiteSpace: "pre-wrap" }}>{u.why.trim()}</td>
+              <td style={{ whiteSpace: "pre-wrap" }} lang="en">
+                {u.why.trim()}
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <p style={{ color: "var(--fg-faint)", fontSize: 12, marginTop: 10 }}>{c.field_paths.note}</p>
-      <p style={{ color: "var(--fg-faint)", fontSize: 12 }}>{c.note}</p>
+      <p style={{ color: "var(--fg-faint)", fontSize: 12, marginTop: 10 }} lang="en">
+        {c.field_paths.note}
+      </p>
+      <p style={{ color: "var(--fg-faint)", fontSize: 12 }} lang="en">
+        {c.note}
+      </p>
     </>
   );
 }

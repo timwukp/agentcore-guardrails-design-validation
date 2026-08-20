@@ -14,9 +14,15 @@ the only payload file that tells a reader to DO something, and a diagram box is 
 a conclusion about a component in a single colour, with no words attached and every chance of being
 screenshotted away from its case table. Both are claims addressed to somebody else's production system.
 
-The remaining arms (typed totals, pass rate, figure bytes, seals) are left to the one-off exercise
-recorded in the gate's own docstring. That is a stated limit, not an oversight — and the limit is where
-the next extension goes, not a line to stop reading at.
+A fourth group was added on 2026-08-20 with the Chinese edition: the pass-rate denial in both languages
+and `both_languages_shipped`. Those are here rather than in the one-off exercise because the properties
+are about a BUILD STEP rather than about a claim in a payload file — a tree-shaken dictionary or a stale
+`dist/` is invisible to every check that reads the source — and because the one guard that reads bytes
+is the one that keeps finding the phrase in places that are not sentences.
+
+The remaining arms (typed totals, figure bytes, seals) are left to the one-off exercise recorded in the
+gate's own docstring. That is a stated limit, not an oversight — and the limit is where the next
+extension goes, not a line to stop reading at.
 
 HOW A MUTANT IS BUILT, AND THE TWO WAYS THIS HARNESS WOULD OTHERWISE HAVE PROVED NOTHING
 ---------------------------------------------------------------------------------------
@@ -37,6 +43,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -78,6 +85,20 @@ def copy_of(payload: Path, tmp_path: Path, tag: str) -> Path:
     dest = tmp_path / f"payload-{tag}"
     shutil.copytree(payload, dest)
     return dest
+
+
+def copy_dist(dist: Path, out: Path) -> Path:
+    """Copy a built `dist/` for mutation, WITHOUT `data`.
+
+    `data` is a symlink to the payload that `csp_preview.py` expects a developer to create, and
+    `copytree` follows symlinks by default. Following it copied the whole ~7 MB payload into every
+    dist mutant's temp directory — and raised `shutil.Error` outright the moment the link dangled,
+    which is a test that fails without reaching the gate at all. The gate reads only `assets/*.js` and
+    `assets/*.css` from `--dist`, so the payload has no business in the copy: it arrives by
+    `--payload`.
+    """
+    shutil.copytree(dist, out, ignore=shutil.ignore_patterns("data"))
+    return out
 
 
 def _mutate(payload: Path, rel: str, edit) -> None:
@@ -244,8 +265,7 @@ def test_a_build_authored_rationale_naming_no_case_and_no_day_is_allowed(payload
 # the one wrong reading.
 
 def test_a_pipeline_state_with_no_stylesheet_rule_fails_the_publish(payload, tmp_path):
-    dist = tmp_path / "dist"
-    shutil.copytree(DIST, dist)
+    dist = copy_dist(DIST, tmp_path / "dist")
     sheets = sorted((dist / "assets").glob("*.css"))
     assert sheets, "the built dist carries no stylesheet, so this arm would be vacuous"
     changed = 0
@@ -270,8 +290,7 @@ def test_an_audit_status_with_no_stylesheet_rule_fails_the_publish(payload, tmp_
     here" — where the token means this study never examined that control. So the mutant disables that
     rule specifically rather than any of the five.
     """
-    dist = tmp_path / "dist"
-    shutil.copytree(DIST, dist)
+    dist = copy_dist(DIST, tmp_path / "dist")
     sheets = sorted((dist / "assets").glob("*.css"))
     assert sheets, "the built dist carries no stylesheet, so this arm would be vacuous"
     changed = 0
@@ -469,8 +488,7 @@ def _mutate_css(dist: Path, tag: str, tmp_path: Path, old: str, new: str) -> Pat
     Separate from `_mutate` because a stylesheet is not JSON and is not in `MANIFEST.json`'s
     `outputs_sha256` — the manifest covers the payload, and `dist/` is checked as served bytes.
     """
-    out = tmp_path / f"dist-{tag}"
-    shutil.copytree(dist, out)
+    out = copy_dist(dist, tmp_path / f"dist-{tag}")
     sheets = sorted((out / "assets").glob("*.css"))
     assert sheets, "the built dist carries no stylesheet, so this arm would be vacuous"
     changed = 0
@@ -531,11 +549,150 @@ def test_a_box_border_not_taken_from_the_status_fails_the_publish(payload, tmp_p
 
 def test_a_dist_with_no_stylesheet_cannot_report_clean(payload, tmp_path):
     """A missing check is not a pass (`feedback_guard_exit_codes`): rc 2, not rc 0."""
-    dist = tmp_path / "dist-nocss"
-    shutil.copytree(DIST, dist)
+    dist = copy_dist(DIST, tmp_path / "dist-nocss")
     removed = [p for p in sorted((dist / "assets").glob("*.css"))]
     assert removed
     for p in removed:
         p.unlink()
     proc = run_gate(payload, dist)
     assert proc.returncode == 2, f"exited {proc.returncode}; a gate that cannot run must not pass"
+
+
+# --------------------------------------------------------------------------- the two languages
+#
+# The Chinese edition is checked here rather than left to the one-off exercise for one reason: the
+# properties are about a BUILD STEP, not about a claim in a payload file. `strings.ts` makes a missing
+# translation a type error and `i18n.test.ts` asserts what a type cannot see, so a defect in this area
+# arrives between the source and the reader — a tree-shaken dictionary, a half-landed translation pass,
+# a `dist/` from before the feature existed. Nothing in the source can notice any of those, and a
+# hand-run check of a bundle is a memory of one bundle.
+#
+# `dist/` is mutated, not the payload: the arm reads served bytes, and the manifest does not cover them.
+
+LOCALE_ARM = "both_languages_shipped"
+RATE_ARM = "no_pass_rate"
+
+
+def _mutate_js(dist: Path, tag: str, tmp_path: Path, edit) -> Path:
+    """Copy `dist` and rewrite every JS bundle through `edit`, asserting the edit landed.
+
+    `edit` takes and returns text rather than being an (old, new) pair because two of the mutants below
+    are not substring swaps: thinning the dictionary has to keep the sentences the OTHER arm checks, or
+    it would be killed by `no_pass_rate` and prove nothing about the floor it is aimed at
+    (`feedback_probe_must_reach_the_code` applies to which arm the probe reaches, not only to whether
+    the bytes changed).
+    """
+    out = copy_dist(dist, tmp_path / f"dist-{tag}")
+    bundles = sorted((out / "assets").glob("*.js"))
+    assert bundles, "the built dist carries no bundle, so this arm would be vacuous"
+    changed = 0
+    for bundle in bundles:
+        before = bundle.read_text(encoding="utf-8")
+        after = edit(before)
+        if after != before:
+            bundle.write_text(after, encoding="utf-8")
+            changed += 1
+    assert changed, f"the {tag} mutation changed no bytes, so the gate never saw it"
+    return out
+
+
+def expect_dist_killed(payload: Path, dist: Path, arm: str, phrase: str) -> None:
+    proc = run_gate(payload, dist)
+    assert proc.returncode == 1, f"the gate exited {proc.returncode}, so the mutant survived"
+    body = proc.stdout + proc.stderr
+    assert f"[{arm}]" in body, f"killed by some other arm, not {arm}:\n{body[-2000:]}"
+    assert phrase in body, f"{arm} fired but not for the reason under test:\n{body[-2000:]}"
+
+
+def test_a_chinese_page_that_states_a_pass_rate_fails_the_publish(payload, tmp_path):
+    """The negation removed and the term left standing: 沒有通過率 -> 通過率.
+
+    This is the mutant that matters most, because the English half of the arm still passes — all four
+    English sentences remain denials — so the page would ship asserting in Chinese exactly what it
+    denies in English, and only the Chinese half of the rule can see it."""
+    dist = _mutate_js(DIST, "zh-asserts", tmp_path, lambda s: s.replace("沒有通過率", "通過率"))
+    expect_dist_killed(payload, dist, RATE_ARM, "are not immediately preceded by")
+
+
+def test_the_chinese_denial_deleted_altogether_fails_the_publish(payload, tmp_path):
+    """The likelier accident, and the one a per-occurrence check cannot catch: the term removed rather
+    than un-negated, so there is no occurrence left to test and every assertion about occurrences
+    passes vacuously. Only the COUNT, derived once per language, notices
+    (`feedback_two_numbers_two_claims`)."""
+    dist = _mutate_js(DIST, "zh-silent", tmp_path, lambda s: s.replace("沒有通過率", "沒有"))
+    expect_dist_killed(payload, dist, RATE_ARM, "English denial(s) but 0 Chinese")
+
+
+def test_a_dictionary_key_spelling_the_phrase_fails_the_publish(payload, tmp_path):
+    """The real 2026-08-20 collision, pinned. `ovw.noPassRate` was a KEY, not a sentence, and the arm
+    reads bytes — so the gate failed on a name. It was renamed rather than the rule widened to excuse a
+    camelCase shape, and the diagnostic that says which of the two happened is asserted here, because a
+    confusing failure message is how a guard gets a `# noqa` instead of a fix."""
+    dist = _mutate_js(DIST, "keyname", tmp_path, lambda s: s.replace("ovw.noRatio", "ovw.noPassRate"))
+    expect_dist_killed(payload, dist, RATE_ARM, "camelCase identifiers")
+
+
+def test_a_bundle_with_no_locale_tag_fails_the_publish(payload, tmp_path):
+    """Renamed, not deleted: `zh-Hant` is a real tag and the toggle would still render two buttons, so
+    a kill here is attributable to the tag this platform actually ships under and to nothing else."""
+    dist = _mutate_js(DIST, "notag", tmp_path, lambda s: s.replace("zh-TW", "zh-Hant"))
+    expect_dist_killed(payload, dist, LOCALE_ARM, "does not appear as a string literal")
+
+
+def test_a_bundle_with_no_language_toggle_label_fails_the_publish(payload, tmp_path):
+    """The whole dictionary can be present and unreachable. The toggle's label is written in the
+    language it switches TO, so it is the one string a reader who cannot read the page must find."""
+    dist = _mutate_js(DIST, "nolabel", tmp_path, lambda s: s.replace("中文", "ZH"))
+    expect_dist_killed(payload, dist, LOCALE_ARM, "language toggle's own label")
+
+
+CJK_RUN = re.compile(r"[㐀-䶿一-鿿豈-﫿0-9A-Za-z，。、：；「」『』（）？！—…·　\s]*"
+                     r"[㐀-䶿一-鿿豈-﫿]"
+                     r"[㐀-䶿一-鿿豈-﫿0-9A-Za-z，。、：；「」『』（）？！—…·　\s]*")
+
+
+def test_a_half_shipped_dictionary_fails_the_publish(payload, tmp_path):
+    """The failure this floor exists for: a bundle carrying SOME Chinese.
+
+    Every other check in the arm still passes — the tag is there, the toggle label is there, both
+    pass-rate denials are there — and the page renders a button saying 中文 above English headings,
+    which is the state in which a reader cannot tell a missing translation from a block quoted verbatim
+    on purpose. The sentences the other arm counts are preserved deliberately: a mutant killed by
+    `no_pass_rate` would prove nothing about this floor."""
+    keep = 100
+
+    def thin(text: str) -> str:
+        seen: dict[str, int] = {}
+
+        def sub(m) -> str:
+            run = m.group(0)
+            if "通過率" in run or "中文" in run:
+                return run
+            key = run.strip()
+            if key not in seen:
+                seen[key] = len(seen)
+            return run if seen[key] < keep else "x"
+
+        return CJK_RUN.sub(sub, text)
+
+    dist = _mutate_js(DIST, "thin", tmp_path, thin)
+    expect_dist_killed(payload, dist, LOCALE_ARM, "under the floor of")
+
+
+def test_a_bundle_that_stopped_marking_verbatim_english_fails_the_publish(payload, tmp_path):
+    """`lang="en"` is the verbatim rule where it has effects rather than where it is described: it picks
+    the Latin font stack over the CJK one and tells a screen reader which phonology to use. Stripped of
+    it, an artifact's own sealed sentence is pronounced as Chinese. The prop is RENAMED so the values
+    stay in the bundle — only the marking is gone, which is the defect. `xlang` rather than a deleted
+    prop for the reason the CSS mutants are renames too: it is the mutant a substring match survives,
+    and it is what made the arm match a whole property name."""
+    dist = _mutate_js(DIST, "nolang", tmp_path, lambda s: s.replace("lang:`en`", "xlang:`en`"))
+    expect_dist_killed(payload, dist, LOCALE_ARM, 'carry lang="en"')
+
+
+def test_a_stylesheet_with_no_verbatim_rule_fails_the_publish(payload, tmp_path):
+    """Renamed rather than deleted, like the status-token mutant above: the rule stays in the file and
+    only a whole-token match kills it. Without it a quoted English block is styled as this platform's
+    own prose, and a sealed quotation reads as a translation somebody forgot."""
+    dist = _mutate_css(DIST, "noverbatim", tmp_path, ".verbatim", ".verbatim-block")
+    expect_dist_killed(payload, dist, LOCALE_ARM, "no `.verbatim` rule")

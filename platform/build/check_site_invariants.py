@@ -56,6 +56,16 @@ THE ARMS, and what each one would have caught
     widened every time the copy is edited, which is how a guard gets deleted. 46 TRUE over 91
     published is not 50.5% of anything — the denominators differ by definition and INCONCLUSIVE is a
     result, not a missing one.
+
+    In both languages, and the Chinese half is not a courtesy: a zh page whose only statement about a
+    pass rate was its silence would be a different platform from the en one. `沒有` must be
+    IMMEDIATELY before `通過率` — Chinese negates by prefix, so there is no equivalent of the English
+    few-words window — and the two counts must be EQUAL, which is what makes deleting the denial from
+    one language fail instead of passing by having nothing left to check
+    (`feedback_two_numbers_two_claims`). The arm reads bytes, so it cannot tell a sentence from a
+    dictionary key: a key named `noPassRate` failed this arm on 2026-08-20 and was renamed
+    `ovw.noRatio` rather than being excused, because widening the rule to permit a shape is how the
+    guard would eventually be deleted. The failure message now says which of the two happened.
 6.  `denominators_carry_definitions` — each of the four has prose long enough to be a definition, an
     integer `n`, and a named derivation source. A number whose definition is missing is the one a
     reader will divide by.
@@ -108,21 +118,35 @@ THE ARMS, and what each one would have caught
     that states a colour without publishing it, or a box rule that names its own border colour instead of
     reading the property, fails the publish.
 
+15. `both_languages_shipped` — the Chinese edition is in the bytes being served: the `zh-TW` tag, the
+    toggle's own label (`中文`, written in the language it switches TO), a FLOOR on how many distinct
+    Chinese runs reach the bundle, a floor on `lang="en"` in the markup, and a `.verbatim` rule in the
+    stylesheet. `strings.ts` makes a missing translation a type error and `i18n.test.ts` asserts what
+    a type cannot see, but both are claims about the SOURCE; this arm exists for what happens between
+    the source and the reader — a tree-shaken dictionary, a half-landed translation pass, a stale
+    `dist/`. All of those ship a toggle that says 中文 above English headings, where an untranslated
+    heading is indistinguishable from one deliberately quoted verbatim. The last two properties are
+    the verbatim rule as the browser experiences it rather than as a comment describes it: `lang`
+    chooses the font stack and the screen reader's phonology, and `.verbatim` is what makes a quoted
+    English block look quoted rather than look like prose somebody forgot to translate.
+
 Exit 0 = all arms pass. 1 = a violation. 2 = the gate could not run (missing payload, unreadable
 JSON): a gate that cannot run must not report clean (`feedback_guard_tool_exit_codes`).
 
-Three groups of arms are pinned by a COMMITTED harness, `platform/build/tests/test_check_site_invariants.py`
+Four groups of arms are pinned by a COMMITTED harness, `platform/build/tests/test_check_site_invariants.py`
 — one mutant per property plus a no-mutant control, re-run on every suite: the replication arms (the
 claim whose false form this project has already published once), the audit-report arm (the only payload
-file that instructs a reader), and arm 14 (the only one that states a conclusion about a component in a
-single colour). The rest rest on the one-off exercise recorded below, which is a memory rather than a
-test (`feedback_test_suite_over_memory`): it cannot notice the day an arm stops looking. Extending the
+file that instructs a reader), arm 14 (the only one that states a conclusion about a component in a
+single colour), and arms 5 + 15 (the only properties that are about a BUILD STEP rather than about a
+claim in a payload file — nothing that reads the source can see a tree-shaken dictionary or a stale
+`dist/`). The rest rest on the one-off exercise recorded below, which is a memory rather than a test
+(`feedback_test_suite_over_memory`): it cannot notice the day an arm stops looking. Extending the
 harness to them is register work, and the limit is stated here rather than left to be inferred from the
 absence of tests.
 
 MUTATION-CHECKED — the arms that existed on 2026-08-20 by a one-off exercise, 19/19; arm 14 by nine
-committed mutants instead, each killed by the arm that watches the property it broke, run against
-COPIES of the payload and `dist`
+committed mutants and arms 5 + 15 by eight more (2026-08-20, the Chinese edition), each killed by the
+arm that watches the property it broke, run against COPIES of the payload and `dist`
 --------------------------------------------------------------------------------------------------
 A no-mutant control ran first and exited 0, so a red run is attributable to the assertions rather than
 to a copy the gate could not read at all. Two findings from that exercise are worth stating, because
@@ -147,6 +171,15 @@ layer; a `record` value the producer never wrote; a typed `"46"`; a pass rate as
 wording removed while `numeric_check` is non-zero; a definition cut to a stub; the verdict mix made not
 to sum; a restricted case's page stripped of its badge; one PNG byte flipped; an "Access Denied" JSON
 body saved as a `.png` with its recorded bytes and sha256 updated to match; one `oracle_text` blanked.
+
+The eight for arms 5 and 15, all against a copied `dist/` because that is the layer they read: the
+Chinese negation stripped (沒有通過率 -> 通過率, with the English half still passing); the Chinese term
+deleted instead, which only the cross-language COUNT can see; `ovw.noRatio` renamed back to
+`ovw.noPassRate`, the real collision, asserting the diagnostic that distinguishes a name from a claim;
+`zh-TW` renamed to `zh-Hant`; 中文 replaced, so the dictionary is present and unreachable; the
+dictionary thinned to ~100 distinct runs while both denials are preserved, so the kill is attributable
+to the floor and not to arm 5; `lang:` renamed to `xlang:`, which the arm's first version survived and
+which is why it now matches a whole property name; and `.verbatim` renamed in the stylesheet.
 """
 
 from __future__ import annotations
@@ -216,7 +249,48 @@ FORBIDDEN_LITERALS = ("93", "92", "91", "90", "46", "23", "20")
 # The one sentence allowed to contain the phrase.
 PASS_RATE_DISCLAIMER = "There is no pass rate on this platform."
 
+# The Chinese half of the same rule. `沒有` prefixes what it negates, so — unlike the English window,
+# which has to allow "there is no" a few words back — the negation is required IMMEDIATELY before the
+# term, and the term is pinned because it is the one a Chinese reader would grep the page for.
+PASS_RATE_ZH = "通過率"
+NO_ZH = "沒有"
+
 MIN_DEFINITION_CHARS = 40
+
+# Han ideographs. Deliberately no CJK punctuation: a "translation" consisting of `，` would satisfy a
+# punctuation-inclusive range while saying nothing, and nothing is the state this looks for.
+HAN = "㐀-䶿一-鿿豈-﫿"
+
+# Characters that may appear INSIDE one Chinese run without ending it — punctuation, digits and Latin,
+# because a translated sentence quotes `oracle_text`, a file name and a verdict word mid-clause.
+RUN_INNER = HAN + r"0-9A-Za-z，。、：；「」『』（）？！—…·　\s"
+
+# A floor on how much Chinese reaches the bundle, not a count. Measured 450 distinct runs on
+# 2026-08-20 against a 481-entry dictionary; the floor sits a third below that so adding a string never
+# fails the gate, while the failure this catches — half a dictionary, which is what tree-shaking, a bad
+# merge or a half-finished translation pass actually produces — lands well under it. A single missing
+# key is `i18n.test.ts`'s job; it can see keys, and this can only see bytes.
+MIN_CJK_RUNS = 300
+
+# A floor on `lang="en"` in the rendered markup. Measured 136 on 2026-08-20 and 160 on 2026-08-21,
+# after the browser walk below. This is the verbatim rule expressed where it has effects: it selects the
+# Latin font stack over the CJK one and tells a screen reader which phonology to use, so an artifact's
+# own English sentence stripped of it is read aloud as though it were Chinese.
+#
+# WHAT THIS FLOOR CANNOT SEE, stated because the gap was found the hard way. A `lang="en"` in the source
+# is ONE occurrence in the bundle however many elements it ends up governing at runtime: the mark on
+# `Markdown`'s root covers every heading, table cell and code span of every artifact body on the site,
+# and deleting it moves this count from 160 to 159. So this arm detects the mark being STRIPPED
+# WHOLESALE — a renamed prop, a bundle built before the feature — and cannot detect a container that
+# stopped marking its subtree. That is a DOM property, and the floor is deliberately not raised toward
+# the measurement to imply otherwise: a floor near 160 would fail the publish on any refactor that
+# consolidated two marks into one, while still missing the defect it looks like it covers.
+#
+# The check that DOES see it is the browser walk prescribed in `csp_preview.py` — every text node whose
+# effective language is `zh-TW` but whose content is English prose. Run on 2026-08-21 over 18 routes in
+# the Chinese locale it found six unmarked surfaces, the largest being every rendered markdown body, and
+# reports zero after the fix.
+MIN_VERBATIM_MARKS = 60
 
 
 class Gate:
@@ -583,14 +657,40 @@ def arm_bundle_text(g: Gate, dist: Path) -> str:
     asserted = [m for m in occurrences
                 if not re.search(r"there\s+is\s+no\s+$", text[max(0, m.start() - 24):m.start()],
                                  re.IGNORECASE)]
+    # An occurrence with no space or hyphen in it is `noPassRate` — a dictionary key, not a sentence,
+    # and the bundle carries keys as string literals like any other. It still fails, because the arm
+    # reads bytes and cannot tell a reader's page from a lookup table, but it fails saying which of the
+    # two things happened: renaming the key costs nothing, and widening the rule to excuse a shape is
+    # how the guard would eventually be deleted.
+    identifiers = sorted({m.group(0) for m in asserted if not re.search(r"[\s-]", m.group(0))})
     g.check(arm, not asserted,
             f'{len(asserted)} of {len(occurrences)} "pass rate" occurrence(s) are not preceded by '
             f'"there is no": {[text[max(0, m.start() - 60):m.end() + 40] for m in asserted[:2]]}. '
-            "There is no denominator on this platform that a verdict count may be divided by.")
+            "There is no denominator on this platform that a verdict count may be divided by."
+            + (f" {len(identifiers)} of them are camelCase identifiers ({identifiers}), so this is a "
+               "NAME spelling the phrase rather than a claim: name the key after what it denies "
+               "(`noRatio`), the way `rep.noRatio` does." if identifiers else ""))
     g.check(arm, bool(occurrences),
             "the phrase does not appear at all, so this arm proved nothing: the UI must actively "
             f"deny a pass rate, and {PASS_RATE_DISCLAIMER!r} is the wording the overview uses",
-            passed=f"all {len(occurrences)} occurrence(s) of the phrase are denials")
+            passed=f"all {len(occurrences)} English occurrence(s) of the phrase are denials")
+
+    # The same rule in the other language, and not a courtesy: a Chinese page whose only statement
+    # about a pass rate was its silence would be a different platform from the English one. `沒有` has
+    # to be IMMEDIATELY before the term — Chinese negates by prefix, so there is no equivalent of the
+    # English window, and two characters is the whole of the negation.
+    zh = [i for i in range(len(text)) if text.startswith(PASS_RATE_ZH, i)]
+    zh_asserted = [i for i in zh if text[max(0, i - len(NO_ZH)):i] != NO_ZH]
+    g.check(arm, not zh_asserted,
+            f"{len(zh_asserted)} of {len(zh)} occurrence(s) of {PASS_RATE_ZH!r} are not immediately "
+            f"preceded by {NO_ZH!r}: "
+            f"{[text[max(0, i - 30):i + 20] for i in zh_asserted[:2]]}")
+    g.check(arm, len(zh) == len(occurrences),
+            f"{len(occurrences)} English denial(s) but {len(zh)} Chinese: the two languages state the "
+            f"same rule, so a count that differs means a denial was dropped from one of them — or that "
+            f"a translation reached for a term other than {PASS_RATE_ZH!r}, which is the term this "
+            "platform uses and the one a reader greps for",
+            passed=f"{len(zh)} Chinese denial(s), matching the English count")
     return text
 
 
@@ -740,6 +840,76 @@ def arm_pipeline_states_are_styled(g: Gate, payload: Path, dist: Path) -> None:
             f"{missing} render as badges with no rule in the stylesheet, so they would appear as "
             f"unremarkable states",
             passed=f"all {len(states)} pipeline state(s) have a rule in {len(sheets)} stylesheet(s)")
+
+
+def arm_both_languages_shipped(g: Gate, bundle: str, dist: Path) -> None:
+    """The Chinese edition is in the bytes being served, and the verbatim rule survived with it.
+
+    `strings.ts` makes a MISSING translation a type error — one dictionary, one key set, each value a
+    `[en, zhTW]` tuple — and `i18n.test.ts` asserts over that same object the things a type cannot see
+    (a blank value, English pasted into both slots, a placeholder present in one language only). Both
+    are claims about the SOURCE. This arm is the only check that reads what a reader downloads, and the
+    failures it can see are the ones that happen between the two: a bundler that tree-shook the
+    dictionary, a merge that landed half a translation pass, a `dist/` left over from before the
+    feature existed. A build like that ships a page with a Chinese toggle and English headings, and a
+    reader cannot tell an untranslated heading from a heading deliberately quoted verbatim.
+
+    So four properties, none of them expressible in TypeScript:
+
+    * The locale tag `zh-TW` is in the bundle at all. Without it there is no second language to pick.
+    * `中文` is in the bundle. That is the toggle's own label, written in the language it switches TO —
+      a reader whose browser advertises `en` reaches Chinese only through that button, so a translated
+      dictionary behind a missing switch is a translation nobody can get to.
+    * Enough distinct Chinese runs reach the bundle (`MIN_CJK_RUNS`). A floor, not a count.
+    * `lang="en"` appears on enough elements (`MIN_VERBATIM_MARKS`), and `.verbatim` has a rule in the
+      stylesheet. Those two are the verbatim rule as the browser experiences it rather than as a
+      comment describes it: `lang` picks the font stack and the screen reader's phonology, and the
+      `.verbatim` rule is what makes a quoted English block look quoted instead of looking like this
+      platform's own prose that somebody forgot to translate.
+
+    The Chinese pass-rate denial is checked in `no_pass_rate` beside the English one, because it is the
+    same rule and a reader looking for where that rule lives should find one place.
+    """
+    arm = "both_languages_shipped"
+    g.check(arm, bool(re.search(r"""(["'`])zh-TW\1""", bundle)),
+            "the locale tag 'zh-TW' does not appear as a string literal in the bundle, so the shipped "
+            "SPA has one language however many the source has")
+    g.check(arm, "中文" in bundle,
+            "the language toggle's own label (中文) is not in the bundle: a reader whose browser asks "
+            "for English can only reach the Chinese edition through that button")
+
+    runs = {m.group(0).strip()
+            for m in re.finditer(rf"[{RUN_INNER}]*[{HAN}][{RUN_INNER}]*", bundle)}
+    long_runs = {r for r in runs if len(r) >= 4}
+    g.check(arm, len(long_runs) >= MIN_CJK_RUNS,
+            f"only {len(long_runs)} distinct Chinese run(s) of 4+ characters are in the bundle, under "
+            f"the floor of {MIN_CJK_RUNS}. The dictionary held 481 entries when the floor was set, so "
+            "a number this low is a bundle built before the translation, or one that shipped part of "
+            "it — either of which renders English headings on a page whose toggle says 中文.",
+            passed=f"{len(long_runs)} distinct Chinese run(s) in the bundle, floor {MIN_CJK_RUNS}")
+
+    # A whole property name, not a substring: without the lookbehind `xmlLang:"en"` — or any minified
+    # identifier ending in `lang` — counts toward a floor about an attribute the browser reads, which is
+    # the same mistake as calling a renamed-away CSS rule present.
+    marks = re.findall(r"""(?<![\w$])lang:\s*(["'`])en\1""", bundle)
+    g.check(arm, len(marks) >= MIN_VERBATIM_MARKS,
+            f"only {len(marks)} element(s) in the bundle carry lang=\"en\", under the floor of "
+            f"{MIN_VERBATIM_MARKS}. Every block of payload prose — oracle_text, a verdict, a "
+            "why_this_status — renders in English in both languages and says so in the markup; "
+            "stripped of that, a screen reader pronounces the artifact's own words as Chinese and the "
+            "CJK font stack picks the glyphs.",
+            passed=f'{len(marks)} element(s) mark their contents as verbatim English')
+
+    sheets = sorted((dist / "assets").glob("*.css")) if (dist / "assets").is_dir() else []
+    if not sheets:
+        cannot_run(f"no stylesheet under {dist}/assets — the verbatim rule cannot be checked, and a "
+                   "missing check is not a pass")
+    css = "\n".join(p.read_text(encoding="utf-8", errors="replace") for p in sheets)
+    g.check(arm, bool(re.search(r"\.verbatim(?![\w-])", css)),
+            "the stylesheet has no `.verbatim` rule, so a quoted English block on a Chinese page is "
+            "styled exactly like this platform's own prose — which makes a sealed quotation "
+            "indistinguishable from a translation somebody forgot",
+            passed="`.verbatim` has a rule, so a quoted block reads as quoted")
 
 
 def arm_audit_vocabularies_are_styled(g: Gate, payload: Path, dist: Path) -> None:
@@ -1043,6 +1213,7 @@ def main(argv: list[str] | None = None) -> int:
     arm_citation_policy(g, payload, census_cases)
     arm_figures(g, payload, bundle)
     arm_pipeline_states_are_styled(g, payload, args.dist.expanduser())
+    arm_both_languages_shipped(g, bundle, args.dist.expanduser())
     arm_audit_vocabularies_are_styled(g, payload, args.dist.expanduser())
     arm_audit_report_is_licensed(g, payload, census, census_cases)
     arm_architecture_colours_are_licensed(g, payload, census, census_cases, args.dist.expanduser())

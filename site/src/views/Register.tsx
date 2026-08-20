@@ -28,7 +28,11 @@
 
 import { useMemo, useState } from "react";
 import { loadManifest, loadRegisters } from "../lib/data";
+import { T, useT, VerbatimNote } from "../lib/i18n";
 import { Body, ErrorPanel, Loading, useAsync } from "../components/ui";
+
+/** A sentinel, not a label — see the note in `Claims.tsx`. */
+const ANY = "*any*";
 
 const ISO = /\b(20\d{2})-(\d{2})-(\d{2})\b/g;
 
@@ -61,7 +65,8 @@ function deadlines(text: string, today: Date, cutoff: string): { date: string; d
 export default function Register() {
   const res = useAsync(loadRegisters, []);
   const man = useAsync(loadManifest, []);
-  const [tier, setTier] = useState("— any —");
+  const [tier, setTier] = useState(ANY);
+  const t = useT();
   // Read once per mount: a countdown that recomputed on every render would tick inconsistently
   // between the items on one screen.
   const today = useMemo(() => {
@@ -69,12 +74,12 @@ export default function Register() {
     return new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate()));
   }, []);
 
-  if (res.state === "loading") return <Loading what="the register" />;
+  if (res.state === "loading") return <Loading what={t("reg.loading")} />;
   if (res.state === "error") return <ErrorPanel error={res.error} />;
   const r = res.data;
 
   const tiers = [...new Set(r.items.map((i) => i.tier))].sort();
-  const items = r.items.filter((i) => tier === "— any —" || i.tier === tier).sort((a, b) => a.n - b.n);
+  const items = r.items.filter((i) => tier === ANY || i.tier === tier).sort((a, b) => a.n - b.n);
 
   // The cutoff comes from the payload, so the table's membership is a property of the derivation and
   // not of when the page happened to be opened. If the manifest has not arrived (or carries a stamp
@@ -91,22 +96,19 @@ export default function Register() {
 
   return (
     <>
-      <h2 className="view">Deficiency register</h2>
-      <p className="lede">
-        {r.n_items} items the study records against itself, tiered by what each one invalidates. This is
-        the register the platform is measured against, not a backlog: an item stays until an artifact
-        closes it.
-      </p>
+      <h2 className="view">{t("nav.register")}</h2>
+      <VerbatimNote />
+      <p className="lede">{t("reg.lede", { n: r.n_items })}</p>
 
       {upcoming.length ? (
         <section>
-          <h3>Dates the register commits to</h3>
+          <h3>{t("reg.h.dates")}</h3>
           <table className="grid">
             <thead>
               <tr>
-                <th>date</th>
-                <th>days from today</th>
-                <th>item</th>
+                <th>{t("reg.th.date")}</th>
+                <th>{t("reg.th.days")}</th>
+                <th>{t("reg.th.item")}</th>
               </tr>
             </thead>
             <tbody>
@@ -123,10 +125,10 @@ export default function Register() {
                           : undefined
                     }
                   >
-                    {d.days < 0 ? `${-d.days} PASSED` : d.days}
+                    {d.days < 0 ? t("reg.passed", { n: -d.days }) : d.days}
                   </td>
                   <td>
-                    item {d.n} — {d.title}
+                    {t("reg.item", { n: d.n })} — <span lang="en">{d.title}</span>
                   </td>
                 </tr>
               ))}
@@ -134,54 +136,53 @@ export default function Register() {
           </table>
           {expired ? (
             <div className="note warn">
-              <strong>
-                {expired} date(s) in this table have passed since this payload was built.
-              </strong>{" "}
-              They are still listed on purpose. A countdown that drops a date the moment it expires is
-              silent exactly when it matters — the row would vanish rather than turn red, and the page
-              would look calm. A passed row means either the commitment was met and the register has not
-              been re-derived since, or it was not met at all; the platform cannot tell which, and says
-              so instead of choosing.
+              <strong>{t("reg.expired.head", { n: expired })}</strong> {t("reg.expired.body")}
             </div>
           ) : null}
           <p style={{ color: "var(--fg-faint)", fontSize: 12, marginTop: 8 }}>
-            Every date any item names that was strictly after the day this payload was derived (cutoff{" "}
-            <span className="mono">{cutoff}</span>
-            {buildDate ? " — the build stamp" : " — the manifest's stamp was unavailable, so the reader's today"}
-            ), found by scanning the items themselves, with days counted against the reader's clock. Two
-            limits, stated rather than left to be assumed: the scan cannot tell a date an item{" "}
-            <em>commits</em> to from one it merely <em>mentions</em>, so a row here is not necessarily a
-            deadline; and a date on or before the build day is absent — the register's own
-            working days (2026-08-15 is named by thirteen items) would otherwise bury the commitments. Nothing is
-            missed because it sat in a paragraph nobody re-read.
+            <T
+              k="reg.cutoffNote"
+              v={{
+                cutoff: <span className="mono">{cutoff}</span>,
+                source: t(buildDate ? "reg.cutoff.fromBuild" : "reg.cutoff.fromReader"),
+                commits: <em>{t("reg.cutoff.commits")}</em>,
+                mentions: <em>{t("reg.cutoff.mentions")}</em>,
+              }}
+            />
           </p>
         </section>
       ) : null}
 
       <section>
-        <h3>Items</h3>
+        <h3>{t("reg.h.items")}</h3>
         <div className="facets">
           <div className="facet">
-            <label>tier</label>
+            <label>{t("reg.facet.tier")}</label>
             <select value={tier} onChange={(e) => setTier(e.target.value)} style={{ minWidth: 420 }}>
-              {["— any —", ...tiers].map((t) => (
-                <option key={t}>{t}</option>
+              {/* A tier is the register's own heading text, so the options stay as written. */}
+              <option value={ANY}>{t("facet.any")}</option>
+              {tiers.map((v) => (
+                <option key={v} value={v} lang="en">
+                  {v}
+                </option>
               ))}
             </select>
           </div>
           <div className="facet">
             <label>&nbsp;</label>
-            <span className="count mono">{items.length} shown</span>
+            <span className="count mono">{t("facet.shown", { n: items.length })}</span>
           </div>
         </div>
 
         {items.map((i) => (
           <details className="raw" key={i.n} style={{ marginBottom: 8 }}>
-            <summary>
+            <summary lang="en">
               <span className="mono">{String(i.n).padStart(2, "0")}</span> — {i.title}
             </summary>
             <div>
-              <div style={{ color: "var(--fg-faint)", fontSize: 11.5, margin: "8px 0" }}>{i.tier}</div>
+              <div style={{ color: "var(--fg-faint)", fontSize: 11.5, margin: "8px 0" }} lang="en">
+                {i.tier}
+              </div>
               <Body src={i.body_md} />
             </div>
           </details>
@@ -189,14 +190,12 @@ export default function Register() {
       </section>
 
       <section>
-        <h3>Side registers</h3>
+        <h3>{t("reg.h.side")}</h3>
         {Object.entries(r.side_registers).map(([name, body]) => (
           <div key={name} style={{ marginBottom: 10 }}>
             {body === null ? (
               <div className="note warn">
-                <strong className="mono">{name}</strong> is not published in this payload. The build
-                emits null rather than an empty string, so "the file has no content" and "the build did
-                not find the file" stay distinguishable — they have different causes.
+                <T k="reg.side.absent" v={{ name: <strong className="mono">{name}</strong> }} />
               </div>
             ) : (
               <details className="raw">

@@ -31,8 +31,18 @@
   --warn: #d0603e;
   --seal: #b08b4f;
 
-  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  /* The Traditional Chinese families are named EXPLICITLY rather than left to the browser's last
+     resort. `-apple-system` resolves CJK on macOS, but "Segoe UI" carries no Han glyphs at all, so on
+     Windows the whole zh-TW edition would render in whatever the fallback happened to be — commonly a
+     Simplified face, which renders 為/為 and 說/説 in the wrong tradition for a page that says it is
+     Traditional. "PingFang TC" / "Noto Sans CJK TC" / "Microsoft JhengHei" are the TC faces on the
+     three platforms this is read on. The Latin families stay FIRST: Han fonts ship Latin glyphs too,
+     and letting them win would change every English word on the page the moment a CJK font was
+     preferred. */
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace, "PingFang TC",
+    "Noto Sans Mono CJK TC", "Microsoft JhengHei";
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, "PingFang TC",
+    "Noto Sans CJK TC", "Microsoft JhengHei", sans-serif;
 }
 
 * {
@@ -112,6 +122,58 @@ pre code {
   font-size: 15px;
   margin: 0 16px 2px;
   letter-spacing: 0.02em;
+}
+
+/* The heading is a repository name: 41 characters with no spaces, in a 232 px rail. `break-word`
+   alone would break it mid-token at an arbitrary column; `anywhere` lets the hyphens do the work, so
+   it wraps where the name's own segments are and stays readable as a name. Monospace because that is
+   what it is — a string to copy, not a title to read. */
+.side h1.repo {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.35;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+  color: var(--fg);
+}
+
+/* Two buttons, sized so the pressed one is legible without colour alone carrying the state — the
+   border changes as well, because a reader who cannot distinguish the two backgrounds still has to be
+   able to tell which language they are currently getting. */
+.localesw {
+  display: flex;
+  gap: 6px;
+  margin: 8px 16px 10px;
+}
+.localesw button {
+  font: inherit;
+  font-size: 11px;
+  padding: 2px 9px;
+  color: var(--fg-dim);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+}
+.localesw button:hover {
+  color: var(--fg);
+  border-color: var(--border-strong);
+}
+.localesw button.on {
+  color: var(--fg);
+  background: #1d2531;
+  border-color: var(--accent);
+}
+
+/* The standing notice that quoted artifact text on a Chinese page stays in English. Styled as an
+   aside rather than a warning: it is a property of the material, not a defect in the page. */
+.verbatim {
+  color: var(--fg-faint);
+  font-size: 11.5px;
+  line-height: 1.55;
+  margin: 0 0 14px;
+  padding-left: 9px;
+  border-left: 2px solid var(--border-strong);
 }
 
 .side .sub {

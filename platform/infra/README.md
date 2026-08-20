@@ -1,4 +1,8 @@
-# GRX Live delivery stack
+# Delivery stack for `agentcore-guardrails-design-validation`
+
+The stack, its CDK app and every AWS resource below keep the `GrxLive` / `grx-live` identifiers on
+purpose — they name resources that are already deployed and read by name at runtime. Only the label
+the app SHOWS a reader changed; see `platform/README.md`.
 
 The AWS side of Phase 1: a private, invite-only way to read the validation payload in a browser. One
 CDK stack (`GrxLive`), one region (`us-east-1`), no compute that the reader can reach other than the

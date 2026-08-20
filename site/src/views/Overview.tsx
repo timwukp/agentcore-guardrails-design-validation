@@ -23,9 +23,16 @@ import { loadCensus, loadDenominators } from "../lib/data";
 import type { CensusRow, Denominator, Denominators, Verdict } from "../lib/types";
 import { VERDICTS } from "../lib/types";
 import { ErrorPanel, Loading, VerdictBadge, useAsync } from "../components/ui";
+import { T, useT, VerbatimNote } from "../lib/i18n";
+import type { Key } from "../lib/strings";
 import { byCaseId, distinct } from "../lib/sort";
 
-const ANY = "— any —";
+/** Sentinels, never labels. The facet's state is compared against these, so if the state were the
+ *  displayed text then switching language mid-filter would leave the filter set to a value no option
+ *  carries: the table would empty while the control still looked normal. `*` cannot occur in a family, a
+ *  tier or a verdict, so neither sentinel can collide with a real value. */
+const ANY = "*any*";
+const NO_VERDICT = "*noverdict*";
 
 /** The four denominators read as a narrowing sequence — registered, then eligible, then published,
  *  then mapped — and that order is the argument for why they differ. Alphabetical order (which is what
@@ -47,19 +54,29 @@ function orderDenominators(d: Denominators): [string, Denominator][] {
 }
 
 function DenominatorCard({ k, d }: { k: string; d: Denominator }) {
-  const excluded: [string, string[]][] = [
-    ["not mapped to a claim", d.unmapped ?? []],
-    ["untestable as written", d.untestable ?? []],
-    ["outstanding", d.outstanding ?? []],
-  ].filter(([, v]) => (v as string[]).length) as [string, string[]][];
+  const t = useT();
+  const excluded: [Key, string[]][] = (
+    [
+      ["ovw.excl.unmapped", d.unmapped ?? []],
+      ["ovw.excl.untestable", d.untestable ?? []],
+      ["ovw.excl.outstanding", d.outstanding ?? []],
+    ] as [Key, string[]][]
+  ).filter(([, v]) => v.length);
   return (
     <div className="card">
       <div className="n">{d.n}</div>
-      <div className="k">{k.replace(/_/g, " ")}</div>
-      <div className="def">{d.definition}</div>
+      {/* The denominator's name is `denominators.json`'s own key — `verdict_eligible`, not a phrase — and
+          it is what a reader greps the payload for, so it stays in English in both languages. The
+          definition beside it is the artifact's own prose, quoted for the same reason. */}
+      <div className="k" lang="en">
+        {k.replace(/_/g, " ")}
+      </div>
+      <div className="def" lang="en">
+        {d.definition}
+      </div>
       {excluded.map(([label, cases]) => (
         <div className="def" key={label}>
-          <strong style={{ color: "var(--fg-dim)" }}>{label}:</strong>{" "}
+          <strong style={{ color: "var(--fg-dim)" }}>{t(label)}</strong>{" "}
           {cases.map((c, i) => (
             <span key={c}>
               {i ? ", " : ""}
@@ -68,12 +85,15 @@ function DenominatorCard({ k, d }: { k: string; d: Denominator }) {
           ))}
         </div>
       ))}
-      <div className="src">{d.derived_from}</div>
+      <div className="src" lang="en">
+        {d.derived_from}
+      </div>
     </div>
   );
 }
 
 function Mix({ mix }: { mix: Record<string, number> }) {
+  const t = useT();
   // Widths are proportional so the bar is readable, but no percentage is ever displayed: the label
   // on each segment is the count itself. A reader can compute a ratio if they want one; the platform
   // will not hand them a rate it cannot honestly define a denominator for.
@@ -96,18 +116,22 @@ function Mix({ mix }: { mix: Record<string, number> }) {
         {VERDICTS.map((v) => (
           <span key={v}>
             <span className="sw" style={{ background: `var(--v-${v.toLowerCase()})` }} />
-            {v} <span className="mono">{mix[v] ?? 0}</span>
+            <span lang="en">{v}</span> <span className="mono">{mix[v] ?? 0}</span>
           </span>
         ))}
         <span style={{ color: "var(--fg-faint)" }}>
-          published verdicts <span className="mono">{total}</span>
+          {t("ovw.publishedVerdicts")} <span className="mono">{total}</span>
         </span>
       </div>
       {extra.length ? (
         <div className="note warn" style={{ marginTop: 12 }}>
-          <strong>The payload contains a verdict value this UI does not know about:</strong>{" "}
-          {extra.join(", ")}. It is counted in the total above but has no colour and no column, which
-          means the census is wider than the vocabulary this build was written against.
+          <T
+            k="ovw.unknownVerdict"
+            v={{
+              head: <strong>{t("ovw.unknownVerdict.head")}</strong>,
+              values: <span lang="en">{extra.join(", ")}</span>,
+            }}
+          />
         </div>
       ) : null}
     </>
@@ -123,6 +147,7 @@ export default function Overview() {
   const [verdict, setVerdict] = useState(ANY);
   const [restricted, setRestricted] = useState(false);
   const [q, setQ] = useState("");
+  const t = useT();
 
   const rows: CensusRow[] = census.state === "ok" ? census.data.rows : [];
 
@@ -134,7 +159,7 @@ export default function Overview() {
       .filter((r) =>
         verdict === ANY
           ? true
-          : verdict === "no verdict"
+          : verdict === NO_VERDICT
             ? !r.has_verdict
             : r.verdict === (verdict as Verdict),
       )
@@ -151,16 +176,14 @@ export default function Overview() {
 
   return (
     <>
-      <h2 className="view">Census</h2>
-      <p className="lede">
-        Every registered case, its verdict, and the claim it was derived from. The counts below are
-        recomputed from the artifacts on every build and are not stored anywhere as a number.
-      </p>
+      <h2 className="view">{t("nav.census")}</h2>
+      <VerbatimNote />
+      <p className="lede">{t("ovw.lede")}</p>
 
       <section>
-        <h3>Denominators, each with what it counts</h3>
+        <h3>{t("ovw.h.denominators")}</h3>
         {denom.state === "loading" ? (
-          <Loading what="denominators" />
+          <Loading what={t("ovw.loading.denominators")} />
         ) : denom.state === "error" ? (
           <ErrorPanel error={denom.error} />
         ) : (
@@ -173,21 +196,20 @@ export default function Overview() {
       </section>
 
       <section>
-        <h3>Verdict mix</h3>
+        <h3>{t("ovw.h.mix")}</h3>
         {census.state === "loading" ? (
-          <Loading what="the census" />
+          <Loading what={t("ovw.loading.census")} />
         ) : census.state === "error" ? (
           <ErrorPanel error={census.error} />
         ) : (
           <>
             <Mix mix={census.data.verdict_mix} />
+            {/* The denial is a whole sentence in both languages. The publish gate requires it: every
+                occurrence of the phrase in the shipped bundle must be a denial, in each language, so a
+                build that dropped the Chinese sentence fails rather than shipping a zh page whose only
+                statement about a pass rate is its absence. */}
             <div className="note" style={{ marginTop: 14 }}>
-              <strong>There is no pass rate on this platform.</strong> INCONCLUSIVE is a result, not a
-              missing one: it records that the measurement did not establish the claim either way, and
-              it licenses no amendment to the design document. FALSE is not a defect in the study — it
-              is where the guidance did not hold, which is what the work was for. Dividing any of these
-              counts by any of the four denominators above would produce a number none of the
-              definitions support.
+              <strong>{t("ovw.noRatio.head")}</strong> {t("ovw.noRatio.body")}
             </div>
             <SealPanel seal={census.data.seal} />
           </>
@@ -196,39 +218,50 @@ export default function Overview() {
 
       <section>
         <h3>
-          Cases <span className="count mono">({filtered.length} shown)</span>
+          {t("ovw.h.cases")}{" "}
+          <span className="count mono">({t("facet.shown", { n: filtered.length })})</span>
         </h3>
         <div className="facets">
           <div className="facet">
-            <label>family</label>
+            <label>{t("pip.th.family")}</label>
             <select value={family} onChange={(e) => setFamily(e.target.value)}>
-              {[ANY, ...distinct(rows.map((r) => r.family))].map((v) => (
-                <option key={v}>{v}</option>
+              <option value={ANY}>{t("facet.any")}</option>
+              {distinct(rows.map((r) => r.family)).map((v) => (
+                <option key={v} value={v}>
+                  {v}
+                </option>
               ))}
             </select>
           </div>
           <div className="facet">
-            <label>tier</label>
+            <label>{t("reg.facet.tier")}</label>
             <select value={tier} onChange={(e) => setTier(e.target.value)}>
-              {[ANY, ...distinct(rows.map((r) => r.tier))].map((v) => (
-                <option key={v}>{v}</option>
+              <option value={ANY}>{t("facet.any")}</option>
+              {distinct(rows.map((r) => r.tier)).map((v) => (
+                <option key={v} value={v}>
+                  {v}
+                </option>
               ))}
             </select>
           </div>
           <div className="facet">
-            <label>verdict</label>
+            <label>{t("ovw.facet.verdict")}</label>
             <select value={verdict} onChange={(e) => setVerdict(e.target.value)}>
-              {[ANY, ...VERDICTS, "no verdict"].map((v) => (
-                <option key={v}>{v}</option>
+              <option value={ANY}>{t("facet.any")}</option>
+              {VERDICTS.map((v) => (
+                <option key={v} value={v} lang="en">
+                  {v}
+                </option>
               ))}
+              <option value={NO_VERDICT}>{t("ui.verdict.none")}</option>
             </select>
           </div>
           <div className="facet">
-            <label>search</label>
+            <label>{t("clm.facet.search")}</label>
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="case, title or claim id"
+              placeholder={t("ovw.facet.searchHint")}
             />
           </div>
           <div className="facet">
@@ -240,7 +273,7 @@ export default function Overview() {
                 onChange={(e) => setRestricted(e.target.checked)}
                 style={{ minWidth: 0, marginRight: 6 }}
               />
-              citation-restricted only
+              {t("ovw.facet.restrictedOnly")}
             </label>
           </div>
           <div className="facet">
@@ -255,7 +288,7 @@ export default function Overview() {
                 setQ("");
               }}
             >
-              reset
+              {t("ovw.facet.reset")}
             </button>
           </div>
         </div>
@@ -265,14 +298,14 @@ export default function Overview() {
             <table className="grid">
               <thead>
                 <tr>
-                  <th>case</th>
-                  <th>verdict</th>
-                  <th>family</th>
-                  <th>tier</th>
-                  <th>title</th>
-                  <th>claims</th>
-                  <th>archived</th>
-                  <th>citation</th>
+                  <th>{t("ovw.th.case")}</th>
+                  <th>{t("ovw.facet.verdict")}</th>
+                  <th>{t("pip.th.family")}</th>
+                  <th>{t("reg.facet.tier")}</th>
+                  <th>{t("fnd.th.title")}</th>
+                  <th>{t("ovw.th.claims")}</th>
+                  <th>{t("ovw.th.archived")}</th>
+                  <th>{t("ovw.th.citation")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -286,12 +319,12 @@ export default function Overview() {
                     </td>
                     <td>{r.family}</td>
                     <td>{r.tier}</td>
-                    <td>{r.title}</td>
+                    <td lang="en">{r.title}</td>
                     <td className="num">{r.n_claims}</td>
                     <td className="num">{r.archive_labels.length}</td>
                     <td>
                       {r.citation_restrictions.length ? (
-                        <span className="badge restrict">restricted</span>
+                        <span className="badge restrict">{t("ovw.restricted")}</span>
                       ) : (
                         <span style={{ color: "var(--fg-faint)" }}>—</span>
                       )}
@@ -303,10 +336,7 @@ export default function Overview() {
           </div>
         ) : null}
         {census.state === "ok" && !filtered.length ? (
-          <div className="note">
-            No case matches this filter combination. That is a statement about the filters, not about
-            the register — clear them to see every registered case.
-          </div>
+          <div className="note">{t("ovw.noMatch")}</div>
         ) : null}
       </section>
     </>
@@ -323,20 +353,21 @@ function SealPanel({
     registry_sha256_recomputed: string;
   };
 }) {
+  const t = useT();
   const ok = seal.registry_sha256_declared === seal.registry_sha256_recomputed;
   return (
     <div className={`note ${ok ? "seal" : "warn"}`} style={{ marginTop: 14 }}>
-      <strong>Oracle registry seal:</strong> {ok ? "declared hash matches recomputed" : "MISMATCH"}
+      <strong>{t("ovw.seal.head")}</strong> {t(ok ? "ovw.seal.ok" : "ovw.seal.mismatch")}
       <div className="mono" style={{ marginTop: 6, fontSize: 11.5, wordBreak: "break-all" }}>
-        declared {seal.registry_sha256_declared}
+        {t("ovw.seal.declared")} {seal.registry_sha256_declared}
         <br />
-        recomputed {seal.registry_sha256_recomputed}
+        {t("ovw.seal.recomputed")} {seal.registry_sha256_recomputed}
       </div>
       <div style={{ marginTop: 6, fontSize: 12 }}>
-        Recomputed over the {seal.n_cases_declared} declared oracle texts, {seal.method}. Each
-        case's oracle was fixed before its measurement ran; a mismatch here would mean an oracle
-        changed after the fact, which is why the build recomputes it rather than trusting the recorded
-        value.
+        <T
+          k="ovw.seal.body"
+          v={{ n: seal.n_cases_declared, method: <span lang="en">{seal.method}</span> }}
+        />
       </div>
     </div>
   );

@@ -1,4 +1,12 @@
-# `platform/` — GRX Live
+# `platform/` — the `agentcore-guardrails-design-validation` platform
+
+> The site called itself "GRX Live" until 2026-08-20. That name existed only in this repository —
+> nothing a reader could look up, check out or file an issue against — so the app now shows the
+> repository's own name instead. AWS resource identifiers still carry the `grx-live` /
+> `GrxLive` prefix (the CDK app, the stack, the SSM parameter paths, the Secrets Manager
+> names, the hosted-UI domain prefix): those name **deployed** resources that the running
+> Lambda@Edge reads at cold start, so renaming them would be a redeploy of the live site rather
+> than a rename of a label.
 
 Everything that turns the finished measurement into something a person can read in a browser, and
 nothing that produces a measurement. The rule that keeps this directory honest: **`platform/` reads

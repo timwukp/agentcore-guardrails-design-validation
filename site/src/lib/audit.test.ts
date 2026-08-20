@@ -14,7 +14,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { compose, decodeReport, obsClass, statusClass } from "./audit.ts";
-import type { Composed } from "./audit.ts";
+import type { Composed, Msg } from "./audit.ts";
 import type { AuditReport } from "./types.ts";
 
 // This file is type-checked by `tsconfig.test.json` rather than by the app project, which excludes
@@ -29,14 +29,14 @@ import type { AuditReport } from "./types.ts";
 // `assert.fail` — which returns `never` — states the same expectation in a form the checker follows,
 // and `at()` keeps `noUncheckedIndexedAccess` on so a missing command line fails loudly here instead
 // of being compared as `undefined` inside an assertion that then proves nothing.
-function expectError(out: ReturnType<typeof decodeReport>, what: string): string {
+function expectError(out: ReturnType<typeof decodeReport>, what: string): Msg {
   if ("error" in out) return out.error;
   assert.fail(`expected a refusal for ${what}, got a decoded report`);
 }
 
 function expectReport(out: ReturnType<typeof decodeReport>): AuditReport {
   if ("report" in out) return out.report;
-  assert.fail(`expected a decoded report, got a refusal: ${out.error}`);
+  assert.fail(`expected a decoded report, got a refusal: ${JSON.stringify(out.error)}`);
 }
 
 function at(c: Composed, n: number): string {
@@ -113,10 +113,22 @@ test("a shell metacharacter refuses to compose and the template is left alone", 
   }
 });
 
+// The refusals are checked by KEY, not by a word in their wording. `includes("hyphen")` would also have
+// passed for a sentence that mentioned hyphens while saying the value was accepted, and it would fail the
+// day the page was read in Chinese — a refusal is an instruction to the reader, so it has both.
 test("a value that would be read as an option refuses too", () => {
   const out = compose(CMDS, "--help", "");
-  assert.ok(out.refusal?.includes("hyphen"), out.refusal ?? "no refusal");
+  assert.equal(out.refusal?.key, "aud.refuse.hyphen");
   assert.deepEqual(out.lines, CMDS);
+});
+
+test("a space is refused by its own sentence, not quoted into the character one", () => {
+  // `JSON.stringify(" ")` is the one character a reader cannot see between quotation marks, so naming it
+  // is the whole point of the second key existing.
+  assert.equal(compose(CMDS, "my repo", "").refusal?.key, "aud.refuse.space");
+  const other = compose(CMDS, "repo;id", "").refusal;
+  assert.equal(other?.key, "aud.refuse.char");
+  assert.equal(other?.vars?.["ch"], '";"');
 });
 
 test("a date that is not an ISO day refuses rather than being pasted in", () => {
@@ -146,8 +158,11 @@ test("an inventory.json is refused by name rather than rendered as an empty repo
     decodeReport(JSON.stringify({ schema: "grx-inventory/1", observations: [] })),
     "an inventory",
   );
-  assert.ok(err.includes("grx-inventory/1"), err);
-  assert.ok(err.includes("inventory.json"), err);
+  assert.equal(err.key, "aud.rep.wrongSchema");
+  // The schema the file declared has to reach the reader as a value: "this is not a report" without it
+  // leaves them guessing which of the two files beside each other they picked.
+  assert.equal(err.vars?.["got"], '"grx-inventory/1"');
+  assert.equal(err.vars?.["want"], '"grx-audit-report/1"');
 });
 
 test("a schema-less object, a JSON array, a JSON scalar and broken JSON are each refused", () => {
@@ -158,7 +173,7 @@ test("a schema-less object, a JSON array, a JSON scalar and broken JSON are each
 
 test("the right schema with no arrays is still refused", () => {
   const err = expectError(decodeReport(JSON.stringify({ schema: "grx-audit-report/1" })), "no arrays");
-  assert.ok(err.includes("controls"), err);
+  assert.equal(err.key, "aud.rep.noArrays");
 });
 
 // --------------------------------------------------------------------------- the derived class names
