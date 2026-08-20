@@ -1,0 +1,871 @@
+# The control inventory an audit looks for, and which of the 93 cases measured each one.
+# AUTHORED, and that is why it lives here beside `families.yaml` rather than under `claims/`.
+#
+# WHAT THIS FILE IS FOR
+#
+# A reader submits the infrastructure-as-code for their own AgentCore deployment and asks the
+# question this study exists to answer: "does the guidance I followed actually hold for what I
+# configured?" Answering it needs a mapping from a *thing a template declares* to *the cases that
+# measured that thing*. Neither half of that mapping exists in the artifacts. `claims/triage.csv`
+# says where in the DOCUMENT a case lives; `PREREGISTRATION.yaml` says what a case claims and how it
+# is adjudicated. Neither says "this is the property a customer sets, and here is what we found when
+# we set it." That is a judgment, so it is authored, once, machine-readably, here.
+#
+# THE TWO HALVES, AND WHY THEY ARE SPLIT
+#
+# `detect:` is DERIVED and re-verifiable. Every field path below was read out of the pinned
+# botocore 1.43.67 service model in `.venv-oracle` on 2026-08-20 — the same SDK build that several
+# F1 and F8 verdicts ARE reads of — and `check_controls.py --verify-field-paths` re-introspects it
+# and fails on any path the model no longer has. A field path typed from memory would be a second,
+# unverified source for something an instrument can be asked; see the `paths_source` on each rule.
+#
+# `measured_by:` and `findings:` are AUTHORED judgments, and each one carries the reason a human
+# gave. But their *legality* is not authored: `check_controls.py` checks every citation against
+# `results/CITATION-POLICY` as published in `citation_policy.json`, whose own header declares it
+# `authoritative_for_tooling: true`. So the rules that matter are enforced by a program:
+#
+#   * `F5-3b` may never appear in any `cites:` list, in any control, under any status. Its verdict
+#     on disk is TRUE and it may be cited as nothing at all.
+#   * `not_established` may cite only INCONCLUSIVE cases, and an INCONCLUSIVE case may not be cited
+#     under any other status. An INCONCLUSIVE verdict is not evidence against a claim, and a report
+#     that turned one into a recommendation would be the study contradicting its own editorial rule.
+#   * `not_measured` must cite NOTHING and must say why. This is the fifth state, and it is the one
+#     an audit tool normally lacks: a control the study never looked at must read as "not measured",
+#     never as "no problem found". Two controls below are in that state for real, not for show.
+#   * a case carrying `PARTIAL` or `REPLICATION_POSITION_BOUND` drags its scope with it, so any
+#     finding citing one must state that scope in `scope_note`.
+#
+# WHAT THIS FILE MUST NEVER CONTAIN
+#
+# A score, a grade, a pass rate, or a count of "controls passed". The headline of an audit built on
+# this file is a DENOMINATOR statement — how many of the reader's controls this study has anything
+# to say about — and never a ratio. 23 FALSE verdicts out of 91 published is not a 75% pass rate; it
+# is 23 places the guidance did not hold, and the denominator that matters is which of *those* the
+# reader is exposed to.
+
+schema: grx-controls/1
+
+# Where every `detect.paths` entry came from, and how to re-derive it rather than trust it.
+field_paths:
+  instrument: "botocore 1.43.67, .venv-oracle (the pinned measurement instrument; never bumped)"
+  derived_on: 2026-08-20
+  reverify: "platform/build/check_controls.py --verify-field-paths"
+  note: >
+    Paths are written lower-cased and dot-joined, because a template may spell them in camelCase
+    (CDK L1 / API shapes) or PascalCase (CloudFormation) and the parser normalises before matching.
+    The CloudFormation *type* spellings are deliberately NOT relied on: `type_hint` is a substring
+    filter, not an equality test, because no synth artifact for AWS::BedrockAgentCore::* has been
+    read in this repository and a type name typed from memory would be an unverified claim wearing
+    a detection rule's clothes. The property paths are the verified part; the report states this
+    limitation in its own caveats rather than hiding it.
+
+vocabularies:
+  # What a finding claims, and therefore what evidence it is required to carry.
+  status: [measured_true, measured_false, not_established, not_measured, context_only]
+  # What the parser can conclude about a control from a template alone.
+  observation: [DECLARED, NOT_DECLARED]
+
+# Detect paths that no AgentCore or Bedrock service model can confirm, each with the reason. Checked
+# in BOTH directions by `check_controls.py --verify-field-paths`: a path exempted here that the model
+# turns out to have is also a finding, because a stale exemption is where a real typo hides. These
+# five were not chosen — they are what the introspection pass rejected on 2026-08-20, and the list is
+# exactly that long.
+unverifiable_paths:
+  - path: tags.otel_traces_sampler
+    why: >
+      `tags` is a string-to-string map in the API model, so a specific key inside it is not a
+      member the model can be asked about. The sampler is nonetheless a real place a template
+      carries this setting, and it is the setting F7-5 measured the consequence of.
+  - path: environmentvariables.otel_traces_sampler
+    why: >
+      Same shape: `CreateHarness.environmentVariables` is a map, and OTEL_TRACES_SAMPLER is a
+      convention of the OpenTelemetry SDK rather than a field of any AWS API. Off by default is
+      precisely why F7-5 exists.
+  - path: metricname
+    why: >
+      A CloudWatch alarm property, not an AgentCore one. No AgentCore API creates an alarm, so this
+      path can only ever be confirmed against a CloudFormation resource specification, which this
+      repository has not read and therefore does not assert.
+  - path: namespace
+    why: >
+      Also CloudWatch. The namespace spelling is what identifies a metric as a policy metric, and
+      whether the documented metrics exist under it at all is what F7-1 measured and found FALSE.
+  - path: alarmactions
+    why: >
+      Also CloudWatch. An alarm with no actions notifies nobody, which is the difference between
+      detection existing and detection working — worth reading even though the path is unverifiable.
+
+controls:
+
+  # ---------------------------------------------------------------- 1. the enforcement switch
+
+  - id: policy_engine_mode
+    label: "Policy engine mode on the gateway"
+    question: "Is the gateway's policy engine in ENFORCE, or in LOG_ONLY?"
+    detect:
+      type_hint: gateway
+      paths: [policyengineconfiguration.mode]
+      value_from: policyengineconfiguration.mode
+      values: [LOG_ONLY, ENFORCE]
+      paths_source: "bedrock-agentcore-control CreateGateway.policyEngineConfiguration.mode"
+    measured_by:
+      - case: F1-5
+        why: >
+          The enum itself is the control's whole surface: two values, and one of them enforces
+          nothing. Confirmed against the service model rather than the document.
+      - case: F4-2
+        why: >
+          Measured directly what LOG_ONLY does with ACTIVE policies attached, which is the exact
+          configuration a reader who believes they are protected will have.
+      - case: F4-3
+        why: >
+          Establishes which of the two mode settings wins when they disagree, and therefore whether
+          reading the policy's own mode tells you anything about enforcement.
+    findings:
+      - when: {value: LOG_ONLY}
+        status: measured_true
+        cites: [F4-2]
+        says: >
+          The policy engine is in LOG_ONLY. Measured: it blocks nothing, even with ACTIVE policies
+          attached. Every Cedar policy in this template is an observation, not a control.
+        consequence: >
+          Any threat model that counts on the policy engine to deny a request is unmet here. This is
+          not a misconfiguration of the policies; it is the switch above them.
+      - when: {value: LOG_ONLY}
+        status: measured_false
+        cites: [F3-10]
+        says: >
+          LOG_ONLY is also not a safe staging position for the documented rollout: the workflow the
+          guidance describes for moving from LOG_ONLY to ENFORCE was measured NOT to be executable
+          from LOG_ONLY telemetry.
+        consequence: >
+          Planning to "watch the logs first, then enforce" is following a documented procedure that
+          did not work when it was run. Budget for a different rollout path.
+      - when: {value: ENFORCE}
+        status: measured_true
+        cites: [F4-1, F4-3]
+        says: >
+          The engine is in ENFORCE, and the engine's mode is what decides — a per-policy
+          `enforcementMode: LOG_ONLY` does not soften it. With no matching permit, all traffic is
+          denied.
+        consequence: >
+          Enforcement is real, so an incomplete permit set fails closed. Check that every intended
+          caller has a matching policy before this reaches production.
+      - when: {observation: NOT_DECLARED}
+        status: measured_true
+        cites: [F4-4]
+        says: >
+          No policy engine is configured on this gateway, so there is no Cedar evaluation at all —
+          which is a different state from Cedar's own default-deny, and it does not deny anything.
+        consequence: >
+          The gateway's authorization posture rests entirely on `authorizerType` and on the
+          execution role. See the `inbound_authorizer_type` and `execution_role_reachability`
+          controls.
+
+  # ---------------------------------------------------------------- 2. the switch below the switch
+
+  - id: per_policy_enforcement_mode
+    label: "Per-policy enforcementMode"
+    question: "Do individual policies set enforcementMode, and does that setting decide anything?"
+    detect:
+      type_hint: polic
+      paths: [enforcementmode]
+      value_from: enforcementmode
+      values: [ACTIVE, LOG_ONLY]
+      paths_source: "bedrock-agentcore-control CreatePolicy.enforcementMode"
+    measured_by:
+      - case: F4-3
+        why: >
+          This is the case that measured the precedence between the two mode settings, which is the
+          only question a reader of a template with both can have.
+    findings:
+      - when: {value: ACTIVE}
+        status: measured_true
+        cites: [F4-3]
+        says: >
+          This policy is ACTIVE, but the engine's mode takes precedence. `enforcementMode: ACTIVE`
+          on a policy attached to a LOG_ONLY engine enforces nothing.
+        consequence: >
+          Reading a template's policies to decide whether traffic is being blocked gives the wrong
+          answer. Read `policyEngineConfiguration.mode` instead — it is the only setting that
+          decides.
+      - when: {value: LOG_ONLY}
+        status: measured_true
+        cites: [F4-3]
+        says: >
+          This policy is in LOG_ONLY. Under an ENFORCE engine the engine's mode is what decides, so
+          do not rely on the per-policy setting to hold a single policy back from enforcing.
+        consequence: >
+          A policy staged as LOG_ONLY under an ENFORCE engine is not staged. Stage by not attaching
+          it.
+
+  # ---------------------------------------------------------------- 3. Cedar
+
+  - id: cedar_policy_set
+    label: "Cedar policy statements"
+    question: "What does the Cedar policy set say, and what happens to a request no statement matches?"
+    detect:
+      type_hint: polic
+      paths: [definition.cedar.statement, definition.policy.statement]
+      paths_source: "bedrock-agentcore-control CreatePolicy.definition.{cedar,policy}.statement"
+    measured_by:
+      - case: F4-4
+        why: >
+          Default-deny is the property the whole policy set rests on: whether an unmatched request
+          is denied or waved through changes what a missing statement costs.
+      - case: F4-5
+        why: >
+          Whether `forbid` overrides `permit` decides whether a deny-list statement can be defeated
+          by adding an allow, which is how a policy set drifts open over time.
+      - case: F1-24
+        why: >
+          A template that tries to put a `when {}` condition and a `when guardrails {}` condition in
+          one policy will not deploy, and the failure mode is a reason to structure the set
+          differently from the start.
+      - case: F1-25
+        why: >
+          Readers reach for a pattern match inside a policy condition; the guardrails-in-policy
+          condition has none, and knowing that before authoring saves a redesign.
+    findings:
+      - when: {observation: DECLARED}
+        status: measured_true
+        cites: [F4-4, F4-5]
+        says: >
+          Cedar's default-deny was confirmed: a request matching no statement is denied, and
+          `forbid` overrides `permit`. Both hold as documented.
+        consequence: >
+          A gap in the permit set fails closed rather than open — provided the engine is in ENFORCE.
+          Under LOG_ONLY neither property is doing anything.
+      - when: {observation: DECLARED}
+        status: measured_false
+        cites: [F1-24, F1-25]
+        says: >
+          Two documented authoring affordances did not hold. `when {}` cannot be mixed with
+          `when guardrails {}` in one policy, and the guardrails-in-policy condition has no
+          regex or pattern matching.
+        consequence: >
+          Split the conditions across policies, and do not plan on expressing a pattern match inside
+          a policy condition. A guardrail with `regexesConfig` is the surface that has one.
+      - when: {observation: NOT_DECLARED}
+        status: measured_true
+        cites: [F4-4]
+        says: >
+          No Cedar statements were found. Under an ENFORCE engine with no permit policy, all traffic
+          is denied; under LOG_ONLY, nothing is evaluated at all.
+        consequence: >
+          Either state is probably not what was intended. Which one this is depends on
+          `policy_engine_mode`.
+
+  # ---------------------------------------------------------------- 4. the deny you have to debug
+
+  - id: denial_response_shape
+    label: "What a denied request tells the caller"
+    question: "When the policy engine denies a request, does the response identify the policy that denied it?"
+    detect:
+      type_hint: gateway
+      paths: [exceptionlevel]
+      value_from: exceptionlevel
+      values: [DEBUG]
+      paths_source: "bedrock-agentcore-control CreateGateway.exceptionLevel"
+    measured_by:
+      - case: F4-6
+        why: >
+          Operability of a deny is a first-order property: an operator holding a 403 that names
+          nothing cannot tell a correct denial from a broken policy set.
+    findings:
+      - when: {observation: DECLARED}
+        status: measured_false
+        cites: [F4-6]
+        says: >
+          Denied requests were measured NOT to return an HTTP 403 naming the denying policy ID, and
+          `exceptionLevel: DEBUG` is set here rather than being the default.
+        consequence: >
+          Plan for policy debugging to come from telemetry rather than from the response. Budget the
+          observability work the `policy_metrics_alarms` control covers, and read its finding first.
+      - when: {observation: NOT_DECLARED}
+        status: measured_false
+        cites: [F4-6]
+        says: >
+          Denied requests were measured NOT to return an HTTP 403 naming the denying policy ID.
+        consequence: >
+          An operator debugging a denial has to reconstruct which policy fired from somewhere else.
+          Establish that path before enforcing, not after the first incident.
+
+  # ---------------------------------------------------------------- 5. the front door
+
+  - id: inbound_authorizer_type
+    label: "Inbound authorizer on the gateway"
+    question: "How is the caller authenticated at the gateway, and was that mechanism measured?"
+    detect:
+      type_hint: gateway
+      paths: [authorizertype]
+      value_from: authorizertype
+      values: [CUSTOM_JWT, AWS_IAM, NONE, AUTHENTICATE_ONLY]
+      paths_source: "bedrock-agentcore-control CreateGateway.authorizerType"
+    measured: none
+    why_not_measured: >
+      No case in the register measures inbound authentication behaviour. The 93 cases were selected
+      against the v1.2 document's claims about the policy engine, guardrails, bypass routes,
+      observability, regional availability, latency and billing; inbound OIDC is prescribed by the
+      document but no oracle was ever written for it. This is a real gap in the study, not a gap in
+      the reader's template, and it is register-visible rather than silently absent.
+    findings:
+      - when: {value: NONE}
+        status: not_measured
+        cites: []
+        says: >
+          The gateway declares `authorizerType: NONE`. This study measured nothing about inbound
+          authentication, so it has no verdict to offer here — which is not the same as finding no
+          problem. `NONE` is a real value in the service model and its consequences are yours to
+          assess.
+        why_not_measured: >
+          No oracle in the sealed register adjudicates inbound authentication, so no evidence in
+          this study bears on it in either direction. Reported as unmeasured rather than as clean.
+      - when: {observation: DECLARED}
+        status: not_measured
+        cites: []
+        says: >
+          An inbound authorizer is declared. This study has no verdict on inbound authentication
+          behaviour of any kind.
+        why_not_measured: >
+          The register contains no case whose proposition is about the authorizer, so a green
+          statement here would be manufactured from the absence of evidence.
+      - when: {observation: NOT_DECLARED}
+        status: not_measured
+        cites: []
+        says: >
+          No inbound authorizer was found on the gateway. Whether that is because the property is
+          absent from the template or because this parser did not recognise its spelling cannot be
+          distinguished from a template alone.
+        why_not_measured: >
+          Two reasons at once, and both are stated: the study measured nothing here, and the
+          detection itself is a negative result over unverified CloudFormation type spellings.
+
+  # ---------------------------------------------------------------- 6. the ways past the front door
+
+  - id: gateway_target_shape
+    label: "Gateway targets, and whether the tool can be reached without the gateway"
+    question: "What do the gateway's targets point at, and is that endpoint reachable directly?"
+    detect:
+      type_hint: target
+      paths:
+        - targetconfiguration.mcp.lambda
+        - targetconfiguration.mcp.apigateway
+        - targetconfiguration.mcp.mcpserver
+        - targetconfiguration.mcp.openapischema
+        - targetconfiguration.http.passthrough
+        - targetconfiguration.http.agentcoreruntime
+        - targetconfiguration.inference.provider
+      paths_source: "bedrock-agentcore-control CreateGatewayTarget.targetConfiguration.{mcp,http,inference}"
+    measured_by:
+      - case: F5-1
+        why: >
+          The bypass this control is about was measured end to end: the tool behind a target was
+          invoked directly, and the gateway's policy engine was not in the path.
+    findings:
+      - when: {observation: DECLARED}
+        status: measured_true
+        cites: [F5-1]
+        says: >
+          Direct invocation of the tool behind a gateway target, bypassing the gateway entirely, was
+          measured to work. The policy engine protects the gateway path, not the tool.
+        consequence: >
+          Every target endpoint in this template needs its own authorization. A resource policy or
+          identity policy that admits only the gateway's role is the control; the gateway's Cedar
+          policies are not reachable on the direct path.
+      - when: {observation: NOT_DECLARED}
+        status: context_only
+        cites: [F5-1]
+        says: >
+          No gateway targets were found, so there is nothing to check for direct reachability yet.
+          When targets are added, the bypass measured in F5-1 applies to each of them.
+        consequence: >
+          Treat target authorization as part of adding a target, not as a later hardening pass.
+
+  # ---------------------------------------------------------------- 7. the credential inside
+
+  - id: execution_role_reachability
+    label: "Execution role reachable from inside a tool session"
+    question: "What can be done with the execution-role credentials available inside the runtime?"
+    detect:
+      # The paths below are members of the GATEWAY and the HARNESS, not of an IAM role resource, so a
+      # `role` hint matched nothing: an AWS::IAM::Role declares `RoleName`, never `roleArn`. The
+      # control then read NOT_DECLARED for every submission, which is a statement about this rule
+      # wearing the clothes of a statement about the reader's template.
+      type_hint: [gateway, harness, runtime, agent]
+      paths: [executionrolearn, rolearn]
+      paths_source: >
+        bedrock-agentcore-control CreateHarness.executionRoleArn and CreateGateway.roleArn
+    measured_by:
+      - case: F5-8
+        why: >
+          Whether the credentials are readable from inside a tool session decides whether the role's
+          permissions are a blast radius or merely a plumbing detail.
+      - case: F5-2
+        why: >
+          Measured what those credentials then allow: calling past the policy engine, which turns
+          the role's breadth into the real authorization boundary.
+    findings:
+      - when: {observation: DECLARED}
+        status: measured_true
+        cites: [F5-8, F5-2]
+        says: >
+          Execution-role credentials were measured to be readable from inside a tool session, and to
+          allow calls that the policy engine does not evaluate.
+        consequence: >
+          The execution role is the authorization boundary, not the Cedar policy set. Scope it to
+          exactly the calls the agent must make, and treat every permission on it as reachable by
+          anything that can influence tool input.
+
+  # ---------------------------------------------------------------- 8. egress
+
+  - id: private_endpoint_egress
+    label: "VPC / private endpoint containment"
+    question: "Is traffic constrained to a VPC, and does that constrain what the study measured?"
+    detect:
+      type_hint: target
+      paths:
+        - privateendpoint.managedvpcresource.vpcidentifier
+        - privateendpoint.managedvpcresource.subnetids
+        - privateendpoint.managedvpcresource.securitygroupids
+        - privateendpoint.selfmanagedlatticeresource.resourceconfigurationidentifier
+      paths_source: "bedrock-agentcore-control CreateGatewayTarget.privateEndpoint"
+    measured_by:
+      - case: F5-7a
+        why: >
+          A containment design that assumes a PrivateLink endpoint service exists needs to know
+          whether it does, and that is a fact about the service, not about the template.
+      - case: F5-7b
+        why: >
+          The containment claim itself was attempted and not established, which is the honest state
+          to report to anyone relying on it.
+    findings:
+      - when: {observation: DECLARED}
+        status: measured_false
+        cites: [F5-7a]
+        says: >
+          The PrivateLink endpoint services the containment design would need were measured NOT to
+          exist.
+        consequence: >
+          A network design drawn around them will not deploy as drawn. Confirm the endpoint services
+          available in your Region before committing to the topology.
+      - when: {observation: DECLARED}
+        status: not_established
+        cites: [F5-7b]
+        says: >
+          VPC egress containment was attempted and NOT established. This is not evidence that
+          containment fails; it is the study saying it did not find out.
+        consequence: >
+          If your threat model depends on egress containment, that dependency is currently unbacked
+          by this study and worth testing yourself.
+      - when: {observation: NOT_DECLARED}
+        status: not_established
+        cites: [F5-7b]
+        says: >
+          No private endpoint configuration was found, and the study did not establish what
+          containment would achieve if one were added.
+        consequence: >
+          Traffic paths are whatever the default is. Neither the presence nor the absence of
+          containment is something this study can score.
+
+  # ---------------------------------------------------------------- 9. guardrail: the checkpoint
+
+  - id: guardrail_checkpoints
+    label: "Guardrail input and output checkpoints"
+    question: "Which direction is each guardrail policy enabled in, and are the two independent?"
+    detect:
+      type_hint: guardrail
+      paths:
+        - contentpolicyconfig.filtersconfig.inputenabled
+        - contentpolicyconfig.filtersconfig.outputenabled
+        - sensitiveinformationpolicyconfig.piientitiesconfig.inputenabled
+        - sensitiveinformationpolicyconfig.piientitiesconfig.outputenabled
+        - topicpolicyconfig.topicsconfig.inputenabled
+        - topicpolicyconfig.topicsconfig.outputenabled
+      paths_source: "bedrock CreateGuardrail, the per-filter inputEnabled/outputEnabled pairs"
+    measured_by:
+      - case: F1-11
+        why: >
+          Whether the two directions are independent decides whether configuring one leaves the
+          other in a known state, which is what a template author is implicitly assuming.
+    findings:
+      - when: {observation: DECLARED}
+        status: not_established
+        cites: [F1-11]
+        says: >
+          Whether input and output settings are independent within one guardrail was attempted and
+          NOT established.
+        consequence: >
+          Do not infer the output-side behaviour from the input-side configuration. Set both
+          explicitly and verify each direction against your own traffic.
+
+  # ---------------------------------------------------------------- 10. guardrail: detection
+
+  - id: guardrail_content_filters
+    label: "Content filters"
+    question: "Do the configured content filters detect what they are documented to detect?"
+    detect:
+      type_hint: guardrail
+      paths:
+        - contentpolicyconfig.filtersconfig.type
+        - contentpolicyconfig.filtersconfig.inputstrength
+        - contentpolicyconfig.filtersconfig.outputstrength
+      paths_source: "bedrock CreateGuardrail.contentPolicyConfig.filtersConfig"
+    measured_by:
+      - case: F3-1
+        why: >
+          Detection above threshold is the filter's whole purpose, and it was measured per category
+          rather than assumed from the console.
+      - case: F3-2
+        why: >
+          A filter that blocks benign traffic is a production outage, so the false-positive rate is
+          as load-bearing as the detection rate.
+      - case: F3-3
+        why: >
+          Hard negatives are where a filter that looks good on obvious inputs quietly fails, and
+          they were measured separately for that reason.
+      - case: F3-8
+        why: >
+          Prompt-attack recall by subtype is the number a reader relying on the filter as an
+          injection defence is actually depending on.
+    findings:
+      - when: {observation: DECLARED}
+        status: measured_true
+        cites: [F3-1, F3-2, F3-3]
+        says: >
+          Content filters detected their categories above threshold, did not block benign content,
+          and were not tripped by hard negatives. All three held as documented.
+        consequence: >
+          The filters do the job on the categories they name. That is a narrower statement than
+          "the model is protected" — see the prompt-attack finding below.
+      - when: {observation: DECLARED}
+        status: measured_false
+        cites: [F3-8]
+        says: >
+          Prompt-attack detection recall was measured by subtype and did NOT hold: some subtypes are
+          missed.
+        consequence: >
+          A content filter is not an injection defence on its own. If an anonymous user can reach
+          this path, design the blast radius so a successful injection cannot do much, rather than
+          relying on the filter to stop it.
+
+  - id: guardrail_pii
+    label: "PII and sensitive-information filters"
+    question: "Are PII entities detected per documented entity type, and everywhere they appear?"
+    detect:
+      type_hint: guardrail
+      paths:
+        - sensitiveinformationpolicyconfig.piientitiesconfig.type
+        - sensitiveinformationpolicyconfig.piientitiesconfig.action
+        - sensitiveinformationpolicyconfig.regexesconfig.pattern
+      paths_source: "bedrock CreateGuardrail.sensitiveInformationPolicyConfig"
+    measured_by:
+      - case: F3-4
+        why: >
+          Per-entity-type detection is what a template author selects by name, so an entity type
+          that is configured but not detected is a silent gap in exactly the reader's design.
+      - case: F1-28
+        why: >
+          Tool-use output is a path a reader does not think of as text, and it was measured
+          separately because that is where the leak nobody configured for happens.
+    findings:
+      - when: {observation: DECLARED}
+        status: measured_false
+        cites: [F3-4]
+        says: >
+          PII entities were measured NOT to be detected per documented entity type.
+        consequence: >
+          Selecting an entity type in the guardrail does not establish that instances of it will be
+          caught. Test the specific entity types your data contains, against your own samples.
+      - when: {observation: DECLARED}
+        status: measured_false
+        cites: [F1-28]
+        says: >
+          PII was measured NOT to be detected inside tool_use output parameters.
+        consequence: >
+          A tool returning a record into the conversation is an egress path the guardrail did not
+          cover. Redact at the tool, not only at the guardrail.
+
+  - id: guardrail_denied_topics
+    label: "Denied topics"
+    question: "Do denied topics block in-topic content?"
+    detect:
+      type_hint: guardrail
+      paths: [topicpolicyconfig.topicsconfig.name, topicpolicyconfig.topicsconfig.definition]
+      paths_source: "bedrock CreateGuardrail.topicPolicyConfig.topicsConfig"
+    measured_by:
+      - case: F3-5
+        why: >
+          Whether an in-topic request is actually blocked is the only question a configured topic
+          raises, and it was measured against in-topic samples rather than paraphrases.
+    findings:
+      - when: {observation: DECLARED}
+        status: measured_true
+        cites: [F3-5]
+        says: "Denied topics blocked in-topic content, as documented."
+        consequence: >
+          The mechanism works on content that is in the topic as defined. The quality of your topic
+          definitions is a separate question this study did not measure.
+
+  - id: guardrail_tier
+    label: "Guardrail tier and cross-Region profile"
+    question: "Which tier is configured, and are the tier-gated features the ones documented?"
+    detect:
+      type_hint: guardrail
+      paths:
+        - contentpolicyconfig.tierconfig.tiername
+        - topicpolicyconfig.tierconfig.tiername
+        - crossregionconfig.guardrailprofileidentifier
+      paths_source: >
+        bedrock CreateGuardrail.contentPolicyConfig.tierConfig,
+        topicPolicyConfig.tierConfig, crossRegionConfig.guardrailProfileIdentifier
+    measured_by:
+      - case: F8-4
+        why: >
+          A feature believed to be tier-gated drives a tier choice and a cost, so whether the gate
+          is where the document says it is has a direct budget consequence.
+    findings:
+      - when: {observation: DECLARED}
+        status: measured_false
+        cites: [F8-4]
+        says: >
+          The documented tier gating did not hold as stated: prompt-leakage detection was measured
+          NOT to be Standard-tier only.
+        consequence: >
+          Do not choose a tier on the strength of the documented feature matrix. Verify the specific
+          feature you are paying for in your own Region and tier.
+
+  # ---------------------------------------------------------------- 11. regional posture
+
+  - id: regional_availability
+    label: "Region, and whether the features exist there"
+    question: "Is the deployment Region one where the configured features are available?"
+    detect:
+      type_hint: gateway
+      paths: [policyengineconfiguration.arn, kmskeyarn, rolearn]
+      value_from: null
+      paths_source: >
+        Region is read from the ARNs the template already carries; there is no separate
+        Region property on CreateGateway.
+    measured_by:
+      - case: F8-1
+        why: >
+          A regional availability count is the kind of documented fact a reader plans a rollout
+          against, and it was checked against the service rather than the document.
+    findings:
+      - when: {observation: DECLARED}
+        status: measured_false
+        cites: [F8-1]
+        says: >
+          The documented claim that guardrails-in-policy is available in exactly 5 Regions was
+          measured to be FALSE.
+        consequence: >
+          Confirm feature availability in your own Region directly. A regional plan drawn from the
+          document's list will be wrong somewhere.
+
+  # ---------------------------------------------------------------- 12. observability
+
+  - id: tracing_enabled
+    label: "Tracing / transaction search"
+    question: "Is tracing explicitly enabled, or will there be no spans?"
+    detect:
+      type_hint: gateway
+      paths: [exceptionlevel, tags.otel_traces_sampler, environmentvariables.otel_traces_sampler]
+      paths_source: >
+        bedrock-agentcore-control CreateGateway.exceptionLevel and
+        CreateHarness.environmentVariables; the sampler is an environment variable, not an API field
+    measured_by:
+      - case: F7-5
+        why: >
+          Off-by-default observability is the failure that is invisible until an incident, because
+          the absence of spans looks exactly like the absence of problems.
+      - case: F7-4
+        why: >
+          Where the spans land and under which operation names decides whether a query written from
+          the document finds anything.
+    findings:
+      - when: {observation: NOT_DECLARED}
+        status: measured_true
+        cites: [F7-5]
+        says: >
+          No tracing configuration was found. Measured: tracing must be explicitly enabled or spans
+          are absent — the default produces nothing.
+        consequence: >
+          An investigation after the fact will have no spans to read. Enable it before you need it;
+          this cannot be turned on retroactively for traffic already served.
+      - when: {observation: DECLARED}
+        status: measured_true
+        cites: [F7-5, F7-4]
+        says: >
+          Tracing configuration is present, and spans were measured to land in `aws/spans` under the
+          documented operation names.
+        consequence: >
+          Queries written against the documented operation names will find data. Confirm the sampler
+          is not set to a rate that drops the events you care about.
+
+  - id: policy_metrics_alarms
+    label: "Alarms on policy metrics"
+    question: "Can the documented policy metrics be alarmed on, and how fast?"
+    detect:
+      type_hint: alarm
+      paths: [metricname, namespace, alarmactions]
+      paths_source: >
+        CloudWatch alarm properties; not an AgentCore API shape. Matched loosely because the
+        namespace spelling is what identifies a policy metric, and that spelling is what F7-1 found.
+    measured_by:
+      - case: F7-1
+        why: >
+          An alarm can only be built on a metric that is published, so whether the documented metric
+          list exists is the precondition for the entire monitoring design.
+      - case: F7-6
+        why: >
+          Publish lag sets a floor on how fast any alarm can fire, which is the number an incident
+          response time budget has to be built from.
+      - case: F9-2
+        why: >
+          An unevaluable policy is the failure mode most likely to be silent, so whether it raises a
+          mismatch metric decides if it is detectable at all.
+    findings:
+      - when: {observation: DECLARED}
+        status: measured_false
+        cites: [F7-1]
+        says: >
+          The 19 documented policy metrics were measured NOT to all be published.
+        consequence: >
+          Verify that each metric your alarms name actually exists before relying on them. An alarm
+          on an unpublished metric never fires and reports as healthy — the worst available state.
+      - when: {observation: DECLARED}
+        status: measured_true
+        cites: [F7-6, F9-2]
+        says: >
+          Metric publish lag was measured to set a floor on every alarm in the documented
+          monitoring section, and MismatchErrors/PolicyMismatch do fire on unevaluable policies.
+        consequence: >
+          Detection is possible, but your alarm latency cannot beat the publish lag. Size incident
+          response budgets against the measured floor rather than the alarm period.
+      - when: {observation: NOT_DECLARED}
+        status: measured_false
+        cites: [F7-1]
+        says: >
+          No alarms were found, and separately, the documented policy metric list was measured not
+          to all be published — so building the documented monitoring design from that list would
+          leave gaps.
+        consequence: >
+          Start from the metrics that exist rather than from the documented list.
+
+  # ---------------------------------------------------------------- 13. latency
+
+  - id: enforcement_latency_budget
+    label: "Enforcement latency"
+    question: "What does adding these controls cost in latency?"
+    detect:
+      type_hint: gateway
+      paths: [policyengineconfiguration.mode, timeoutseconds]
+      paths_source: >
+        bedrock-agentcore-control CreateGateway.policyEngineConfiguration.mode and
+        CreateHarness.timeoutSeconds
+    measured_by:
+      - case: F6-1
+        why: >
+          The first hop's guardrail latency is the part of the budget a reader adds by turning the
+          gateway guardrail on, so it is the number a timeout has to accommodate.
+      - case: F6-2
+        why: >
+          The Bedrock input guardrail is a second, separately configurable hop, and its cost has to
+          be counted separately to be designed around.
+    findings:
+      - when: {observation: DECLARED}
+        status: measured_false
+        cites: [F6-1]
+        says: >
+          Hop-1 gateway guardrail latency did not fall inside the documented band.
+        consequence: >
+          Do not size timeouts from the documented band. Measure from your own client, in your own
+          network position.
+        scope_note: >
+          These measurements are bound to the network position they were taken from — a MacBook
+          client against us-east-1 — because the estimator is a paired difference of client-measured
+          wall clocks. A re-run from a different client or network changes the quantity being
+          measured, so this verdict may not be cited as replicated from anywhere else, and your own
+          numbers will differ for reasons that are not a defect.
+      - when: {observation: DECLARED}
+        status: measured_false
+        cites: [F6-2]
+        says: >
+          Hop-2 Bedrock input guardrail latency did not fall inside the documented band at p50 and
+          p90.
+        consequence: >
+          Two guardrail hops in one request path compound. Count both when budgeting, and measure
+          rather than adding documented figures.
+        scope_note: >
+          Citable on p50 and p90 only. The p99 tail is NOT established in either direction: the
+          day-2 confidence interval is 435 ms wide against a 400 ms band, so neither day decides it.
+          The measurement is also bound to its network position, as above.
+
+  # ---------------------------------------------------------------- 14. billing
+
+  - id: input_tagging_billing
+    label: "Input tagging and billed text units"
+    question: "Does input tagging reduce what you are billed?"
+    detect:
+      type_hint: guardrail
+      paths: [contentpolicyconfig.filtersconfig.inputmodalities, blockedinputmessaging]
+      paths_source: >
+        bedrock CreateGuardrail.contentPolicyConfig.filtersConfig.inputModalities and
+        blockedInputMessaging; input tagging is applied at ApplyGuardrail call time, so a template
+        can only show that a guardrail exists to tag against
+    measured_by:
+      - case: F10-3
+        why: >
+          A documented cost optimisation that does not reduce the bill turns a budget projection
+          into an overrun, and it is the kind of claim only a billing measurement can settle.
+    findings:
+      - when: {observation: DECLARED}
+        status: measured_false
+        cites: [F10-3]
+        says: >
+          Input tagging was measured NOT to reduce the text units billed.
+        consequence: >
+          Do not build a cost projection on tagging as a discount mechanism. Size the guardrail bill
+          on the full text volume passing through it.
+
+  # ---------------------------------------------------------------- 15. tenant isolation
+
+  - id: memory_tenant_isolation
+    label: "Memory and per-tenant isolation"
+    question: "If memory is configured, what keeps one tenant's memory out of another's session?"
+    detect:
+      type_hint: memor
+      paths:
+        - memory.agentcorememoryconfiguration.actorid
+        - memory.managedmemoryconfiguration.strategies
+        - memory.managedmemoryconfiguration.eventexpiryduration
+        - memory.disabled
+      paths_source: "bedrock-agentcore-control CreateHarness.memory"
+    measured: none
+    why_not_measured: >
+      No case in the register measures memory isolation. The study's scope was the v1.2 document's
+      claims, and while the document prescribes an actor-scoped memory design, no oracle was written
+      to test whether cross-actor retrieval is possible. For a multi-tenant B2B deployment this is
+      likely the single most consequential control the study has nothing to say about, which is
+      exactly why it is reported rather than omitted.
+    findings:
+      - when: {observation: DECLARED}
+        status: not_measured
+        cites: []
+        says: >
+          Memory is configured. This study measured nothing about memory isolation between actors or
+          tenants, in either direction.
+        why_not_measured: >
+          The register contains no case whose proposition is about memory retrieval scope, so any
+          statement here would be manufactured. If this deployment is multi-tenant, this is a gap in
+          the evidence you are relying on and not a clean result.
+      - when: {observation: NOT_DECLARED}
+        status: not_measured
+        cites: []
+        says: >
+          No memory configuration was found, so there is no isolation question to answer yet — and
+          if one is added later, this study will still have nothing to say about it.
+        why_not_measured: >
+          Same gap in the register. Stated on the negative branch too, so that adding memory later
+          does not read as entering a measured area.

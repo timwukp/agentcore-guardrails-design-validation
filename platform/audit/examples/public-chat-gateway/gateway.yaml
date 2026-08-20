@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  SYNTHETIC EXAMPLE - never deployed. A B2C public chat gateway whose operator believes the policy
+  engine is protecting it. See README.md; every account id is the documentation-reserved 111122223333.
+
+Resources:
+  PublicChatGateway:
+    Type: AWS::BedrockAgentCore::Gateway
+    Properties:
+      Name: public-chat-gateway
+      RoleArn: arn:aws:iam::111122223333:role/public-chat-gateway-exec
+      AuthorizerType: CUSTOM_JWT
+      ExceptionLevel: DEBUG
+      TimeoutSeconds: 30
+      PolicyEngineConfiguration:
+        Mode: LOG_ONLY
+        Arn: arn:aws:bedrock-agentcore:us-east-1:111122223333:policy-engine/pe-example
+      Tags:
+        OTEL_TRACES_SAMPLER: parentbased_always_off
+
+  AllowSupportTools:
+    Type: AWS::BedrockAgentCore::GatewayPolicy
+    Properties:
+      Name: allow-support-tools
+      EnforcementMode: ACTIVE
+      Definition:
+        Cedar:
+          Statement: |
+            permit(principal, action == Action::"invokeTool", resource)
+            when { resource.name == "lookup_order" };
+
+  SupportToolsTarget:
+    Type: AWS::BedrockAgentCore::GatewayTarget
+    Properties:
+      Name: support-tools
+      GatewayIdentifier: !Ref PublicChatGateway
+      TargetConfiguration:
+        Mcp:
+          Lambda:
+            LambdaArn: arn:aws:lambda:us-east-1:111122223333:function:support-tools
+
+  PolicyDeniesAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: public-chat-policy-denies
+      Namespace: AWS/BedrockAgentCore
+      MetricName: PolicyEvaluationDenied
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - arn:aws:sns:us-east-1:111122223333:security-oncall

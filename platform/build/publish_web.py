@@ -88,6 +88,76 @@ VENV_FIGS = REPO / ".venv-figs" / "bin" / "python"
 # the ceiling here is the set-equality assertion in gate_payload.py).
 MIN_REPO_FILES_SCANNED = 500
 
+# The same shape of floor for the SPA's own tests: `node --test` exits 0 when its glob matches nothing,
+# so a renamed test file would publish as a clean run of no tests. 12 as of 2026-08-20; raise it when
+# tests are added, which makes the addition visible here rather than only in the test directory.
+SPA_TEST_FLOOR = 12
+
+# The gates over AUTHORED curation, as data rather than as a chain of `if`s.
+#
+# Every entry says four things: the curation file a human writes (`curation`), the payload file the
+# build derives from it (`emits`), the gate that enforces its rules (`script`), and what publishing it
+# ungated would mean (`ungated_means`). Each runs only if its payload file is present, because these
+# curations are authored incrementally and a gate that fails for a file nobody has written yet gets
+# deleted rather than satisfied.
+#
+# The reason this is a table: a conditional gate's failure mode is silence. Emit the file under a
+# different name, or rename the check, and the branch simply stops firing — the publish then reports a
+# clean run with one fewer gate, which reads exactly like a run that passed it
+# (`feedback_missing_check_is_not_pass`, `feedback_guard_tool_exit_codes`). A table can be walked by a
+# test in both directions: every `script` must exist, and every `curation` file that exists on disk
+# must have its `emits` in a real build's payload. Prose in this position cannot be walked.
+CURATION_GATES = [
+    {
+        "name": "scenario curation gate",
+        "curation": "platform/curation/scenarios.yaml",
+        "emits": "scenarios.json",
+        "script": "check_scenarios.py",
+        "args": [],
+        "absent": "the B2B/B2C lens has not been authored yet",
+        "ungated_means":
+            "The B2B/B2C lens is authored, not derived, and its governance rules (no INCONCLUSIVE "
+            "case under a validated control, F5-3b and F1-19 never primary) are only real if a gate "
+            "enforces them. Publishing the lens ungated is not an option.",
+    },
+    {
+        "name": "architecture curation gate",
+        "curation": "platform/curation/architecture.yaml",
+        "emits": "architecture.json",
+        "script": "check_architecture.py",
+        "args": [],
+        "absent": "the design diagrams have not been authored yet",
+        "ungated_means":
+            "A diagram is the payload's most quotable artifact and the one that travels furthest from "
+            "its caveats — screenshotted into a deck, it carries a colour per component and no case "
+            "table underneath. Its topology is authored, so the rules that keep a colour honest — every "
+            "case in the register, every box either citing cases or stating in writing that nothing was "
+            "measured, no INCONCLUSIVE-only box reading as validated, a NEVER_CITE case excluded in "
+            "writing rather than by absence, and placed plus excluded equalling the register — are "
+            "enforced by this gate and by nothing else at the authoring layer. Publishing a green box "
+            "the register does not license is the loudest wrong claim this platform could make.",
+    },
+    {
+        "name": "control curation gate (+ field-path re-introspection)",
+        "curation": "platform/curation/controls.yaml",
+        "emits": "controls.json",
+        "script": "check_controls.py",
+        # `--verify-field-paths` re-introspects the pinned botocore model, so a detect path the SDK no
+        # longer carries fails the publish instead of quietly matching nothing in a reader's template
+        # and reporting NOT_DECLARED. That is the asymmetric failure: it tells a reader the audit
+        # looked and saw nothing, when in fact it could not look.
+        "args": ["--verify-field-paths"],
+        "absent": "the control inventory is not emitted by this build",
+        "ungated_means":
+            "The control inventory is authored, and its citation rules — F5-3b cited nowhere, "
+            "`not_established` citing only INCONCLUSIVE cases, `not_measured` citing nothing and "
+            "saying why, a PARTIAL or position-bound case dragging its scope into `scope_note` — are "
+            "enforced by this gate and by nothing else. An audit report that cites F5-3b, or that "
+            "turns an INCONCLUSIVE verdict into a recommendation, is this study contradicting its own "
+            "editorial policy inside a document addressed to somebody else's production system.",
+    },
+]
+
 
 @dataclass
 class Step:
@@ -108,6 +178,11 @@ class Publish:
     stamp: str
     payload: Path
     steps: list[Step] = field(default_factory=list)
+    # A gate that did not run, and why. Separate from `steps` deliberately: a skipped gate has no
+    # return code, and giving it one — even `null` inside the gates list — would let a reader scan the
+    # list and see a row where nothing ran. It is recorded because "this curation is not authored yet"
+    # is a fact about the release, and a release that silently omits a gate reads as one that passed it.
+    skipped: list[dict] = field(default_factory=list)
     figure_check_rc: int | None = None
     uploaded: list[str] = field(default_factory=list)
 
@@ -242,6 +317,31 @@ def build_payload(pub: Publish) -> None:
          "--figure-check-rc", str(pub.figure_check_rc)],
     )))
 
+    # The SPA's own logic tests, before the bundle it would ship. Two of the functions they cover carry
+    # properties nothing else in this pipeline can see: the intake refuses to compose a shell command
+    # from a value carrying a metacharacter, and the report view refuses a JSON file that is not a
+    # report rather than rendering it as a report with every section empty. `gate_payload.py` and
+    # `check_site_invariants.py` read the built BYTES — they can confirm a stylesheet rule exists and
+    # never that a function refuses what it must refuse.
+    #
+    # `node --test` with a glob that matches nothing exits 0, so the count is asserted below: a test run
+    # that executed no tests is an error, not a pass (`feedback_zero_file_scan_is_error`).
+    tests = run(Step(
+        "SPA logic tests",
+        ["node", "--test", "src/lib/**/*.test.ts"],
+        note="a red assertion here means the intake or the report decoder changed behaviour.",
+    ), cwd=SITE)
+    pub.steps.append(tests)
+    counted = re.search(r"^\s*(?:ℹ|#)\s*tests\s+(\d+)", tests.stdout, re.MULTILINE)
+    if not counted or int(counted.group(1)) < SPA_TEST_FLOOR:
+        fail(
+            f"the SPA test run reported {counted.group(1) if counted else 'no'} test(s), fewer than the "
+            f"floor of {SPA_TEST_FLOOR}. `node --test` exits 0 when its glob matches nothing, so a "
+            "renamed file or a moved directory would otherwise publish as a clean run. Raise "
+            "SPA_TEST_FLOOR in this file when tests are added — the point is that the change is visible."
+        )
+    print(f"    verified: {counted.group(1)} SPA test(s) actually ran")
+
     pub.steps.append(run(Step(
         f"build SPA at base /v/{pub.stamp}/",
         ["npm", "run", "build", "--", f"--base=/v/{pub.stamp}/"],
@@ -265,6 +365,12 @@ def build_payload(pub: Publish) -> None:
             "site/src/lib/data.ts, so the root copy of this release would fetch /data/… and 404."
         )
     print(f"    verified: index.html and the bundle both carry {marker}")
+
+
+def skip(pub: Publish, name: str, why: str) -> None:
+    """Record a gate that did not run. Printing it is not recording it."""
+    pub.skipped.append({"name": name, "why": why})
+    print(f"\n=== {name}\n    skipped: {why}. Recorded in current.json under `gates_skipped`.")
 
 
 def gate_payload(pub: Publish) -> None:
@@ -293,19 +399,16 @@ def gate_payload(pub: Publish) -> None:
          "--payload", str(pub.payload), "--dist", str(DIST)],
     )))
 
-    if (pub.payload / "scenarios.json").exists():
-        scenarios = REPO / "platform" / "build" / "check_scenarios.py"
-        if not scenarios.is_file():
-            fail(
-                "the payload contains scenarios.json but platform/build/check_scenarios.py does not "
-                "exist. The B2B/B2C lens is authored, not derived, and its governance rules (no "
-                "INCONCLUSIVE case under a validated control, F5-3b and F1-19 never primary) are "
-                "only real if a gate enforces them. Publishing the lens ungated is not an option."
-            )
-        pub.steps.append(run(Step("scenario curation gate", [str(VENV_ORACLE), str(scenarios)])))
-    else:
-        print("\n=== scenario curation gate\n    skipped: the payload contains no scenarios.json "
-              "(the lens has not been authored yet). This is recorded in the publish record.")
+    for gate in CURATION_GATES:
+        script = REPO / "platform" / "build" / gate["script"]
+        if not (pub.payload / gate["emits"]).exists():
+            skip(pub, gate["name"], f"the payload contains no {gate['emits']} ({gate['absent']})")
+            continue
+        if not script.is_file():
+            fail(f"the payload contains {gate['emits']} but platform/build/{gate['script']} does "
+                 f"not exist. {gate['ungated_means']}")
+        pub.steps.append(run(Step(gate["name"],
+                                  [str(VENV_ORACLE), str(script), *gate["args"]])))
 
 
 # ---------------------------------------------------------------------------- AWS
@@ -354,6 +457,7 @@ def upload(pub: Publish, bucket: str, distribution: str) -> None:
         "manifest_sha256": sha256_file(manifest) if manifest.is_file() else None,
         "figure_check_rc": pub.figure_check_rc,
         "gates": [{"name": s.name, "rc": s.rc, "note": s.note} for s in pub.steps],
+        "gates_skipped": pub.skipped,
         "published_by": "platform/build/publish_web.py",
     }
     with tempfile.TemporaryDirectory() as tmp:

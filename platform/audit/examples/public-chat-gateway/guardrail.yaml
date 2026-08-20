@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  SYNTHETIC EXAMPLE - never deployed. The guardrail attached to the public chat gateway. Its filters
+  are enabled on the input checkpoint only, which is the asymmetry the study measured.
+
+Resources:
+  PublicChatGuardrail:
+    Type: AWS::Bedrock::Guardrail
+    Properties:
+      Name: public-chat-guardrail
+      BlockedInputMessaging: "Sorry, I can't help with that."
+      BlockedOutputsMessaging: "Sorry, I can't help with that."
+      ContentPolicyConfig:
+        FiltersConfig:
+          - Type: PROMPT_ATTACK
+            InputStrength: HIGH
+            OutputStrength: NONE
+            InputEnabled: true
+            OutputEnabled: false
+            InputModalities:
+              - TEXT
+          - Type: VIOLENCE
+            InputStrength: MEDIUM
+            OutputStrength: MEDIUM
+            InputEnabled: true
+            OutputEnabled: true
+        TierConfig:
+          TierName: CLASSIC
+      SensitiveInformationPolicyConfig:
+        PiiEntitiesConfig:
+          - Type: EMAIL
+            Action: ANONYMIZE
+            InputEnabled: true
+            OutputEnabled: true
+          - Type: CREDIT_DEBIT_CARD_NUMBER
+            Action: BLOCK
+            InputEnabled: true
+            OutputEnabled: true
+      TopicPolicyConfig:
+        TopicsConfig:
+          - Name: competitor_pricing
+            Type: DENY
+            Definition: >
+              Requests for pricing, discounts or contract terms offered to other customers.
+            InputEnabled: true
+            OutputEnabled: true
+        TierConfig:
+          TierName: CLASSIC

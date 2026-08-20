@@ -1,0 +1,23 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  SYNTHETIC EXAMPLE - never deployed. The staging copy of the same gateway, whose engine mode is a
+  stack parameter. A parameterised value is UNRESOLVED, not a value: the parser reports the site and
+  refuses to guess, because guessing ENFORCE here would report a control that may not exist.
+
+Parameters:
+  EngineMode:
+    Type: String
+    Default: LOG_ONLY
+    AllowedValues:
+      - LOG_ONLY
+      - ENFORCE
+
+Resources:
+  StagingChatGateway:
+    Type: AWS::BedrockAgentCore::Gateway
+    Properties:
+      Name: staging-chat-gateway
+      RoleArn: arn:aws:iam::111122223333:role/staging-chat-gateway-exec
+      AuthorizerType: CUSTOM_JWT
+      PolicyEngineConfiguration:
+        Mode: !Ref EngineMode

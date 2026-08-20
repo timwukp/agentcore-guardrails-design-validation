@@ -3,11 +3,13 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "GRX Live — the read-only validation dashboard. Renders the payload emitted by platform/build/build_site_data.py and derives nothing of its own.",
+  "description": "GRX Live \u2014 the read-only validation dashboard. Renders the payload emitted by platform/build/build_site_data.py and derives nothing of its own.",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b --noEmit && vite build",
-    "preview": "vite preview"
+    "build": "npm run typecheck && vite build",
+    "preview": "vite preview",
+    "test": "node --test 'src/lib/**/*.test.ts'",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json"
   },
   "dependencies": {
     "react": "^19.2.8",
@@ -15,6 +17,7 @@
     "react-router-dom": "^7.18.2"
   },
   "devDependencies": {
+    "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^6.0.5",

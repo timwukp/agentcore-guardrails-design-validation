@@ -1,0 +1,35 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.9.5",
+  "_comment": "SYNTHETIC EXAMPLE - never applied. A `terraform show -json` plan, included so the example exercises the second format the parser reads and declares a control this study never measured.",
+  "planned_values": {
+    "root_module": {
+      "child_modules": [
+        {
+          "address": "module.agentcore",
+          "resources": [
+            {
+              "address": "module.agentcore.awscc_bedrockagentcore_memory.chat_memory",
+              "mode": "managed",
+              "type": "awscc_bedrockagentcore_memory",
+              "name": "chat_memory",
+              "provider_name": "registry.terraform.io/hashicorp/awscc",
+              "values": {
+                "name": "public-chat-memory",
+                "memory": {
+                  "managedmemoryconfiguration": {
+                    "strategies": [
+                      "SUMMARIZATION",
+                      "SEMANTIC"
+                    ],
+                    "eventexpiryduration": 90
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

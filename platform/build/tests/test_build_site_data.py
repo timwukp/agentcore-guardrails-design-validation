@@ -32,7 +32,9 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import re
 import sys
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -154,6 +156,34 @@ def test_no_mutant_control_the_authored_file_passes(monkeypatch):
             lambda t: _blank_value(t, "replication_requirement"),
             "no `replication_requirement`",
         ),
+        # The cadence pairing. Each of these four is a state in which the pipeline view would render
+        # something false rather than fail: a family nothing can call stale, a staleness badge whose
+        # remedy is forbidden, two calendars, or a deadline with no stated reason.
+        (
+            "schedulable with no cadence, so nothing can ever call it stale",
+            lambda t: t.replace("    cadence_days: 7", "    cadence_days: null", 1),
+            "nothing can ever call it stale",
+        ),
+        (
+            "not schedulable but carrying a cadence",
+            lambda t: _set_cadence_of(t, "F6", "14"),
+            "pressure toward that run",
+        ),
+        (
+            "calendar-gated and also carrying a cadence",
+            lambda t: _set_cadence_of(t, "F10", "30"),
+            "second calendar",
+        ),
+        (
+            "a cadence that is not a positive whole number of days",
+            lambda t: t.replace("    cadence_days: 7", "    cadence_days: 0", 1),
+            "neither null nor a positive whole number",
+        ),
+        (
+            "a cadence with no stated reason",
+            lambda t: _blank_value(t, "why_cadence"),
+            "gives no reason",
+        ),
     ],
 )
 def test_families_gate_refuses(monkeypatch, name, mutate, expect):
@@ -182,6 +212,21 @@ def test_duplicate_key_is_refused_rather_than_silently_last_wins(monkeypatch):
         f"refused, but not as a duplicate key: {err.value}"
     )
 
+
+
+def _set_cadence_of(text: str, family: str, value: str) -> str:
+    """Replace one family's `cadence_days`, leaving the other ten alone."""
+    lines = text.splitlines(keepends=True)
+    out, inside = [], False
+    for line in lines:
+        if line.startswith(f"  {family}:"):
+            inside = True
+        elif line.startswith("  F") and line.rstrip().endswith(":"):
+            inside = False
+        if inside and line.startswith("    cadence_days:"):
+            line = f"    cadence_days: {value}\n"
+        out.append(line)
+    return "".join(out)
 
 def _drop_family(text: str, family: str) -> str:
     """Remove one family's whole entry: the key line and every line indented under it.
@@ -401,3 +446,183 @@ def test_figure_check_rc_is_recorded_verbatim_including_not_run(tmp_path, argv_r
     figures = json.loads((out / "figures.json").read_text(encoding="utf-8"))
     assert figures["numeric_check"] == expected
     assert figures["present"], "no figures were censused, so the pass-through proved nothing"
+
+
+# --------------------------------------------------------------------------- the pipeline view
+#
+# `pipeline.json` is the answer to "what is the live state of the test pipeline", and its whole risk is
+# in one direction: a family whose last run cannot be established must never render beside one measured
+# yesterday. The study has no run-day field — a registered deficiency — so 53 of the 93 cases carry no
+# derivable day at all, and a two-state view (fresh / stale) would have to put every one of them on one
+# side or the other. These arms hold the five-state shape in place and check that each state is a
+# function of the two dates rather than of anything anybody wrote down.
+
+
+def test_a_family_whose_day_cannot_be_established_is_never_within_cadence(payload: Path):
+    pipeline = read(payload, "pipeline.json")
+    unobserved = [r for r in pipeline["families"].values() if r["last_observed_utc_day"] is None]
+    assert unobserved, "no family lacks an observation day; this arm would be vacuous"
+    for row in unobserved:
+        assert row["state"] != "WITHIN CADENCE", (
+            f"{row['family']} has no derivable observation day and reads {row['state']!r}. "
+            f"'No evidence of a run' and 'ran inside its cadence' are the two things this view exists "
+            f"to keep apart."
+        )
+        assert "cannot say when" in row["statement"], row["statement"]
+
+
+def test_f6_reads_as_requiring_a_local_run_and_never_as_stale(payload: Path):
+    """The one family where a staleness badge would cause the damage it appears to prevent: the only
+    refresh a scheduler can perform runs from the wrong network position, and its numbers would look
+    like a replication."""
+    row = read(payload, "pipeline.json")["families"]["F6"]
+    assert row["state"] == "REQUIRES A LOCAL RUN", row["state"]
+    assert row["cadence_days"] is None
+    assert row["network_position_sensitive"] is True
+    assert "STALE" not in json.dumps(row)
+
+
+def test_the_state_is_recomputable_from_the_as_of_day_and_the_last_observed_day(payload: Path):
+    """Not a spot check of today's labels: every schedulable family's state is re-derived here from the
+    two dates and the authored cadence, so a hand-written state could not survive."""
+    pipeline = read(payload, "pipeline.json")
+    as_of = date.fromisoformat(pipeline["as_of_utc_day"])
+    checked = 0
+    for fam, row in pipeline["families"].items():
+        if not row["schedulable"] or row["cadence_days"] is None:
+            continue
+        last = row["last_observed_utc_day"]
+        if last is None:
+            assert row["state"] == "NOT OBSERVED"
+            continue
+        age = max(0, (as_of - date.fromisoformat(last)).days)
+        assert row["days_since_last_observation"] == age, fam
+        assert row["state"] == ("STALE" if age > row["cadence_days"] else "WITHIN CADENCE"), fam
+        checked += 1
+    assert checked >= 3, f"only {checked} family/families exercised the cadence arithmetic"
+
+
+def test_the_two_replication_lists_count_what_their_names_say(payload: Path):
+    """A single list would carry the replication-backlog label while mostly holding cases whose
+    observation day is simply unknown (`feedback_label_must_match_computation`)."""
+    pipeline = read(payload, "pipeline.json")
+    cases = pipeline["cases"]
+    for fam, row in pipeline["families"].items():
+        for cid in row["cases_owing_a_second_day"]:
+            assert cases[cid]["n_archived_prior_days"] == 0, (
+                f"{cid} is listed as owing a second day with "
+                f"{cases[cid]['n_archived_prior_days']} archived prior day(s)")
+            assert cases[cid]["has_verdict"], cid
+        for cid in row["cases_whose_observation_day_is_unknown"]:
+            assert cases[cid]["observation_days"] == [], cid
+    assert any(r["cases_owing_a_second_day"] for r in pipeline["families"].values())
+    assert any(r["cases_whose_observation_day_is_unknown"] for r in pipeline["families"].values())
+
+
+def test_a_replication_claim_rests_on_a_separate_artifact_not_on_two_timestamps(payload: Path):
+    """The load-bearing arm of this view. A run that starts at 23:58 and ends at 00:03 carries two
+    calendar days and is ONE occasion; only an archived day-1 file is a second artifact. Counting the
+    record's own days as occasions would publish a replication claim for a single producer invocation —
+    the 2026-08-19 incident's exact shape.
+    """
+    pipeline = read(payload, "pipeline.json")
+    archive = read(payload, "archive.json")["by_case"]
+    for cid, row in pipeline["cases"].items():
+        n_archive_days = len({d for e in archive.get(cid, [])
+                              for d in re.findall(r"20\d\d-\d\d-\d\d", e["label"])})
+        assert row["n_archived_prior_days"] == n_archive_days, cid
+        if row["replication"] in {"two_or_more_archived_days_agreeing", "disagreeing"}:
+            assert n_archive_days >= 1, f"{cid} claims a prior occasion with no archived file"
+    # A case with two record days and no archive must NOT read as replicated. Non-vacuous by assertion.
+    from_record_only = [c for c in pipeline["cases"].values()
+                        if len(c["days_from_the_record"]) >= 2 and not c["days_from_the_archive"]]
+    assert from_record_only, "no case has two record days and no archive; this arm would be vacuous"
+    for row in from_record_only:
+        assert row["replication"] == "no_archived_prior_day", row["case"]
+
+
+def test_the_replication_states_partition_the_register(payload: Path):
+    pipeline = read(payload, "pipeline.json")
+    per_family = pipeline["families"]
+    totals = {k: sum(r["replication"][k] for r in per_family.values())
+              for k in ("no_archived_prior_day", "one_archived_prior_day",
+                        "two_or_more_archived_days_agreeing", "disagreeing")}
+    assert sum(totals.values()) == len(pipeline["cases"]) == pipeline["totals"]["n_cases"]
+    assert totals["disagreeing"] == pipeline["totals"]["n_disagreeing"]
+    assert totals["one_archived_prior_day"] == pipeline["totals"]["n_one_archived_prior_day"]
+    # The exclusive buckets hide a real population when `disagreeing` wins, so the non-exclusive count
+    # must be published beside them and must be at least as large.
+    assert (pipeline["totals"]["n_with_two_or_more_archived_days"]
+            >= totals["two_or_more_archived_days_agreeing"])
+    assert pipeline["totals"]["n_with_two_or_more_archived_days"] == sum(
+        1 for c in pipeline["cases"].values() if c["n_archived_prior_days"] >= 2)
+
+
+# Applied to KEYS and to rendered numbers, not to prose. The note in `pipeline.json` says in words that
+# there is no progress bar and no percentage, and a check that fires on a correct explanation of its own
+# rule is a check somebody deletes (measured: the first version of this arm failed on that sentence).
+PIPELINE_BANNED_KEYS = [r"progress", r"percent", r"\bpct\b", r"\beta\b", r"ratio", r"pass_rate"]
+PIPELINE_BANNED_TEXT = [r"\d+\s*%"]
+
+
+def _all_keys(obj, out: set) -> set:
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            out.add(str(k))
+            _all_keys(v, out)
+    elif isinstance(obj, list):
+        for v in obj:
+            _all_keys(v, out)
+    return out
+
+
+def test_the_pipeline_view_carries_no_progress_bar_and_no_percentage(payload: Path):
+    """A family is a set of cases, not a job with a fraction done. A percentage here would invite the
+    reader to average a set that contains 'never observed' — the one value that must not be averaged."""
+    pipeline = read(payload, "pipeline.json")
+    keys = _all_keys(pipeline, set())
+    bad = sorted(k for k in keys for p in PIPELINE_BANNED_KEYS if re.search(p, k, re.I))
+    assert bad == [], f"pipeline.json carries the key(s) {bad}"
+    text = (payload / "pipeline.json").read_text(encoding="utf-8")
+    hits = [p for p in PIPELINE_BANNED_TEXT if re.search(p, text, re.I)]
+    assert hits == [], f"pipeline.json renders {hits}"
+    # The negative controls: both pattern lists must be able to fire.
+    assert [k for k in {"progress_percent"} for p in PIPELINE_BANNED_KEYS if re.search(p, k, re.I)]
+    assert [p for p in PIPELINE_BANNED_TEXT if re.search(p, "47 % done", re.I)]
+
+
+def test_an_unclassified_date_key_fails_the_build_rather_than_being_ignored(monkeypatch):
+    """The ceiling on the key list. A pure allow-list cannot notice a new key
+    (`feedback_scope_as_namelist`), and a producer that later wrote its run day under an unlisted name
+    would leave its family reading 'never observed' forever with nothing failing."""
+    inputs: dict[str, str] = {}
+    cases = bsd.derive_register(inputs)[0]
+    published = bsd.derive_published(inputs)
+    archive = bsd.derive_archive(inputs)
+    families = bsd.derive_families(inputs, cases)
+
+    # No-mutant control first, so a red result below is the mutation and not the harness.
+    ok = bsd.derive_pipeline(families, cases, published, archive, "20260820T000000Z")
+    assert ok["families"]["F6"]["last_observed_utc_day"], "F6 has no day; the mutation would be moot"
+
+    thinner = {k: v for k, v in bsd.OBSERVATION_DAY_KEYS.items() if k != "t"}
+    monkeypatch.setattr(bsd, "OBSERVATION_DAY_KEYS", thinner)
+    with pytest.raises(bsd.BuildError) as err:
+        bsd.derive_pipeline(families, cases, published, archive, "20260820T000000Z")
+    assert "neither OBSERVATION_DAY_KEYS nor NOT_AN_OBSERVATION_KEYS" in str(err.value)
+
+
+def test_a_deadline_is_not_counted_as_an_observation(monkeypatch):
+    """The other direction, and the dangerous one: an `expiry` or a `due_on` counted as a run day makes
+    a family look FRESHER than it is. Moving one from the reject table to neither table must fail the
+    build, so the only way to make a date count is to say, in the accept table, that it is one."""
+    inputs: dict[str, str] = {}
+    cases = bsd.derive_register(inputs)[0]
+    published = bsd.derive_published(inputs)
+    archive = bsd.derive_archive(inputs)
+    families = bsd.derive_families(inputs, cases)
+    thinner = {k: v for k, v in bsd.NOT_AN_OBSERVATION_KEYS.items() if k != "expiry"}
+    monkeypatch.setattr(bsd, "NOT_AN_OBSERVATION_KEYS", thinner)
+    with pytest.raises(bsd.BuildError) as err:
+        bsd.derive_pipeline(families, cases, published, archive, "20260820T000000Z")
+    assert "expiry" in str(err.value)
