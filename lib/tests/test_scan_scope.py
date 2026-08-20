@@ -112,6 +112,17 @@ def test_no_scanner_carries_its_own_virtualenv_name_list():
     enumeration that goes stale when the third member arrives.
 
     `scan_scope.py` is excluded by path because it is where the family is defined.
+
+    A candidate must also be spellable as a DIRECTORY NAME — no whitespace. That clause was added
+    2026-08-20 after this guard fired on `platform/build/publish_web.py`'s `required_gates()`,
+    whose two offending strings were the operator-facing labels `".venv-oracle interpreter"` and
+    `".venv-figs interpreter"` in a dict mapping label → required path. That is not an enumeration
+    of the family and a prefix cannot replace it: the requirement is that those two specific
+    interpreters exist, because the publish pipeline invokes both, and a third virtualenv appearing
+    on disk must NOT silently become a required gate. The guard's own stated rule is about lists of
+    venv NAMES, and `".venv-figs interpreter"` is a sentence — a scope list has to hold exact names
+    to match with, so the whitespace test separates the two on the axis that actually distinguishes
+    them rather than exempting a file by path. Verified in both directions below the assertion.
     """
     prefix = SKIP_DIR_PREFIXES[0]
     offenders = []
@@ -130,7 +141,8 @@ def test_no_scanner_carries_its_own_virtualenv_name_list():
                 elts = [k for k in node.keys if k is not None]
             named = sorted({e.value for e in elts
                             if isinstance(e, ast.Constant) and isinstance(e.value, str)
-                            and e.value.startswith(prefix)})
+                            and e.value.startswith(prefix)
+                            and not any(c.isspace() for c in e.value)})
             if len(named) >= 2:
                 offenders.append(f"{path.relative_to(ROOT)}:{node.lineno}  {named}")
     assert not offenders, (

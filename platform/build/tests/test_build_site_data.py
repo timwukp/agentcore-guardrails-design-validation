@@ -42,16 +42,28 @@ BUILD = REPO / "platform" / "build"
 FAMILIES_YAML = REPO / "platform" / "curation" / "families.yaml"
 
 
-def _load(name: str):
-    spec = importlib.util.spec_from_file_location(name, BUILD / f"{name}.py")
+# The name this test registers in `sys.modules`, spelled as a module-level constant rather than
+# passed in as a parameter. `lib/tests/test_module_name_collisions.py` reads every by-path loader
+# call statically to prove no registered name shadows one `lib/` owns, and it resolves either a
+# literal or a module-level string constant. A `_load(name)` helper is opaque to it, which is why
+# its `UNRESOLVABLE` table exists — but that table is a list of documented blind spots, and there
+# was no reason to add a fourth: this file loads exactly ONE module, so parameterising the name
+# bought nothing and cost the gate its coverage. `gate_payload.py` and `test_gate_payload.py`
+# already use this shape; this file was the one that did not.
+SUBJECT_MODULE_NAME = "build_site_data"
+
+
+def _load_subject():
+    spec = importlib.util.spec_from_file_location(
+        SUBJECT_MODULE_NAME, BUILD / f"{SUBJECT_MODULE_NAME}.py")
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
+    sys.modules[SUBJECT_MODULE_NAME] = module
     spec.loader.exec_module(module)
     return module
 
 
-bsd = _load("build_site_data")
+bsd = _load_subject()
 
 
 # --------------------------------------------------------------------------- one shared build
