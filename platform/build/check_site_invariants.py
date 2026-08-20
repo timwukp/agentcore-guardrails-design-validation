@@ -25,10 +25,21 @@ THE ARMS, and what each one would have caught
     keys (`F3-10_log_surface_join`, `F5-4a_logonly_read`) are sub-artifact snapshots with no census row
     and no verdict — so the derivation is restricted to keys the census knows, and a separate check
     requires every non-case key to carry no verdict. An archived verdict for something the census does
-    not count would be a verdict outside every denominator.
-3.  `no_replication_claim_authored_by_the_build` — a forward guard, in two halves. Outside `record`
-    (the derived layer, which the build writes) no key matching /replicat/ may be truthy for a case
-    that is not in the two-day set. Inside `record` (a verbatim copy of the producer's evidence file,
+    not count would be a verdict outside every denominator. `pipeline.json` counts archived days in its
+    own code path, so its per-case counts and its headline two-day total are cross-derived here too —
+    that page is where a reader goes to ask "was this measured twice", and its total is the sentence
+    they carry away whether or not the rows beneath it agree with it.
+3.  `no_replication_claim_authored_by_the_build` — a forward guard over three kinds of value, because a
+    replication claim is not always a boolean. Outside `record` (the derived layer, which the build
+    writes): a key matching /replicat/ may not be TRUE for a case outside the two-day set; a VOCABULARY
+    token (`two_or_more_archived_days_agreeing`, `no_archived_prior_day`, …) is classified against the
+    number of archived days it asserts and checked against the archive in both directions, over- and
+    under-claiming alike, with an unclassified token failing the gate rather than passing it; and PROSE
+    must either appear verbatim in the repo file its document names or sit under a key that declares
+    itself a rationale (`why_…`, `…_note`) and name no case and no calendar day. The words are what a
+    reader actually believes — a page saying "two_or_more_archived_days_agreeing" is the 2026-08-19
+    sentence whether or not any flag is set — and a boolean-only guard reads that page as making no
+    claim at all. Inside `record` (a verbatim copy of the producer's evidence file,
     minus the heavy series arrays) such keys DO legitimately exist — F10-2's billing-scaling cells
     each carry `replicates_agree`, which is about repeated cells inside one run — so instead of
     excusing that subtree, every replication-named value in it is compared against the same path in
@@ -60,12 +71,49 @@ THE ARMS, and what each one would have caught
     a payload cannot know it drifted while the page stays silent.
 10. `oracles_are_sealed` — every case carries a non-empty `oracle_text` marked sealed, and the
     registry hash the census reports recomputed equals the declared one.
+11. `pipeline_states_are_styled` — every state in `pipeline.json`'s vocabulary has a rule in the built
+    stylesheet. The badge class is derived from the state name in the component, so a state added later
+    renders unstyled, and an unstyled badge reads as a state with nothing wrong — which for STALE and
+    NOT OBSERVED is the one wrong reading. TypeScript cannot see it: the class is a string the CSS never
+    imports (`feedback_vitest_css_stub`).
+12. `audit_report_is_licensed` — the published audit report is the only payload file that gives a reader
+    an INSTRUCTION rather than a measurement, so every recommendation in it must rest on a case the
+    register knows, whose verdict the census agrees with, which is TRUE or FALSE, and which the citation
+    policy does not mark NEVER_CITE. `report.py` enforces the same rules while composing; re-checking
+    them here is the difference between a program's word for its own behaviour and a property of the
+    bytes being served. The report's quoted verdict mix is re-derived from the census (a third copy of
+    those four numbers), withheld recommendations must each state why, and no key or string anywhere on
+    the page may present a rate, a score or a percentage — a pass rate over these controls would divide
+    "measured, and the guidance did not hold" by the same denominator as "never examined".
+13. `audit_vocabularies_are_styled` — the same check as arm 11, over `controls.json`'s status and
+    observation vocabularies, whose badge classes the audit views also derive from the payload token.
+    Its wrong reading is the sharper one: an unstyled `not_measured` badge is a plain box, and a plain
+    box beside a control reads as "nothing remarkable here" where the token means this study never
+    examined that control.
+14. `architecture_colours_are_licensed` — no box on either diagram is coloured by a verdict the census
+    does not publish: a green box needs a citable TRUE, a red one a citable FALSE, a box supported only
+    by restricted cases is coloured by none of them, and INCONCLUSIVE-only support may never read as
+    validated. Plus the coverage ceiling in both directions (placed ∪ excluded == the census, disjoint)
+    and the same styling check as arms 11 and 13 over the five status classes and the three edge routes.
+    This arm exists because a diagram is the payload's most quotable artifact and the one that travels
+    WITHOUT the case table under it — `check_architecture.py` and `derive_architecture()` both read the
+    authored topology, and neither is a second reading of the colour that actually shipped.
 
 Exit 0 = all arms pass. 1 = a violation. 2 = the gate could not run (missing payload, unreadable
 JSON): a gate that cannot run must not report clean (`feedback_guard_tool_exit_codes`).
 
-MUTATION-CHECKED, 2026-08-20 — 19/19, each mutant killed by the arm that watches the property it
-broke, run against COPIES of the payload and `dist`
+Three groups of arms are pinned by a COMMITTED harness, `platform/build/tests/test_check_site_invariants.py`
+— one mutant per property plus a no-mutant control, re-run on every suite: the replication arms (the
+claim whose false form this project has already published once), the audit-report arm (the only payload
+file that instructs a reader), and arm 14 (the only one that states a conclusion about a component in a
+single colour). The rest rest on the one-off exercise recorded below, which is a memory rather than a
+test (`feedback_test_suite_over_memory`): it cannot notice the day an arm stops looking. Extending the
+harness to them is register work, and the limit is stated here rather than left to be inferred from the
+absence of tests.
+
+MUTATION-CHECKED — the arms that existed on 2026-08-20 by a one-off exercise, 19/19; arm 14 by seven
+committed mutants instead, each killed by the arm that watches the property it broke, run against
+COPIES of the payload and `dist`
 --------------------------------------------------------------------------------------------------
 A no-mutant control ran first and exited 0, so a red run is attributable to the assertions rather than
 to a copy the gate could not read at all. Two findings from that exercise are worth stating, because
@@ -103,6 +151,52 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 ARCHIVE_DIR = REPO / "results" / "phase1" / "archive"
+
+# A replication claim in the derived layer is not always a boolean. `pipeline.json` states each case's
+# replication state IN WORDS, and the words are what a reader actually believes: a page saying
+# "two_or_more_archived_days_agreeing" is the 2026-08-19 sentence, whether or not any flag is set. So
+# every replication-named STRING the build emits outside `record` is classified here against the number
+# of archived prior days it asserts, and checked against the archive.
+#
+# Two tables rather than one, for the reason established for the date keys: a bare allow-list of claim
+# strings cannot notice a new one (`feedback_scope_as_namelist`), and a bare deny-list is worse than
+# useless here — a value it fails to recognise as a claim would pass silently, which is the exact
+# failure this arm exists to catch. An unclassified replication-named string fails the gate with its
+# path, so a new vocabulary has to be classified by whoever introduces it.
+CLAIMS_N_ARCHIVED_PRIOR_DAYS = {
+    # value -> the minimum number of distinct archived days it asserts
+    "one_archived_prior_day": 1,
+    "two_or_more_archived_days_agreeing": 2,
+    "disagreeing": 1,          # a disagreement is still a second occasion, and a louder one
+}
+CLAIMS_NO_ARCHIVED_PRIOR_DAY = {
+    # value -> checked in the other direction: the archive must hold nothing, or the payload is
+    # under-claiming, which is a payload/archive disagreement in its own right
+    "no_archived_prior_day",
+}
+
+# The other kind of replication-named string in the payload is PROSE — a finding's provenance paragraph,
+# F6's replication requirement, the note explaining how this view counts. No table can adjudicate a
+# paragraph against an archive, but excusing prose is where the next instance hides
+# (`feedback_guard_scope_is_a_claim`), so it is admitted two ways and no third:
+#
+#   1. Traceable — it appears verbatim in the repo file the enclosing document names, which establishes
+#      that the build copied it rather than composed it. This is the proof already used for `record`.
+#   2. A rationale — prose under a key that DECLARES itself one (`why_…`, `…_note`, `note`), naming no
+#      case and no calendar day. Such a sentence explains how a number is counted; it cannot assert that
+#      a replication happened, because the two things a claim must name to be believed are exactly what
+#      it may not contain, and the key it sits under says in advance that it is not a finding.
+#
+# The key-shape half is what closes the loophole the no-case/no-day half leaves open on its own: a
+# paragraph can assert "both days were re-derived" without naming either. Under `provenance.replication`
+# — a key that reads as a record — that must be somebody's authored sentence in a file on disk. Only a
+# key whose own name says "rationale" may be composed here, and then only about counting.
+VOCABULARY_TOKEN = re.compile(r"^[a-z][a-z0-9_]*$")
+RATIONALE_KEY = re.compile(r"^(why_|note$|.*_note$)")
+# A percentage anywhere in the audit page. `\d{1,3}` with a word boundary, so a figure like `1.2%` is
+# caught and a bare `%` in prose is not: what is forbidden is a NUMBER presented as a rate.
+PERCENTAGE = re.compile(r"\b\d{1,3}(?:\.\d+)?\s?%")
+CALENDAR_DAY = re.compile(r"20\d\d-\d\d-\d\d")
 DEFAULT_PAYLOAD = REPO.parent / "grx-site-payload"
 DEFAULT_DIST = REPO / "site" / "dist"
 
@@ -198,13 +292,13 @@ def arm_manifest_liveness(g: Gate, payload: Path) -> None:
             "MANIFEST.json itself)")
 
 
-def arm_replication(g: Gate, payload: Path, census_cases: set[str]) -> set[str]:
+def arm_replication(g: Gate, payload: Path, census_cases: set[str]) -> dict[str, set[str]]:
     arm = "replication_needs_two_days"
     archive = load(payload, "archive.json").get("by_case", {})
     method = load(payload, "method.json")
     if not archive:
         g.fail(arm, "archive.json has no by_case block; the replication panel would have no source")
-        return set()
+        return {}
 
     two_day: set[str] = set()
     for key, entries in archive.items():
@@ -260,8 +354,9 @@ def arm_replication(g: Gate, payload: Path, census_cases: set[str]) -> set[str]:
     # Both directions over the KEY SET too, so a case dropped from the builder's map cannot agree with
     # it by being absent from both sides of a per-key comparison.
     declared_days = method.get("archive_days_by_case", {})
-    with_days = {k for k, v in archive.items()
-                 if k in census_cases and days_from_labels([e.get("label", "") for e in v])}
+    days_by_case = {k: days_from_labels([e.get("label", "") for e in v])
+                    for k, v in archive.items() if k in census_cases}
+    with_days = {k for k, v in days_by_case.items() if v}
     g.check(arm, set(declared_days) == with_days,
             f"archive_days_by_case covers {sorted(set(declared_days) ^ with_days)[:5]} differently "
             "from the archive itself")
@@ -271,14 +366,49 @@ def arm_replication(g: Gate, payload: Path, census_cases: set[str]) -> set[str]:
     ]
     g.check(arm, not mismatched,
             f"archive_days_by_case disagrees with the archive labels for {mismatched[:5]}")
-    return two_day
+
+    # A THIRD derivation of the same quantity, because `pipeline.json` is the page a reader visits to
+    # ask "was this measured twice", and it counts archived days in its own code path. Two numbers
+    # produced by two paths must each be derived (`feedback_two_numbers_two_claims`); and the total is
+    # checked as well as the per-case values, because the total is the sentence — a page saying "0 cases
+    # measured on two days" is believed whether or not the rows beneath it agree.
+    pipeline = load(payload, "pipeline.json")
+    p_cases = pipeline.get("cases") or {}
+    g.check(arm, bool(p_cases), "pipeline.json carries no cases block, so the freshness view would "
+                                "have nothing to render and this cross-check nothing to compare")
+    off = [f"{c}: pipeline says {row.get('n_archived_prior_days')}, the archive holds "
+           f"{sorted(days_by_case.get(c, set()))}"
+           for c, row in sorted(p_cases.items())
+           if row.get("n_archived_prior_days") != len(days_by_case.get(c, set()))]
+    g.check(arm, not off,
+            f"pipeline.json's archived-day count disagrees with archive.json for {off[:5]}")
+    declared_two = (pipeline.get("totals") or {}).get("n_with_two_or_more_archived_days")
+    g.check(arm, declared_two == len(two_day),
+            f"pipeline.json's totals say {declared_two} case(s) have two or more archived days; the "
+            f"archive gives {len(two_day)} ({sorted(two_day)})")
+    return days_by_case
 
 
-def arm_no_authored_replication_claim(g: Gate, payload: Path, two_day: set[str]) -> None:
+def arm_no_authored_replication_claim(g: Gate, payload: Path, census_cases: set[str],
+                                      days_by_case: dict[str, set[str]]) -> None:
     arm = "no_replication_claim_authored_by_the_build"
+    two_day = {k for k, v in days_by_case.items() if len(v) >= 2}
     derived_offenders: list[str] = []
     authored_in_record: list[str] = []
-    n_derived = n_verbatim = 0
+    unclassified: list[str] = []
+    unattributable: list[str] = []
+    n_derived = n_verbatim = n_worded = n_prose = n_note = 0
+
+    def _squeeze(s: str) -> str:
+        return " ".join(s.split())
+
+    def source_named_above(doc: object, parts: list[str]) -> str | None:
+        """The nearest enclosing object's repo-relative `source`, walking outward from the value."""
+        for k in range(len(parts), -1, -1):
+            node = at(doc, parts[:k])
+            if isinstance(node, dict) and isinstance(node.get("source"), str):
+                return node["source"]
+        return None
 
     def replicat_paths(node: object, where: str, out: dict[str, object]) -> None:
         if isinstance(node, dict):
@@ -341,14 +471,78 @@ def arm_no_authored_replication_claim(g: Gate, payload: Path, two_day: set[str])
                     )
                 continue
             n_derived += 1
-            if value is True and case_hint not in two_day:
-                derived_offenders.append(f"{rel}:{where} is true for {case_hint}")
+            # The case a claim is ABOUT may come from the filename (cases/F6-5.json) or from the path
+            # inside a whole-register view (pipeline.json's /cases/F6-5/replication). Resolve it from
+            # either, and treat an unattributable claim as a failure rather than skipping it: a
+            # replication claim no reader can pin to a case is one no gate can check.
+            case = next((p for p in parts if p in census_cases),
+                        case_hint if case_hint in census_cases else None)
+            if value is True and case not in two_day:
+                derived_offenders.append(f"{rel}:{where} is true for {case}")
+            if isinstance(value, str) and not VOCABULARY_TOKEN.match(value.strip()):
+                n_prose += 1
+                src = source_named_above(data, parts)
+                if src is None:
+                    named = sorted(c for c in census_cases
+                                   if re.search(rf"\b{re.escape(c)}\b", value))
+                    days = sorted(set(CALENDAR_DAY.findall(value)))
+                    key = parts[-1] if parts else ""
+                    if not RATIONALE_KEY.match(key):
+                        unattributable.append(
+                            f"{rel}:{where} is build-authored prose about replication under a key that "
+                            f"does not declare itself a rationale, and no enclosing object names a "
+                            f"repo-relative `source`, so nothing establishes the build did not compose "
+                            f"the claim")
+                    elif named or days:
+                        unattributable.append(
+                            f"{rel}:{where} is a build-authored rationale naming {(named + days)[:4]}. "
+                            f"A rationale explains how a number is counted; naming a case or a day "
+                            f"makes it an assertion about a measurement, which must come from a file")
+                    else:
+                        n_note += 1
+                elif not (REPO / src).is_file():
+                    unattributable.append(f"{rel}:{where} names source {src}, which is not on disk")
+                elif _squeeze(value) not in _squeeze((REPO / src).read_text(encoding="utf-8")):
+                    authored_in_record.append(
+                        f"{rel}:{where} is prose that does not appear in {src}, so this build "
+                        f"composed it")
+            elif isinstance(value, str):
+                n_worded += 1
+                if value in CLAIMS_N_ARCHIVED_PRIOR_DAYS:
+                    need = CLAIMS_N_ARCHIVED_PRIOR_DAYS[value]
+                    if case is None:
+                        unattributable.append(f"{rel}:{where} says {value!r}")
+                    elif len(days_by_case.get(case, set())) < need:
+                        derived_offenders.append(
+                            f"{rel}:{where} says {value!r} for {case}, which asserts >= {need} "
+                            f"archived day(s); the archive holds "
+                            f"{sorted(days_by_case.get(case, set()))}")
+                elif value in CLAIMS_NO_ARCHIVED_PRIOR_DAY:
+                    if case is None:
+                        unattributable.append(f"{rel}:{where} says {value!r}")
+                    elif days_by_case.get(case):
+                        derived_offenders.append(
+                            f"{rel}:{where} says {value!r} for {case} but the archive holds "
+                            f"{sorted(days_by_case[case])}, so the payload under-claims what was "
+                            f"measured")
+                else:
+                    unclassified.append(f"{rel}:{where} = {value!r}")
 
     g.check(arm, not derived_offenders,
             f"the derived layer sets a replication flag for a case outside the two-day set: "
             f"{derived_offenders[:5]}",
-            passed=f"{n_derived} replication-named field(s) in the derived layer, none asserting a "
-                   "single-day case is replicated")
+            passed=f"{n_derived} replication-named field(s) in the derived layer ({n_worded} vocabulary "
+                   f"state(s) checked against the archive, {n_prose - n_note} paragraph(s) found "
+                   f"verbatim in the file their document names, {n_note} build-authored rationale(s) "
+                   f"naming no case and no day); {len(two_day)} case(s) may be "
+                   f"presented as measured on two archived days: {sorted(two_day)}")
+    g.check(arm, not unclassified,
+            f"a replication-named string in the derived layer is in neither "
+            f"CLAIMS_N_ARCHIVED_PRIOR_DAYS nor CLAIMS_NO_ARCHIVED_PRIOR_DAY, so nothing checked it "
+            f"against the archive: {unclassified[:5]}")
+    g.check(arm, not unattributable,
+            f"a replication claim names no case, so no archive can be compared against it: "
+            f"{unattributable[:5]}")
     g.check(arm, not authored_in_record,
             f"a replication-named value under `record` differs from the producer's evidence file, so "
             f"the build authored it: {authored_in_record[:5]}",
@@ -510,6 +704,285 @@ def arm_oracles(g: Gate, payload: Path) -> None:
     g.note(arm, f"{len(cases)} case files carry a sealed, non-empty oracle")
 
 
+def arm_pipeline_states_are_styled(g: Gate, payload: Path, dist: Path) -> None:
+    """Every state the payload can render must have a rule in the built stylesheet.
+
+    The badge class is DERIVED in the component (`WITHIN CADENCE` -> `s-within-cadence`) rather than
+    looked up in a table, so a state added to the vocabulary later renders as a badge with no rule —
+    and an unstyled badge reads as a state with nothing wrong, which for STALE or NOT OBSERVED is the
+    one wrong reading. Nothing in TypeScript can catch this: the class name is a string the CSS never
+    imports (`feedback_vitest_css_stub`), so it is checked here, against the bytes that get served.
+    """
+    arm = "pipeline_states_are_styled"
+    states = load(payload, "pipeline.json").get("states") or []
+    g.check(arm, bool(states), "pipeline.json declares no state vocabulary, so this arm would be "
+                               "vacuous and the freshness view would have nothing to colour")
+    sheets = sorted((dist / "assets").glob("*.css")) if (dist / "assets").is_dir() else []
+    if not sheets:
+        cannot_run(f"no stylesheet under {dist}/assets — the badge classes cannot be checked, and a "
+                   "missing check is not a pass")
+    css = "\n".join(p.read_text(encoding="utf-8", errors="replace") for p in sheets)
+    # A whole class token, not a substring: `.s-stale` occurs inside `.s-stale-DISABLED`, so a substring
+    # test would call a renamed-away rule present. The negative lookahead is what makes the mutant in
+    # `test_check_site_invariants.py` die instead of surviving with the rule visibly disabled.
+    missing = [s for s in states
+               if not re.search(rf"\.s-{re.escape(str(s).lower().replace(' ', '-'))}(?![\w-])", css)]
+    g.check(arm, not missing,
+            f"{missing} render as badges with no rule in the stylesheet, so they would appear as "
+            f"unremarkable states",
+            passed=f"all {len(states)} pipeline state(s) have a rule in {len(sheets)} stylesheet(s)")
+
+
+def arm_audit_vocabularies_are_styled(g: Gate, payload: Path, dist: Path) -> None:
+    """Every audit status and observation the payload can render must have a rule in the stylesheet.
+
+    Same mechanism as the arm above and the same reason for existing separately: the audit views derive
+    `st-<status>` and `o-<observation>` from the payload token rather than looking either up in a table,
+    so a vocabulary member added to `controls.yaml` later renders as a badge with no rule.
+
+    Which reading that produces is the point. An unstyled `not_measured` badge is a plain box beside a
+    control, and a plain box reads as "nothing remarkable here" — where the token means this study never
+    examined the control at all. Under-stating a finding is recoverable by reading the line; making an
+    unexamined control look examined is the failure this platform exists to refuse.
+    """
+    arm = "audit_vocabularies_are_styled"
+    vocab = load(payload, "controls.json").get("vocabularies") or {}
+    statuses = vocab.get("status") or []
+    observations = vocab.get("observation") or []
+    g.check(arm, bool(statuses) and bool(observations),
+            f"controls.json declares {len(statuses)} status and {len(observations)} observation "
+            "token(s); with either empty this arm would be vacuous and the audit views would have "
+            "nothing to colour")
+    sheets = sorted((dist / "assets").glob("*.css")) if (dist / "assets").is_dir() else []
+    if not sheets:
+        cannot_run(f"no stylesheet under {dist}/assets — the badge classes cannot be checked, and a "
+                   "missing check is not a pass")
+    css = "\n".join(p.read_text(encoding="utf-8", errors="replace") for p in sheets)
+    # Whole class tokens for the same reason as above. `\w` covers the underscore, so `.st-not_measured`
+    # does not answer for a renamed `.st-not_measured_at_all`.
+    missing = [f"st-{s}" for s in statuses
+               if not re.search(rf"\.st-{re.escape(str(s).lower())}(?![\w-])", css)]
+    missing += [f"o-{o}" for o in observations
+                if not re.search(rf"\.o-{re.escape(str(o).lower())}(?![\w-])", css)]
+    g.check(arm, not missing,
+            f"{missing} render as badges with no rule in the stylesheet, so a control this study never "
+            f"examined would look no different from one it measured",
+            passed=f"all {len(statuses)} status and {len(observations)} observation token(s) have a rule "
+                   f"in {len(sheets)} stylesheet(s)")
+
+
+def arm_audit_report_is_licensed(g: Gate, payload: Path, census: dict, census_cases: set[str]) -> None:
+    """The published audit report may only recommend what a citable verdict licenses.
+
+    `audit.json` is the one payload file that gives a reader an INSTRUCTION — "scope this role", "budget
+    for a different rollout path" — rather than a measurement. That makes it the file where a governance
+    slip does the most damage, and the slip is not hypothetical: an INCONCLUSIVE verdict licenses no
+    amendment to this study's own document, so it cannot license advice to somebody else's deployment
+    either, and `F5-3b` is TRUE on disk and citable as nothing at all.
+
+    `report.py` enforces both rules while composing. This arm re-checks them on the bytes about to be
+    served, against the census and the citation policy as published — because the enforcement and the
+    output would otherwise be the same program's word for its own behaviour, and the day a refactor
+    widened `LICENSES_RECOMMENDATION` nothing outside that file would notice.
+
+    It also re-derives the verdict mix the report quotes. The report states the study's totals to give
+    its reader a denominator, so those four numbers are a THIRD copy of them (`feedback_two_numbers_two_
+    claims`), and a stale copy would understate how much of the study did not hold.
+    """
+    arm = "audit_report_is_licensed"
+    audit = load(payload, "audit.json")
+    report = audit.get("report") or {}
+    inventory = audit.get("inventory") or {}
+    g.check(arm, report.get("schema") == "grx-audit-report/1"
+            and inventory.get("schema") == "grx-inventory/1",
+            f"audit.json carries an unknown shape (report {report.get('schema')!r}, inventory "
+            f"{inventory.get('schema')!r}); every arm below reads named keys and would be vacuous")
+
+    verdicts = {r["case"]: r.get("verdict") for r in census.get("rows", []) if isinstance(r, dict)}
+    restrictions = {r["case"]: set(r.get("citation_restrictions") or [])
+                    for r in census.get("rows", []) if isinstance(r, dict)}
+    mix = {v: sum(1 for x in verdicts.values() if x == v) for v in sorted({v for v in verdicts.values()
+                                                                          if v})}
+    quoted = (report.get("study") or {}).get("verdict_mix")
+    g.check(arm, quoted == mix,
+            f"the audit report quotes the verdict mix as {quoted}, and the census derives {mix}: the "
+            f"report's denominator no longer describes the study it cites",
+            passed=f"the report's verdict mix re-derives from census.json ({mix})")
+
+    recs = report.get("recommendations") or []
+    g.check(arm, bool(recs), "the published audit report recommends nothing at all, so every arm below "
+                             "would pass by having nothing to check")
+    unlicensed, unknown_case = [], []
+    for rec in recs:
+        for cite in rec.get("licensed_by") or []:
+            case, verdict = cite.get("case"), cite.get("verdict")
+            if case not in census_cases:
+                unknown_case.append(f"{rec.get('control')} cites {case!r}, absent from the register")
+                continue
+            if verdict != verdicts.get(case):
+                unlicensed.append(f"{rec.get('control')} cites {case} as {verdict!r}, and the census "
+                                  f"says {verdicts.get(case)!r}")
+            if verdict not in ("TRUE", "FALSE"):
+                unlicensed.append(f"{rec.get('control')} rests on {case}, whose verdict is {verdict!r}: "
+                                  f"an INCONCLUSIVE or unpublished result licenses no recommendation")
+            forbidden = restrictions.get(case, set()) & {"NEVER_CITE"}
+            if forbidden:
+                unlicensed.append(f"{rec.get('control')} rests on {case}, which the citation policy "
+                                  f"marks {sorted(forbidden)}")
+    g.check(arm, not unknown_case, f"the report cites case(s) that are not in the register: "
+                                   f"{unknown_case}")
+    g.check(arm, not unlicensed, f"{len(unlicensed)} recommendation citation(s) are not licensed: "
+                                 f"{unlicensed}",
+            passed=f"{len(recs)} recommendation(s), each licensed only by a citable TRUE or FALSE "
+                   f"verdict")
+
+    withheld = report.get("recommendations_withheld")
+    g.check(arm, isinstance(withheld, list),
+            "the report carries no `recommendations_withheld` list, so a recommendation this study "
+            "declined to make would be indistinguishable from one nobody considered")
+    for item in withheld or []:
+        g.check(arm, bool(str(item.get("why_withheld", "")).strip()),
+                f"a withheld recommendation for {item.get('control')!r} states no reason")
+
+    # No ratio, anywhere. Not a style rule: a pass rate over these controls would divide "measured, and
+    # the guidance did not hold" by the same denominator as "never examined", and the reader would carry
+    # away a number that feels like information. The one key allowed to say `ratio` is the one that
+    # explains why there is none.
+    offenders: list[str] = []
+
+    def scan(node: object, where: str) -> None:
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if re.search(r"pass_rate|passed_count|n_passed|score|grade|percent", str(key)) or (
+                        "ratio" in str(key) and "no_ratio" not in str(key)):
+                    offenders.append(f"{where}/{key}")
+                scan(value, f"{where}/{key}")
+        elif isinstance(node, list):
+            for i, value in enumerate(node):
+                scan(value, f"{where}[{i}]")
+        elif isinstance(node, str) and PERCENTAGE.search(node):
+            offenders.append(f"{where} states the percentage {PERCENTAGE.search(node).group(0)!r}")
+
+    scan(audit, "audit.json")
+    g.check(arm, not offenders,
+            f"the audit page states a rate or a score, which is arithmetic over incommensurable "
+            f"states: {offenders}",
+            passed="no rate, score, grade or percentage anywhere on the audit page")
+
+    example = audit.get("example") or {}
+    g.check(arm, example.get("is_synthetic") is True and bool(example.get("files")),
+            "the worked example is not marked synthetic or names no files: a reader must not be able "
+            "to mistake an authored template for a captured deployment")
+
+
+def arm_architecture_colours_are_licensed(g: Gate, payload: Path, census: dict,
+                                          census_cases: set[str], dist: Path) -> None:
+    """No box on either diagram may be coloured by a verdict the census does not publish.
+
+    The diagram is the artifact most likely to leave this platform on its own — screenshotted into a
+    deck, pasted into a review — and it leaves without the case table underneath it. So a green box is
+    the highest-leverage false claim the payload can make, and the claim has to be re-checked against
+    `census.json` here rather than trusted from the builder that drew it: `derive_architecture()` and
+    `check_architecture.py` both read the authored file, and neither of them is a second pair of eyes on
+    the colour that actually shipped.
+
+    Four things are checked, each one a rule the user set for this view:
+
+    * a `validated_in_part` box has at least one case whose census verdict is TRUE and whose citation
+      restrictions do not disqualify it;
+    * a `contested` box likewise has a citable FALSE — the status says the guidance did not hold
+      somewhere, and it may not rest on a restricted case;
+    * no box supported only by INCONCLUSIVE reads as validated, because an INCONCLUSIVE verdict
+      licenses no amendment to this study's own document and cannot colour a component green either;
+    * every case the diagrams place is in the register, and placed ∪ unplaced covers it exactly — a
+      case that appeared on no diagram and in no exclusion list would be invisible by construction.
+
+    And the styling arm, for the same reason the pipeline and audit vocabularies have one: the five
+    status classes are DERIVED from the payload token in the view, so a status added later renders as a
+    plain box — and a plain box beside a component reads as "nothing remarkable here", which is the one
+    thing `contested` does not mean.
+    """
+    arm = "architecture_colours_are_licensed"
+    arch = load(payload, "architecture.json")
+    diagrams = arch.get("diagrams") or []
+    g.check(arm, len(diagrams) >= 2, f"architecture.json carries {len(diagrams)} diagram(s); every arm "
+                                     f"below quantifies over their boxes and would be vacuous")
+
+    verdicts = {r["case"]: r.get("verdict") for r in census.get("rows", []) if isinstance(r, dict)}
+    restrictions = {r["case"]: set(r.get("citation_restrictions") or [])
+                    for r in census.get("rows", []) if isinstance(r, dict)}
+    non_colouring = set(arch.get("non_colouring_restrictions") or [])
+    g.check(arm, bool(non_colouring),
+            "architecture.json declares no non-colouring restriction set, so the licence checks below "
+            "would treat a NEVER_CITE case as ordinary support")
+
+    boxes = [(d.get("id"), b) for d in diagrams for b in d.get("boxes") or []]
+    g.check(arm, len(boxes) >= 24, f"the two diagrams carry {len(boxes)} box(es) between them, too few "
+                                   f"for this arm to be reading the published payload")
+
+    bad, ghost = [], []
+    placed: set[str] = set()
+    for did, b in boxes:
+        ids = [c.get("case") for c in b.get("cases") or []]
+        placed.update(i for i in ids if i)
+        unknown = [i for i in ids if i not in census_cases]
+        if unknown:
+            ghost.append(f"{did}/{b.get('id')} places {unknown}, absent from census.json")
+            continue
+        citable = [i for i in ids if verdicts.get(i) and not (restrictions.get(i, set()) & non_colouring)]
+        status = b.get("status")
+        if status == "validated_in_part" and not any(verdicts[i] == "TRUE" for i in citable):
+            bad.append(f"{did}/{b.get('id')} is coloured validated_in_part with no citable TRUE verdict "
+                       f"among {ids}")
+        if status == "contested" and not any(verdicts[i] == "FALSE" for i in citable):
+            bad.append(f"{did}/{b.get('id')} is coloured contested with no citable FALSE verdict among "
+                       f"{ids}")
+        if status in {"validated_in_part", "contested"} and ids and not citable:
+            bad.append(f"{did}/{b.get('id')} is coloured {status} although every case on it is "
+                       f"non-citable")
+        if status == "validated_in_part" and citable and all(verdicts[i] == "INCONCLUSIVE"
+                                                             for i in citable):
+            bad.append(f"{did}/{b.get('id')} reads as validated on INCONCLUSIVE support only")
+    g.check(arm, not ghost, "; ".join(ghost))
+    g.check(arm, not bad, f"{len(bad)} box colour(s) the census does not license: " + "; ".join(bad),
+            passed=f"every coloured box on {len(diagrams)} diagram(s) rests on a citable verdict "
+                   f"({len(boxes)} boxes checked)")
+
+    unplaced = {u.get("case") for u in arch.get("unplaced_cases") or []}
+    missing = sorted(census_cases - placed - unplaced)
+    overlap = sorted(placed & unplaced)
+    g.check(arm, not missing and not overlap,
+            f"coverage does not close: {missing} appear on no diagram and in no exclusion list, and "
+            f"{overlap} appear in both",
+            # "registered", not "published": `census.json` carries a row per registered case, and 93 is
+            # the register's denominator while 91 is the published one. Naming the wrong denominator in
+            # a passing message is how a gate teaches a reader a number that is not the one it checked.
+            passed=f"{len(placed)} placed + {len(unplaced)} excluded covers all {len(census_cases)} "
+                   f"registered case(s), disjointly")
+
+    statuses = sorted(arch.get("status_labels") or {})
+    g.check(arm, bool(statuses), "architecture.json declares no status vocabulary, so the styling check "
+                                 "below would be vacuous")
+    sheets = sorted((dist / "assets").glob("*.css")) if (dist / "assets").is_dir() else []
+    if not sheets:
+        cannot_run(f"no stylesheet under {dist}/assets — the box classes cannot be checked, and a "
+                   "missing check is not a pass")
+    css = "\n".join(p.read_text(encoding="utf-8", errors="replace") for p in sheets)
+    # Whole class tokens, as in the two arms above: `.st-not_measured` must not answer for a renamed
+    # `.st-not_measured_here`.
+    unstyled = [f"st-{s}" for s in statuses
+                if not re.search(rf"\.st-{re.escape(str(s).lower())}(?![\w-])", css)]
+    routes = sorted({e.get("route") for d in diagrams for e in d.get("edges") or [] if e.get("route")})
+    g.check(arm, bool(routes), "no edge declares a route, so the edge styling check would be vacuous")
+    unstyled += [f"e-{r}" for r in routes
+                 if not re.search(rf"\.e-{re.escape(str(r).lower())}(?![\w-])", css)]
+    g.check(arm, not unstyled,
+            f"{unstyled} render with no rule in the stylesheet, so a contested component would look no "
+            f"different from an unexamined one",
+            passed=f"all {len(statuses)} status and {len(routes)} edge-route token(s) have a rule in "
+                   f"{len(sheets)} stylesheet(s)")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -530,13 +1003,17 @@ def main(argv: list[str] | None = None) -> int:
                    "set and would be near-vacuous")
 
     arm_manifest_liveness(g, payload)
-    two_day = arm_replication(g, payload, census_cases)
-    arm_no_authored_replication_claim(g, payload, two_day)
+    days_by_case = arm_replication(g, payload, census_cases)
+    arm_no_authored_replication_claim(g, payload, census_cases, days_by_case)
     bundle = arm_bundle_text(g, args.dist.expanduser())
     denominators = arm_denominators(g, payload)
     arm_verdict_mix(g, payload, denominators)
     arm_citation_policy(g, payload, census_cases)
     arm_figures(g, payload, bundle)
+    arm_pipeline_states_are_styled(g, payload, args.dist.expanduser())
+    arm_audit_vocabularies_are_styled(g, payload, args.dist.expanduser())
+    arm_audit_report_is_licensed(g, payload, census, census_cases)
+    arm_architecture_colours_are_licensed(g, payload, census, census_cases, args.dist.expanduser())
     arm_oracles(g, payload)
 
     if args.verbose or g.failures:

@@ -29,6 +29,21 @@
 # `cost_model.yaml`, whose prices were read from the live Pricing API and are re-verifiable with
 # `estimate_cost.py --verify-prices`. A figure typed here would be a second, unverified one.
 
+# WHY `cadence_days` IS AUTHORED HERE AND NOT DERIVED
+#
+# A dashboard can only say "this family has not been validated in N days" if something states how long
+# is too long. Nothing in the artifacts does: a verdict file records what was measured, never how often
+# the measurement is supposed to be repeated. So the cadence is a judgment, and it is authored beside
+# the flag that says whether a scheduler may act on it at all.
+#
+# The pairing is checked, in both directions, because each half alone produces a specific silent
+# failure. A schedulable family with NO cadence can never be reported STALE, so a schedule that quietly
+# stops looks exactly like one that is up to date — the plan names this as worse than an obviously dead
+# one. A non-schedulable family WITH a cadence eventually shows a staleness badge whose only available
+# remedy is a run somebody has forbidden; for F6 that run would also invalidate the comparison it
+# appears to refresh. `calendar_gated` is the third case and it is null on purpose: F10's meaningful
+# dates come from its own comparison window, and a cadence here would be a second calendar.
+
 schema: grx-families/1
 
 # Vocabularies, stated so a consumer can reject a value rather than treat an unknown one as benign.
@@ -50,6 +65,11 @@ families:
     mutates: nothing
     schedulable: true
     network_position_sensitive: false
+    cadence_days: 7
+    why_cadence: >
+      Section 10's URLs are somebody else's documents: they move without announcing it, and a dead
+      citation in a published whitepaper is a defect the day it happens, not the quarter. A weekly
+      cadence costs a handful of HTTP reads.
 
   F1:
     label: "Configuration surface — what the policy and guardrail APIs actually accept"
@@ -59,6 +79,13 @@ families:
     mutates: own_probe_only
     schedulable: true
     network_position_sensitive: false
+    cadence_days: 7
+    why_cadence: >
+      Cheap, offline, and the family most likely to change without any action of ours: these are
+      reads of a service model that AWS revises. Weekly is chosen so that a changed API surface is
+      noticed as a change rather than discovered inside a later measurement. Note the pin: a re-run
+      under a newer botocore is a new instrument, so what weekly buys is DETECTION of drift, not
+      replication.
     note: >
       Several F1 verdicts are reads of the pinned botocore model rather than of a live service, so
       they are cheap to repeat but are also DATED BY THE SDK PIN. Re-running them under a newer
@@ -72,6 +99,11 @@ families:
     mutates: own_probe_only
     schedulable: true
     network_position_sensitive: false
+    cadence_days: 30
+    why_cadence: >
+      Billable by construction — hundreds of identical ApplyGuardrail calls — and measuring a
+      property (repeatability of a decision) that changes only when the model or the service does.
+      Monthly is the cadence at which a change would still be attributable to a period.
     note: >
       Billable: the determinism arms send identical inputs through ApplyGuardrail hundreds of times
       by construction. A budget estimate must be written before execution, not after.
@@ -84,6 +116,11 @@ families:
     mutates: shared_configuration
     schedulable: true
     network_position_sensitive: false
+    cadence_days: 30
+    why_cadence: >
+      The most expensive family and the one that mutates shared configuration (engine mode to
+      LOG_ONLY and back). Monthly keeps the detection-efficacy claim current without paying for a
+      sweep, or risking a failed restore, every week.
     note: >
       The largest billable family (300–1000-trial sweeps) and the one that changes engine mode to
       LOG_ONLY and back. The mode change is restored and the restoration is verified by a guard, but
@@ -103,6 +140,11 @@ families:
       the account, and the exit condition is a restore whose failure is not observable from outside
       the run. A human approves the run and watches the restore.
     network_position_sensitive: false
+    cadence_days: null
+    why_cadence: >
+      Not schedulable: a cadence would eventually badge this family stale, and the only remedy
+      is a run that denies all traffic in a shared account. The re-measurement is a human decision
+      every time it is taken.
 
   F5:
     label: "Red team — the documented bypass routes"
@@ -117,6 +159,11 @@ families:
       leave it done. The prohibition is not enforced by this flag — the flag states it; the
       enforcement is that no tool the director holds can express an F5 run at all.
     network_position_sensitive: false
+    cadence_days: null
+    why_cadence: >
+      Not schedulable: nothing may put an IAM- and SCP-mutating family on a clock. A staleness
+      badge here would be pressure toward exactly the run the tool surface is built to make
+      inexpressible.
 
   F6:
     label: "Latency — the per-hop cost of the controls"
@@ -126,6 +173,12 @@ families:
     mutates: own_probe_only
     schedulable: false
     network_position_sensitive: true
+    cadence_days: null
+    why_cadence: >
+      Not schedulable, and this is the family where a cadence would do real damage. The only
+      refresh available to a scheduler runs from the wrong network position, so a staleness badge
+      would create pressure for a run that silently invalidates the comparison it appears to renew.
+      See `ui_state_when_old`: the UI says 'requires a local run', never 'stale'.
     why: >
       Every F6 estimator is a paired difference of wall clocks measured at the client. The quantity
       is therefore a property of the client's network position as much as of the service: the same
@@ -151,6 +204,11 @@ families:
     mutates: nothing
     schedulable: true
     network_position_sensitive: false
+    cadence_days: 7
+    why_cadence: >
+      Free reads of logs and metrics, and observability is where a silent regression is most
+      plausible: a span or metric can stop being published by a service-side change with no error
+      anywhere. Weekly, because the whole value of this family is noticing an absence.
 
   F8:
     label: "Regional and tier availability"
@@ -160,6 +218,10 @@ families:
     mutates: nothing
     schedulable: true
     network_position_sensitive: false
+    cadence_days: 30
+    why_cadence: >
+      Billable, though at a fraction of F3's volume, and it measures availability across Regions
+      and tiers — something that changes on AWS's release cadence, not on ours. Monthly.
     note: >
       Reads availability from live APIs across Regions; the multi-language tier cases send text
       through ApplyGuardrail and so are billable, though at a fraction of F3's volume.
@@ -177,6 +239,10 @@ families:
       that also hosts other work, trades a re-measurement nobody asked for against a window in which
       the control is deliberately not working.
     network_position_sensitive: false
+    cadence_days: null
+    why_cadence: >
+      Not schedulable: the family's subject is what happens WHILE the control is broken, and it
+      induces that state deliberately. A clock must not open that window.
 
   F10:
     label: "Billing behaviour of the controls"
@@ -191,3 +257,8 @@ families:
       two incomplete periods. The next meaningful date is recorded in the case records, not here —
       this file must not become a second calendar.
     network_position_sensitive: false
+    cadence_days: null
+    why_cadence: >
+      Deliberately null while `cost: calendar_gated`. F10 compares Cost Explorer figures across
+      billing periods, so the only meaningful dates are the ones its own comparison window names. A
+      number here would be a second calendar, and the two would disagree.

@@ -45,6 +45,7 @@ a fake that ignored it would let the wrong wiring pass (`feedback_unreachable_br
 from __future__ import annotations
 
 import shutil
+import subprocess
 import sys
 from fnmatch import fnmatch
 from pathlib import Path
@@ -271,3 +272,157 @@ def test_the_unmutated_trees_pass(served, trees):
     payload, _ = trees
     _verify(payload)            # must not raise
     assert len(served) == 1
+
+
+# ---------------------------------------------------------------------------- the curation gates
+#
+# `CURATION_GATES` exists because a conditional gate fails SILENTLY. Its condition is the presence of a
+# payload file, so renaming either side — the emitted file or the check — stops the branch firing and
+# the publish then reports a clean run with one fewer gate. That is indistinguishable, in the record and
+# on the screen, from a run that passed it (`feedback_missing_check_is_not_pass`). These arms walk the
+# table in both directions so a rename fails a test instead of quietly widening what may be published.
+
+
+def _fake_gate_run(monkeypatch) -> list[list[str]]:
+    """Record what `gate_payload` would execute instead of executing it.
+
+    Only `run` is faked. `fail` still raises, and the presence checks still hit the real filesystem —
+    those are the two behaviours under test, and a fake that swallowed either would make every arm here
+    vacuous (`feedback_unreachable_branch_in_fake`).
+    """
+    argvs: list[list[str]] = []
+
+    def fake_run(step, cwd=None):
+        argvs.append([str(a) for a in step.argv])
+        step.rc = 0
+        return step
+
+    monkeypatch.setattr(pw, "run", fake_run)
+    return argvs
+
+
+def _curation_only(pub_payload: Path, present: list[str]) -> None:
+    for name in present:
+        (pub_payload / name).write_text("{}\n", encoding="utf-8")
+
+
+def _gates_for(monkeypatch, tmp_path, present: list[str], tag: str = "a"):
+    """Run only the curation-gate loop of `gate_payload`, with `present` payload files in place."""
+    payload = tmp_path / f"curation-payload-{tag}"
+    payload.mkdir()
+    _curation_only(payload, present)
+    pub = pw.Publish(stamp=STAMP, payload=payload)
+    argvs = _fake_gate_run(monkeypatch)
+    for gate in pw.CURATION_GATES:
+        script = pw.REPO / "platform" / "build" / gate["script"]
+        if not (pub.payload / gate["emits"]).exists():
+            pw.skip(pub, gate["name"], f"the payload contains no {gate['emits']} ({gate['absent']})")
+            continue
+        if not script.is_file():
+            pw.fail(f"the payload contains {gate['emits']} but platform/build/{gate['script']} does "
+                    f"not exist. {gate['ungated_means']}")
+        pub.steps.append(pw.run(pw.Step(gate["name"], [str(pw.VENV_ORACLE), str(script), *gate["args"]])))
+    return pub, argvs
+
+
+def test_no_entry_is_half_built_in_the_direction_that_publishes_ungated():
+    """The pairing invariant: authored curation ⇒ its gate exists.
+
+    A table entry may legitimately name a script nobody has written — `check_scenarios.py` does not
+    exist today, and the lens it would gate has not been authored either. That combination is honest:
+    the payload carries no `scenarios.json`, so the loop skips and records the skip.
+
+    The combination that must never exist is the other one: a curation file a human HAS authored whose
+    gate is missing. The publish then refuses every time, which is loud — but the arm exists because the
+    obvious "fix" for a refusal is to delete the table entry, and that is the change that publishes the
+    curation with nothing checking it. Asserting the pairing here means the deletion fails a test rather
+    than clearing a blocker.
+    """
+    for gate in pw.CURATION_GATES:
+        authored = (pw.REPO / gate["curation"]).is_file()
+        exists = (pw.REPO / "platform" / "build" / gate["script"]).is_file()
+        if authored:
+            assert exists, (
+                f"{gate['curation']} is authored but platform/build/{gate['script']} does not exist. "
+                f"Write the check — do not remove the entry."
+            )
+        assert gate["ungated_means"].strip() and gate["absent"].strip(), (
+            f"{gate['name']} states no consequence for running ungated, or no reason for being absent; "
+            f"an unexplained gate is one somebody removes."
+        )
+
+
+@pytest.fixture(scope="module")
+def built_payload(tmp_path_factory) -> Path:
+    """A REAL payload from `build_site_data.py`, run as a subprocess.
+
+    Deliberately not an import: this file's subject is `publish_web`, and the arm below asks whether the
+    two programs agree on a filename. Loading the builder in-process to answer that would put both
+    halves of the agreement inside one interpreter, where a shared constant could satisfy the assertion
+    without the file ever being written. The subprocess boundary is the point — the evidence is the
+    payload on disk.
+    """
+    out = tmp_path_factory.mktemp("real-payload") / "payload"
+    proc = subprocess.run([sys.executable, str(REPO / "platform" / "build" / "build_site_data.py"),
+                           "--out", str(out), "--stamp", STAMP, "--figure-check-rc", "0"],
+                          cwd=REPO, capture_output=True, text=True, check=False)
+    assert proc.returncode == 0, f"the builder exited {proc.returncode}: {proc.stderr[-600:]}"
+    return out
+
+
+def test_an_authored_curation_file_reaches_the_payload_and_the_gate(monkeypatch, tmp_path,
+                                                                    built_payload):
+    """The direction that catches a rename. For every curation file a human HAS authored, the real
+    build must emit the payload file the gate keys on, and the gate must then run.
+
+    This is the arm that fails if `build_site_data.py` emits the inventory as `control_inventory.json`
+    while the table still waits for `controls.json`: nothing else in this repository would notice, and
+    the publish would go out with the citation rules unenforced.
+    """
+    authored = [g for g in pw.CURATION_GATES if (pw.REPO / g["curation"]).is_file()]
+    assert authored, "no curation file is authored yet; this arm would be vacuous"
+    for gate in authored:
+        assert (built_payload / gate["emits"]).is_file(), (
+            f"{gate['curation']} is authored but the build emitted no {gate['emits']}, so the "
+            f"{gate['name']} never runs and the publish looks clean without it."
+        )
+    pub, argvs = _gates_for(monkeypatch, tmp_path, [g["emits"] for g in authored])
+    ran = {" ".join(a) for a in argvs}
+    for gate in authored:
+        assert any(gate["script"] in a for a in ran), f"{gate['name']} did not run"
+        for extra in gate["args"]:
+            assert any(extra in a for a in ran), (
+                f"{gate['name']} ran without {extra}, which is the flag that makes it re-derive rather "
+                f"than trust its authored input."
+            )
+    assert pub.skipped == [] or all(s["name"] not in {g["name"] for g in authored}
+                                   for s in pub.skipped)
+
+
+def test_a_payload_file_with_no_gate_script_refuses_to_publish(monkeypatch, tmp_path):
+    """The mutation: the payload carries the authored curation, the check has been deleted. Publishing
+    it ungated must be impossible, not merely inadvisable."""
+    victim = pw.CURATION_GATES[-1]
+    real = pw.REPO / "platform" / "build" / victim["script"]
+    moved = real.with_suffix(".py.hidden-by-test")
+    real.rename(moved)
+    try:
+        with pytest.raises(SystemExit) as exc:
+            _gates_for(monkeypatch, tmp_path, [victim["emits"]], tag="mutant")
+        assert exc.value.code == 2
+    finally:
+        moved.rename(real)
+    # The no-mutant control, in the same arm: with the script back, the same payload passes.
+    pub, argvs = _gates_for(monkeypatch, tmp_path, [victim["emits"]], tag="control")
+    assert any(victim["script"] in " ".join(a) for a in argvs)
+
+
+def test_a_skipped_gate_is_recorded_rather_than_only_printed(monkeypatch, tmp_path, capsys):
+    """A gate that did not run is a fact about the release. `current.json` carries `gates_skipped`
+    because a reader comparing two releases has no other way to tell that one of them enforced less."""
+    pub, argvs = _gates_for(monkeypatch, tmp_path, present=[])
+    assert argvs == [], "no curation file was present, so no gate should have run"
+    assert [s["name"] for s in pub.skipped] == [g["name"] for g in pw.CURATION_GATES]
+    for entry in pub.skipped:
+        assert entry["why"].strip(), "a skip with no reason is the one somebody makes permanent"
+    assert "skipped" in capsys.readouterr().out

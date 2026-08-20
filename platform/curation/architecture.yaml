@@ -1,0 +1,758 @@
+# The two diagrams this platform draws: how a verdict is made, and what the study looked at.
+# AUTHORED topology, DERIVED annotation — and the split is the whole discipline of this file.
+#
+# WHAT THIS FILE IS FOR
+#
+# A reader who lands on a wall of 93 case pages cannot see two things that matter more than any
+# individual verdict: the shape of the machine that produced them, and the shape of the system they
+# were measured against. Both are pictures. Neither can be derived, because a picture is a set of
+# judgments — which components are worth a box, which relations are worth an arrow, and which of the
+# study's 93 cases is *about* which component. `PREREGISTRATION.yaml` records what each case claims;
+# `claims/triage.csv` records where in the document it lives. Neither says "this case is about the
+# gateway", and no artifact in this repository does.
+#
+# So the topology is authored here, once. Every annotation on it — the colour of a box, the verdict
+# badges, the case chips, the counts, the restriction warnings — is DERIVED at build time from the
+# sealed register, `results/phase1/` and `results/CITATION-POLICY.md`. Author a verdict beside a box
+# and this file becomes a second source of truth that can disagree with the census; that is the one
+# thing this platform may not ship, and `check_architecture.py` fails on any key that would allow it.
+#
+# WHY A BOX'S COLOUR IS NOT IN THIS FILE
+#
+# The status of a box is a function of the verdicts of its cases, and it is computed in
+# `build_site_data.derive_architecture()` by this rule, in this order:
+#
+#   contested          at least one citable FALSE verdict among its cases — the guidance did not hold
+#                      somewhere on this component. This wins over TRUE deliberately: a component with
+#                      four TRUEs and one FALSE is a component with a finding, and a green box would
+#                      bury it.
+#   validated_in_part  at least one citable TRUE and no FALSE. "In part" is not modesty: a box carries
+#                      many claims and a TRUE on one of them is not validation of the component.
+#   not_established    only INCONCLUSIVE verdicts. An INCONCLUSIVE verdict is not evidence against a
+#                      claim and it licenses no amendment, so it can never colour a box as validated —
+#                      `check_site_invariants.py` re-checks that against the census on every publish.
+#   context_only       only cases that are not verdicts at all (RECORDED) or carry no verdict.
+#   not_measured       no cases. This is the state an architecture diagram normally lacks, and the
+#                      reason it is a state here rather than an absence: an uncoloured box reads as
+#                      "nothing to worry about", where what it means is that this study never looked.
+#
+# THE CEILING, NOT ONLY THE FLOOR
+#
+# `unplaced_cases:` is required to account for every registered case that appears on no diagram. The
+# gate checks BOTH directions — placed ∪ unplaced must equal the register exactly, and the two sets
+# must be disjoint. Without that arm a new case would join the register and appear on no diagram and
+# in no list, which is the failure mode this whole repository is built against: work that sits outside
+# every count (`feedback_unnumbered_is_uncounted`). A diagram is a claim about coverage whether or not
+# it admits it.
+#
+# WHY SATELLITES ARE STRUCTURALLY DIFFERENT FROM SPINE BOXES
+#
+# `kind: property` boxes hang off exactly one parent and have no children, and the gate enforces that
+# (one incoming edge, zero outgoing). It is not a stylistic rule. It is what makes the rendered layout
+# provably crossing-free: the spine is laid out left to right by longest-path layering, and each
+# property box is stacked in its parent's own column, so no property edge can cross a spine edge. A
+# diagram whose edges cross is a diagram a reader misreads (`feedback_diagram_layout_rules`), and
+# `platform/build/tests/test_architecture_layout.py` asserts zero crossings rather than trusting that
+# it looked fine once.
+
+schema: grx-architecture/1
+
+# Vocabularies, stated so a consumer can reject an unknown value rather than treat it as benign. The
+# gate checks both directions: a value used but not declared here, and a value declared here that no
+# box uses — a stale vocabulary entry is a rule that can never fire.
+vocabularies:
+  kind: [actor, boundary, control, checkpoint, target, stage, artifact, property]
+  # `.venv-agentcore` is deliberately absent: the director harness has no box on either diagram yet,
+  # and a venv declared here that nothing runs in would assert machinery this platform does not have.
+  # It comes back with the box that uses it, not before.
+  venv: [".venv-oracle", ".venv-figs", "none"]
+  machine: [ec2_runner, macbook_only, laptop_or_runner, none]
+  edge_kind: [request_path, data_flow, governance, out_of_band]
+  # The closed set of derived numbers a box may display. Each name is implemented once, in
+  # `build_site_data.derive_architecture()`; a name here that the builder cannot compute fails the
+  # build rather than rendering as a blank, and a number typed into this file would be a second,
+  # unverified source for something the census already knows.
+  count_from:
+    - cases_registered
+    - verdicts_published
+    - verdicts_false
+    - cases_with_an_archive
+    - cases_with_two_distinct_archive_days
+    - cases_carrying_a_restriction
+    - claims_mapped
+    - families_total
+    - families_macbook_only
+    - controls_declared
+    - figures_published
+    - register_items
+
+diagrams:
+
+  # =======================================================================================
+  - id: verdict_pipeline
+    label: "How a verdict is made"
+    subtitle: >
+      The machine that produced the 93 cases, one box per step, with the virtual environment and the
+      machine each step runs on. Read it top to bottom, one step per row; the branch at the census is
+      where this platform hangs off the study rather than being part of it.
+    why_this_diagram: >
+      The study's credibility rests on an ordering — the oracle is sealed before the producer runs,
+      the verdict is a function of evidence rather than of a reading of it, an amendment happens only
+      after a replication. Prose states that ordering in eleven places; a diagram states it once, and
+      a diagram whose arrows were authored can be checked for cycles, which is what makes "sealed
+      before measured" a structural claim rather than a promise.
+
+    boxes:
+      - id: document
+        label: "The design document, sealed at v1.2"
+        detail: >
+          `~/Downloads/agentcore_guardrails_best_practices_v1.2.md`, outside the repository and never
+          modified. Every claim this study adjudicates was read out of that file before any
+          measurement was taken.
+        kind: artifact
+        venv: "none"
+        machine: laptop_or_runner
+        cases: [F0-1]
+        why_these_cases: >
+          F0-1 is the only case whose subject is the document itself rather than the service: it
+          resolves the URLs Section 10 cites, so a dead citation in the source of every claim is a
+          finding about this box.
+
+      - id: claim_triage
+        label: "Claim extraction and triage"
+        detail: >
+          546 rows in `claims/triage.csv`, each anchored to a document line, classified as testable or
+          not. Sealed: the file is in the protected set, so a claim cannot be reclassified after its
+          case has a verdict.
+        kind: stage
+        program: claims/triage_rules.py
+        venv: ".venv-oracle"
+        machine: laptop_or_runner
+        count_from: claims_mapped
+        measured: none
+        why_not_measured: >
+          The triage is this study's own reading of somebody else's document. No case measures it,
+          and one could not: there is no oracle for "did we read it correctly", which is why the file
+          is sealed and the register lists the claims it declined to test rather than dropping them.
+
+      - id: preregistration
+        label: "Preregistration and seal"
+        detail: >
+          `PREREGISTRATION.yaml` plus its `.sha256`: per case, the kind of test, the thresholds, the
+          planned n, alpha, and the guards that can invalidate the run — all fixed before the first
+          request was sent.
+        kind: stage
+        program: verify_prereg.py
+        venv: ".venv-oracle"
+        machine: laptop_or_runner
+        count_from: cases_registered
+        measured: none
+        why_not_measured: >
+          A preregistration cannot be measured by the study it constrains; it is checked instead. The
+          publish gate re-verifies the sha256 and the oracle-registry hashes on every build, so a
+          drifted seal fails the publish rather than being reported afterwards.
+
+      - id: oracle
+        label: "Oracle text, bound to the case"
+        detail: >
+          `lib/oracle.py` binds each case to the sealed sentence that decides it. The verdict is a
+          function of that sentence and the evidence — the reason case pages quote `oracle_text`
+          verbatim and never paraphrase it.
+        kind: stage
+        program: lib/oracle.py
+        venv: ".venv-oracle"
+        machine: laptop_or_runner
+        measured: none
+        why_not_measured: >
+          Sealed machinery of this study, not a property of AgentCore. Its integrity is gated (the
+          registry hashes are re-verified at every publish) rather than measured.
+
+      - id: instrument
+        label: "The pinned instrument"
+        detail: >
+          `.venv-oracle` with botocore 1.43.67, never bumped. For the F1 and F8 families the SDK
+          model IS the measurement, so a version bump would silently re-date those verdicts —
+          `check_venv_isolation.py` fails the build if the pin moves.
+        kind: stage
+        venv: ".venv-oracle"
+        machine: laptop_or_runner
+        measured: none
+        why_not_measured: >
+          The instrument is what other cases are measured WITH. A case measuring it would need a
+          second instrument, and this study has no second reading of the service model to offer.
+
+      - id: producer
+        label: "Producers, one per family"
+        detail: >
+          The programs that actually call AWS, run through `runner/run.py --detach` on the EC2 runner
+          inside `.venv-oracle`. Nine families of them; the F6 latency family may only ever run from
+          the MacBook, because moving it changes the network position that is being measured.
+        kind: stage
+        program: runner/run.py
+        venv: ".venv-oracle"
+        machine: ec2_runner
+        count_from: families_macbook_only
+        measured: none
+        why_not_measured: >
+          A producer is the thing doing the measuring. What it produces is measured — the evidence
+          box downstream — but no case in the register has a producer as its subject.
+
+      - id: evidence
+        label: "Evidence, local only"
+        detail: >
+          Raw request/response records with `x-amzn-requestid` values, timestamps and probe
+          resources. `evidence/` is never published and never enters the site payload: the redaction
+          gate reads the repository tree and the payload gate reads every byte about to be uploaded.
+        kind: artifact
+        program: runner/merge_evidence.py
+        venv: ".venv-oracle"
+        machine: laptop_or_runner
+        count_from: cases_with_an_archive
+        measured: none
+        why_not_measured: >
+          The evidence is the input to every verdict, so a case measuring it would be circular. Its
+          handling is gated instead: additive merges only, an explicit IAM deny on the runner
+          bucket's evidence prefix for the pull role, and a 90-day lifecycle that stays.
+
+      - id: verdict
+        label: "Adjudication"
+        detail: >
+          `lib/stats.py` — sealed — turns evidence into TRUE, FALSE, INCONCLUSIVE or RECORDED against
+          the preregistered thresholds, with order-statistic intervals rather than a t-test, and
+          records the guards that passed or failed.
+        kind: stage
+        program: lib/stats.py
+        venv: ".venv-oracle"
+        machine: laptop_or_runner
+        count_from: verdicts_published
+        measured: none
+        why_not_measured: >
+          Sealed and in the protected set. The register's item on the taxonomy itself — that
+          TRUE/FALSE/INCONCLUSIVE/RECORDED has no located precedent across 26 primary sources — is
+          the honest statement about this box, and it is carried as a citation restriction rather
+          than as a verdict.
+
+      - id: census
+        label: "Census"
+        detail: >
+          `census.py` recomputes, from the verdict files alone, how many cases are registered, how
+          many carry a verdict, and what the verdict mix is. Every number on this platform is read
+          from here or recomputed the same way; none is stored.
+        kind: stage
+        program: census.py
+        venv: ".venv-oracle"
+        machine: laptop_or_runner
+        count_from: cases_registered
+        measured: none
+        why_not_measured: >
+          A derivation, not a measurement. Its correctness is a test property — the publish gate
+          fails if the site's totals disagree with a fresh derivation — rather than a case.
+
+      - id: replication
+        label: "Day-2 replication"
+        detail: >
+          `tools/day2_replicate.py` is the only sanctioned re-run path: it moves day-1 checkpoints
+          aside, refuses a same-day repeat, snapshots `results/phase1/` before the producer runs, and
+          compares whole verdict files afterwards. Return code 1 is a finding, not a fix; return code
+          2 means it did not observe, and the platform renders that as not a replication.
+        kind: stage
+        program: tools/day2_replicate.py
+        venv: ".venv-oracle"
+        machine: ec2_runner
+        count_from: cases_with_two_distinct_archive_days
+        measured: none
+        why_not_measured: >
+          The replication driver is process machinery. What it produces — a second calendar day of
+          evidence — is checked by the publish gate for every case the site would call replicated,
+          because the 2026-08-19 incident was exactly a process claim with no artifact behind it.
+
+      - id: amendment_readiness
+        label: "Amendment readiness"
+        detail: >
+          `check_amendment_readiness.py` decides whether a verdict may change the document at all:
+          n met, at least two distinct UTC days, an archived `x-amzn-requestid`, and an
+          alternative-explanation entry. An INCONCLUSIVE verdict licenses no amendment.
+        kind: stage
+        program: check_amendment_readiness.py
+        venv: ".venv-oracle"
+        machine: laptop_or_runner
+        measured: none
+        why_not_measured: >
+          A gate over this study's own editing. Register item 22 — that this gate does not yet look
+          at the twelve cases which owe a replication — is surfaced on the lineage view rather than
+          papered over here.
+
+      - id: candidates
+        label: "v1.3 candidate lines"
+        detail: >
+          `build_v13_candidates.py` writes, per document site, the line the evidence licenses and the
+          cases and UTC days that license it. A case with an INCONCLUSIVE verdict produces zero lines.
+        kind: stage
+        program: build_v13_candidates.py
+        venv: ".venv-oracle"
+        machine: laptop_or_runner
+        measured: none
+        why_not_measured: >
+          Generated text about the document, not an observation of the service.
+
+      - id: pull_request
+        label: "A pull request a human merges"
+        detail: >
+          `tools/api_push_pr.py` writes blobs, a tree, a commit and a ref through the GitHub Git Data
+          API and opens a PR. Nothing in this repository merges one, and nothing pushes: the merge is
+          an act of a person, which is why the document can never change without one.
+        kind: stage
+        program: tools/api_push_pr.py
+        venv: ".venv-oracle"
+        machine: laptop_or_runner
+        measured: none
+        why_not_measured: >
+          The boundary between what a program may do and what a person must do. There is no
+          measurement of it; there is the absence of a merge call, which is checkable by reading the
+          file and is asserted by the platform's own tests.
+
+      - id: payload
+        label: "Site payload"
+        detail: >
+          `platform/build/build_site_data.py` is the only writer of the payload: it reads the
+          artifacts and emits `census.json`, the per-case files, the registers, the controls and the
+          audit example, with a manifest of sha256s.
+        kind: stage
+        program: platform/build/build_site_data.py
+        venv: ".venv-oracle"
+        machine: laptop_or_runner
+        count_from: controls_declared
+        measured: none
+        why_not_measured: >
+          This platform's own machinery. It is gated, not measured — and it derives rather than
+          stores, so that a stale number has nowhere to live.
+
+      - id: figures
+        label: "Canonical figures"
+        detail: >
+          The eight whitepaper figures are the matplotlib PNGs `tools/whitepaper_figures.py` produced
+          under `.venv-figs`, served as bytes. Redrawing them in the browser would create a second
+          rendering of the same numbers that can disagree with the paper.
+        kind: property
+        program: tools/whitepaper_figures.py
+        venv: ".venv-figs"
+        machine: laptop_or_runner
+        count_from: figures_published
+        measured: none
+        why_not_measured: >
+          A rendering of numbers measured elsewhere. `--check` re-derives each figure's numbers and
+          its return code becomes the freshness badge, so a drifted figure is visible rather than
+          merely old.
+
+      - id: gates
+        label: "The publish gates"
+        detail: >
+          In order: the repository redaction scan, the payload gate over every byte to be uploaded
+          including the built bundle, the site invariants, the control curation gate, and the SPA's
+          own logic tests. A gate that cannot run must fail rather than report clean.
+        kind: stage
+        program: platform/build/publish_web.py
+        venv: ".venv-oracle"
+        machine: laptop_or_runner
+        measured: none
+        why_not_measured: >
+          The gates check claims; they make none. Each arm is mutation-tested in
+          `platform/build/tests/`, because a guard with no test is a memory.
+
+      - id: site
+        label: "This platform"
+        detail: >
+          Immutable `/v/<stamp>/` prefixes on a private S3 bucket behind CloudFront with a
+          Cognito check at the edge, and a `current.json` pointer flip for atomicity. A release is
+          never edited in place.
+        kind: artifact
+        venv: "none"
+        machine: laptop_or_runner
+        count_from: register_items
+        measured: none
+        why_not_measured: >
+          The platform is not part of the study it renders. Its own deficiencies live in the register
+          alongside the study's, which is the only honest place for them.
+
+    edges:
+      - {from: document, to: claim_triage, kind: data_flow, label: "claims, with a line anchor"}
+      - {from: claim_triage, to: preregistration, kind: governance, label: "testable claims only"}
+      - {from: preregistration, to: oracle, kind: governance, label: "sealed before any request"}
+      - {from: oracle, to: producer, kind: governance, label: "what the run must decide"}
+      - {from: instrument, to: producer, kind: data_flow, label: "the pinned SDK the run uses"}
+      - {from: producer, to: evidence, kind: data_flow, label: "raw records, local only"}
+      - {from: oracle, to: verdict, kind: governance, label: "the sentence the evidence is read against"}
+      - {from: evidence, to: verdict, kind: data_flow, label: "the only input a verdict may use"}
+      - {from: verdict, to: census, kind: data_flow, label: "recomputed, never stored"}
+      - {from: census, to: replication, kind: governance, label: "which cases owe a second day"}
+      - {from: replication, to: amendment_readiness, kind: governance, label: "two distinct UTC days"}
+      - {from: amendment_readiness, to: candidates, kind: governance, label: "only what is licensed"}
+      - {from: candidates, to: pull_request, kind: governance, label: "a person merges, or it does not land"}
+      - {from: census, to: payload, kind: data_flow, label: "the branch: rendering, not measuring"}
+      - {from: payload, to: figures, kind: out_of_band, label: "eight PNGs, served as bytes"}
+      - {from: payload, to: gates, kind: governance, label: "every byte, before any upload"}
+      - {from: gates, to: site, kind: data_flow, label: "a new immutable release"}
+
+  # =======================================================================================
+  - id: request_path
+    label: "What the study looked at: one request through an AgentCore deployment"
+    subtitle: >
+      The controls a request passes on its way to a model and a tool, coloured by what this study
+      established about each one. The spine runs top to bottom in request order; a box to the right of
+      a spine box is a property of it — what it costs, how long it takes, whether it is repeatable,
+      whether you can see it work.
+    why_this_diagram: >
+      The document prescribes a closed loop of configured controls: a gateway that traffic cannot go
+      around, a policy engine that decides, guardrail checkpoints before and after inference, an
+      execution identity, an egress boundary and organization controls above all of it. A reader
+      needs to know which links in that loop this study could stand behind, which it contradicted,
+      and which it never examined — and the third category is the one a security diagram normally
+      leaves out, so it is a colour here rather than an omission.
+
+    boxes:
+      - id: end_user
+        label: "End user"
+        detail: >
+          A person or a caller outside the trust boundary. For a B2C service, unauthenticated; for
+          B2B, a tenant whose identity arrives as an inbound token.
+        kind: actor
+        venv: "none"
+        machine: "none"
+        measured: none
+        why_not_measured: >
+          An actor, not a control. This study measured configured mechanisms; nothing in the register
+          has a user as its subject, and a box coloured as though it had would be a claim about
+          somebody's users.
+
+      - id: app
+        label: "Your application"
+        detail: >
+          The agent host that receives a request and calls AgentCore: your code, your prompt
+          construction, your session handling.
+        kind: actor
+        venv: "none"
+        machine: "none"
+        measured: none
+        why_not_measured: >
+          Out of scope by construction. Every case measures a service surface, so this study can say
+          nothing about a reader's own code — and the audit intake reads infrastructure-as-code for
+          the same reason: it can see what you configured, never what your application does with it.
+
+      - id: gateway
+        label: "AgentCore Gateway"
+        detail: >
+          The enforcement point traffic is supposed to be unable to go around, and the place a denial
+          becomes an HTTP response.
+        kind: boundary
+        venv: "none"
+        machine: "none"
+        cases: [F5-1, F4-6]
+        why_these_cases: >
+          One case asks whether a tool can be invoked directly, bypassing the gateway entirely, and
+          one asks whether a denial identifies the policy that produced it. Together they are the
+          gateway's two load-bearing promises: that it is on the path, and that its decisions are
+          legible afterwards.
+
+      - id: policy_engine
+        label: "Policy engine (Cedar + guardrails-in-policy)"
+        detail: >
+          The decision itself: engine mode, per-policy enforcement mode, Cedar evaluation, and the
+          guardrail conditions a policy may carry.
+        kind: control
+        venv: "none"
+        machine: "none"
+        cases: [F1-1, F1-3, F1-4, F1-5, F1-16, F1-17, F1-24, F1-25, F2-1, F4-1, F4-2, F4-3, F4-4, F4-5]
+        why_these_cases: >
+          The configuration surface (what the API accepts), the decision behaviour (default deny,
+          forbid over permit, engine mode over per-policy mode, LOG_ONLY blocking nothing) and the
+          two authoring limits the study found the document did not state. This is the densest box on
+          the diagram because it is the one the document leans on hardest.
+
+      - id: guardrail_input
+        label: "Input guardrail checkpoint"
+        detail: >
+          The BEFORE checkpoint: content filters, PII and sensitive-information detection, denied
+          topics, word filters and prompt-attack detection, applied to what arrives.
+        kind: checkpoint
+        venv: "none"
+        machine: "none"
+        cases: [F1-2, F1-7, F1-8, F1-9, F1-10, F1-18, F1-19, F1-20, F1-27, F3-1, F3-2, F3-3, F3-4,
+                F3-5, F3-6, F3-8, F3-9, F5-6]
+        why_these_cases: >
+          Both halves of an input checkpoint: which detections exist and what they accept (the F1
+          configuration reads), and how well they actually detect on labelled corpora (the F3
+          efficacy runs, including the two categories where recall did not hold). F1-19 is here for
+          its mechanism observation only and is never this box's sole support.
+
+      - id: model
+        label: "Model inference"
+        detail: >
+          The Bedrock InvokeModel / Converse call that every checkpoint on this diagram exists to
+          bracket. It is the only box here that this study treated as opaque: the request reaches it
+          after the input guardrail and its response leaves through the output guardrail, and nothing
+          in the register looks inside.
+        kind: target
+        venv: "none"
+        machine: "none"
+        measured: none
+        why_not_measured: >
+          This study measured the controls around inference, never the model's own behaviour. A box
+          coloured from the neighbouring cases would read as a claim about model quality, which no
+          case in the register makes.
+
+      - id: guardrail_output
+        label: "Output guardrail checkpoint"
+        detail: >
+          The AFTER checkpoint: output filters, contextual grounding, automated reasoning checks, and
+          how streaming interacts with all three.
+        kind: checkpoint
+        venv: "none"
+        machine: "none"
+        cases: [F1-11, F1-12, F1-13, F1-14, F3-7]
+        why_these_cases: >
+          The output side is configured independently of the input side, and this study measured that
+          independence, the grounding limits, the streaming modes, and the one documented capability
+          whose stated scope did not hold.
+
+      - id: guardrail_tool_call
+        label: "Per-tool-call checkpoint"
+        detail: >
+          The checkpoint the document places around each tool invocation, where a tool's arguments
+          and its returned content are evaluated.
+        kind: checkpoint
+        venv: "none"
+        machine: "none"
+        cases: [F1-28]
+        why_these_cases: >
+          One case, and it is a finding: sensitive data inside tool-use output parameters was not
+          detected. A single-case box is left as a single-case box rather than padded, because the
+          count of cases behind a box is part of what the box is telling you.
+
+      - id: tool_target
+        label: "Gateway target (MCP, HTTP, Lambda)"
+        detail: >
+          What the agent actually calls, and the content that comes back — including content an
+          attacker may control.
+        kind: target
+        venv: "none"
+        machine: "none"
+        cases: [F1-15, F5-5]
+        why_these_cases: >
+          Whether the policy engine covers every target type, and whether content returned by a tool
+          can steer the agent. The second is the case a reader with a retrieval pipeline should read
+          first, and this study did not establish it either way.
+
+      - id: execution_role
+        label: "Tool execution identity"
+        detail: >
+          The IAM role a tool runs as, and what is readable from inside the environment it runs in.
+        kind: boundary
+        venv: "none"
+        machine: "none"
+        cases: [F5-2, F5-8]
+        why_these_cases: >
+          Two observations that compose into the study's sharpest structural finding: the execution
+          role's credentials are readable from inside a tool sandbox, and holding them lets a caller
+          reach the service without passing the policy engine at all.
+
+      - id: network_egress
+        label: "Network egress boundary"
+        detail: >
+          Whether traffic from the agent's own network can be confined, and whether the private
+          endpoints the document names exist to confine it to.
+        kind: boundary
+        venv: "none"
+        machine: "none"
+        cases: [F5-7a, F5-7b]
+        why_these_cases: >
+          One case checked whether the named PrivateLink endpoint services exist; the other tried to
+          contain egress and did not establish containment. A reader planning a VPC design needs both
+          answers, and neither is the one the document implies.
+
+      - id: org_controls
+        label: "Organization controls (SCP, permissions boundary)"
+        detail: >
+          The layer above the account: service control policies and permissions boundaries that are
+          supposed to stop a privileged caller from reconfiguring the controls below.
+        kind: boundary
+        venv: "none"
+        machine: "none"
+        cases: [F5-3a]
+        why_these_cases: >
+          The SCP authoring and propagation case is the only support this box may carry. The
+          companion case that tested a permissions boundary reached a TRUE on disk whose own guard
+          failed, so the citation policy marks it never-citable and it is listed under
+          `unplaced_cases`. Whatever colour that leaves this box is the colour the remaining evidence
+          earns; nothing here asserts one, because the status is derived and a sentence naming it
+          would be a second source for it.
+
+      - id: enforced_guardrail
+        label: "Account-level enforced guardrail"
+        detail: >
+          The configuration that applies a guardrail to every call in an account, whether or not the
+          caller asks for one.
+        kind: control
+        venv: "none"
+        machine: "none"
+        cases: [F1-21, F5-9]
+        why_these_cases: >
+          One case reads the surface that sets it; the other tried to decline it from the caller's
+          side and did not establish that declining is impossible. That pairing — the API exists, the
+          bypass is unproven either way — is the honest state of this control.
+
+      - id: guardrail_determinism
+        label: "Is the decision repeatable?"
+        detail: >
+          The same input, evaluated twice: score stability, whether the decision is a function of the
+          score, and how often a borderline input flips.
+        kind: property
+        venv: "none"
+        machine: "none"
+        cases: [F2-2, F2-3, F2-4, F2-5]
+        why_these_cases: >
+          A control that answers differently on the same input has a property no threshold document
+          discusses, and three of these four cases contradicted the document's implied determinism.
+          It hangs off the input checkpoint because that is where the scores it examines are produced.
+
+      - id: latency
+        label: "What each checkpoint costs in time"
+        detail: >
+          Per-hop latency for the gateway guardrail, the input and output checkpoints, the Cedar
+          decision and each additional tool call, plus the end-to-end total and the saving from
+          blocking early.
+        kind: property
+        venv: "none"
+        machine: macbook_only
+        cases: [F6-1, F6-2, F6-3, F6-4, F6-5, F6-6, F6-7, F6-8, F6-9]
+        why_these_cases: >
+          The whole F6 family, kept in one box because every one of its verdicts is bound to the
+          network position it was measured from — the reason this family may only ever be re-run from
+          the MacBook, and the reason the platform renders it as "requires a local run" rather than
+          as stale.
+
+      - id: observability
+        label: "Can you see it working?"
+        detail: >
+          The metrics and spans the controls publish, whether tracing must be turned on, how long a
+          metric takes to appear, and whether a LOG_ONLY rollout produces the telemetry the document's
+          workflow depends on.
+        kind: property
+        venv: "none"
+        machine: "none"
+        cases: [F3-10, F7-1, F7-2, F7-3, F7-4, F7-5, F7-6, F7-7]
+        why_these_cases: >
+          An alarm cannot be built on a metric that is not published, and a staged rollout cannot be
+          adjudicated from telemetry that does not carry the field it needs. Both were measured here,
+          and both produced findings the document's Section 6 and 7 rest on.
+
+      - id: billing
+        label: "What each checkpoint costs in money"
+        detail: >
+          Text units, what a blocked request still charges, and whether input tagging reduces the
+          units billed.
+        kind: property
+        venv: "none"
+        machine: "none"
+        cases: [F10-1, F10-2, F10-3]
+        why_these_cases: >
+          A cost model is a design input: if blocking at the input checkpoint does not avoid the
+          inference charge, a security control has a per-request price a reader must plan for. One of
+          these three carries no verdict at all and says so.
+
+      - id: region_tier
+        label: "Where it works, and in which languages"
+        detail: >
+          Regional availability of guardrails-in-policy, the two guardrail tiers, per-tier language
+          coverage and length limits, and whether cross-Region inference stays in-geography.
+        kind: property
+        venv: "none"
+        machine: "none"
+        cases: [F1-6, F1-26, F8-1, F8-2, F8-3, F8-4, F8-5, F8-6, F8-7, F8-8]
+        why_these_cases: >
+          Every one of these is a deployability question rather than a security question until it is
+          not: a control that is unavailable in your Region, or ineffective in your users' language,
+          is a control you do not have. Four of the eight availability claims did not hold as stated.
+
+      - id: failure_modes
+        label: "What happens when a control cannot run"
+        detail: >
+          Policy evaluation that cannot complete, a guardrail whose permission was removed, a policy
+          referencing a path that does not exist, and throttling.
+        kind: property
+        venv: "none"
+        machine: "none"
+        cases: [F5-4a, F5-4b, F9-1, F9-2, F9-3]
+        why_these_cases: >
+          The document's implied posture is fail-closed. This box holds what the study could observe
+          about that: two recorded observations that are explicitly not verdicts, one claim it could
+          not test at all, one confirmed error signal, and one unresolved question about throttling.
+
+      - id: drift
+        label: "Does it still behave the same next month?"
+        detail: >
+          Whether guardrail behaviour changes under provider-side updates, measured as agreement
+          between two runs on different days.
+        kind: property
+        venv: "none"
+        machine: "none"
+        cases: [F3-11]
+        why_these_cases: >
+          The one case that treats time as the variable. It is INCONCLUSIVE, and that is the whole
+          point of the box existing: a reader deciding how often to re-test their own deployment gets
+          the honest answer that this study does not know, rather than silence.
+
+      - id: guardrail_lifecycle
+        label: "Authoring, evaluating and tuning a guardrail"
+        detail: >
+          The surfaces around a guardrail's life rather than its runtime: recommendations, config
+          bundles, A/B testing, and the on-demand, batch and online evaluation modes.
+        kind: property
+        venv: "none"
+        machine: "none"
+        cases: [F1-22, F1-23]
+        why_these_cases: >
+          Two configuration reads, kept out of the runtime path because they describe how a guardrail
+          is developed, not what it does to a request. A reader planning an operating point needs to
+          know these exist; nothing about them was measured at runtime.
+
+    edges:
+      - {from: end_user, to: app, kind: request_path, label: "a request"}
+      - {from: app, to: gateway, kind: request_path, label: "an agent invocation"}
+      - {from: gateway, to: policy_engine, kind: request_path, label: "authorize"}
+      - {from: policy_engine, to: guardrail_input, kind: request_path, label: "permitted, now inspect"}
+      - {from: guardrail_input, to: model, kind: request_path, label: "not blocked"}
+      - {from: model, to: guardrail_tool_call, kind: request_path, label: "a tool call"}
+      - {from: guardrail_tool_call, to: tool_target, kind: request_path, label: "invoke"}
+      - {from: tool_target, to: execution_role, kind: request_path, label: "runs as"}
+      - {from: execution_role, to: network_egress, kind: request_path, label: "reaches the network"}
+      - {from: network_egress, to: guardrail_output, kind: request_path, label: "response returns"}
+      - {from: guardrail_output, to: org_controls, kind: governance, label: "all of it under"}
+      - {from: org_controls, to: enforced_guardrail, kind: governance, label: "and under"}
+      - {from: guardrail_input, to: guardrail_determinism, kind: out_of_band, label: "repeatability"}
+      - {from: guardrail_input, to: latency, kind: out_of_band, label: "time per hop"}
+      - {from: guardrail_input, to: billing, kind: out_of_band, label: "cost per request"}
+      - {from: guardrail_input, to: drift, kind: out_of_band, label: "stability over time"}
+      - {from: policy_engine, to: observability, kind: out_of_band, label: "metrics and spans"}
+      - {from: policy_engine, to: failure_modes, kind: out_of_band, label: "when it cannot run"}
+      - {from: enforced_guardrail, to: region_tier, kind: out_of_band, label: "availability"}
+      - {from: enforced_guardrail, to: guardrail_lifecycle, kind: out_of_band, label: "authoring"}
+
+# Every registered case that appears on no diagram, with the reason. The gate requires this list and
+# the placements together to account for the register exactly — no case may be in both, and none may
+# be in neither.
+unplaced_cases:
+  - case: F5-3b
+    why: >
+      The citation policy gives it NEVER_CITE: its verdict on disk is TRUE, but its own
+      every_boundary_transition_was_observed_to_settle guard failed, so it may be cited as nothing at
+      all — not as confirmation, and not as a TRUE in any count. Placing it on the organization
+      controls box would colour that box green on evidence the study withdrew, which is precisely the
+      reading the restriction exists to prevent.
+
+mapped_by: "the maintainer of this repository"
+mapped_on: 2026-08-20
+note: >
+  Topology and justifications authored here. Every colour, badge, chip and count on the rendered
+  diagrams is derived at build time from results/_census.json, results/phase1/ and
+  results/CITATION-POLICY.md; the layout coordinates are computed, not authored, and asserted to be
+  crossing-free by a test rather than by eye.

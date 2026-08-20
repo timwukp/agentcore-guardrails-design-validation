@@ -10,14 +10,22 @@ import Citations from "./views/Citations";
 import Claims from "./views/Claims";
 import Method from "./views/Method";
 import Provenance from "./views/Provenance";
+import Pipeline from "./views/Pipeline";
+import Audit from "./views/Audit";
+import Report from "./views/Report";
+import Architecture from "./views/Architecture";
 
 const NAV: [string, string, string][] = [
   ["Results", "/", "Census"],
   ["Results", "/findings", "Findings"],
   ["Results", "/figures", "Figures"],
+  ["Method", "/architecture", "Design diagrams"],
   ["Method", "/method", "How a verdict is made"],
   ["Method", "/claims", "Claim triage"],
   ["Method", "/citations", "Citation policy"],
+  ["Pipeline", "/pipeline", "Pipeline state"],
+  ["Audit your design", "/audit", "Submit a design"],
+  ["Audit your design", "/report", "Report and example"],
   ["Governance", "/register", "Deficiency register"],
   ["Governance", "/provenance", "Build provenance"],
 ];
@@ -75,7 +83,11 @@ export default function App() {
           <Route path="/citations" element={<Citations />} />
           <Route path="/claims" element={<Claims />} />
           <Route path="/method" element={<Method />} />
+          <Route path="/architecture" element={<Architecture />} />
           <Route path="/provenance" element={<Provenance />} />
+          <Route path="/pipeline" element={<Pipeline />} />
+          <Route path="/audit" element={<Audit />} />
+          <Route path="/report" element={<Report />} />
           <Route
             path="*"
             element={

@@ -78,6 +78,11 @@ export const loadRegisters = () => getJson<import("./types").Registers>("registe
 export const loadFigures = () => getJson<import("./types").Figures>("figures.json");
 export const loadFamilies = () => getJson<import("./types").Families>("families.json");
 export const loadMethod = () => getJson<import("./types").Method>("method.json");
+export const loadPipeline = () => getJson<import("./types").Pipeline>("pipeline.json");
+export const loadControls = () => getJson<import("./types").ControlsDoc>("controls.json");
+export const loadAudit = () => getJson<import("./types").AuditPage>("audit.json");
+export const loadArchitecture = () =>
+  getJson<import("./types").Architecture>("architecture.json");
 export const loadClaims = () => getJson<import("./types").Claims>("claims.json");
 export const loadCitationPolicy = () =>
   getJson<import("./types").CitationPolicy>("citation_policy.json");
