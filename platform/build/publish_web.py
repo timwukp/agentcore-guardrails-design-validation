@@ -385,18 +385,51 @@ def verify_served(pub: Publish, bucket: str) -> None:
     point of the platform — so the origin is the closest thing to 'what is served'. Downloading and
     re-running the patterns catches a class the pre-upload gate cannot: a truncated or mangled upload,
     and a file that reached the bucket without passing through the gate at all.
+
+    **The two halves are fetched separately, because `upload()` writes them separately and they are
+    scanned under different rules.** `--payload` inherits reviewed exceptions from the artifact a
+    payload file was derived from — four RFC1918 hits in `cases/F5-7b.json` and `findings.json` do —
+    while `--also-scan` grants no inheritance at all, by design, because a Vite bundle has no
+    upstream artifact to inherit from. Syncing the whole release prefix into one directory and
+    passing it as `--payload` therefore got this wrong in two ways at once, both found on 2026-08-20
+    by running it against the first real release: `MANIFEST.json` lives at `data/MANIFEST.json` under
+    the prefix, so the gate exited 1 with `no MANIFEST.json under <tmp>` and **the patterns never ran
+    over a single served byte** — the loudest possible form of the right failure, but a check that
+    had never once executed its own subject (`feedback_probe_must_reach_the_code`). Passing the same
+    combined tree to `--also-scan` instead would have failed the other way, convicting those four
+    reviewed exceptions. The shapes here mirror `upload()` line for line: payload → `data/`,
+    `site/dist` minus `data` → the prefix root.
+
+    Set equality against the local trees is asserted, not just a non-empty count. "A truncated or
+    mangled upload" is what the docstring above has always claimed to catch, and a count cannot: one
+    file missing and one file extra is the same integer.
     """
     print(f"\n=== verify what the origin now holds under v/{pub.stamp}/")
     with tempfile.TemporaryDirectory() as tmp:
-        aws(["s3", "sync", f"s3://{bucket}/v/{pub.stamp}/", tmp, "--only-show-errors"],
-            parse_json=False)
-        fetched = files_under(Path(tmp))
-        if not fetched:
-            fail("downloaded zero objects from the release prefix — the upload did not happen")
-        print(f"    fetched {len(fetched)} object(s)")
+        served_data, served_spa = Path(tmp) / "data", Path(tmp) / "spa"
+        aws(["s3", "sync", f"s3://{bucket}/v/{pub.stamp}/data/", str(served_data),
+             "--only-show-errors"], parse_json=False)
+        aws(["s3", "sync", f"s3://{bucket}/v/{pub.stamp}/", str(served_spa),
+             "--exclude", "data/*", "--only-show-errors"], parse_json=False)
+
+        for label, served, local in (("payload", served_data, pub.payload),
+                                     ("SPA", served_spa, DIST)):
+            want = {p.relative_to(local) for p in files_under(local)
+                    if label == "payload" or "data" not in p.relative_to(local).parts}
+            got = {p.relative_to(served) for p in files_under(served)}
+            if not got:
+                fail(f"downloaded zero {label} objects from v/{pub.stamp}/ — the upload did not "
+                     f"happen, and a gate over nothing would have passed")
+            if got != want:
+                fail(f"the {label} half of v/{pub.stamp}/ is not what was built. "
+                     f"only in the bucket: {sorted(map(str, got - want))[:5]} | "
+                     f"only on disk: {sorted(map(str, want - got))[:5]}")
+            print(f"    fetched {len(got)} {label} object(s), set-equal to what was built")
+
         run(Step(
             "redaction patterns over the FETCHED bytes",
-            [str(VENV_ORACLE), "platform/build/gate_payload.py", "--payload", tmp],
+            [str(VENV_ORACLE), "platform/build/gate_payload.py",
+             "--payload", str(served_data), "--also-scan", str(served_spa)],
             note="the bytes in the bucket differ from the bytes that were gated.",
         ))
 
