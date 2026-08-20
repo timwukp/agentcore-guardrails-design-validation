@@ -43,6 +43,12 @@ What it does that the repo gate cannot
    files on disk, the manifest's `outputs_sha256`, and (when given) the upload list — plus a
    re-hash of every file against the manifest. A gate that scanned a payload and an uploader that
    uploaded a different one would otherwise both report success.
+4. **It reads the built SPA too, on `--also-scan`.** The bundle is served from the same distribution,
+   so its bytes are in scope for the same reason the payload's are, and it is the one artefact a
+   build-time environment variable can bake a Cognito pool id or an account id into. It is scanned by
+   the same `scan_tree()` loop with `provenance=None`: a bundle has no derivation record, so no
+   reviewed exception can be inherited and only a shape-based excuse applies. That is also the right
+   standard — nothing in a Vite bundle has a legitimate reason to carry a cloud identifier.
 
 What it deliberately does NOT add
 ---------------------------------
@@ -64,6 +70,7 @@ Usage
     .venv-oracle/bin/python platform/build/gate_payload.py
     .venv-oracle/bin/python platform/build/gate_payload.py --payload ~/grx-site-payload --verbose
     .venv-oracle/bin/python platform/build/gate_payload.py --upload-list /path/to/list.txt
+    .venv-oracle/bin/python platform/build/gate_payload.py --also-scan site/dist
 """
 
 from __future__ import annotations
@@ -82,6 +89,11 @@ DEFAULT_PAYLOAD = ROOT.parent / "grx-site-payload"
 # below that never to false-alarm and far enough above zero to catch a walk that read the wrong
 # directory. `feedback_zero_file_scan_is_error`: an empty scan must fail, not pass quietly.
 MIN_FILES = 40
+
+# The floor for a `--also-scan` tree. A Vite build of this SPA emits index.html + one JS + one CSS,
+# so three is the honest minimum; the point of the floor is that pointing the gate at an unbuilt or
+# wrong directory must fail rather than pass on nothing.
+MIN_EXTRA_FILES = 3
 
 # Skipped by NAME, and the list is deliberately tiny. Everything not named here is read.
 SKIP_NAMES = {".DS_Store"}
@@ -185,12 +197,70 @@ def excuse(gate, sources: list[str], name: str, form: str,
     return None
 
 
+class ScanResult:
+    """What one tree's scan found. A class rather than a tuple so a caller cannot swap two fields."""
+
+    def __init__(self) -> None:
+        self.findings: list[tuple[str, int, str, str]] = []
+        self.inherited: list[tuple[str, int, str, str, str]] = []
+        self.by_shape = 0
+        self.n_bytes = 0
+        self.lossy: list[str] = []
+
+
+def scan_tree(gate, root: Path, files: list[Path], provenance: dict[str, list[str]] | None,
+              verbose: bool = False) -> ScanResult:
+    """Apply `gate`'s patterns to every line of every file, and classify each hit.
+
+    ONE implementation, used for every tree this gate is pointed at. The payload and the built bundle
+    differ in whether a reviewed exception can be inherited, not in how thoroughly they are read, and
+    that difference is this function's single parameter: `provenance=None` means no file has a declared
+    source, so `excuse()` can only return a shape-based excuse and every other hit is a finding.
+
+    A second copy of this loop for the bundle is the arrangement the module docstring argues against —
+    two gates that share a pattern set but not an inclusion rule are one gate with a blind spot, which
+    is how 87 files went unread until 2026-08-20.
+    """
+    res = ScanResult()
+    for p in files:
+        rel = str(p.relative_to(root))
+        text, was_lossy = text_of(p)
+        res.n_bytes += len(text)
+        if was_lossy:
+            res.lossy.append(rel)
+        sources = (provenance or {}).get(rel, [])
+        for lineno, line in enumerate(text.splitlines(), 1):
+            forms = gate.scan_forms(line)
+            for name, rx, _desc in gate.PATTERNS:
+                for form, note in forms:
+                    if not rx.search(form):
+                        continue
+                    got = excuse(gate, sources, name, form, line)
+                    if got:
+                        src, why = got
+                        if src is None:
+                            res.by_shape += 1
+                            if verbose:
+                                print(f"  shape {rel}:{lineno} [{name}] {why[:70]}")
+                        else:
+                            res.inherited.append((rel, lineno, name, src, why))
+                    else:
+                        shown = name if not note else f"{name} ({note})"
+                        res.findings.append((rel, lineno, shown, form.strip()[:120]))
+                    break
+    return res
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--payload", default=str(DEFAULT_PAYLOAD))
     ap.add_argument("--upload-list", help="file of payload-relative paths about to be uploaded; "
                                           "set equality with what was scanned is asserted")
+    ap.add_argument("--also-scan", action="append", metavar="DIR",
+                    help="an additional tree to scan with the same patterns and no inheritance "
+                         "(the built SPA: its bytes are served from the same distribution). "
+                         "Repeatable.")
     ap.add_argument("--verbose", action="store_true", help="print every inherited excuse")
     args = ap.parse_args(argv if argv is not None else sys.argv[1:])
 
@@ -257,37 +327,38 @@ def main(argv: list[str] | None = None) -> int:
                 f"upload list does not match what was scanned: to upload but not scanned="
                 f"{sorted(listed - rels)[:5]} scanned but not uploaded={sorted(rels - listed)[:5]}")
 
-    findings: list[tuple[str, int, str, str]] = []
-    inherited: list[tuple[str, int, str, str, str]] = []
-    by_shape = 0
-    n_bytes = 0
-    lossy: list[str] = []
-    for p in found:
-        rel = str(p.relative_to(payload))
-        text, was_lossy = text_of(p)
-        n_bytes += len(text)
-        if was_lossy:
-            lossy.append(rel)
-        sources = provenance[rel]
-        for lineno, line in enumerate(text.splitlines(), 1):
-            forms = gate.scan_forms(line)
-            for name, rx, _desc in gate.PATTERNS:
-                for form, note in forms:
-                    if not rx.search(form):
-                        continue
-                    got = excuse(gate, sources, name, form, line)
-                    if got:
-                        src, why = got
-                        if src is None:
-                            by_shape += 1
-                            if args.verbose:
-                                print(f"  shape {rel}:{lineno} [{name}] {why[:70]}")
-                        else:
-                            inherited.append((rel, lineno, name, src, why))
-                    else:
-                        shown = name if not note else f"{name} ({note})"
-                        findings.append((rel, lineno, shown, form.strip()[:120]))
-                    break
+    scan = scan_tree(gate, payload, found, provenance, verbose=args.verbose)
+    findings, inherited, by_shape, n_bytes, lossy = (
+        scan.findings, scan.inherited, scan.by_shape, scan.n_bytes, scan.lossy)
+
+    # The built SPA is served from the same distribution as the payload, so its bytes are in scope for
+    # the same reason the payload's are. It is scanned by the SAME loop, with `provenance=None`: a
+    # bundle has no derivation record, so there is no source for a reviewed exception to be inherited
+    # from, and only a shape-based excuse can apply. That is also the correct standard for a bundle —
+    # a Vite build has no legitimate reason to carry a cloud identifier, and the one way it acquires
+    # one (a build-time env var baked into the JS) produces a bare literal that no shape excuses.
+    for extra in args.also_scan or []:
+        tree = Path(extra).resolve()
+        if not tree.is_dir():
+            raise GateError(f"--also-scan is not a directory: {tree}")
+        # Symlinked files are excluded, so the floor can only be met by bytes this build produced.
+        # `walk()` sees them — `is_file()` follows a link — and the local preview harness creates
+        # exactly this situation (`site/dist/data -> ~/grx-site-payload`). A symlinked DIRECTORY is
+        # already excluded upstream because `Path.rglob` does not descend into one, but that is the
+        # stdlib's property and it has changed once (3.13 made it explicit for `**`); making it this
+        # gate's own property costs one predicate.
+        efound = [p for p in walk(tree) if not any(q.is_symlink() for q in (p, *p.parents))]
+        if len(efound) < MIN_EXTRA_FILES:
+            raise GateError(f"--also-scan {tree} holds {len(efound)} non-symlinked file(s), below the "
+                            f"floor of {MIN_EXTRA_FILES}: a bundle this small was not built, and a "
+                            f"scan that reads nothing must fail rather than report clean")
+        esc = scan_tree(gate, tree, efound, None, verbose=args.verbose)
+        print(f"also scanned: {len(efound)} file(s) under {tree} "
+              f"({esc.n_bytes:,} chars, {esc.by_shape} shape-excused, no provenance to inherit from)")
+        findings += [(f"{tree.name}/{rel}", ln, name, snip) for rel, ln, name, snip in esc.findings]
+        n_bytes += esc.n_bytes
+        by_shape += esc.by_shape
+        lossy += [f"{tree.name}/{rel}" for rel in esc.lossy]
 
     print(f"payload gate: {len(found)} file(s) under {payload}")
     print(f"  {n_bytes:,} characters read")

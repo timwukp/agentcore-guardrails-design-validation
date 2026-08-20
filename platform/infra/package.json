@@ -1,0 +1,31 @@
+{
+  "name": "grx-live-infra",
+  "version": "1.0.0",
+  "description": "GRX Live delivery stack: private S3 + CloudFront + OAC + Lambda@Edge Cognito",
+  "scripts": {
+    "typecheck": "tsc",
+    "test": "tsx --test test/*.test.ts",
+    "synth": "cdk synth",
+    "diff": "cdk diff",
+    "deploy": "cdk deploy",
+    "cdk": "cdk"
+  },
+  "license": "UNLICENSED",
+  "type": "commonjs",
+  "dependencies": {
+    "@aws-sdk/client-secrets-manager": "3.1114.0",
+    "@aws-sdk/client-ssm": "3.1114.0",
+    "aws-cdk-lib": "2.266.0",
+    "cognito-at-edge": "1.5.5",
+    "constructs": "10.8.1"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "8.10.162",
+    "@types/node": "26.2.0",
+    "aws-cdk": "2.1138.0",
+    "esbuild": "0.28.2",
+    "tsx": "4.23.12",
+    "typescript": "7.0.2"
+  },
+  "private": true
+}

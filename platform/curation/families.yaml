@@ -1,0 +1,193 @@
+# Per-family operational classification. AUTHORED, not derived — and that is why it lives here.
+#
+# WHAT THIS FILE IS FOR
+#
+# Three questions have no answer anywhere in the artifacts: may a scheduler re-run this family
+# unattended, does re-running it cost money, and does re-running it in a different place change what
+# is being measured. `PREREGISTRATION.yaml` records what each case claims and how it is adjudicated;
+# it says nothing about the safety of repeating the measurement. So the answers are authored here,
+# once, machine-readably, and every consumer reads them from this file rather than restating them.
+#
+# WHY NOT A README PARAGRAPH
+#
+# The rule that matters most in this file — F6 may only ever be measured from the MacBook — is a
+# rule about where a program may run. Written as prose in a README it survives exactly until the
+# first refactor by someone who did not read it, and its violation produces a plausible-looking
+# number rather than an error. Written here it is a flag that `build_site_data.py` carries into the
+# published payload, that the case page renders as a banner over every F6 case, and that the Phase-4
+# scheduler's family enum is checked against. A reader who wonders why F6 shows "requires a local
+# run" instead of "stale" is one click from the reason.
+#
+# THE CEILING, NOT JUST THE FLOOR
+#
+# `derive_families()` fails the build in BOTH directions: a family in the sealed register that is
+# absent here, and a family named here that is not in the register. A file like this is normally
+# checked only for gaps, which means it silently keeps stale entries and — worse — a NEW family
+# added to the register inherits no classification at all and would be schedulable by omission.
+#
+# `cost` is a CLASS, never a dollar figure. Money has exactly one source of truth in this repo,
+# `cost_model.yaml`, whose prices were read from the live Pricing API and are re-verifiable with
+# `estimate_cost.py --verify-prices`. A figure typed here would be a second, unverified one.
+
+schema: grx-families/1
+
+# Vocabularies, stated so a consumer can reject a value rather than treat an unknown one as benign.
+vocabularies:
+  cost: [free_offline, free_reads_only, billable, calendar_gated]
+  runner: [any, ec2, macbook_only, none]
+  mutates: [nothing, own_probe_only, shared_configuration, iam_and_org]
+
+families:
+
+  F0:
+    label: "Documentation reference integrity"
+    directory: null
+    directory_note: >
+      F0-1 has no producer directory: it resolves the URLs Section 10 cites. The check lives in
+      tools/, not in a family directory, which is why this field is null rather than guessed.
+    cost: free_reads_only
+    runner: any
+    mutates: nothing
+    schedulable: true
+    network_position_sensitive: false
+
+  F1:
+    label: "Configuration surface — what the policy and guardrail APIs actually accept"
+    directory: f1_config
+    cost: free_reads_only
+    runner: any
+    mutates: own_probe_only
+    schedulable: true
+    network_position_sensitive: false
+    note: >
+      Several F1 verdicts are reads of the pinned botocore model rather than of a live service, so
+      they are cheap to repeat but are also DATED BY THE SDK PIN. Re-running them under a newer
+      botocore does not replicate them; it measures a different instrument.
+
+  F2:
+    label: "Determinism — is the decision a repeatable function of the input"
+    directory: f2_determinism
+    cost: billable
+    runner: any
+    mutates: own_probe_only
+    schedulable: true
+    network_position_sensitive: false
+    note: >
+      Billable: the determinism arms send identical inputs through ApplyGuardrail hundreds of times
+      by construction. A budget estimate must be written before execution, not after.
+
+  F3:
+    label: "Detection efficacy — does the guardrail catch what it claims to catch"
+    directory: f3_efficacy
+    cost: billable
+    runner: any
+    mutates: shared_configuration
+    schedulable: true
+    network_position_sensitive: false
+    note: >
+      The largest billable family (300–1000-trial sweeps) and the one that changes engine mode to
+      LOG_ONLY and back. The mode change is restored and the restoration is verified by a guard, but
+      a re-run that dies between the two leaves the engine in LOG_ONLY, so an unattended run needs
+      the restore step owned by the state machine rather than by the producer.
+
+  F4:
+    label: "Enforcement modes — engine and per-policy precedence"
+    directory: f4_modes
+    cost: billable
+    runner: ec2
+    mutates: shared_configuration
+    schedulable: false
+    why_not_schedulable: >
+      F4 deliberately puts the policy engine into states in which it denies all traffic, to establish
+      that it does. Those states are correct for the measurement and wrong for anything else sharing
+      the account, and the exit condition is a restore whose failure is not observable from outside
+      the run. A human approves the run and watches the restore.
+    network_position_sensitive: false
+
+  F5:
+    label: "Red team — the documented bypass routes"
+    directory: f5_redteam
+    cost: billable
+    runner: ec2
+    mutates: iam_and_org
+    schedulable: false
+    why_not_schedulable: >
+      F5 grants and revokes IAM permissions, authors SCPs, and attaches permissions boundaries in
+      order to demonstrate a bypass and then close it. A scheduler that could do this could also
+      leave it done. The prohibition is not enforced by this flag — the flag states it; the
+      enforcement is that no tool the director holds can express an F5 run at all.
+    network_position_sensitive: false
+
+  F6:
+    label: "Latency — the per-hop cost of the controls"
+    directory: f6_latency
+    cost: billable
+    runner: macbook_only
+    mutates: own_probe_only
+    schedulable: false
+    network_position_sensitive: true
+    why: >
+      Every F6 estimator is a paired difference of wall clocks measured at the client. The quantity
+      is therefore a property of the client's network position as much as of the service: the same
+      guardrail measured from an in-region EC2 instance and from a laptop over the public internet
+      produces two different numbers, neither of which is wrong.
+    replication_requirement: >
+      A replication must hold the client fixed and vary only the day, so an F6 re-run from anywhere
+      other than the original MacBook is a NEW measurement and may not be compared with day 1. The
+      platform may prepare a run bundle and ingest the results; it must never trigger the run.
+    why_not_schedulable: >
+      Any cloud-side scheduler necessarily runs from the wrong network position, and the resulting
+      numbers would look like a successful replication.
+    ui_state_when_old: requires_local_run
+    ui_state_note: >
+      Never "stale". A staleness badge creates pressure to refresh, and the only available refresh is
+      the one that invalidates the comparison.
+
+  F7:
+    label: "Observability — are the documented metrics and spans actually published"
+    directory: f7_observability
+    cost: free_reads_only
+    runner: any
+    mutates: nothing
+    schedulable: true
+    network_position_sensitive: false
+
+  F8:
+    label: "Regional and tier availability"
+    directory: f8_regional
+    cost: billable
+    runner: any
+    mutates: nothing
+    schedulable: true
+    network_position_sensitive: false
+    note: >
+      Reads availability from live APIs across Regions; the multi-language tier cases send text
+      through ApplyGuardrail and so are billable, though at a fraction of F3's volume.
+
+  F9:
+    label: "Fail-secure behaviour under timeout, mismatch and throttling"
+    directory: f9_failsecure
+    cost: billable
+    runner: ec2
+    mutates: shared_configuration
+    schedulable: false
+    why_not_schedulable: >
+      F9 induces failure states — unevaluable policies, throttling — and its whole subject is what
+      happens while the control is broken. Inducing that unattended, on a schedule, in an account
+      that also hosts other work, trades a re-measurement nobody asked for against a window in which
+      the control is deliberately not working.
+    network_position_sensitive: false
+
+  F10:
+    label: "Billing behaviour of the controls"
+    directory: f10_billing
+    cost: calendar_gated
+    runner: any
+    mutates: nothing
+    schedulable: true
+    calendar_gate: >
+      F10 compares Cost Explorer figures across billing periods, so a run is only meaningful on the
+      dates its own comparison window names. Running it on any other date produces a comparison of
+      two incomplete periods. The next meaningful date is recorded in the case records, not here —
+      this file must not become a second calendar.
+    network_position_sensitive: false

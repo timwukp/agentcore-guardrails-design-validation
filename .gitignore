@@ -21,6 +21,20 @@ runner/.state/
 # instead of a red gate, and so that a path used as local-only is finally said to be local-only.
 runner/.staging/
 
+# Derived build output of the SPA, and NOT skipped by check_redaction.py — the distinction matters.
+# These bytes are published (they are what CloudFront serves), so the gate must keep reading them;
+# `SKIP_DIRS` deliberately does not list them and `gate_payload.py` scans them again at publish time.
+# What they must not be is TRACKED: a committed `dist/` is a second copy of the source that diverges
+# the moment anyone edits `site/src` without rebuilding, and a reviewer would have no way to tell
+# which one the deployment came from. `npm run build` regenerates them from source in seconds.
+# Verified rather than assumed, 2026-08-20: `check_redaction.files()` returns exactly
+# `site/dist/index.html` and the two `assets/` files. It does NOT return anything under
+# `site/dist/data`, which is a SYMLINK to the payload directory and which `Path.rglob` does not
+# descend into — so the payload's own bytes are `gate_payload.py`'s responsibility (113 files there),
+# not this gate's. Two gates, two disjoint sets, and neither one covers the other's.
+site/dist/
+*.tsbuildinfo
+
 # Environments and caches
 .venv/
 .venv-*/

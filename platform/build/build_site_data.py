@@ -414,21 +414,232 @@ def derive_citation_policy(inputs: dict[str, str]) -> dict:
     return meta
 
 
-def derive_figures(inputs: dict[str, str]) -> dict:
+DATE_RE = re.compile(r"(20\d{2}-\d{2}-\d{2})")
+
+
+def derive_method(published: dict, archive: dict, cases: dict) -> dict:
+    """Derived structure of the adjudication itself: kinds, guards, and who is replicated.
+
+    Every number the method walkthrough states is computed here rather than written in the page. The
+    replication counts are the load-bearing ones: a case is replicated when its evidence names two
+    DISTINCT calendar days, and that is derived from the archive labels rather than from anybody's
+    statement that a replication happened. The 2026-08-19 incident was exactly a process claim with no
+    artifact behind it, so the only claim this platform can make about replication is one the build
+    recomputes from the files.
+    """
+    kinds: dict[str, int] = {}
+    guards: dict[str, int] = {}
+    caveats = {"what_true_does_not_prove": 0, "what_false_does_not_prove": 0}
+    verdict_of: dict[str, str] = {}
+    for cid, pub in published.items():
+        rec = pub.get("record") or {}
+        adj = rec.get("record") or {}
+        kind = adj.get("kind") or rec.get("kind") or "(none recorded)"
+        kinds[kind] = kinds.get(kind, 0) + 1
+        # `guards` is a name -> bool mapping in most cases, but not in all: a few records carry a list
+        # instead. Iterating blindly counted a dict as a key and crashed, which is the better failure —
+        # a `str()` around it would have produced a guard named "{'test': ...}" appearing once, i.e. a
+        # census of guards that silently disagreed with the case pages.
+        gs = rec.get("guards")
+        if isinstance(gs, dict):
+            for name in gs:
+                guards[name] = guards.get(name, 0) + 1
+        elif isinstance(gs, list):
+            for entry in gs:
+                name = entry.get("name") if isinstance(entry, dict) else entry
+                if isinstance(name, str):
+                    guards[name] = guards.get(name, 0) + 1
+                else:
+                    guards["(guard recorded without a name)"] = guards.get(
+                        "(guard recorded without a name)", 0) + 1
+        for key in caveats:
+            if str(rec.get(key) or "").strip():
+                caveats[key] += 1
+        if pub.get("verdict"):
+            verdict_of[cid] = pub["verdict"]
+
+    # A caveat is only owed where the verdict has a direction to over-read.
+    owed_true = sorted(c for c, v in verdict_of.items() if v == "TRUE")
+    owed_false = sorted(c for c, v in verdict_of.items() if v == "FALSE")
+    have_true = sorted(c for c in owed_true
+                       if str((published[c].get("record") or {}).get("what_true_does_not_prove") or "").strip())
+    have_false = sorted(c for c in owed_false
+                        if str((published[c].get("record") or {}).get("what_false_does_not_prove") or "").strip())
+
+    days_by_case: dict[str, list[str]] = {}
+    disagreeing: list[dict] = []
+    for cid in sorted(cases):
+        labels = [a["label"] for a in archive.get(cid, [])]
+        days = sorted({m.group(1) for lab in labels for m in [DATE_RE.search(lab)] if m})
+        days_by_case[cid] = days
+        live = verdict_of.get(cid)
+        for a in archive.get(cid, []):
+            if live and a.get("verdict") and a["verdict"] != live:
+                disagreeing.append({"case": cid, "label": a["label"],
+                                    "archived_verdict": a["verdict"], "live_verdict": live})
+
+    # "Two distinct days" counts the archive's days plus the live file's occasion. An archive with one
+    # day is one prior occasion, which with the live file makes two — but only if the live run is not
+    # itself that day. The build cannot see the live run's date from the label set alone, so this
+    # reports the archive's own distinct days and leaves the stronger assertion to
+    # check_site_invariants.py, which reads the evidence timestamps. Reporting the weaker number here
+    # is deliberate: an over-claimed replication count is the exact defect this file guards against.
+    return {
+        "kinds": dict(sorted(kinds.items())),
+        "guard_names": dict(sorted(guards.items(), key=lambda kv: (-kv[1], kv[0]))),
+        "caveats": {
+            "cases_with_what_true_does_not_prove": len(have_true),
+            "true_verdicts": len(owed_true),
+            "true_verdicts_without_the_caveat": sorted(set(owed_true) - set(have_true)),
+            "cases_with_what_false_does_not_prove": len(have_false),
+            "false_verdicts": len(owed_false),
+            "false_verdicts_without_the_caveat": sorted(set(owed_false) - set(have_false)),
+            "why_this_is_counted": "The case page renders 'what this verdict does not prove' for every "
+                                   "case and says so explicitly when the record carries no such "
+                                   "statement. Counting it here makes the gap a number rather than "
+                                   "something a reader would have to notice one case at a time.",
+        },
+        "archive_days_by_case": {c: d for c, d in days_by_case.items() if d},
+        "n_cases_with_an_archive": sum(1 for d in days_by_case.values() if d),
+        "n_cases_with_two_distinct_archive_days": sum(1 for d in days_by_case.values() if len(d) >= 2),
+        "archives_disagreeing_with_the_live_verdict": disagreeing,
+        "note": "Derived from the verdict files and the archive at build time. No count here is stored "
+                "anywhere; each is recomputed, and a page that wants one asks this file for it.",
+    }
+
+
+def _yaml_no_duplicate_keys(text: str, rel: str) -> dict:
+    """Parse YAML, refusing a mapping that defines the same key twice.
+
+    PyYAML's safe_load accepts a duplicate key and silently keeps the last one. In an authored
+    governance file that is the worst possible failure mode: two `schedulable:` lines under one
+    family read as valid, and the one a human edited may be the one that is discarded. So the loader
+    is told to fail instead. This is the same defect class as a config parser accepting a duplicate
+    key that the service it configures rejects.
+    """
+    try:
+        import yaml  # noqa: PLC0415 - only this derivation needs it
+    except ImportError:  # pragma: no cover - depends on the interpreter, not on the tree
+        die(f"{rel} needs PyYAML and this interpreter has none. Run the build under .venv-oracle or "
+            f"the system interpreter; do NOT add a fallback parser, because a second YAML reader is "
+            f"a second grammar for an authored governance file.")
+
+    class NoDuplicates(yaml.SafeLoader):
+        pass
+
+    def mapping(loader, node):
+        seen: set = set()
+        for key_node, _ in node.value:
+            key = loader.construct_object(key_node, deep=True)
+            if key in seen:
+                die(f"{rel} defines the key {key!r} twice in one mapping (line "
+                    f"{key_node.start_mark.line + 1}). PyYAML would keep the last one silently.")
+            seen.add(key)
+        return loader.construct_mapping(node, deep=True)
+
+    NoDuplicates.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, mapping)
+    try:
+        loaded = yaml.load(text, Loader=NoDuplicates)  # noqa: S506 - NoDuplicates derives SafeLoader
+    except yaml.YAMLError as e:
+        die(f"{rel} is not readable YAML: {e}")
+    if not isinstance(loaded, dict):
+        die(f"{rel} must be a mapping at the top level, not {type(loaded).__name__}")
+    return loaded
+
+
+def derive_families(inputs: dict[str, str], cases: dict) -> dict:
+    """The authored per-family operational classification, checked against the sealed register.
+
+    Checked in BOTH directions, deliberately. A missing entry is the obvious error; the dangerous one
+    is the opposite — a family added to the register later would arrive with no classification, and
+    every consumer that reads a flag with `.get(...)` would then treat "unclassified" as
+    "unrestricted". Nothing may be schedulable, or non-network-position-sensitive, by omission.
+    """
+    rel = "platform/curation/families.yaml"
+    data = _yaml_no_duplicate_keys(read_text(ROOT / "platform" / "curation" / "families.yaml", inputs),
+                                   rel)
+    fams = data.get("families")
+    if not isinstance(fams, dict) or not fams:
+        die(f"{rel} carries no `families` mapping")
+
+    in_register = sorted({v[0] for v in cases.values()})
+    authored = sorted(fams)
+    missing = [f for f in in_register if f not in fams]
+    extra = [f for f in authored if f not in in_register]
+    if missing:
+        die(f"{rel} does not classify {missing}, which the sealed register uses. An unclassified "
+            f"family is schedulable by omission, which is the failure this check exists to prevent.")
+    if extra:
+        die(f"{rel} classifies {extra}, which no registered case belongs to. A stale entry is a rule "
+            f"nothing enforces, and it makes the file look wider in coverage than it is.")
+
+    vocab = data.get("vocabularies") or {}
+    required = ("label", "cost", "runner", "mutates", "schedulable", "network_position_sensitive")
+    for fam in in_register:
+        entry = fams[fam]
+        if not isinstance(entry, dict):
+            die(f"{rel}: family {fam} is not a mapping")
+        for key in required:
+            if key not in entry:
+                die(f"{rel}: family {fam} has no `{key}`. Every field this platform branches on must "
+                    f"be stated, because a default would be an unauthored policy.")
+        for key in ("cost", "runner", "mutates"):
+            allowed = vocab.get(key)
+            if isinstance(allowed, list) and entry[key] not in allowed:
+                die(f"{rel}: family {fam} has {key}={entry[key]!r}, outside the declared "
+                    f"vocabulary {allowed}")
+        if entry["schedulable"] is False and not str(entry.get("why_not_schedulable", "")).strip():
+            die(f"{rel}: family {fam} is not schedulable and gives no reason. A prohibition with no "
+                f"stated reason is the first one somebody removes.")
+        if entry["network_position_sensitive"] is True:
+            for key in ("why", "replication_requirement"):
+                if not str(entry.get(key, "")).strip():
+                    die(f"{rel}: family {fam} is network-position sensitive and has no `{key}`. The "
+                        f"case page renders this text as a banner; an empty banner is no banner.")
+
+    n_cases = {fam: sum(1 for v in cases.values() if v[0] == fam) for fam in in_register}
+    return {"schema": data.get("schema"), "vocabularies": vocab,
+            "families": {f: {**fams[f], "n_cases": n_cases[f]} for f in in_register},
+            "note": "Authored in platform/curation/families.yaml and validated against the sealed "
+                    "register in both directions: a registered family absent here, or an entry here "
+                    "for no registered family, fails the build. `cost` is a class, never a figure — "
+                    "cost_model.yaml is the only source of prices."}
+
+
+def derive_figures(inputs: dict[str, str], check_rc: int | None) -> dict:
+    """Census the whitepaper figures, and record each PNG as an input this build read.
+
+    `record_input` rather than a bare `read_bytes()`: the PNG bytes are copied into the payload
+    verbatim (see `copy_figures`), so they are an input with a hash like every other, and the copy can
+    declare the source it came from. Without that the figures would be the only published bytes with
+    no provenance — the exact hole the manifest exists to close.
+    """
     man = read_json(FIGURES / "MANIFEST.json", inputs)
     present, missing = [], []
     for p in sorted(FIGURES.glob("fig-*.png")):
+        rel = record_input(p, inputs)
         present.append({"file": p.name, "bytes": p.stat().st_size,
-                        "sha256": sha256_bytes(p.read_bytes())})
+                        "sha256": inputs[rel], "source": rel})
     names = {f["file"] for f in present}
     for n in range(1, 9):
         if not any(f.startswith(f"fig-{n:02d}") for f in names):
             missing.append(f"fig-{n:02d}")
     return {"manifest": man, "present": present, "missing": missing,
-            "numeric_check": None,
-            "numeric_check_note": "rc of `tools/whitepaper_figures.py --check` under .venv-figs. "
+            "numeric_check": check_rc,
+            "numeric_check_note": "rc of `tools/whitepaper_figures.py --check` under .venv-figs, "
+                                  "passed in with --figure-check-rc by whoever ran it. 0 means the "
+                                  "figures' NUMBERS were re-derived and matched; 1 means they "
+                                  "differ, so a figure shows a value the artifacts no longer hold; "
                                   "null means this build did not run it, which the UI must render "
-                                  "as 'not verified', never as fresh."}
+                                  "as 'not verified', never as fresh. The check compares numbers, "
+                                  "never PNG bytes: rendered bytes move with matplotlib and "
+                                  "freetype versions while the measurements do not.",
+            "redaction_note": "These PNGs are copied byte for byte and are NOT text-scannable: a "
+                              "regex cannot read a pixel, so the payload gate that catches an "
+                              "account id in JSON would not catch one rendered into an axis label. "
+                              "What protects a figure is that its numbers come from already-masked "
+                              "artifacts, plus a human looking at the image. Stated here because an "
+                              "unstated limit reads as a check that passed."}
 
 
 # --------------------------------------------------------------------------------------------
@@ -465,6 +676,36 @@ def emit(out_root: Path, rel: str, payload, outputs: dict[str, str],
     provenance[rel] = sorted(set(sources))
 
 
+def copy_figures(out_root: Path, figures: dict, outputs: dict[str, str],
+                 provenance: dict[str, list[str]], inputs: dict[str, str]) -> int:
+    """Copy each whitepaper PNG into the payload, hashed and attributed like every other output.
+
+    Not masked, because a PNG is not text — `emit`'s `redact.mask_text` on compressed image bytes
+    would either do nothing or corrupt the file, and doing nothing while calling itself masking is
+    worse than not calling it at all. The honest statement of what that leaves unchecked is in
+    `figures.json`'s `redaction_note`, where the figure gallery renders it.
+
+    The alternative — leaving the copy to `publish_web.py` — is what this replaces: bytes uploaded by
+    the publisher but absent from MANIFEST.json are bytes a reader cannot verify and a gate asserting
+    set-equality against the manifest would have to be told to ignore.
+    """
+    for f in figures["present"]:
+        src = ROOT / f["source"]
+        rel = f"figures/{f['file']}"
+        dst = (out_root / rel).resolve()
+        if out_root not in dst.parents:
+            die(f"refusing to write outside the output root: {dst}")
+        data = src.read_bytes()
+        if sha256_bytes(data) != inputs[f["source"]]:
+            die(f"{f['source']} changed between the census and the copy; the payload would carry a "
+                f"figure whose manifest hash is of different bytes")
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_bytes(data)
+        outputs[rel] = f["sha256"]
+        provenance[rel] = [f["source"]]
+    return len(figures["present"])
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -473,6 +714,14 @@ def main(argv: list[str] | None = None) -> int:
                          f"WHY THE PAYLOAD LIVES OUTSIDE THE REPOSITORY in this module's docstring)")
     ap.add_argument("--stamp", help="build stamp; default is now, UTC, YYYYmmddTHHMMSSZ")
     ap.add_argument("--clean", action="store_true", help="remove the output root first")
+    # An integer this build did not compute, and the ONLY one. Running the figure check needs
+    # `.venv-figs` (matplotlib), and importing that here would put a rendering toolchain inside the
+    # deriver of the census. So the caller runs it and passes the return code, which this build
+    # records verbatim. It is not defaulted to 0: an unrun check must render as "not verified", and a
+    # default of 0 would render as verified — the one wrong answer of the three.
+    ap.add_argument("--figure-check-rc", type=int, default=None,
+                    help="return code of `.venv-figs/bin/python tools/whitepaper_figures.py "
+                         "--check`. Omit if it was not run; NEVER pass 0 for 'not run'.")
     args = ap.parse_args(argv)
 
     out_root = Path(args.out)
@@ -517,7 +766,9 @@ def main(argv: list[str] | None = None) -> int:
     with scope() as s_policy:
         policy = derive_citation_policy(inputs)
     with scope() as s_figures:
-        figures = derive_figures(inputs)
+        figures = derive_figures(inputs, args.figure_check_rc)
+    with scope() as s_families:
+        families = derive_families(inputs, cases)
 
     restricted: dict[str, list[str]] = {}
     for r in policy.get("restrictions", []):
@@ -552,7 +803,7 @@ def main(argv: list[str] | None = None) -> int:
         "build_stamp": stamp, "rows": census_rows, "verdict_mix": mix,
         "seal": {"registry_sha256_recomputed": live_sha,
                  "registry_sha256_declared": declared_sha, "n_cases_declared": n_declared,
-                 "checked": "recomputed from the register itself and compared, not quoted"},
+                 "method": "read from the sealed register at build time, not from a recorded value"},
     }, census_sources)
     put("denominators.json", denominators,
         s_register.sorted() + s_published.sorted() + s_claims.sorted())
@@ -562,6 +813,11 @@ def main(argv: list[str] | None = None) -> int:
     put("citation_policy.json", policy, s_policy.sorted())
     put("figures.json", figures, s_figures.sorted())
     put("archive.json", {"by_case": archive}, s_archive.sorted())
+    # The register is a source too: this file's coverage claim is checked against it, so a reader who
+    # wants to know whether the classification is complete needs the tree the check ran over.
+    put("families.json", families, s_families.sorted() + s_register.sorted())
+    put("method.json", derive_method(published, archive, cases),
+        s_register.sorted() + s_published.sorted() + s_archive.sorted())
 
     n_series = 0
     for cid in sorted(cases):
@@ -593,6 +849,8 @@ def main(argv: list[str] | None = None) -> int:
             put(f"series/{cid}.json", {"case": cid, "series": heavy}, case_sources)
             n_series += 1
 
+    n_figs = copy_figures(out_root, figures, outputs, provenance, inputs)
+
     missing_prov = sorted(set(outputs) - set(provenance))
     if missing_prov:
         die(f"emitted without provenance: {missing_prov}")
@@ -622,9 +880,13 @@ def main(argv: list[str] | None = None) -> int:
           f"{', '.join(f'{k} {v}' for k, v in mix.items())}")
     print("  denominators " + " | ".join(
         f"{k} {v['n']}" for k, v in denominators.items()))
+    n_sched = sum(1 for v in families["families"].values() if v["schedulable"])
+    print(f"  {len(families['families'])} families classified, {n_sched} schedulable, "
+          f"{sum(1 for v in families['families'].values() if v['network_position_sensitive'])} "
+          f"network-position sensitive")
     print(f"  {len(findings)} findings, {registers['n_items']} register items, "
           f"{len(policy.get('restrictions', []))} citation restrictions, "
-          f"{len(figures['present'])} figures present, missing {figures['missing'] or 'none'}")
+          f"{n_figs} figures copied, missing {figures['missing'] or 'none'}")
     print(f"  {n_series} case(s) needed a series split at >= {SERIES_BYTES} bytes")
     return 0
 

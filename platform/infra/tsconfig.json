@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["es2022"],
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noImplicitThis": true,
+    "noImplicitReturns": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "alwaysStrict": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    // NOT `verbatimModuleSyntax`. This package is CommonJS on purpose: `aws-cdk-lib` is CJS and its
+    // named exports are getters that Node's ESM interop does not always detect, and `__dirname` is
+    // needed to locate the edge handler's entry file. `tsx` transpiles the ESM syntax below to
+    // require() calls; `verbatimModuleSyntax` would instead forbid writing it.
+    "declaration": false,
+    "typeRoots": ["./node_modules/@types"],
+    "types": ["node", "aws-lambda"],
+    "noEmit": true,
+    "allowImportingTsExtensions": true
+  },
+  "include": ["bin/**/*.ts", "lib/**/*.ts", "test/**/*.ts"],
+  "exclude": ["node_modules"]
+}
