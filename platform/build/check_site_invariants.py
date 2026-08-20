@@ -99,6 +99,15 @@ THE ARMS, and what each one would have caught
     WITHOUT the case table under it — `check_architecture.py` and `derive_architecture()` both read the
     authored topology, and neither is a second reading of the colour that actually shipped.
 
+    It also checks that the status colour REACHES the box, which the styling check above cannot see. On
+    2026-08-20 every status token was in the served stylesheet and every box was drawn in the same
+    neutral slate anyway: `.st-contested` and `.archbox` are both single-class selectors, `.archbox` was
+    the later one, and its own `border` shorthand discarded the status colour — while the legend printed
+    beside the diagram went on advertising five. So the stylesheet publishes each status colour as the
+    custom property `--st` and the box rule reads it, and both halves of that are asserted here: a status
+    that states a colour without publishing it, or a box rule that names its own border colour instead of
+    reading the property, fails the publish.
+
 Exit 0 = all arms pass. 1 = a violation. 2 = the gate could not run (missing payload, unreadable
 JSON): a gate that cannot run must not report clean (`feedback_guard_tool_exit_codes`).
 
@@ -111,7 +120,7 @@ test (`feedback_test_suite_over_memory`): it cannot notice the day an arm stops 
 harness to them is register work, and the limit is stated here rather than left to be inferred from the
 absence of tests.
 
-MUTATION-CHECKED — the arms that existed on 2026-08-20 by a one-off exercise, 19/19; arm 14 by seven
+MUTATION-CHECKED — the arms that existed on 2026-08-20 by a one-off exercise, 19/19; arm 14 by nine
 committed mutants instead, each killed by the arm that watches the property it broke, run against
 COPIES of the payload and `dist`
 --------------------------------------------------------------------------------------------------
@@ -981,6 +990,29 @@ def arm_architecture_colours_are_licensed(g: Gate, payload: Path, census: dict,
             f"different from an unexamined one",
             passed=f"all {len(statuses)} status and {len(routes)} edge-route token(s) have a rule in "
                    f"{len(sheets)} stylesheet(s)")
+
+    # A TOKEN IN THE STYLESHEET IS NOT A COLOUR ON THE BOX
+    #
+    # The check above passed on 2026-08-20 against a served page that drew all 38 boxes in the same neutral
+    # slate. `.st-contested` and `.archbox` are both single-class selectors and `.archbox` is declared
+    # later, so its own `border` won the cascade and discarded every status colour — while the legend
+    # printed beside the diagram went on advertising five. The gate could not see it, because a rule being
+    # present in the file is a different claim from that rule reaching the element.
+    #
+    # A custom property makes the second claim greppable, which is why the stylesheet was rewritten to use
+    # one: each status rule publishes its colour as `--st`, and the box rule reads it. `.archbox` never
+    # declares `--st`, so there is nothing for a later rule to override, and the two halves of that
+    # arrangement are asserted here separately — half of it is a monochrome diagram again.
+    no_var = [f"st-{s}" for s in statuses
+              if not re.search(rf"\.st-{re.escape(str(s).lower())}(?![\w-])\{{[^}}]*--st:", css)]
+    g.check(arm, not no_var,
+            f"{no_var} state a colour without publishing it as `--st`, so the diagram surface's own rule "
+            f"decides the box border and the status on the element decides nothing")
+    g.check(arm, re.search(r"\.archbox(?![\w-])\{[^}]*border:[^;}]*var\(--st(?![\w-])", css) is not None,
+            "the `.archbox` rule does not take its border colour from `--st`, so every box is drawn in "
+            "whatever colour that one rule names, whatever the payload says about the component",
+            passed=f"all {len(statuses)} status(es) publish `--st` and the diagram box takes its border "
+                   f"from it, so a box's colour is the status the payload put on it")
 
 
 def main(argv: list[str] | None = None) -> int:

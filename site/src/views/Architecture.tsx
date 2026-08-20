@@ -245,7 +245,7 @@ function Diagram({ d, arch }: { d: ArchDiagram; arch: Architecture }) {
         ))}
       </div>
 
-      <div className="scroll">
+      <div className="archscroll">
         <div
           className="archcanvas"
           style={{ width: v.width * SCALE, height: v.height * SCALE }}
@@ -372,7 +372,7 @@ export default function ArchitectureView() {
         closed set is below, so a number on a box can always be traced to the thing that produced it — and
         a metric this file could not compute fails the build rather than rendering blank.
       </p>
-      <table className="grid">
+      <table className="grid archmetrics">
         <tbody>
           {Object.entries(arch.metrics)
             .sort(([a], [b]) => a.localeCompare(b))

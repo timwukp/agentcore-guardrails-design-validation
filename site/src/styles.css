@@ -639,25 +639,42 @@ details.raw > div {
  * this study never looked, which is not a clean result.
  *
  * The palette carries the same refusal as the verdict palette: measured_false is amber because it is a
- * finding, not a failure, and not_measured is dashed slate rather than green-adjacent anything. */
+ * finding, not a failure, and not_measured is dashed slate rather than green-adjacent anything.
+ *
+ * EVERY RULE HERE ALSO PUBLISHES ITS COLOUR AS `--st`, AND THAT IS LOAD-BEARING
+ *
+ * A badge is a bare element, so `color`/`border-color` reach it. A diagram box is not: `.archbox` is a
+ * surface with its own `color` and `border`, both single-class selectors like these, and it is declared
+ * LATER in this file — so on 2026-08-20 the served page rendered all 38 boxes in the neutral slate while
+ * the legend beside them showed five distinct colours. The publish gate greps the stylesheet for
+ * `st-<status>` and passed, because the token was present; a token being present is a different claim from
+ * the colour reaching the element. A custom property cannot lose that argument: `.archbox` never declares
+ * `--st`, so there is nothing for the cascade to override, and the box border resolves to whatever status
+ * the payload put on the element. One declaration per status, read by both the badge and the diagram. */
 .st-measured_true {
+  --st: var(--v-true);
   color: var(--v-true);
   border-color: var(--v-true);
 }
 .st-measured_false {
+  --st: var(--v-false);
   color: var(--v-false);
   border-color: var(--v-false);
 }
 .st-not_established {
+  --st: var(--v-inconclusive);
   color: var(--v-inconclusive);
   border-color: var(--v-inconclusive);
 }
 .st-not_measured {
+  --st: var(--v-inconclusive);
+  --st-style: dashed;
   color: var(--v-inconclusive);
   border-color: var(--v-inconclusive);
   border-style: dashed;
 }
 .st-context_only {
+  --st: var(--v-recorded);
   color: var(--v-recorded);
   border-color: var(--v-recorded);
 }
@@ -762,10 +779,12 @@ details.raw > div {
  * `not_measured` is deliberately loud rather than pale. An uncoloured box reads as "nothing to worry
  * about"; what it means is that this study never looked at that component at all. */
 .st-contested {
+  --st: var(--v-false);
   color: var(--v-false);
   border-color: var(--v-false);
 }
 .st-validated_in_part {
+  --st: var(--v-true);
   color: var(--v-true);
   border-color: var(--v-true);
 }
@@ -781,6 +800,15 @@ details.raw > div {
 
 .archsec {
   margin-bottom: 34px;
+}
+
+/* Not the shared `.scroll` wrapper the tables use: that one draws its own border at the full width of the
+ * column, which around a 425 px-wide diagram reads as a large empty panel with a small picture in the
+ * corner, and clips at 70vh — cutting the verdict pipeline off at its seventh box of seventeen. The canvas
+ * already draws its own border at its own width, so this wrapper only ever scrolls. */
+.archscroll {
+  overflow: auto;
+  max-height: 88vh;
 }
 
 .archcanvas {
@@ -831,6 +859,14 @@ details.raw > div {
   fill: var(--seal);
 }
 
+/* The box carries the status in its BORDER, which is the same shape the legend swatch above it is drawn
+ * as — a bordered rectangle in the status colour — so the legend is a miniature of the thing it explains
+ * rather than a second encoding of it. Colour comes through `--st` (declared by the `.st-*` rules) instead
+ * of being restated per status here: `.archbox` and `.st-contested` are both single-class selectors, and
+ * this rule is the later one, so any colour written here would silently win. `box-sizing: border-box` is
+ * global, so border width never changes the footprint `_layout()` proved separated. The label stays at
+ * `--fg`: at 72% scale an amber sentence is harder to read than a black-on-slate one, and the colour is
+ * already carried by the frame. */
 .archbox {
   position: absolute;
   display: flex;
@@ -843,7 +879,7 @@ details.raw > div {
   font-size: 13px;
   color: var(--fg);
   background: var(--bg-raised);
-  border: 2px solid var(--border-strong);
+  border: 2px var(--st-style, solid) var(--st, var(--border-strong));
   border-radius: 4px;
   cursor: pointer;
   overflow: hidden;
@@ -911,11 +947,15 @@ details.raw > div {
   gap: 6px;
 }
 
+/* The swatch is drawn exactly as the box is — same width, same colour source, same `--st-style` — because
+ * a legend that renders `not_measured` solid while the boxes render it dashed is a legend for a different
+ * picture. `currentColor` is the status colour here: this rule sets no `color`, so the `.st-*` class on the
+ * element still supplies it. */
 .archlegend .sw {
   width: 22px;
   height: 11px;
   border-radius: 2px;
-  border: 2px solid currentColor;
+  border: 2px var(--st-style, solid) currentColor;
   background: var(--bg-raised);
 }
 
@@ -970,6 +1010,13 @@ details.raw > div {
 
 .archkv {
   margin-bottom: 10px;
+}
+
+/* Two columns, both narrow. `table.grid` is `width: 100%`, which put each metric's value ~780 px to the
+ * right of the name it belongs to — the number and its label were on screen together and still could not
+ * be read as a pair. */
+.archmetrics {
+  max-width: 560px;
 }
 
 .archwhy {

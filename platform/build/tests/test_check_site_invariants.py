@@ -463,28 +463,70 @@ def test_an_empty_non_colouring_set_cannot_report_clean(payload, tmp_path):
     expect_killed(mutant, ARCH_ARM, "declares no non-colouring restriction set")
 
 
-def test_a_box_status_with_no_stylesheet_rule_fails_the_publish(payload, tmp_path):
-    """`contested` is the token whose unstyled reading is wrong in the dangerous direction, and it is
-    the one status word this vocabulary does not share with the audit page's — so a kill here is
-    attributable to the diagram arm rather than to the control inventory's."""
-    dist = tmp_path / "dist-arch"
-    shutil.copytree(DIST, dist)
-    sheets = sorted((dist / "assets").glob("*.css"))
+def _mutate_css(dist: Path, tag: str, tmp_path: Path, old: str, new: str) -> Path:
+    """Copy `dist` and rewrite one substring in every stylesheet, asserting the edit landed.
+
+    Separate from `_mutate` because a stylesheet is not JSON and is not in `MANIFEST.json`'s
+    `outputs_sha256` — the manifest covers the payload, and `dist/` is checked as served bytes.
+    """
+    out = tmp_path / f"dist-{tag}"
+    shutil.copytree(dist, out)
+    sheets = sorted((out / "assets").glob("*.css"))
     assert sheets, "the built dist carries no stylesheet, so this arm would be vacuous"
     changed = 0
     for sheet in sheets:
         before = sheet.read_text(encoding="utf-8")
-        # Renamed, not deleted: the rule stays visible in the file, so only a whole-token match kills it.
-        after = before.replace(".st-contested", ".st-contested-box")
+        after = before.replace(old, new)
         if after != before:
             sheet.write_text(after, encoding="utf-8")
             changed += 1
-    assert changed, "the rule under test is not in the built stylesheet at all"
+    assert changed, f"{old!r} is not in the built stylesheet, so this arm would prove nothing"
+    return out
+
+
+def test_a_box_status_with_no_stylesheet_rule_fails_the_publish(payload, tmp_path):
+    """`contested` is the token whose unstyled reading is wrong in the dangerous direction, and it is
+    the one status word this vocabulary does not share with the audit page's — so a kill here is
+    attributable to the diagram arm rather than to the control inventory's.
+
+    Renamed, not deleted: the rule stays visible in the file, so only a whole-token match kills it."""
+    dist = _mutate_css(DIST, "arch", tmp_path, ".st-contested", ".st-contested-box")
     proc = run_gate(payload, dist)
     assert proc.returncode == 1, f"the gate exited {proc.returncode}, so the mutant survived"
     body = proc.stdout + proc.stderr
     assert f"[{ARCH_ARM}]" in body, body[-2000:]
     assert "st-contested" in body
+
+
+# The two arms below are the ones the 2026-08-20 defect got past. Every status token WAS in the
+# stylesheet; the boxes were slate anyway, because `.archbox` is a later single-class rule that set
+# `border` outright. The property that had to become checkable is not "the rule exists" but "the rule
+# reaches the box", and it is asserted as two halves — each half alone permits a monochrome diagram.
+
+def test_a_status_that_does_not_publish_its_colour_fails_the_publish(payload, tmp_path):
+    """`--st` removed from one status rule: the rule still declares a colour, and the token check above
+    still passes, so a kill here is attributable to the cascade check and to nothing else."""
+    dist = _mutate_css(DIST, "novar", tmp_path,
+                       ".st-contested{--st:var(--v-false);", ".st-contested{")
+    proc = run_gate(payload, dist)
+    assert proc.returncode == 1, f"the gate exited {proc.returncode}, so the mutant survived"
+    body = proc.stdout + proc.stderr
+    assert f"[{ARCH_ARM}]" in body, body[-2000:]
+    assert "without publishing it as `--st`" in body, body[-2000:]
+    assert "st-contested" in body, body[-2000:]
+
+
+def test_a_box_border_not_taken_from_the_status_fails_the_publish(payload, tmp_path):
+    """The other half: every status publishes `--st` and the box ignores it. This is the exact shape of
+    the defect that shipped — a hardcoded border on the surface rule — so it must not survive."""
+    dist = _mutate_css(DIST, "hardborder", tmp_path,
+                       "border:2px var(--st-style,solid) var(--st,var(--border-strong))",
+                       "border:2px solid var(--border-strong)")
+    proc = run_gate(payload, dist)
+    assert proc.returncode == 1, f"the gate exited {proc.returncode}, so the mutant survived"
+    body = proc.stdout + proc.stderr
+    assert f"[{ARCH_ARM}]" in body, body[-2000:]
+    assert "does not take its border colour from `--st`" in body, body[-2000:]
 
 
 def test_a_dist_with_no_stylesheet_cannot_report_clean(payload, tmp_path):
