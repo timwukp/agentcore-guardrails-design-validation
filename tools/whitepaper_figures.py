@@ -45,6 +45,7 @@ no PNG is written. That is the same rule the paper applies to Appendix D.
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import sys
 import textwrap
@@ -134,6 +135,27 @@ def footer(ax, sources: list[str]) -> None:
                    fontsize=5.2, color="#666666", ha="left", va="bottom")
 
 
+# Does `finish()` put bytes on disk? False under `--check`, and the reason is not tidiness.
+#
+# `--check` calls `build()`, which calls every `figNN()`, which called `finish()`, which called
+# `savefig` unconditionally — so the read-only freshness check OVERWROTE all seven PNGs it was
+# checking, and then reported STALE about the manifest describing the files it had just replaced.
+# Two consequences, both measured on 2026-08-20:
+#
+#   1. There is no state in which a PNG on disk can be found to disagree with the manifest, because
+#      the act of looking rewrites it. `--check` can detect a stale MANIFEST and never a stale
+#      figure, and its help text ("re-derive the numbers") did not say so.
+#   2. It corrupts other measurements. The full suite's concurrent-writer detector reported
+#      `7 change(s) under results/ ... made by ANOTHER PROCESS` and declared its own tree-diff
+#      channel VOID for the session — a `--check` run in a neighbouring shell cost a 1 h 28 m test
+#      run half its coverage.
+#
+# The figures are still RENDERED under `--check`, into a discarded buffer, because that is real
+# coverage worth keeping: a NaN axis or an empty series raises in `savefig`, and dropping the draw
+# entirely would trade one silent gap for another.
+WRITE_PNGS = True
+
+
 def finish(fig, out: str) -> None:
     """Save with a reserved footer strip instead of `bbox_inches="tight"`.
 
@@ -142,10 +164,13 @@ def finish(fig, out: str) -> None:
     outright. Reserving the bottom 6% and laying out into the remainder puts the footer somewhere
     deterministic on every figure, at the cost of a little whitespace.
     """
-    FIGDIR.mkdir(parents=True, exist_ok=True)
     bottom = (0.18 + 0.04) / fig.get_figheight()   # provenance footer strip
     fig.tight_layout(rect=(0, bottom, 1, getattr(fig, "_wp_top", 1.0)))
-    fig.savefig(FIGDIR / out, dpi=200)
+    if WRITE_PNGS:
+        FIGDIR.mkdir(parents=True, exist_ok=True)
+        fig.savefig(FIGDIR / out, dpi=200)
+    else:
+        fig.savefig(io.BytesIO(), format="png", dpi=200)  # rendered, then dropped: see WRITE_PNGS
     plt.close(fig)
 
 
@@ -614,12 +639,74 @@ def build() -> dict:
             "figures": figs}
 
 
+def _leaves(obj, prefix: str = "") -> dict[str, object]:
+    """Flatten to `dotted.path[i] -> scalar`, so a difference can be named instead of asserted."""
+    if isinstance(obj, dict):
+        out: dict[str, object] = {}
+        for k, v in obj.items():
+            out.update(_leaves(v, f"{prefix}.{k}" if prefix else str(k)))
+        return out
+    if isinstance(obj, list):
+        out = {}
+        for i, v in enumerate(obj):
+            out.update(_leaves(v, f"{prefix}[{i}]"))
+        return out
+    return {prefix: obj}
+
+
+def report_drift(manifest_text: str, fresh_text: str) -> None:
+    """Print WHICH numbers moved, to stderr, in `path: manifest -> re-derived` form.
+
+    A `--check` that prints only `STALE` gives the operator nothing: on 2026-08-20 this exit 1 had
+    to be diagnosed by hand-writing a flattening script, and the answer — five F6 percentiles and
+    one denominator, all of figure 3, because the 2026-08-19 day-2 replication landed after the
+    manifest was last written — was a legitimate re-derivation rather than a defect. Those are
+    opposite dispositions and the gate said nothing that separated them. A drift of one percentile
+    and a drift of every figure in the file are also opposite situations; the count alone tells them
+    apart, so it is printed even when the list is truncated.
+
+    A difference the parsed leaves cannot explain is reported as such rather than as an empty diff,
+    because "STALE, and here is nothing" is the same uselessness one level down.
+    """
+    try:
+        old = _leaves(json.loads(manifest_text))
+    except json.JSONDecodeError as exc:
+        print(f"  MANIFEST.json is not valid JSON ({exc}); no per-number diff is possible",
+              file=sys.stderr)
+        return
+    new = _leaves(json.loads(fresh_text))
+    moved = [k for k in sorted(set(old) | set(new)) if old.get(k, _MISSING) != new.get(k, _MISSING)]
+    if not moved:
+        print("  every number agrees; the files differ in formatting, key order or whitespace only "
+              "— regenerate to normalise it", file=sys.stderr)
+        return
+    print(f"  {len(moved)} of {len(set(old) | set(new))} value(s) moved:", file=sys.stderr)
+    for k in moved[:DRIFT_LINES]:
+        o, n = old.get(k, _MISSING), new.get(k, _MISSING)
+        print(f"    {k}: {o!r} -> {n!r}", file=sys.stderr)
+    if len(moved) > DRIFT_LINES:
+        print(f"    … and {len(moved) - DRIFT_LINES} more", file=sys.stderr)
+
+
+class _Missing:
+    def __repr__(self) -> str:
+        return "<absent>"
+
+
+_MISSING = _Missing()
+DRIFT_LINES = 40
+
+
 def main(argv: list[str] | None = None) -> int:
+    global WRITE_PNGS
+
     ap = argparse.ArgumentParser()
     ap.add_argument("--check", action="store_true",
-                    help="re-derive the numbers and exit 1 if they differ from MANIFEST.json")
+                    help="re-derive the numbers, name any that differ from MANIFEST.json, exit 1; "
+                         "renders every figure but writes no PNG")
     a = ap.parse_args(argv)
 
+    WRITE_PNGS = not a.check  # set BEFORE build(): see the WRITE_PNGS comment above finish()
     m = build()
     # Masked BEFORE the --check comparison, not only before the write, so both paths compare the
     # same bytes. `results/` is distributable and every write into it must mask
@@ -632,8 +719,10 @@ def main(argv: list[str] | None = None) -> int:
         if not MANIFEST.exists():
             print(f"STALE — {MANIFEST.relative_to(ROOT)} does not exist", file=sys.stderr)
             return 1
-        if MANIFEST.read_text(encoding="utf-8") != text:
+        stored = MANIFEST.read_text(encoding="utf-8")
+        if stored != text:
             print("STALE — the figures' numbers no longer match MANIFEST.json", file=sys.stderr)
+            report_drift(stored, text)
             return 1
         print("FRESH — every figure's numbers match MANIFEST.json")
         return 0
