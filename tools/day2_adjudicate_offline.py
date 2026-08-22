@@ -67,16 +67,24 @@ def failed_calls_run_wide(d2r, run_id: str, day: str) -> dict:
 
     Deliberately not a second copy of `day2_replicate.transient_failures()`. That function answers a
     narrower question — "was this specific case's observation invalidated by the service declining to
-    look?" — and it answers it through two filters that both failed on this run: a closed tuple of
-    error *names* (`TRANSIENT_ERRORS`, which has no entry for botocore's `ReadTimeoutError` or a bare
-    HTTP 500) and `_scoped()`, which cannot match a directory named for two cases at once (`F6-2_5`).
-    So it reported a clean observation over a run containing a 70-second read timeout, and
-    `clean_observation: true` went into the record with nothing beside it to contradict it.
+    look?" — and when this function was written it answered it through two filters that both failed on
+    the 2026-08-19 run: a closed tuple of error *names* (`TRANSIENT_ERRORS`, which had no entry for
+    botocore's `ReadTimeoutError` or a bare HTTP 500) and `_scoped()`, which could not match a
+    directory named for two cases at once (`F6-2_5`). So it reported a clean observation over a run
+    containing a 70-second read timeout, and `clean_observation: true` went into the record with
+    nothing beside it to contradict it.
 
-    This is the cheap, un-scoped complement: a predicate over the record's own `ok` flag rather than
-    over a list of names, across the whole run id, with no case filter and no threshold. It cannot
-    adjudicate anything and is not used to — it exists so that a reader of the emitted JSON sees the
-    failure count next to the clean-observation claim and can tell that the two disagree.
+    BOTH OF THOSE FILTERS ARE FIXED (FUTURE-WORK items 33/34, 2026-08-22). `transient_failures()` now
+    gates on the record's own `ok is False` — the same predicate as here — and scopes through
+    `lib.case_ids`, and on this run's records it finds all eight failures and attributes four to each
+    of F6-2/F6-5 and four to each of F6-6/F6-7/F6-8. Convergence is deliberate and this function is
+    still not redundant, for a reason the fix does not remove: it is **un-scoped**. A case-scoped
+    check can only ever report failures in the cases someone asked about, so a failure in a producer
+    nobody requested that day stays invisible to it. The run-wide count is what makes "clean for every
+    case I asked about" and "this run degraded" distinguishable in the emitted JSON.
+
+    So: a predicate over the record's own `ok` flag rather than over a list of names, across the whole
+    run id, with no case filter and no threshold. It cannot adjudicate anything and is not used to.
     """
     base = d2r.EVIDENCE / run_id
     if not base.is_dir():
@@ -103,8 +111,16 @@ def failed_calls_run_wide(d2r, run_id: str, day: str) -> dict:
             codes[str(code)] = codes.get(str(code), 0) + 1
     return {"scanned": n, "not_ok": n_bad, "error_codes": codes,
             "max_duration_ms": round(worst, 3),
-            "basis": "the record's own `ok` flag over every case under this run id — no error-name "
-                     "list and no case scoping, so it sees what transient_failures() cannot"}
+            # This sentence is a claim about the OTHER function, so it expires when that
+            # function changes ([[feedback_prose_is_not_verified]]). It read "no error-name
+            # list and no case scoping" until 2026-08-22, when items 33/34 removed the name
+            # list from `transient_failures()`; only the scoping difference survives, and
+            # `error_codes` buckets a failure carrying no service code as "unrecorded"
+            # rather than resolving it, which is why the two views can disagree on labels
+            # while agreeing on the count.
+            "basis": "the record's own `ok` flag over every case under this run id, with no "
+                     "case filter — the one thing transient_failures() cannot see, because a "
+                     "case-scoped check reports only on cases someone asked about"}
 
 
 def main() -> int:
@@ -227,7 +243,8 @@ def main() -> int:
                      "payload_fields_differing_total": len(pquant),
                      "payload_run_scoped_differences": len(pvol),
                      "clean_observation": not trans,
-                     "transient_error_calls": [{"evidence": p, "error_code": c} for p, c in trans]})
+                     # Key names follow day2_replicate.py's; see its `schema_change` block.
+                     "failed_calls": [{"evidence": p, "reason": c} for p, c in trans]})
         print(f"  [{'AGREE' if v1 == v2 else 'DISAGREE'}] {case}: {d1} {v1} -> {args.day} {v2}"
               f"  | record paths differing: {len(diffs)} | sealed moved: {broke or 'none'}")
 
@@ -248,7 +265,7 @@ def main() -> int:
              "day1_date_source": day1_sources,
              "summaries_captured_today": caps, "calls_reported": n_calls,
              "checkpoints_archived": None, "day1_files_archived": None,
-             "cases_with_transient_failures": caveats, "results": rows,
+             "cases_with_failed_calls": caveats, "results": rows,
              "provenance": {"derived_offline": True,
                             "tool": "tools/day2_adjudicate_offline.py",
                             "reason": args.reason,

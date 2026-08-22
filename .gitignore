@@ -40,6 +40,9 @@ site/dist/
 .venv-*/
 __pycache__/
 .pytest_cache/
+# `ruff check` writes this; it appeared in `tools/repo_diff.py`'s ADDED list the first
+# time the lint gate ran here, i.e. it was one push list away from being published.
+.ruff_cache/
 node_modules/
 f1_config/.wheel_cache/
 .DS_Store

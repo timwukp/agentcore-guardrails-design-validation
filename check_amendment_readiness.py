@@ -44,8 +44,11 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT))
 RESULTS = ROOT / "results"
 EVIDENCE = ROOT / "evidence"
+
+from lib.case_ids import case_ids_in  # noqa: E402
 
 # A finding declares its provenance in a fenced block so the gate does not have to
 # parse prose. Keys are deliberately few: status, and the run_ids the claims rest on.
@@ -88,9 +91,37 @@ def observation_days(run_ids: list[str], cases: list[str], problems: list[str],
     the two do not match: FINDING-F5-7A.md rests on records whose `case_id` is `F5-7a`, and a
     filename-derived guess would silently match nothing, which this function reports as a
     failure — the right direction, but for the wrong reason and with a confusing message.
+
+    MATCHING IS BY `lib.case_ids`, NOT BY EQUALITY (FUTURE-WORK item 34)
+    -------------------------------------------------------------------
+    Equality made this gate unable to accept the id the document and the verdict files use.
+    F6's and F7's producers stamp every record with a **timing group** — `F6-6_7_8`, 9,287
+    records — so a finding declaring `F6-6` matched none of its own records and was reported as
+    resting on records that were never written. FINDING-F6-DAY2-DECISIVENESS.md worked around
+    that by declaring the three group ids, and its own `cases_note` records the price: "its
+    per-case day scoping degrades to per-producer scoping ... a day credited to one member is
+    credited to all of its group". That workaround is exactly the failure the scoping above
+    exists to prevent, admitted in prose instead of fixed.
+
+    A record now matches when the case ids **its** name denotes intersect the case ids the
+    declaration denotes, so `F6-6` reaches `F6-6_7_8`'s records and `F3-4` reaches its own
+    strata (`F3-4-pii-us_social_security_number`). Both directions are expanded because either
+    side may be the joined or the qualified form.
+
+    WHICH WAY THIS CAN GO WRONG. Widening a replication gate is the dangerous direction: a
+    finding that was short of two days could be handed a second day it did not earn. Two things
+    bound it. `lib.case_ids` never expands across cases — the separator rule keeps `F8-50` out
+    of F8-5 and `F6-2_5` out of F6-25 — so a day can only arrive from a record of the declared
+    case itself or of a group that ran the declared case in the same invocation. And the effect
+    was measured, not assumed: `results/ITEM34-GATE-DELTA.json` records every finding's matched
+    record count and day set before and after, and no finding's day count crossed the MIN_DAYS
+    boundary. Re-derive that file rather than trusting this sentence.
     """
     days: set[str] = set()
+    # The declaration expanded once: the ids as written, plus every case each denotes.
     wanted = set(cases)
+    for c in cases:
+        wanted.update(case_ids_in(c))
     n_matched = 0
     for rid in run_ids:
         d = EVIDENCE / rid
@@ -110,7 +141,8 @@ def observation_days(run_ids: list[str], cases: list[str], problems: list[str],
                 problems.append(f"{src}: {p.relative_to(ROOT)} is not readable JSON "
                                 f"({e}), so its date cannot be counted")
                 continue
-            if rec.get("case_id") not in wanted:
+            cid = rec.get("case_id")
+            if cid not in wanted and not (set(case_ids_in(cid)) & wanted):
                 continue
             n_matched += 1
             ts = rec.get("t_start_utc")

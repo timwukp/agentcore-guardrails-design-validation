@@ -78,6 +78,7 @@ EVIDENCE = ROOT / "evidence"
 sys.path.insert(0, str(ROOT))
 from lib import evidence as E  # noqa: E402
 from lib import redact as _redact  # noqa: E402
+from lib.case_ids import case_ids_in  # noqa: E402
 
 
 def utc_today() -> str:
@@ -108,11 +109,20 @@ def snapshot_phase1() -> dict[str, bytes]:
 def _scoped(parts: tuple[str, ...], case: str | None) -> bool:
     """Does an evidence path belong to `case`? `None` means "every case in the run".
 
-    A path component must BE the case id or start `<case>-` (stratum directories such as
-    `F8-4-classic-benign`). Substring matching would credit F8-5's records to F8-50, and an
-    unscoped match would let the busiest case in a run date or contaminate every other one.
+    A path component must DENOTE the case, which `lib.case_ids.case_ids_in` decides: the
+    component is the id, or qualifies it (`F8-4-classic-benign`, `F3-4-pii-ip_address`), or is a
+    joined timing group that holds it (`F6-2_5`, `F6-6_7_8`). Substring matching would credit
+    F8-5's records to F8-50, and an unscoped match would let the busiest case in a run date or
+    contaminate every other one — both still refused, by the separator rule in `case_ids_in`.
+
+    Why the joined-group arm had to be added: this function used to require the component to BE
+    the id or start `<case>-`, and F6's producers write one directory per *timing group*, so
+    neither `F6-2_5` nor `F6-6_7_8` matched anything. On 2026-08-19 that filtered away every one
+    of the run's 9,448 records and `transient_failures` reported a clean observation over eight
+    failed calls (FUTURE-WORK item 34). The identity arm is kept ahead of the resolver so that a
+    caller passing a non-canonical case string still gets an exact match rather than nothing.
     """
-    return case is None or any(p == case or p.startswith(case + "-") for p in parts)
+    return case is None or any(p == case or case in case_ids_in(p) for p in parts)
 
 
 def evidence_date(case: str, run_id: str) -> tuple[str | None, str]:
@@ -313,6 +323,38 @@ def run_id_of(raw: bytes) -> str:
         return ""
 
 
+def recorded_run_ids(before: dict[str, bytes], after: dict[str, bytes]) -> list[str]:
+    """The run ids the producer actually wrote under, read out of what it re-emitted.
+
+    Why this exists: the flag is a REQUEST, and three producers refused it
+    ------------------------------------------------------------------------
+    `main` appends `--run-id <minted>` to the producer command and then proves the run observed
+    something by counting records under `evidence/<minted>`. State-loading producers ignore the
+    flag — `lib.testbed.State.load_or_new` reads `state.json` and adopts the run id recorded
+    there — so on 2026-08-19 all three F6 producers printed `run_id=r20260810T130945Z` beneath a
+    command line reading `--run-id r20260819T030137Z`. The driver looked in
+    `evidence/r20260819T030137Z/`, which was never created, found **0** records, and returned
+    rc 2 "did not observe" over 52 min, 36 min and 2 h 41 min of real measurement whose 9,448
+    records had gone to the other directory (FUTURE-WORK item 33).
+
+    So the effective run id is derived the same way `evidence_date` derives a day: from what the
+    observation itself recorded, in preference to what a name asserts. The verdict files the
+    producer re-emitted carry it — `run_id` at the top level, or inside `record` — and a file
+    whose bytes did not change is not evidence of anything this run did, so only changed files
+    are read.
+
+    Returns the ids in verdict-file name order, deduplicated, `[]` when nothing changed.
+    """
+    out: list[str] = []
+    for name in sorted(after):
+        if before.get(name) == after[name]:
+            continue
+        rid = run_id_of(after[name])
+        if rid and rid not in out:
+            out.append(rid)
+    return out
+
+
 META = ("environment.json", "analysis.json", "summary.json")
 
 
@@ -341,6 +383,14 @@ def fresh_records(run_id: str, day: str) -> int:
 
 # Errors that are the service declining to LOOK at the request, as opposed to answering it.
 # A call that ends in one of these carries no information about the thing under test.
+#
+# THIS IS NO LONGER THE GATE, and that is the whole point of FUTURE-WORK item 34. It was, and on
+# 2026-08-19 it let all eight of a run's failed calls through: it has no entry for botocore's
+# actual read-timeout class `ReadTimeoutError`, none for a bare HTTP 500, and four of the eight
+# records carry NO error code or class in any field at all, so no list of names could have
+# reached them. A name list cannot cover the next member of a family a predicate would have
+# caught ([[feedback_scope_as_namelist]]) — the third instance of that failure in one month. It
+# is kept as an EXTRA that supplies a precise label for the codes it does know.
 TRANSIENT_ERRORS = (
     "ThrottlingException", "ThrottledException", "TooManyRequestsException",
     "ServiceUnavailableException", "ServiceQuotaExceededException", "InternalServerException",
@@ -348,9 +398,145 @@ TRANSIENT_ERRORS = (
     "ModelNotReadyException", "SlowDown",
 )
 
+# botocore/urllib3 exception classes that mean the call never reached a decision: the socket
+# timed out, the connection was reset, the endpoint did not resolve. Also an extra rather than a
+# gate — matched against `error_class` and against the leading `ClassName:` of `error_message`,
+# because the three `ProtocolError` records of 2026-08-19 carry the class name only there.
+TRANSPORT_FAILURES = (
+    "ReadTimeoutError", "ConnectTimeoutError", "ConnectionError", "EndpointConnectionError",
+    "ConnectionClosedError", "ConnectionResetError", "ProtocolError", "RemoteDisconnected",
+    "IncompleteReadError", "ResponseStreamingError", "SSLError", "HTTPClientError",
+    "ReadTimeout", "ConnectTimeout", "NewConnectionError", "MaxRetryError",
+)
+
+
+def _status_of(d: dict) -> int | None:
+    """The HTTP status a record carries, from either place it can live."""
+    st = d.get("http_status")
+    if isinstance(st, int):
+        return st
+    meta = d.get("error_metadata") or {}
+    for holder in (meta, d):
+        rm = holder.get("ResponseMetadata") if isinstance(holder, dict) else None
+        if isinstance(rm, dict) and isinstance(rm.get("HTTPStatusCode"), int):
+            return rm["HTTPStatusCode"]
+    return None
+
+
+# HTTP statuses that mean the service did NOT evaluate the request, even though they are 4xx.
+# Status-based rather than name-based on purpose: throttling is the one 4xx that means "not
+# looked at", and it has its own status. Everything 5xx is covered by the >= 500 rule.
+NOT_EVALUATED_4XX = (408, 425, 429)
+
+
+def service_answered(d: dict) -> bool:
+    """Did the service EVALUATE the request and answer it, the answer happening to be an error?
+
+    The distinction `ok is False` cannot make on its own, and the one F8-5 turns on. F8-5 sends
+    four `CreateGuardrail` probes and **the error is the data**: a topic definition at the tier
+    limit should be accepted and one over it rejected, so its two `ValidationException`s (HTTP
+    400, `retry_attempts: 0`) are the observation, while its `ThrottlingException` (HTTP 429) is
+    the service refusing to look. Both are `ok: false`. Treating them alike in either direction
+    is a defect: counting the throttle as data is the original F8-5 bug, and counting the
+    validation error as a hole would put a permanent false caveat on a case whose evidence is a
+    rejection — and a guard that fires on things it should not is one people learn to bypass.
+
+    The rule is the HTTP status first, with the error code only as a presence test:
+
+    * no status at all — the call never got an HTTP answer (`ReadTimeoutError`, `ProtocolError`);
+    * 5xx, or 408/425/429 — the service answered *about itself*, not about the request;
+    * no explicit error code — an answer names itself, so a failure that names nothing is not
+      one. This is what reaches the bare 404 of 2026-08-19, whose every error field is empty;
+    * a code in `TRANSIENT_ERRORS` — kept as an override for a named refusal on an odd status.
+
+    Anything else — an explicit service exception on a 4xx the service chose — is an answer.
+
+    THE LIMIT, stated because it is in the dangerous direction. A refusal returned as 400 with a
+    modeled code that `TRANSIENT_ERRORS` does not list would read here as an answer, and a
+    producer that scores an error as its observation would then count it as data. What bounds it
+    is that the two common refusals do not depend on any name: throttling carries 429 and
+    server-side failure carries 5xx, so a name list is only load-bearing for a service that
+    returns a refusal as a plain 400. `TRANSIENT_ERRORS` is that list, and it is now the only
+    place in this file where a name still decides anything.
+    """
+    codes = [c for c in (d.get("error_code"), d.get("error_class"),
+                         ((d.get("error_metadata") or {}).get("Error") or {}).get("Code"))
+             if isinstance(c, str) and c]
+    if any(c in TRANSIENT_ERRORS for c in codes):
+        return False
+    status = _status_of(d)
+    if not isinstance(status, int):
+        return False
+    if status >= 500 or status in NOT_EVALUATED_4XX:
+        return False
+    # An answer names itself. `error_class` alone does not count: botocore's transport classes
+    # (`ReadTimeoutError`) are not service codes, and a bare status carries no name at all.
+    named = [c for c in (d.get("error_code"),
+                         ((d.get("error_metadata") or {}).get("Error") or {}).get("Code"))
+             if isinstance(c, str) and c and c not in TRANSPORT_FAILURES]
+    return bool(named) and 400 <= status < 500
+
+
+def failure_reason(d: dict) -> str | None:
+    """Why this record's call carries no decision about the thing under test, or `None`.
+
+    THE GATE IS THE RECORD'S OWN SUCCESS FLAG. `lib/evidence.py` writes `ok` for every call, and
+    `ok is False` means the call raised or came back non-2xx — which is the only signal present
+    in all eight failures of 2026-08-19. Four of them carry no `error_code`, no `error_class` and
+    no `error_metadata`; three of those name `ProtocolError` in `error_message` alone and the
+    fourth carries nothing but `http_status: 404` and a JSON-RPC `-32004 Session not found or
+    expired`. Any classifier keyed on an error code — with any list of names — is blind to them.
+
+    Everything after the gate only chooses the LABEL, so an unrecognised failure is still
+    reported. That is deliberate: the 404 above is a session expiry, transient in effect and
+    4xx in shape, and a rule that only admitted 5xx would have dropped it. A failed call whose
+    reason we cannot name is exactly the one an operator needs to see.
+
+    `ok` missing is treated as a failure only when an error field is set, so a producer that
+    omits the flag cannot make a raised call invisible; a record with neither is not evidence of
+    a failure and is left alone.
+
+    THIS REPORTS EVERY FAILED CALL, including one that is the service's own answer about the
+    request (F8-5's `ValidationException`). Whether a failure invalidates the observation is the
+    separate question `service_answered()` decides, and `transient_failures()` composes the two.
+    Kept separate so that the count of failed calls and the count of holes in the observation are
+    two derivations rather than one number used twice.
+    """
+    codes = [c for c in (d.get("error_code"), d.get("error_class"),
+                         ((d.get("error_metadata") or {}).get("Error") or {}).get("Code"))
+             if isinstance(c, str) and c]
+    message = d.get("error_message") if isinstance(d.get("error_message"), str) else ""
+    ok = d.get("ok")
+    if ok is not False and not (ok is None and (codes or message)):
+        return None
+
+    for code in codes:                                    # the precise service code, if known
+        if code in TRANSIENT_ERRORS:
+            return code
+    # The class name as botocore raises it: `error_class`, or the `ClassName:` prefix of the
+    # message, which is where the 2026-08-19 ProtocolErrors put it.
+    head = message.split(":", 1)[0].split("(", 1)[0].strip()
+    for name in (*codes, head):
+        if name in TRANSPORT_FAILURES:
+            return name
+    status = _status_of(d)
+    if isinstance(status, int) and status >= 500:
+        return f"http_{status}"
+    if codes:
+        return codes[0]
+    if isinstance(status, int):
+        return f"http_{status}"
+    return "unclassified_failure"
+
 
 def transient_failures(run_id: str, day: str, case: str | None = None) -> list[tuple[str, str]]:
-    """Fresh call records whose error is transient — `(evidence path, error code)` pairs.
+    """Fresh call records that are a HOLE in the observation — `(evidence path, reason)` pairs.
+
+    Two conditions, derived separately: the call failed (`failure_reason`, gated on the record's
+    own `ok` flag rather than on a list of error names — FUTURE-WORK item 34 and the eight calls
+    the code-keyed version missed), **and** the failure is not the service's own answer about the
+    request (`service_answered`). F8-5's `ValidationException` is a failed call that is not a
+    hole; its `ThrottlingException` is both.
 
     Why this guard exists: F8-5, 2026-08-15
     ---------------------------------------
@@ -372,9 +558,17 @@ def transient_failures(run_id: str, day: str, case: str | None = None) -> list[t
     That is a class of defect, not one case's bad luck: any producer that classifies an
     exception without excluding transient ones can convert a throttle into evidence, and no
     verdict-level or record-level comparison can see it. So the check is deliberately placed
-    here — case-agnostic, over the raw call records the run actually wrote, keyed on nothing but
-    the error code — and it is a CAVEAT rather than a failure: a throttled probe does not
-    contradict day 1, it just is not a second observation of that probe.
+    here — case-agnostic, over the raw call records the run actually wrote — and it is a CAVEAT
+    rather than a failure: a throttled probe does not contradict day 1, it just is not a second
+    observation of that probe.
+
+    Both directions of this guard have now been wrong once. The shipped version was too narrow
+    and reported clean over eight failed calls. The first fix for that was too WIDE: gating on
+    `ok is False` alone made F8-5's two `ValidationException` probes — the case's own evidence —
+    into holes, and it was two pre-existing arms of
+    `tools/tests/test_day2_replicate_compare.py` that caught it, not a new one. Hence the two
+    separate predicates: the widening had to keep the distinction the narrow version got right
+    by accident.
     """
     base = EVIDENCE / run_id
     if not base.is_dir():
@@ -389,18 +583,13 @@ def transient_failures(run_id: str, day: str, case: str | None = None) -> list[t
             continue
         if str(d.get("t_start_utc") or "")[:10] != day:
             continue
-        # `lib.evidence` writes error_code and error_class; error_metadata.Error.Code is
-        # botocore's own copy. All three are read so that a record written by a producer that
-        # fills only one of them still counts — a guard that misses the field reports clean.
-        meta_code = ((d.get("error_metadata") or {}).get("Error") or {}).get("Code")
-        for code in (d.get("error_code"), d.get("error_class"), meta_code):
-            if isinstance(code, str) and code in TRANSIENT_ERRORS:
-                # repo-relative where possible (that is the form the operator can cite); the
-                # absolute path when EVIDENCE has been pointed outside the tree, rather than
-                # raising ValueError and losing a real finding to a formatting detail.
-                rel = str(f.relative_to(ROOT)) if f.is_relative_to(ROOT) else str(f)
-                out.append((rel, code))
-                break
+        reason = failure_reason(d)
+        if reason is not None and not service_answered(d):
+            # repo-relative where possible (that is the form the operator can cite); the
+            # absolute path when EVIDENCE has been pointed outside the tree, rather than
+            # raising ValueError and losing a real finding to a formatting detail.
+            rel = str(f.relative_to(ROOT)) if f.is_relative_to(ROOT) else str(f)
+            out.append((rel, reason))
     return out
 
 
@@ -571,6 +760,14 @@ def main(argv: list[str] | None = None) -> int:
             return 2
 
     run_id = args.run_id or mint_run_id()
+    # SCOPE OF THE NEXT TWO GUARDS, stated because it is narrower than it reads. Both reason
+    # about the run id this driver ASKS for, and the flag is only a request: a state-loading
+    # producer adopts the id in its `state.json` instead, so `evidence/<minted>` may never be
+    # created and neither guard can see the directory that actually receives the records. They
+    # are kept because they are correct for a producer that honours the flag and they cost
+    # nothing — but the check that matters is `recorded_run_ids` after the producer returns, and
+    # the reason this comment exists is that for five days the pre-run pair LOOKED like the
+    # protection ([[feedback_guard_scope_is_a_claim]]).
     if run_id_date(run_id) in day1_dates.values():
         print(f"FATAL: run id {run_id} names a day that is already a day-1 date "
               f"({sorted(set(day1_dates.values()))})", file=sys.stderr)
@@ -581,6 +778,8 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     print(f"day-2 replication — UTC today {today}, new run_id {run_id}")
+    print("  note: the two run-id guards above cover the id this driver ASKS for; the id the "
+          "producer actually writes under is re-derived after it returns")
     for case in cases:
         print(f"  {case:8} day 1 {day1_dates[case]}   verdict "
               f"{verdict_of(before[f'{case}.json'])}")
@@ -623,18 +822,49 @@ def main(argv: list[str] | None = None) -> int:
     prc = proc.returncode
     print(f"  producer rc: {prc}")
 
-    # --- guard 2: did it actually observe anything today?
-    n_fresh = fresh_records(run_id, today)
-    caps, n_calls = zero_call_capture(run_id, today)
-    proof = f"{n_fresh} call record(s) dated {today}"
-    if n_fresh == 0 and args.no_call_case and caps > 0 and n_calls == 0:
-        proof = (f"{caps} summary/summaries captured {today}, reporting 0 calls "
-                 f"(--no-call-case: this producer sends none)")
-    print(f"  observation proof: {proof}")
-
     after = snapshot_phase1()
     changed = [k for k, v in after.items() if before.get(k) != v]
     print(f"  verdict files changed: {len(changed)} {sorted(changed)}")
+
+    # --- guard 2a: which run id did the producer ACTUALLY write under? Answered before the
+    # observation proof, because the proof is a count of records under a directory and picking
+    # the wrong directory is how three real runs were scored as having observed nothing.
+    recorded = recorded_run_ids(before, after)
+    day1_rids = {run_id_of(raw) for name, raw in before.items()
+                 if name[:-len(".json")] in cases}
+    day1_rids.discard("")
+    unplaceable = [r for r in recorded if r != run_id and r not in day1_rids]
+    if unplaceable:
+        print(f"FATAL: the producer recorded run id(s) {unplaceable} in the verdict files it "
+              f"re-emitted. Those are neither the id it was given ({run_id}) nor any named "
+              f"case's day-1 id ({sorted(day1_rids)}), so the provenance of this run cannot be "
+              f"placed and nothing about it is adjudicated.", file=sys.stderr)
+        return 2
+    effective = recorded or [run_id]
+    if effective != [run_id]:
+        print(f"  !! THE PRODUCER IGNORED --run-id: asked for {run_id}, recorded under "
+              f"{effective}. That is a fact about the producer worth publishing, not a "
+              f"formatting detail — a state-loading instrument adopts the id in its state.json, "
+              f"and every check below is scoped to what it actually wrote.")
+        reused = sorted(set(effective) & day1_rids)
+        if reused:
+            print(f"     {reused} is also a day-1 run id, so today's records land beside day "
+                  f"1's in the same directory. Only records dated {today} are counted, and "
+                  f"FUTURE-WORK item 29 tracks the per-case roll-up a re-run overwrites.")
+
+    # --- guard 2: did it actually observe anything today?
+    n_fresh = sum(fresh_records(r, today) for r in effective)
+    caps = n_calls = 0
+    for r in effective:
+        c, n = zero_call_capture(r, today)
+        caps += c
+        n_calls += n
+    where = effective[0] if len(effective) == 1 else f"{len(effective)} run id(s) {effective}"
+    proof = f"{n_fresh} call record(s) dated {today} under {where}"
+    if n_fresh == 0 and args.no_call_case and caps > 0 and n_calls == 0:
+        proof = (f"{caps} summary/summaries captured {today} under {where}, reporting 0 calls "
+                 f"(--no-call-case: this producer sends none)")
+    print(f"  observation proof: {proof}")
 
     # Archive first, adjudicate second — a post-run guard must not be able to leave a
     # rewritten verdict file with no day-1 copy in the tree.
@@ -710,8 +940,9 @@ def main(argv: list[str] | None = None) -> int:
         # a coarse-record case (F8-4) are the only place drift is visible at all.
         pquant, pvol = payload_diff(old, new, (run_id_of(old), run_id_of(new)))
 
-        # Did every call this case made today actually reach the thing under test?
-        trans = transient_failures(run_id, today, case)
+        # Did every call this case made today actually reach the thing under test? Scoped to the
+        # run id(s) the producer really wrote under, not the one it was asked for.
+        trans = [t for r in effective for t in transient_failures(r, today, case)]
         if trans:
             caveats.append(case)
 
@@ -727,7 +958,12 @@ def main(argv: list[str] | None = None) -> int:
                      "payload_fields_differing_total": len(pquant),
                      "payload_run_scoped_differences": len(pvol),
                      "clean_observation": not trans,
-                     "transient_error_calls": [{"evidence": p, "error_code": c} for p, c in trans]})
+                     # Renamed from `transient_error_calls`/`error_code` when the gate stopped
+                     # being a list of transient codes: the set now holds EVERY failed call and
+                     # `reason` can be `http_404` or `unclassified_failure`, neither of which is
+                     # a service error code. A key that outlives its computation misreads as a
+                     # narrower claim than the data supports.
+                     "failed_calls": [{"evidence": p, "reason": c} for p, c in trans]})
         print(f"  [{'AGREE' if agree else 'DISAGREE'}]{'  ' if agree else ''} {case}: "
               f"{d1} {v1} -> {today} {v2}")
         if diffs:
@@ -763,14 +999,31 @@ def main(argv: list[str] | None = None) -> int:
 
     out = ROOT / "results" / f"day2_replication_{today}.json"
     prior = json.loads(out.read_text()) if out.is_file() else {"runs": []}
-    prior["runs"].append({"run_id": run_id, "utc_date": today, "cases_requested": cases,
+    # `run_id` is what the producer was ASKED for and `run_ids_effective` is what it wrote
+    # under. Both are published because they are two claims, not one restated: a reader who
+    # goes looking for these records under `run_id` alone finds nothing whenever a
+    # state-loading producer adopted the id in its own state.json, and the silence would look
+    # like the run never happened rather than like the flag was ignored.
+    prior["runs"].append({"run_id": run_id, "run_ids_effective": effective,
+                          "producer_honoured_run_id": effective == [run_id],
+                          "utc_date": today, "cases_requested": cases,
                           "producer": full, "fresh_records": n_fresh,
                           "observation_proof": proof,
                           "day1_date_source": day1_sources,
                           "summaries_captured_today": caps, "calls_reported": n_calls,
                           "checkpoints_archived": moved,
                           "day1_files_archived": archived,
-                          "cases_with_transient_failures": caveats, "results": rows})
+                          "cases_with_failed_calls": caveats, "results": rows,
+                          "schema_change": {
+                              "since": "FUTURE-WORK items 33/34",
+                              "cases_with_transient_failures": "renamed to "
+                                  "cases_with_failed_calls",
+                              "results[].transient_error_calls": "renamed to "
+                                  "results[].failed_calls, and its `error_code` to `reason`",
+                              "why": "the check gates on the record's own ok flag, not on a list "
+                                     "of transient error codes, so it reports failures it cannot "
+                                     "classify as transient. Earlier files in this directory use "
+                                     "the old keys and every one of their values is []."}})
     out.write_text(_redact.mask_text(
         json.dumps(prior, indent=2, sort_keys=True, ensure_ascii=False) + "\n"),
         encoding="utf-8")
@@ -798,8 +1051,10 @@ def main(argv: list[str] | None = None) -> int:
         # is to re-run the affected case, not to investigate a disagreement. But the word
         # REPLICATED does not appear unqualified over an observation with a hole in it.
         print(f"REPLICATED WITH CAVEAT — {len(rows)} case(s) agree across {day1_tag} and "
-              f"{today}, but {caveats} had transiently-failed call(s) today. Those probes are "
-              f"not replicated; re-run the case on a later UTC day before citing them.")
+              f"{today}, but {caveats} had FAILED call(s) today — failed, not necessarily "
+              f"transient: the check reports a failure it cannot classify rather than dropping "
+              f"it. Those probes are not replicated; re-run the case on a later UTC day before "
+              f"citing them, and read results[].failed_calls[].reason for what went wrong.")
         return 0
     print(f"REPLICATED — {len(rows)} case(s) agree across {day1_tag} and {today}")
     return 0

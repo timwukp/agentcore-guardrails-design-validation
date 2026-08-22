@@ -320,15 +320,51 @@ def test_a_validation_error_is_not_transient(mod, tmp_path, monkeypatch):
     A ValidationException IS the observation for a boundary case — F8-5's `classic-201` probe is
     *supposed* to be rejected that way. A guard that flagged every error would caveat every
     boundary case, which is indistinguishable from having no guard.
+
+    THE FIXTURE GAINED `ok` AND `http_status` ON 2026-08-22, and the reason is worth keeping. When
+    the guard stopped gating on a list of error names and started gating on the record's own `ok`
+    flag (FUTURE-WORK item 34), this arm went red — correctly, because the record it planted is
+    one `lib/evidence.py` cannot produce. `error_code` is populated *only* in the `ClientError`
+    branch (`lib/evidence.py:498-501`), and a `ClientError` always carries
+    `ResponseMetadata.HTTPStatusCode`, which the same function copies into `http_status`
+    (:512). So "a named service code with no status" is not a shape this instrument writes, and
+    a fixture asserting behaviour over it was asserting behaviour over nothing
+    ([[feedback_verify_against_real_artifact]]). The real F8-5 records carry
+    `ValidationException` / 400 and `ThrottlingException` / 429, and those are what is planted
+    now. The claim under test is unchanged: a validation error is not a hole in the observation.
     """
     monkeypatch.setattr(mod, "EVIDENCE", tmp_path)
     d = tmp_path / "r1" / "f8" / "F8-5"
     d.mkdir(parents=True)
     (d / "0001_x.json").write_text(json.dumps(
-        {"t_start_utc": "2026-08-15T09:25:00Z", "error_code": "ValidationException"}))
-    (d / "0002_x.json").write_text(json.dumps({"t_start_utc": "2026-08-15T09:25:01Z"}))
+        {"t_start_utc": "2026-08-15T09:25:00Z", "ok": False, "http_status": 400,
+         "error_code": "ValidationException", "error_class": "ClientError",
+         "error_message": "Topics may not exceed the tier limit"}))
+    (d / "0002_x.json").write_text(json.dumps(
+        {"t_start_utc": "2026-08-15T09:25:01Z", "ok": True, "http_status": 200}))
 
     assert mod.transient_failures("r1", "2026-08-15", "F8-5") == []
+
+
+def test_a_failure_with_no_status_at_all_is_a_hole(mod, tmp_path, monkeypatch):
+    """The safe default in the other direction, pinned so the arm above cannot be over-read.
+
+    `service_answered` requires an HTTP status, because an answer is something the service sent.
+    A failure that never got one — a read timeout, an aborted connection — is a hole whatever
+    name it carries, and a record carrying a name but no status (which this instrument does not
+    write) is treated as a hole rather than given the benefit of the doubt. Mis-reading a refusal
+    as an answer is the direction that corrupted F8-5's verdict; mis-reading an answer as a hole
+    only costs a caveat.
+    """
+    monkeypatch.setattr(mod, "EVIDENCE", tmp_path)
+    d = tmp_path / "r1" / "f8" / "F8-5"
+    d.mkdir(parents=True)
+    (d / "0001_x.json").write_text(json.dumps(
+        {"t_start_utc": "2026-08-15T09:25:00Z", "ok": False, "http_status": None,
+         "error_class": "ReadTimeoutError", "error_message": "Read timeout on endpoint URL"}))
+
+    assert [c for _, c in mod.transient_failures("r1", "2026-08-15", "F8-5")] == [
+        "ReadTimeoutError"]
 
 
 def test_only_todays_calls_and_only_this_case_are_reported(mod, tmp_path, monkeypatch):
