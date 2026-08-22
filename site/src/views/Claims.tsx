@@ -12,13 +12,24 @@
 import { useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { loadClaims } from "../lib/data";
+import { useT, VerbatimNote } from "../lib/i18n";
 import { ErrorPanel, Loading, useAsync } from "../components/ui";
 
-const ANY = "— any —";
+/** The facet's STATE is a stable token; only its label is translated. If the label were the state,
+ *  switching language mid-filter would leave a filter set to a value no option carries any more, and
+ *  the table would silently show nothing while the control looked normal. */
+const ANY = "*any*";
+const MAPPED = "*mapped*";
+const UNMAPPED = "*unmapped*";
+
+/** The column names of the sealed CSV, not headings this platform chose. Untranslated for the same
+ *  reason the cells are unparsed: a reader checking a column against `claims/triage.csv` is looking
+ *  for `doc_line`, and `文件行號` is not in that file. */
 const COLS = ["claim_id", "cls", "rule", "unit_type", "cases", "anchor", "doc_line", "text"] as const;
 
 export default function Claims() {
   const res = useAsync(loadClaims, []);
+  const t = useT();
   const { hash } = useLocation();
   const wanted = hash.replace(/^#/, "");
 
@@ -34,9 +45,7 @@ export default function Claims() {
     return rows
       .filter((r) => cls === ANY || r.cls === cls)
       .filter((r) => rule === ANY || r.rule === rule)
-      .filter((r) =>
-        mapped === ANY ? true : mapped === "mapped to a case" ? !!r.cases.trim() : !r.cases.trim(),
-      )
+      .filter((r) => (mapped === ANY ? true : mapped === MAPPED ? !!r.cases.trim() : !r.cases.trim()))
       .filter(
         (r) =>
           !needle ||
@@ -47,7 +56,7 @@ export default function Claims() {
       );
   }, [rows, cls, rule, mapped, q]);
 
-  if (res.state === "loading") return <Loading what="the claim triage" />;
+  if (res.state === "loading") return <Loading what={t("clm.loading")} />;
   if (res.state === "error") return <ErrorPanel error={res.error} />;
 
   const nMapped = rows.filter((r) => r.cases.trim()).length;
@@ -55,68 +64,68 @@ export default function Claims() {
 
   return (
     <>
-      <h2 className="view">Claim triage</h2>
-      <p className="lede">
-        Every unit of the design document the study extracted, its classification, and the case (if any)
-        that measures it. Rendered exactly as the sealed CSV holds it.
-      </p>
+      <h2 className="view">{t("nav.claims")}</h2>
+      <VerbatimNote />
+      <p className="lede">{t("clm.lede")}</p>
 
       <div className="cards" style={{ marginBottom: 18 }}>
         <div className="card">
           <div className="n">{res.data.n_rows}</div>
-          <div className="k">triaged rows</div>
-          <div className="def">Every row of the sealed triage CSV, including the excluded ones.</div>
+          <div className="k">{t("clm.card.rows")}</div>
+          <div className="def">{t("clm.card.rows.def")}</div>
         </div>
         <div className="card">
           <div className="n">{nMapped}</div>
-          <div className="k">rows naming at least one case</div>
-          <div className="def">
-            The <code>cases</code> cell is non-empty. Counted from the cell as text, so a row naming two
-            cases counts once here — the census counts the other direction.
-          </div>
+          <div className="k">{t("clm.card.named")}</div>
+          <div className="def">{t("clm.card.named.def")}</div>
         </div>
         <div className="card">
           <div className="n">{Object.keys(res.data.by_case).length}</div>
-          <div className="k">cases with at least one claim</div>
-          <div className="def">
-            Derived by the build from these same rows, and the basis of the claim-mapped denominator on
-            the census page.
-          </div>
+          <div className="k">{t("clm.card.cases")}</div>
+          <div className="def">{t("clm.card.cases.def")}</div>
         </div>
       </div>
 
       <div className="facets">
         <div className="facet">
-          <label>class</label>
+          <label>{t("clm.facet.class")}</label>
           <select value={cls} onChange={(e) => setCls(e.target.value)}>
-            {[ANY, ...values("cls")].map((v) => (
-              <option key={v}>{v || "(empty)"}</option>
+            {/* The option TEXT for a triage class is the CSV's own token; only `— any —` and the
+                empty-cell marker are this platform's words. */}
+            <option value={ANY}>{t("facet.any")}</option>
+            {values("cls").map((v) => (
+              <option key={v} value={v}>
+                {v || t("facet.empty")}
+              </option>
             ))}
           </select>
         </div>
         <div className="facet">
-          <label>rule</label>
+          <label>{t("clm.facet.rule")}</label>
           <select value={rule} onChange={(e) => setRule(e.target.value)}>
-            {[ANY, ...values("rule")].map((v) => (
-              <option key={v}>{v || "(empty)"}</option>
+            <option value={ANY}>{t("facet.any")}</option>
+            {values("rule").map((v) => (
+              <option key={v} value={v}>
+                {v || t("facet.empty")}
+              </option>
             ))}
           </select>
         </div>
         <div className="facet">
-          <label>case mapping</label>
+          <label>{t("clm.facet.mapping")}</label>
           <select value={mapped} onChange={(e) => setMapped(e.target.value)}>
-            {[ANY, "mapped to a case", "no case named"].map((v) => (
-              <option key={v}>{v}</option>
-            ))}
+            <option value={ANY}>{t("facet.any")}</option>
+            <option value={MAPPED}>{t("clm.facet.mapped")}</option>
+            <option value={UNMAPPED}>{t("clm.facet.unmapped")}</option>
           </select>
         </div>
         <div className="facet">
-          <label>search</label>
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="claim id, text, anchor" />
+          <label>{t("clm.facet.search")}</label>
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("clm.facet.searchHint")} />
         </div>
         <div className="facet">
           <label>&nbsp;</label>
-          <span className="count mono">{filtered.length} shown</span>
+          <span className="count mono">{t("facet.shown", { n: filtered.length })}</span>
         </div>
       </div>
 
@@ -125,7 +134,9 @@ export default function Claims() {
           <thead>
             <tr>
               {COLS.map((c) => (
-                <th key={c}>{c}</th>
+                <th key={c} lang="en">
+                  {c}
+                </th>
               ))}
             </tr>
           </thead>
@@ -137,8 +148,12 @@ export default function Claims() {
                 style={r.claim_id === wanted ? { outline: "1px solid var(--accent)" } : undefined}
               >
                 {COLS.map((c) => (
+                  // Every cell is a `claims/triage.csv` value — the `text` column is the sealed
+                  // claim as the design document words it — so the whole row is quoted English in
+                  // both editions, like the header above it.
                   <td
                     key={c}
+                    lang="en"
                     className={c === "text" ? undefined : "mono"}
                     style={c === "text" ? { minWidth: 320 } : { whiteSpace: "nowrap" }}
                   >
@@ -162,11 +177,7 @@ export default function Claims() {
           </tbody>
         </table>
       </div>
-      <p style={{ color: "var(--fg-faint)", fontSize: 12, marginTop: 8 }}>
-        The <code>cases</code> column is linked by splitting the raw cell on whitespace for navigation
-        only; the cell itself is shown unmodified in every other respect, and the value the study joins
-        on is the string, not this split.
-      </p>
+      <p style={{ color: "var(--fg-faint)", fontSize: 12, marginTop: 8 }}>{t("clm.splitNote")}</p>
     </>
   );
 }

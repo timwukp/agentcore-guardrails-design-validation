@@ -1,9 +1,9 @@
 {
   "name": "grx-live",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
-  "description": "GRX Live \u2014 the read-only validation dashboard. Renders the payload emitted by platform/build/build_site_data.py and derives nothing of its own.",
+  "description": "agentcore-guardrails-design-validation \u2014 the read-only, bilingual (en / zh-TW) validation dashboard. Renders the payload emitted by platform/build/build_site_data.py and derives nothing of its own. The npm package name stays `grx-live` because package-lock.json and the CDK asset paths key on it.",
   "scripts": {
     "dev": "vite",
     "build": "npm run typecheck && vite build",

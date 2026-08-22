@@ -33,8 +33,11 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { loadAudit } from "../lib/data";
 import { ErrorPanel, Loading, useAsync } from "../components/ui";
+import { T, useT, VerbatimNote } from "../lib/i18n";
 import { ObsBadge, StatusBadge } from "./Audit";
 import { decodeReport } from "../lib/audit";
+import type { Key } from "../lib/strings";
+import type { Msg } from "../lib/audit";
 import type { AuditPage, AuditReport, ReportControlLine, ReportMeasurement } from "../lib/types";
 
 /** A download of bytes this page already holds. Composed as a Blob URL at click time and revoked
@@ -59,12 +62,15 @@ function Download({ name, text, type, label }: { name: string; text: string; typ
 }
 
 function Sites({ line }: { line: ReportControlLine }) {
+  const t = useT();
   if (!line.sites.length && !line.unresolved.length)
     return <span style={{ color: "var(--fg-faint)" }}>—</span>;
   return (
     <div style={{ fontSize: 11.5 }}>
       {line.sites.map((s, n) => (
-        <div className="mono" key={`s${n}`} style={{ wordBreak: "break-all" }}>
+        // A file path, a config path and the value read at it — bytes out of the audited repository,
+        // Cedar policy text included, so the whole line is quoted rather than translated.
+        <div className="mono" key={`s${n}`} lang="en" style={{ wordBreak: "break-all" }}>
           {s.file}:{s.line} · {s.path}
           {s.value === null || s.value === undefined ? null : (
             <>
@@ -75,8 +81,14 @@ function Sites({ line }: { line: ReportControlLine }) {
         </div>
       ))}
       {line.unresolved.map((s, n) => (
-        <div className="mono" key={`u${n}`} style={{ color: "var(--warn)", wordBreak: "break-all" }}>
-          {s.file}:{s.line} · {s.path} = unresolved{s.unresolved_tag ? ` (${s.unresolved_tag})` : ""}
+        <div
+          className="mono"
+          key={`u${n}`}
+          lang="en"
+          style={{ color: "var(--warn)", wordBreak: "break-all" }}
+        >
+          {s.file}:{s.line} · {s.path} = {t("rep.unresolved")}
+          {s.unresolved_tag ? ` (${s.unresolved_tag})` : ""}
         </div>
       ))}
     </div>
@@ -84,26 +96,36 @@ function Sites({ line }: { line: ReportControlLine }) {
 }
 
 function Measurement({ m }: { m: ReportMeasurement }) {
+  const t = useT();
   return (
     <div className="meas">
       <div>
         <StatusBadge s={m.status} label={m.status_label} />{" "}
-        <span style={{ color: "var(--fg-dim)", fontSize: 12 }}>{m.status_label}</span>
+        <span style={{ color: "var(--fg-dim)", fontSize: 12 }} lang="en">
+          {m.status_label}
+        </span>
       </div>
-      {m.says ? <p style={{ margin: "6px 0 0", whiteSpace: "pre-wrap" }}>{m.says.trim()}</p> : null}
+      {/* `says`, `consequence`, `scope_note` and `why_not_measured` are the report's own sentences,
+          written by `platform/audit/report.py` from the case files. They are the deliverable a reader
+          hands to a colleague, so they render verbatim; the labels in front of them are ours. */}
+      {m.says ? (
+        <p style={{ margin: "6px 0 0", whiteSpace: "pre-wrap" }} lang="en">
+          {m.says.trim()}
+        </p>
+      ) : null}
       {m.consequence ? (
-        <p style={{ margin: "6px 0 0", color: "var(--fg-dim)", whiteSpace: "pre-wrap" }}>
+        <p style={{ margin: "6px 0 0", color: "var(--fg-dim)", whiteSpace: "pre-wrap" }} lang="en">
           {m.consequence.trim()}
         </p>
       ) : null}
       {m.scope_note ? (
         <div className="note" style={{ margin: "8px 0 0" }}>
-          <strong>Scope:</strong> {m.scope_note.trim()}
+          <strong>{t("rep.scope")}</strong> <span lang="en">{m.scope_note.trim()}</span>
         </div>
       ) : null}
       {m.why_not_measured ? (
         <div className="note warn" style={{ margin: "8px 0 0" }}>
-          <strong>Why this study never examined it:</strong> {m.why_not_measured.trim()}
+          <strong>{t("rep.neverExamined")}</strong> <span lang="en">{m.why_not_measured.trim()}</span>
         </div>
       ) : null}
       <div style={{ marginTop: 8 }}>
@@ -119,12 +141,12 @@ function Measurement({ m }: { m: ReportMeasurement }) {
             ))}
             {k.limits_stated_by_the_case && k.what_this_verdict_does_not_prove ? (
               <div style={{ color: "var(--fg-dim)", fontSize: 12, marginLeft: 4 }}>
-                What it does not prove: {k.what_this_verdict_does_not_prove.trim()}
+                {t("rep.doesNotProve")}{" "}
+                <span lang="en">{k.what_this_verdict_does_not_prove.trim()}</span>
               </div>
             ) : (
               <div style={{ color: "var(--warn)", fontSize: 12, marginLeft: 4 }}>
-                This case file states no limit on its own verdict, so treat the verdict as narrower than
-                it reads.
+                {t("rep.noLimitStated")}
               </div>
             )}
           </div>
@@ -135,60 +157,76 @@ function Measurement({ m }: { m: ReportMeasurement }) {
 }
 
 function ControlBlock({ line }: { line: ReportControlLine }) {
+  const t = useT();
   return (
     <div className="ctl">
       <div className="head">
         <ObsBadge o={line.observation} />
-        <strong style={{ marginLeft: 8 }}>{line.label}</strong>
+        <strong style={{ marginLeft: 8 }} lang="en">
+          {line.label}
+        </strong>
         <span className="mono" style={{ marginLeft: 8, color: "var(--fg-faint)", fontSize: 11.5 }}>
           {line.control}
         </span>
       </div>
-      <p style={{ color: "var(--fg-dim)", margin: "4px 0 8px" }}>{line.question}</p>
+      <p style={{ color: "var(--fg-dim)", margin: "4px 0 8px" }} lang="en">
+        {line.question}
+      </p>
       <table className="grid">
         <tbody>
           <tr>
-            <th style={{ width: 190 }}>Declared value</th>
+            <th style={{ width: 190 }}>{t("rep.th.declaredValue")}</th>
             <td>
               {line.value !== null ? (
-                <span className="mono">
+                <span className="mono" lang="en">
                   <strong>{line.value}</strong>
                 </span>
               ) : line.values_seen.length ? (
-                <span className="mono">{line.values_seen.join(", ")}</span>
-              ) : (
-                <span style={{ color: "var(--fg-faint)" }}>
-                  no value read — this control is detected by the presence of its properties, not by a
-                  value
+                <span className="mono" lang="en">
+                  {line.values_seen.join(", ")}
                 </span>
+              ) : (
+                <span style={{ color: "var(--fg-faint)" }}>{t("rep.noValueRead")}</span>
               )}
               {line.disagreement?.length ? (
                 <div className="note warn" style={{ margin: "8px 0 0" }}>
-                  <strong>Two different values are declared across your files:</strong>{" "}
-                  <span className="mono">{line.disagreement.join(", ")}</span>. Every measurement below
-                  is stated per value, because a staging template that disagrees with production is a
-                  real state and not a parse error.
+                  <T
+                    k="rep.disagreement"
+                    v={{
+                      head: <strong>{t("rep.disagreement.head")}</strong>,
+                      values: <span className="mono">{line.disagreement.join(", ")}</span>,
+                    }}
+                  />
                 </div>
               ) : null}
               {line.values_outside_the_declared_enum?.length ? (
                 <div className="note warn" style={{ margin: "8px 0 0" }}>
-                  Value(s) outside the vocabulary this control knows:{" "}
-                  <span className="mono">{line.values_outside_the_declared_enum.join(", ")}</span>. No
-                  measurement covers them.
+                  <T
+                    k="rep.outsideEnum"
+                    v={{
+                      values: (
+                        <span className="mono">
+                          {line.values_outside_the_declared_enum.join(", ")}
+                        </span>
+                      ),
+                    }}
+                  />
                 </div>
               ) : null}
             </td>
           </tr>
           <tr>
-            <th>Where it was found</th>
+            <th>{t("rep.th.whereFound")}</th>
             <td>
               <Sites line={line} />
             </td>
           </tr>
           {line.why_this_status ? (
             <tr>
-              <th>Why this reads {line.observation}</th>
-              <td>{line.why_this_status}</td>
+              <th>
+                <T k="rep.th.whyReads" v={{ o: <span lang="en">{line.observation}</span> }} />
+              </th>
+              <td lang="en">{line.why_this_status}</td>
             </tr>
           ) : null}
         </tbody>
@@ -197,8 +235,7 @@ function ControlBlock({ line }: { line: ReportControlLine }) {
         line.measurements.map((m, n) => <Measurement key={n} m={m} />)
       ) : (
         <div className="note" style={{ marginTop: 10 }}>
-          This study has no measurement that applies to what your files declare here. That is a statement
-          about this study's coverage, not about your deployment.
+          {t("rep.noMeasurement")}
         </div>
       )}
     </div>
@@ -206,103 +243,88 @@ function ControlBlock({ line }: { line: ReportControlLine }) {
 }
 
 function ReportBody({ r }: { r: AuditReport }) {
+  const t = useT();
   const h = r.headline;
-  const cards: [number, string, string | null][] = [
-    [h.controls_the_study_covers, "controls this study can speak to", null],
-    [h.controls_you_declare, "of them your files declare", null],
-    [
-      h.declared_with_a_measurement,
-      "declared, and measured by this study",
-      "The only bucket where a finding rests on a measurement of the value you declare.",
-    ],
-    [
-      h.declared_where_the_guidance_did_not_hold,
-      "declared, and the guidance did NOT hold",
-      "Measured, and the documented behaviour was not observed. These are the findings.",
-    ],
-    [
-      h.declared_never_measured_by_this_study,
-      "declared, never examined here",
-      "Not a clean result. Nothing was tested, so nothing is claimed.",
-    ],
-    [
-      h.declared_in_a_state_no_measurement_covers,
-      "declared in a state no measurement covers",
-      "The control was measured, but not at the value your files declare.",
-    ],
-    [
-      h.not_seen_in_the_parsed_files,
-      "not seen in the parsed files",
-      "NOT_DECLARED means the parser did not find it. It is not evidence the control is absent.",
-    ],
+  // Keyed by the dictionary key rather than by the label, so switching language does not remount the
+  // cards and a card can never end up keyed by a string that changed under it.
+  const cards: [number, Key, Key | null][] = [
+    [h.controls_the_study_covers, "rep.card.covers", null],
+    [h.controls_you_declare, "rep.card.youDeclare", null],
+    [h.declared_with_a_measurement, "rep.card.measured", "rep.card.measured.def"],
+    [h.declared_where_the_guidance_did_not_hold, "rep.card.didNotHold", "rep.card.didNotHold.def"],
+    [h.declared_never_measured_by_this_study, "rep.card.neverExamined", "rep.card.neverExamined.def"],
+    [h.declared_in_a_state_no_measurement_covers, "rep.card.noCoverage", "rep.card.noCoverage.def"],
+    [h.not_seen_in_the_parsed_files, "rep.card.notSeen", "rep.card.notSeen.def"],
   ];
 
   return (
     <>
-      <h3>Headline</h3>
-      <p style={{ whiteSpace: "pre-wrap" }}>{h.statement.trim()}</p>
+      <h3>{t("rep.h.headline")}</h3>
+      <p style={{ whiteSpace: "pre-wrap" }} lang="en">
+        {h.statement.trim()}
+      </p>
       <div className="cards">
         {cards.map(([n, k, def]) => (
           <div className="card" key={k}>
             <div className="n">{n}</div>
-            <div className="k">{k}</div>
-            {def ? <div className="def">{def}</div> : null}
+            <div className="k">{t(k)}</div>
+            {def ? <div className="def">{t(def)}</div> : null}
           </div>
         ))}
       </div>
       <div className="note" style={{ marginTop: 12 }}>
-        <strong>Why there is no pass rate here:</strong> {h.why_this_report_gives_no_ratio.trim()}
+        <strong>{t("rep.noRatio")}</strong>{" "}
+        <span lang="en">{h.why_this_report_gives_no_ratio.trim()}</span>
       </div>
 
-      <h3>What the report was written against</h3>
+      <h3>{t("rep.h.writtenAgainst")}</h3>
       <table className="grid">
         <tbody>
           <tr>
-            <th style={{ width: 260 }}>Report date</th>
-            <td className="mono">
-              {r.as_of ?? "none — the tool reads no clock, so the report is byte-identical on re-run"}
+            <th style={{ width: 260 }}>{t("rep.th.reportDate")}</th>
+            <td className={r.as_of ? "mono" : undefined}>{r.as_of ?? t("rep.noClock")}</td>
+          </tr>
+          <tr>
+            <th>{t("rep.th.evidenceThrough")}</th>
+            <td className={r.evidence_through_at_least ? "mono" : undefined}>
+              {r.evidence_through_at_least ?? t("rep.notDerivable")}
             </td>
           </tr>
           <tr>
-            <th>Evidence through at least</th>
-            <td className="mono">{r.evidence_through_at_least ?? "not derivable"}</td>
-          </tr>
-          <tr>
-            <th>Cases registered / verdicts published</th>
+            <th>{t("rep.th.registeredPublished")}</th>
             <td className="mono">
               {r.study.cases_registered} / {r.study.verdicts_published}
             </td>
           </tr>
           <tr>
-            <th>Verdict mix behind every line below</th>
+            <th>{t("rep.th.verdictMix")}</th>
             <td>
               {Object.entries(r.study.verdict_mix).map(([v, n]) => (
-                <span key={v} className={`badge v-${v}`} style={{ marginRight: 6 }}>
+                <span key={v} className={`badge v-${v}`} style={{ marginRight: 6 }} lang="en">
                   {v} {n}
                 </span>
               ))}
             </td>
           </tr>
           <tr>
-            <th>Resources parsed</th>
+            <th>{t("rep.th.resourcesParsed")}</th>
             <td className="mono">{r.inventory.resources.length}</td>
           </tr>
         </tbody>
       </table>
 
-      <h3>Recommendations</h3>
+      <h3>{t("rep.h.recommendations")}</h3>
       <p style={{ color: "var(--fg-dim)" }}>
-        {r.recommendations.length} recommendation(s), each licensed by a citable verdict named beside it.
-        A recommendation with no case is not written at all.
+        {t("rep.recommendations.lede", { n: r.recommendations.length })}
       </p>
       <div className="scroll">
         <table className="grid">
           <thead>
             <tr>
-              <th style={{ width: 170 }}>Control</th>
-              <th>What to do, and why</th>
-              <th style={{ width: 180 }}>Licensed by</th>
-              <th style={{ width: 170 }}>Where</th>
+              <th style={{ width: 170 }}>{t("aud.th.control")}</th>
+              <th>{t("rep.th.whatToDo")}</th>
+              <th style={{ width: 180 }}>{t("rep.th.licensedBy")}</th>
+              <th style={{ width: 170 }}>{t("rep.th.where")}</th>
             </tr>
           </thead>
           <tbody>
@@ -310,21 +332,26 @@ function ReportBody({ r }: { r: AuditReport }) {
               <tr key={n}>
                 <td>
                   <div className="mono">{x.control}</div>
-                  <div style={{ color: "var(--fg-dim)", fontSize: 12 }}>{x.label}</div>
+                  <div style={{ color: "var(--fg-dim)", fontSize: 12 }} lang="en">
+                    {x.label}
+                  </div>
                   <div style={{ marginTop: 4 }}>
                     <ObsBadge o={x.observation} />
                   </div>
                 </td>
                 <td>
-                  <div style={{ whiteSpace: "pre-wrap" }}>{x.recommendation.trim()}</div>
+                  <div style={{ whiteSpace: "pre-wrap" }} lang="en">
+                    {x.recommendation.trim()}
+                  </div>
                   <div
                     style={{ color: "var(--fg-dim)", fontSize: 12, marginTop: 6, whiteSpace: "pre-wrap" }}
+                    lang="en"
                   >
                     {x.because.trim()}
                   </div>
                   {x.scope_note ? (
                     <div style={{ color: "var(--warn)", fontSize: 12, marginTop: 6 }}>
-                      Scope: {x.scope_note.trim()}
+                      {t("rep.scope")} <span lang="en">{x.scope_note.trim()}</span>
                     </div>
                   ) : null}
                 </td>
@@ -335,7 +362,7 @@ function ReportBody({ r }: { r: AuditReport }) {
                     </Link>
                   ))}
                 </td>
-                <td className="mono" style={{ fontSize: 11.5, wordBreak: "break-all" }}>
+                <td className="mono" lang="en" style={{ fontSize: 11.5, wordBreak: "break-all" }}>
                   {x.sites.join(" ") || "—"}
                 </td>
               </tr>
@@ -344,18 +371,16 @@ function ReportBody({ r }: { r: AuditReport }) {
         </table>
       </div>
 
-      <h3>Recommendations deliberately withheld</h3>
+      <h3>{t("rep.h.withheld")}</h3>
       <p style={{ color: "var(--fg-dim)" }}>
-        {r.recommendations_withheld.length} control(s) where something was declared and this study
-        declines to advise. Listed rather than omitted: an absent row would read as a control with
-        nothing to say about it.
+        {t("rep.withheld.lede", { n: r.recommendations_withheld.length })}
       </p>
       <table className="grid">
         <thead>
           <tr>
-            <th style={{ width: 190 }}>Control</th>
-            <th style={{ width: 170 }}>State</th>
-            <th>Why nothing is recommended</th>
+            <th style={{ width: 190 }}>{t("aud.th.control")}</th>
+            <th style={{ width: 170 }}>{t("pip.th.state")}</th>
+            <th>{t("rep.th.whyWithheld")}</th>
           </tr>
         </thead>
         <tbody>
@@ -365,19 +390,21 @@ function ReportBody({ r }: { r: AuditReport }) {
               <td>
                 <StatusBadge s={w.status} />
               </td>
-              <td style={{ whiteSpace: "pre-wrap" }}>{w.why_withheld.trim()}</td>
+              <td style={{ whiteSpace: "pre-wrap" }} lang="en">
+                {w.why_withheld.trim()}
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      <h3>Control by control</h3>
+      <h3>{t("rep.h.controlByControl")}</h3>
       {r.controls.map((line) => (
         <ControlBlock key={line.control} line={line} />
       ))}
 
-      <h3>Caveats that apply to every line above</h3>
-      <ul>
+      <h3>{t("rep.h.caveats")}</h3>
+      <ul lang="en">
         {r.caveats.map((cv, n) => (
           <li key={n} style={{ marginBottom: 8 }}>
             {cv}
@@ -391,55 +418,65 @@ function ReportBody({ r }: { r: AuditReport }) {
 export default function Report() {
   const res = useAsync(loadAudit, []);
   const [own, setOwn] = useState<{ name: string; report: AuditReport } | null>(null);
-  const [readError, setReadError] = useState<string | null>(null);
+  // The read failure is held as a `Msg` — a key plus the reader's own value — not as a sentence, so it
+  // is rendered in whichever language is on screen when it is shown, not the one that was on screen when
+  // the file was picked.
+  const [readError, setReadError] = useState<Msg | null>(null);
+  const t = useT();
 
   const shown = useMemo(
     () => (own ? own.report : res.state === "ok" ? res.data.report : null),
     [own, res],
   );
 
-  if (res.state === "loading") return <Loading what="the audit report" />;
+  if (res.state === "loading") return <Loading what={t("rep.loading")} />;
   if (res.state === "error") return <ErrorPanel error={res.error} />;
   const a: AuditPage = res.data;
 
   return (
     <>
-      <h2>Audit report</h2>
+      <h2>{t("rep.title")}</h2>
+      <VerbatimNote />
       <p className="lede">
         {own ? (
-          <>
-            Rendering <span className="mono">{own.name}</span>, decoded in this browser. It was not
-            uploaded: selecting it produced no network request, which you can confirm in your browser's
-            network panel.
-          </>
+          <T k="rep.lede.own" v={{ name: <span className="mono">{own.name}</span> }} />
         ) : (
-          <>
-            The worked example, produced at build time by running{" "}
-            <span className="mono">{a.tools.parse}</span> and <span className="mono">{a.tools.report}</span>{" "}
-            over <span className="mono">{a.example.submission}</span> — the same two programs the{" "}
-            <Link to="/audit">intake page</Link> composes commands for, run over{" "}
-            {a.example.n_files} checked-in files. Nothing here was written by hand.
-          </>
+          <T
+            k="rep.lede.example"
+            v={{
+              parse: <span className="mono">{a.tools.parse}</span>,
+              report: <span className="mono">{a.tools.report}</span>,
+              submission: <span className="mono">{a.example.submission}</span>,
+              intake: <Link to="/audit">{t("rep.intakeLink")}</Link>,
+              n: a.example.n_files,
+            }}
+          />
         )}
       </p>
 
       {!own && a.example.is_synthetic ? (
         <div className="note warn">
-          <strong>This submission is synthetic.</strong>{" "}
-          <span style={{ whiteSpace: "pre-wrap" }}>{a.example.why_synthetic.trim()}</span>
+          <strong>{t("rep.synthetic")}</strong>{" "}
+          <span style={{ whiteSpace: "pre-wrap" }} lang="en">
+            {a.example.why_synthetic.trim()}
+          </span>
         </div>
       ) : null}
 
-      <h3>Render a report of your own</h3>
+      <h3>{t("rep.h.ownReport")}</h3>
       <p style={{ color: "var(--fg-dim)" }}>
-        Run the three commands from the <Link to="/audit">intake page</Link> and select the{" "}
-        <span className="mono">report.json</span> they wrote. The file is decoded with{" "}
-        <span className="mono">FileReader</span> in this tab; this site has no endpoint that accepts a
-        request body, so there is nowhere for it to be sent even if a future version tried.
+        <T
+          k="rep.ownReport.body"
+          v={{
+            intake: <Link to="/audit">{t("rep.intakeLink")}</Link>,
+            report: <span className="mono">report.json</span>,
+            reader: <span className="mono">FileReader</span>,
+          }}
+        />
       </p>
       <div className="intake">
         <label>
-          <span>Your report.json</span>
+          <span>{t("rep.field.file")}</span>
           <input
             type="file"
             accept=".json,application/json"
@@ -457,18 +494,20 @@ export default function Report() {
                     setOwn({ name: f.name, report: out.report });
                   }
                 },
-                (err) => setReadError(`Could not read the file: ${String(err)}`),
+                (err) => setReadError({ key: "rep.readFailed", vars: { why: String(err) } }),
               );
             }}
           />
         </label>
         {own ? (
           <button type="button" className="btn" onClick={() => setOwn(null)}>
-            Back to the worked example
+            {t("rep.backToExample")}
           </button>
         ) : null}
       </div>
-      {readError ? <div className="note warn">{readError}</div> : null}
+      {readError ? (
+        <div className="note warn">{t(readError.key, readError.vars)}</div>
+      ) : null}
 
       {!own ? (
         <p>
@@ -476,19 +515,19 @@ export default function Report() {
             name="grx-audit-example.md"
             text={a.markdown}
             type="text/markdown"
-            label="Download this report as Markdown"
+            label={t("rep.dl.md")}
           />{" "}
           <Download
             name="grx-audit-example.json"
             text={JSON.stringify(a.report, null, 2)}
             type="application/json"
-            label="Download it as JSON"
+            label={t("rep.dl.json")}
           />{" "}
           <Download
             name="grx-audit-example-inventory.json"
             text={JSON.stringify(a.inventory, null, 2)}
             type="application/json"
-            label="Download the inventory the parser wrote"
+            label={t("rep.dl.inventory")}
           />
         </p>
       ) : null}
@@ -497,16 +536,14 @@ export default function Report() {
 
       {!own ? (
         <>
-          <h3>The Markdown the tool wrote, verbatim</h3>
-          <p style={{ color: "var(--fg-dim)" }}>
-            Rendered as text rather than as formatted Markdown on purpose: this is the deliverable a
-            reader hands to a colleague, and the point of showing it here is that it is the same bytes,
-            not a prettier version of them.
-          </p>
+          <h3>{t("rep.h.markdown")}</h3>
+          <p style={{ color: "var(--fg-dim)" }}>{t("rep.markdown.body")}</p>
           <details className="raw">
-            <summary>{a.markdown.split("\n").length} lines of Markdown</summary>
+            <summary>{t("rep.markdown.lines", { n: a.markdown.split("\n").length })}</summary>
             <div>
-              <pre>
+              {/* The report as the audit emitted it. English verbatim in both editions — a reader
+                  pastes these bytes into a repository, so a translated word would be a defect. */}
+              <pre lang="en">
                 <code>{a.markdown}</code>
               </pre>
             </div>
@@ -514,7 +551,9 @@ export default function Report() {
         </>
       ) : null}
 
-      <p style={{ color: "var(--fg-faint)", fontSize: 12, marginTop: 16 }}>{a.note}</p>
+      <p style={{ color: "var(--fg-faint)", fontSize: 12, marginTop: 16 }} lang="en">
+        {a.note}
+      </p>
     </>
   );
 }

@@ -20,6 +20,7 @@ import type { ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { loadCase, loadFamilies, loadSeries } from "../lib/data";
 import type { ArchiveEntry, CaseDetail as Case, Verdict } from "../lib/types";
+import { T, useT, VerbatimNote } from "../lib/i18n";
 import {
   Body,
   Chips,
@@ -36,13 +37,40 @@ import {
  *  composite as its own JSON. The verdict files are deliberately heterogeneous — each case records
  *  what its instrument produced — so a component that assumed a shape would silently drop fields. */
 function Any({ v }: { v: unknown }) {
+  const t = useT();
+  // `null`, `true` and `false` are the JSON spelling of the stored value, not words about it: a reader
+  // comparing this table against the verdict file has to see what the file contains.
   if (v === null) return <span style={{ color: "var(--fg-faint)" }}>null</span>;
   if (v === undefined) return <span style={{ color: "var(--fg-faint)" }}>—</span>;
-  if (typeof v === "boolean") return <span className="mono">{v ? "true" : "false"}</span>;
-  if (typeof v === "number" || typeof v === "string") return <span className="mono">{String(v)}</span>;
+  // `lang="en"` on every branch: a stored value is as likely to be a whole English sentence
+  // (`n_met_basis`, `false_means_what`, a `notes` entry) as an identifier, and the component cannot
+  // tell them apart — nor should it try, because both are bytes out of the verdict file and neither is
+  // this platform's own prose. Unmarked, the Chinese edition would hand a sealed English sentence to a
+  // screen reader as Chinese.
+  if (typeof v === "boolean")
+    return (
+      <span className="mono" lang="en">
+        {v ? "true" : "false"}
+      </span>
+    );
+  if (typeof v === "number" || typeof v === "string")
+    return (
+      <span className="mono" lang="en">
+        {String(v)}
+      </span>
+    );
   if (Array.isArray(v) && v.every((x) => typeof x === "string" || typeof x === "number"))
-    return <Chips items={v.map(String)} />;
-  return <RawJson label={Array.isArray(v) ? `${v.length} item(s)` : "object"} value={v} />;
+    return (
+      <span lang="en">
+        <Chips items={v.map(String)} />
+      </span>
+    );
+  return (
+    <RawJson
+      label={Array.isArray(v) ? t("cs.any.items", { n: v.length }) : t("cs.any.object")}
+      value={v}
+    />
+  );
 }
 
 const PRIM = (v: unknown) => v === null || ["boolean", "number", "string"].includes(typeof v);
@@ -112,32 +140,50 @@ function DoesNotProve({ c }: { c: Case }) {
   const mine = c.verdict === "FALSE" ? forFalse : c.verdict === "TRUE" ? forTrue : null;
   const key = c.verdict === "FALSE" ? "what_false_does_not_prove" : "what_true_does_not_prove";
   const other = c.verdict === "FALSE" ? forTrue : forFalse;
+  const t = useT();
 
   return (
     <section>
-      <h3>What this verdict does not prove</h3>
+      <h3>{t("cs.h.doesNotProve")}</h3>
       {c.verdict === "INCONCLUSIVE" ? (
         <div className="note warn">
-          <strong>INCONCLUSIVE establishes nothing in either direction.</strong> It is not a weak
-          TRUE and not a soft FALSE: the measurement ran and did not decide the claim. It licenses no
-          amendment to the design document and may not be cited as evidence for or against the claim.
+          <strong>
+            <T k="cs.dnp.inconclusive.head" v={{ v: <span lang="en">INCONCLUSIVE</span> }} />
+          </strong>{" "}
+          <T
+            k="cs.dnp.inconclusive.body"
+            v={{ t: <span lang="en">TRUE</span>, f: <span lang="en">FALSE</span> }}
+          />
         </div>
       ) : typeof mine === "string" && mine.trim() ? (
-        <div className="note">{mine}</div>
+        // The caveat is the record's own sentence about its own verdict. Translating it here would
+        // produce a bound on the reading whose only source is this website.
+        <div className="note" lang="en">
+          {mine}
+        </div>
       ) : (
         <div className="note warn">
-          <strong>This verdict record carries no such statement.</strong> The artifact has no{" "}
-          <code>{key}</code> field, so nothing bounds how far this{" "}
-          <span className="mono">{c.verdict ?? "verdict"}</span> may be read. That is a gap in the
-          record, not an assertion that the verdict generalises — this section is rendered for every
-          case precisely so an unwritten caveat cannot look like an absent need for one.
+          <strong>{t("cs.dnp.absent.head")}</strong>{" "}
+          <T
+            k="cs.dnp.absent.body"
+            v={{
+              field: <code lang="en">{key}</code>,
+              verdict: (
+                <span className="mono" lang="en">
+                  {c.verdict ?? t("cs.dnp.verdictWord")}
+                </span>
+              ),
+            }}
+          />
         </div>
       )}
       {typeof other === "string" && other.trim() ? (
         <details className="raw">
-          <summary>the record also carries the caveat for the opposite outcome</summary>
+          <summary>{t("cs.dnp.opposite")}</summary>
           <div>
-            <p style={{ color: "var(--fg-dim)" }}>{other}</p>
+            <p style={{ color: "var(--fg-dim)" }} lang="en">
+              {other}
+            </p>
           </div>
         </details>
       ) : null}
@@ -154,40 +200,38 @@ function Replication({ c }: { c: Case }) {
   const days = new Set(
     c.archive.map((a) => /(\d{4}-\d{2}-\d{2})/.exec(a.label)?.[1] ?? "").filter(Boolean),
   );
+  const t = useT();
   return (
     <section>
-      <h3>Replication</h3>
+      <h3>{t("cs.h.replication")}</h3>
       {!c.archive.length ? (
-        <div className="note">
-          No archived copy of this verdict exists, so this case has been measured on one occasion only.
-          It is not replicated. The dashboard will not call a single measurement a replication however
-          many times the case is rendered.
-        </div>
+        <div className="note">{t("cs.rep.none")}</div>
       ) : (
         <>
           {disagree.length ? (
             <div className="note warn">
               <strong>
-                {disagree.length} archived {disagree.length === 1 ? "copy" : "copies"} of this verdict
-                disagree with the live file.
+                {t(
+                  disagree.length === 1 ? "cs.rep.disagree.head1" : "cs.rep.disagree.head",
+                  { n: disagree.length },
+                )}
               </strong>{" "}
-              A disagreement between two measurement occasions is a finding about the stability of the
-              claim, not an error to be resolved by preferring the newer run. Both verdicts are shown.
+              {t("cs.rep.disagree.body")}
             </div>
           ) : null}
           <table className="grid">
             <thead>
               <tr>
-                <th>label</th>
-                <th>verdict in that file</th>
-                <th>run id</th>
-                <th>sha256</th>
+                <th>{t("cs.rep.th.label")}</th>
+                <th>{t("cs.rep.th.verdict")}</th>
+                <th>{t("cs.rep.th.runId")}</th>
+                <th>{t("cs.rep.th.sha")}</th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 <td>
-                  <span className="badge">live</span> {c.verdict_file ?? "—"}
+                  <span className="badge">{t("cs.rep.live")}</span> {c.verdict_file ?? "—"}
                 </td>
                 <td>
                   <VerdictBadge v={live} />
@@ -216,8 +260,7 @@ function Replication({ c }: { c: Case }) {
             </tbody>
           </table>
           <p style={{ color: "var(--fg-faint)", fontSize: 12, marginTop: 8 }}>
-            Distinct calendar days named by the archive labels: {days.size ? [...days].join(", ") : "none"}.
-            A replication requires two distinct UTC days; one day repeated is a re-run.
+            {t("cs.rep.days", { days: days.size ? [...days].join(", ") : t("cs.none") })}
           </p>
         </>
       )}
@@ -255,6 +298,7 @@ function SpanJoin({ join }: { join: Record<string, unknown> }) {
   }, [join]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [i, setI] = useState(0);
+  const t = useT();
   if (!arms.length) return null;
 
   const t0 = points.length ? (points[0]?.t ?? 0) : 0;
@@ -265,17 +309,19 @@ function SpanJoin({ join }: { join: Record<string, unknown> }) {
 
   return (
     <section>
-      <h3>Span join — one tick per recovered request</h3>
+      <h3>{t("cs.h.spanJoin")}</h3>
       <table className="grid" style={{ marginBottom: 12 }}>
         <thead>
           <tr>
-            <th>arm</th>
-            <th>wanted</th>
-            <th>found</th>
-            <th>timed</th>
-            <th>queries</th>
-            <th>missing</th>
-            <th>truncated</th>
+            {/* The arm names are the record's own keys and appear untranslated in the rows below; the
+                column headings are this page's description of the record's fields. */}
+            <th>{t("cs.sj.th.arm")}</th>
+            <th>{t("cs.sj.th.wanted")}</th>
+            <th>{t("cs.sj.th.found")}</th>
+            <th>{t("cs.sj.th.timed")}</th>
+            <th>{t("cs.sj.th.queries")}</th>
+            <th>{t("cs.sj.th.missing")}</th>
+            <th>{t("cs.sj.th.truncated")}</th>
           </tr>
         </thead>
         <tbody>
@@ -284,14 +330,16 @@ function SpanJoin({ join }: { join: Record<string, unknown> }) {
             const trunc = a["truncated"] === true;
             return (
               <tr key={arm}>
-                <td className="mono">{arm}</td>
+                <td className="mono" lang="en">
+                  {arm}
+                </td>
                 <td className="num">{String(a["n_wanted"] ?? "—")}</td>
                 <td className="num">{String(a["n_found"] ?? "—")}</td>
                 <td className="num">{String(a["n_timed"] ?? "—")}</td>
                 <td className="num">{String(a["n_queries"] ?? "—")}</td>
                 <td className="num">{miss}</td>
                 <td className={trunc ? "num" : "num"} style={trunc ? { color: "var(--warn)" } : undefined}>
-                  {trunc ? "TRUNCATED" : "no"}
+                  {trunc ? t("cs.sj.truncated") : t("cs.sj.notTruncated")}
                 </td>
               </tr>
             );
@@ -359,37 +407,48 @@ function SpanJoin({ join }: { join: Record<string, unknown> }) {
           {cur ? (
             <KV
               rows={[
-                ["arm", <span className="mono">{cur.arm}</span>],
-                ["request id", <span className="mono">{cur.id}</span>],
                 [
-                  "span time",
+                  t("cs.sj.th.arm"),
+                  <span className="mono" lang="en">
+                    {cur.arm}
+                  </span>,
+                ],
+                [t("cs.sj.kv.requestId"), <span className="mono">{cur.id}</span>],
+                [
+                  t("cs.sj.kv.spanTime"),
                   <span className="mono">
-                    {cur.t.toFixed(3)} ({(cur.t - t0).toFixed(3)} s into the window)
+                    {t("cs.sj.kv.spanTime.value", {
+                      t: cur.t.toFixed(3),
+                      into: (cur.t - t0).toFixed(3),
+                    })}
                   </span>,
                 ],
               ]}
             />
           ) : null}
-          <p style={{ color: "var(--fg-faint)", fontSize: 12, marginTop: 8 }}>
-            Each tick is the timestamp at which one request's span was recovered from telemetry, not a
-            latency. The two arms are separate sets of calls, so a tick in one has no partner in the
-            other — this is a coverage view, and the paired estimator lives in the verdict record.
-          </p>
+          <p style={{ color: "var(--fg-faint)", fontSize: 12, marginTop: 8 }}>{t("cs.sj.note")}</p>
         </>
       ) : stubbed.length ? null : (
-        <div className="note">
-          The arms carry counts but no per-request timestamps, so there is nothing to plot.
-        </div>
+        <div className="note">{t("cs.sj.nothingToPlot")}</div>
       )}
       {stubbed.length ? (
         <div className="note">
           <strong>
-            {stubbed.length === 1 ? "One arm's" : `${stubbed.length} arms'`} per-request timestamps are
-            not on this page yet
+            {t(stubbed.length === 1 ? "cs.sj.stubbed.head1" : "cs.sj.stubbed.head", {
+              n: stubbed.length,
+            })}
           </strong>{" "}
-          (<span className="mono">{stubbed.join(", ")}</span>). They were large enough to be published
-          as a separate series; load them from <em>Heavy series</em> below and this plot fills in. The
-          counts in the table above are the record's own and are complete either way.
+          <T
+            k="cs.sj.stubbed.body"
+            v={{
+              arms: (
+                <span className="mono" lang="en">
+                  {stubbed.join(", ")}
+                </span>
+              ),
+              section: <em>{t("cs.h.heavySeries")}</em>,
+            }}
+          />
         </div>
       ) : null}
     </section>
@@ -400,6 +459,7 @@ export default function CaseDetail() {
   const { id = "" } = useParams();
   const res = useAsync(() => loadCase(id), [id]);
   const fam = useAsync(loadFamilies, []);
+  const t = useT();
 
   // The series file is fetched on request, never with the page: it is the larger half of the payload
   // and most readers of most cases never open it. State lives here, above the early returns, because
@@ -427,7 +487,7 @@ export default function CaseDetail() {
     [loaded, series],
   );
 
-  if (res.state === "loading") return <Loading what={`case ${id}`} />;
+  if (res.state === "loading") return <Loading what={t("cs.loading", { id })} />;
   if (res.state === "error") return <ErrorPanel error={res.error} />;
   const c = res.data;
   const rec = hydrated ? hydrated.record : c.record;
@@ -470,12 +530,24 @@ export default function CaseDetail() {
       <h2 className="view">
         <span className="mono">{c.case}</span> <VerdictBadge v={c.verdict} />
       </h2>
-      <p className="lede">{c.title}</p>
+      {/* The case title is the artifact's own one-line statement of what was measured. */}
+      <p className="lede" lang="en">
+        {c.title}
+      </p>
+      <VerbatimNote />
       <div style={{ marginBottom: 18 }}>
-        <span className="chip">family {c.family}</span>
-        <span className="chip">tier {c.tier}</span>
-        {adj?.["kind"] ? <span className="chip">kind {String(adj["kind"])}</span> : null}
-        {c.oracle_is_sealed ? <span className="chip sealed">oracle sealed</span> : null}
+        <span className="chip">
+          {t("cs.chip.family")} <span lang="en">{c.family}</span>
+        </span>
+        <span className="chip">
+          {t("cs.chip.tier")} <span lang="en">{c.tier}</span>
+        </span>
+        {adj?.["kind"] ? (
+          <span className="chip">
+            {t("cs.chip.kind")} <span lang="en">{String(adj["kind"])}</span>
+          </span>
+        ) : null}
+        {c.oracle_is_sealed ? <span className="chip sealed">{t("cs.chip.sealed")}</span> : null}
         {c.claims.map((cl) => (
           <Link key={cl} to={`/claims#${cl}`} className="chip">
             {cl}
@@ -485,40 +557,47 @@ export default function CaseDetail() {
 
       {famFlags?.network_position_sensitive ? (
         <div className="note warn">
-          <strong>This case is network-position sensitive.</strong> {famFlags.why}
-          {famFlags.replication_requirement ? <> {famFlags.replication_requirement}</> : null}
+          <strong>{t("cs.netPos")}</strong> <span lang="en">{famFlags.why}</span>
+          {famFlags.replication_requirement ? (
+            <> <span lang="en">{famFlags.replication_requirement}</span></>
+          ) : null}
         </div>
       ) : null}
 
       <Restrictions items={c.citation_restrictions} />
 
       <section>
-        <h3>Sealed oracle — the exact text this verdict answers</h3>
-        <div className="verbatim">{c.oracle_text}</div>
-        <p style={{ color: "var(--fg-faint)", fontSize: 12, marginTop: 8 }}>
-          Quoted verbatim from the sealed oracle registry, whose hash is recomputed at every build. Not
-          paraphrased and not shortened: the wording is the claim, and the verdict is an answer to this
-          wording rather than to a summary of it.
-        </p>
+        <h3>{t("cs.h.oracle")}</h3>
+        {/* The one block on this platform that is quoted with the most force: it is sealed, hashed, and
+            answered by the verdict. `lang="en"` states in the markup what the note below states in
+            words — this text is not in the reader's language because it may not be restated. */}
+        <div className="verbatim" lang="en">
+          {c.oracle_text}
+        </div>
+        <p style={{ color: "var(--fg-faint)", fontSize: 12, marginTop: 8 }}>{t("cs.oracle.note")}</p>
       </section>
 
       {c.instrument ? (
         <section>
-          <h3>Instrument — how the claim was put to a measurement</h3>
+          <h3>{t("cs.h.instrument")}</h3>
           <div className="md">
-            <p>{c.instrument}</p>
+            <p lang="en">{c.instrument}</p>
           </div>
         </section>
       ) : null}
 
       {adj ? (
         <section>
-          <h3>Adjudication</h3>
+          <h3>{t("cs.h.adjudication")}</h3>
           <table className="grid">
             <tbody>
               {split(adj).prim.map(([k, v]) => (
                 <tr key={k}>
-                  <th style={{ width: 200 }}>{k}</th>
+                  {/* The row headings here are the record's own field names, not descriptions of them:
+                      a reader checking this table against the verdict file greps for these strings. */}
+                  <th style={{ width: 200 }} lang="en">
+                    {k}
+                  </th>
                   <td>
                     <Any v={v} />
                   </td>
@@ -528,7 +607,11 @@ export default function CaseDetail() {
           </table>
           {split(adj).comp.map(([k, v]) => (
             <div key={k} style={{ marginTop: 10 }}>
-              <div style={{ color: "var(--fg-dim)", fontSize: 12, marginBottom: 4 }} className="mono">
+              <div
+                style={{ color: "var(--fg-dim)", fontSize: 12, marginBottom: 4 }}
+                className="mono"
+                lang="en"
+              >
                 {k}
               </div>
               <EvidenceBlock v={v} />
@@ -541,13 +624,17 @@ export default function CaseDetail() {
 
       {NARRATIVE.some((k) => typeof rec[k] === "string") ? (
         <section>
-          <h3>How the verdict was read</h3>
+          <h3>{t("cs.h.howRead")}</h3>
           {NARRATIVE.filter((k) => typeof rec[k] === "string").map((k) => (
             <div key={k} style={{ marginBottom: 10 }}>
-              <div className="mono" style={{ color: "var(--fg-faint)", fontSize: 11.5 }}>
+              <div className="mono" style={{ color: "var(--fg-faint)", fontSize: 11.5 }} lang="en">
                 {k}
               </div>
-              <Body src={String(rec[k])} />
+              {/* `verdict_reading` and `verdict_rule` are how the producer read its own measurement.
+                  They are the reasoning this page reports, so they are quoted, not rendered again. */}
+              <div lang="en">
+                <Body src={String(rec[k])} />
+              </div>
             </div>
           ))}
         </section>
@@ -555,13 +642,13 @@ export default function CaseDetail() {
 
       {guards ? (
         <section>
-          <h3>Guards — the conditions that had to hold for the measurement to count</h3>
+          <h3>{t("cs.h.guards")}</h3>
           <table className="grid">
             <thead>
               <tr>
-                <th>guard</th>
-                <th>held</th>
-                <th>what it tested, and why</th>
+                <th>{t("cs.g.th.guard")}</th>
+                <th>{t("cs.g.th.held")}</th>
+                <th>{t("cs.g.th.testWhy")}</th>
               </tr>
             </thead>
             <tbody>
@@ -569,23 +656,27 @@ export default function CaseDetail() {
                 const d = asRecord(guardDetail?.[name]);
                 return (
                   <tr key={name}>
-                    <td className="mono">{name}</td>
+                    <td className="mono" lang="en">
+                      {name}
+                    </td>
                     <td>
+                      {/* `held` is this page's word for `true`; anything else is the stored value,
+                          shown as stored rather than interpreted. */}
                       <span className={`badge ${ok === true ? "v-TRUE" : "v-FALSE"}`}>
-                        {ok === true ? "held" : String(ok)}
+                        {ok === true ? t("cs.g.held") : String(ok)}
                       </span>
                     </td>
                     <td>
-                      {d?.["test"] ? <div>{String(d["test"])}</div> : null}
+                      {d?.["test"] ? <div lang="en">{String(d["test"])}</div> : null}
                       {d?.["why"] ? (
-                        <div style={{ color: "var(--fg-dim)", marginTop: 4 }}>{String(d["why"])}</div>
+                        <div style={{ color: "var(--fg-dim)", marginTop: 4 }} lang="en">
+                          {String(d["why"])}
+                        </div>
                       ) : null}
                       {!d?.["test"] && !d?.["why"] ? (
-                        <span style={{ color: "var(--fg-faint)" }}>
-                          no test/why recorded for this guard
-                        </span>
+                        <span style={{ color: "var(--fg-faint)" }}>{t("cs.g.noTestWhy")}</span>
                       ) : null}
-                      {d ? <RawJson label="guard detail" value={d} /> : null}
+                      {d ? <RawJson label={t("cs.g.detail")} value={d} /> : null}
                     </td>
                   </tr>
                 );
@@ -597,14 +688,17 @@ export default function CaseDetail() {
 
       {blockers ? (
         <section>
-          <h3>Blockers</h3>
+          <h3>{t("cs.h.blockers")}</h3>
           {Array.isArray(blockers["blockers"]) && (blockers["blockers"] as unknown[]).length ? (
-            <RawJson label={`${(blockers["blockers"] as unknown[]).length} blocker(s)`} value={blockers["blockers"]} />
+            <RawJson
+              label={t("cs.bl.count", { n: (blockers["blockers"] as unknown[]).length })}
+              value={blockers["blockers"]}
+            />
           ) : (
-            <div className="note">No blocker was recorded for this case.</div>
+            <div className="note">{t("cs.bl.none")}</div>
           )}
           {typeof blockers["blockers_are_not_exhaustive"] === "string" ? (
-            <p style={{ color: "var(--fg-dim)", fontSize: 12.5 }}>
+            <p style={{ color: "var(--fg-dim)", fontSize: 12.5 }} lang="en">
               {String(blockers["blockers_are_not_exhaustive"])}
             </p>
           ) : null}
@@ -616,25 +710,24 @@ export default function CaseDetail() {
       <Replication c={c} />
 
       <section>
-        <h3>Resources and run identity</h3>
+        <h3>{t("cs.h.resources")}</h3>
         <KV
           rows={IDS.filter((k) => rec[k] !== undefined).map((k) => [k, <Any v={rec[k]} />] as [string, ReactNode])}
         />
-        <p style={{ color: "var(--fg-faint)", fontSize: 12, marginTop: 8 }}>
-          Account identifiers and bucket names are masked by the same redaction pass that guards the
-          repository, so an identifier here reads as a placeholder rather than a real one.
-        </p>
+        <p style={{ color: "var(--fg-faint)", fontSize: 12, marginTop: 8 }}>{t("cs.resources.note")}</p>
       </section>
 
       {rest.prim.length || rest.comp.length ? (
         <section>
-          <h3>Everything else the record carries</h3>
+          <h3>{t("cs.h.everythingElse")}</h3>
           {rest.prim.length ? (
             <table className="grid" style={{ marginBottom: 12 }}>
               <tbody>
                 {rest.prim.map(([k, v]) => (
                   <tr key={k}>
-                    <th style={{ width: 260 }}>{k}</th>
+                    <th style={{ width: 260 }} lang="en">
+                      {k}
+                    </th>
                     <td>
                       <Any v={v} />
                     </td>
@@ -653,20 +746,17 @@ export default function CaseDetail() {
 
       {c.series_available.length ? (
         <section>
-          <h3>Heavy series</h3>
+          <h3>{t("cs.h.heavySeries")}</h3>
           <div className="note">
-            This case's large arrays were split out of the case file to keep the page small and are
-            published separately at <code>data/series/{c.case}.json</code>. Each one left a stub in the
-            record naming its own path, its element count and its size, so this page can tell you what
-            it is not showing you before it fetches anything.
+            <T k="cs.hs.body" v={{ file: <code>data/series/{c.case}.json</code> }} />
           </div>
           <table className="grid" style={{ marginTop: 10, marginBottom: 10 }}>
             <thead>
               <tr>
-                <th>path in the record</th>
-                <th>elements</th>
-                <th>size</th>
-                <th>loaded</th>
+                <th>{t("cs.hs.th.path")}</th>
+                <th>{t("cs.hs.th.elements")}</th>
+                <th>{t("cs.hs.th.size")}</th>
+                <th>{t("cs.hs.th.loaded")}</th>
               </tr>
             </thead>
             <tbody>
@@ -679,11 +769,17 @@ export default function CaseDetail() {
                 const here = series ? series[path] : undefined;
                 return (
                   <tr key={path}>
-                    <td className="mono">{path}</td>
+                    <td className="mono" lang="en">
+                      {path}
+                    </td>
                     <td className="num">{stub ? stub.n : "—"}</td>
                     <td className="num">{stub ? `${Math.round(stub.bytes / 1024)} KB` : "—"}</td>
                     <td className="num">
-                      {Array.isArray(here) ? `yes (${here.length})` : series ? "MISSING" : "no"}
+                      {Array.isArray(here)
+                        ? t("cs.hs.loaded.yes", { n: here.length })
+                        : series
+                          ? t("cs.hs.loaded.missing")
+                          : t("cs.hs.loaded.no")}
                     </td>
                   </tr>
                 );
@@ -702,37 +798,40 @@ export default function CaseDetail() {
               }}
               disabled={loadingSeries}
             >
-              {loadingSeries ? "loading…" : "Load the series into this page"}
+              {loadingSeries ? t("cs.hs.loading") : t("cs.hs.load")}
             </button>
           )}
           {mine?.state === "error" ? <ErrorPanel error={mine.error} /> : null}
           {hydrated?.unresolved.length ? (
             <div className="note warn">
-              <strong>The series file and this page disagree.</strong> These paths were published as
-              series but this record carries no matching stub for them:{" "}
-              <span className="mono">{hydrated.unresolved.join(", ")}</span>. Every panel above is
-              therefore showing the record WITHOUT them. This should be impossible —{" "}
-              <code>check_site_invariants.py</code> asserts at publish time that the stubs, the series
-              file and <code>series_available</code> agree — so treat it as a payload defect rather
-              than as a case whose series happened to be small.
+              <strong>{t("cs.hs.disagree.head")}</strong>{" "}
+              <T
+                k="cs.hs.disagree.body"
+                v={{
+                  paths: (
+                    <span className="mono" lang="en">
+                      {hydrated.unresolved.join(", ")}
+                    </span>
+                  ),
+                  gate: <code>check_site_invariants.py</code>,
+                  field: <code>series_available</code>,
+                }}
+              />
             </div>
           ) : null}
           {series ? (
-            <div className="note">
-              Loaded. The panels above — the span join in particular — now render the full arrays, not
-              the stubs.
-            </div>
+            <div className="note">{t("cs.hs.done")}</div>
           ) : null}
         </section>
       ) : null}
 
       <section>
-        <h3>The verdict file as published</h3>
-        <RawJson label={c.verdict_file ?? "record"} value={rec} />
+        <h3>{t("cs.h.verdictFile")}</h3>
+        <RawJson label={c.verdict_file ?? t("cs.recordLabel")} value={rec} />
       </section>
 
       <p style={{ marginTop: 24 }}>
-        <Link to="/">← back to the census</Link>
+        <Link to="/">{t("cs.back")}</Link>
       </p>
     </>
   );
@@ -749,7 +848,9 @@ function EvidenceBlock({ v }: { v: unknown }) {
           <tbody>
             {prim.map(([k, x]) => (
               <tr key={k}>
-                <th style={{ width: 220 }}>{k}</th>
+                <th style={{ width: 220 }} lang="en">
+                  {k}
+                </th>
                 <td>
                   <Any v={x} />
                 </td>

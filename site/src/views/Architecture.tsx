@@ -37,6 +37,7 @@ import { Link } from "react-router-dom";
 import { loadArchitecture } from "../lib/data";
 import { statusClass } from "../lib/audit";
 import { ErrorPanel, Loading, useAsync, VerdictBadge } from "../components/ui";
+import { T, useT, VerbatimNote } from "../lib/i18n";
 import type { ArchBox, ArchDiagram, ArchEdge, Architecture } from "../lib/types";
 
 /** How much smaller than its own coordinate space each diagram is drawn. The layout is generous — a
@@ -91,6 +92,7 @@ function Mix({ mix }: { mix: Record<string, number> }) {
 }
 
 function Box({ box, sel, onSelect }: { box: ArchBox; sel: boolean; onSelect: () => void }) {
+  const t = useT();
   return (
     <button
       type="button"
@@ -102,61 +104,79 @@ function Box({ box, sel, onSelect }: { box: ArchBox; sel: boolean; onSelect: () 
       style={{ left: box.x, top: box.y, width: box.w, height: box.h }}
       title={box.status_label}
     >
-      <span className="lab">{box.label}</span>
+      <span className="lab" lang="en">
+        {box.label}
+      </span>
       <span className="meta">
         {box.count !== null ? <span className="cnt">{box.count}</span> : null}
-        {box.n_cases ? <Mix mix={box.verdict_mix} /> : <span className="none">not measured</span>}
+        {box.n_cases ? (
+          <Mix mix={box.verdict_mix} />
+        ) : (
+          <span className="none">{t("arc.notMeasured")}</span>
+        )}
       </span>
     </button>
   );
 }
 
 function Panel({ box, arch }: { box: ArchBox; arch: Architecture }) {
+  const t = useT();
   const nonCiting = new Set(arch.non_colouring_restrictions);
   return (
     <div className={`archpanel ${statusClass(box.status)}`}>
       <div className="head">
-        <h4>{box.label}</h4>
-        <span className={`badge ${statusClass(box.status)}`}>{box.status.replace(/_/g, " ")}</span>
+        <h4 lang="en">{box.label}</h4>
+        <span className={`badge ${statusClass(box.status)}`} lang="en">
+          {box.status.replace(/_/g, " ")}
+        </span>
       </div>
-      <p className="what">{box.detail.trim()}</p>
-      <p className="why">
-        <strong>Why this colour:</strong> {box.why_this_status}
+      {/* `detail`, `why_this_status`, `status_label` and `why_these_cases` are the authored topology
+          file's own sentences. They are quoted, not paraphrased, for the same reason `oracle_text` is. */}
+      <p className="what" lang="en">
+        {box.detail.trim()}
       </p>
       <p className="why">
-        <strong>What the colour means:</strong> {box.status_label}
+        <strong>{t("arc.whyColour")}</strong> <span lang="en">{box.why_this_status}</span>
+      </p>
+      <p className="why">
+        <strong>{t("arc.colourMeans")}</strong> <span lang="en">{box.status_label}</span>
       </p>
 
       <table className="grid archkv">
         <tbody>
           <tr>
-            <th>Kind</th>
+            <th>{t("arc.kv.kind")}</th>
             <td className="mono">{box.kind}</td>
           </tr>
           {box.program ? (
             <tr>
-              <th>Program</th>
+              <th>{t("arc.kv.program")}</th>
               <td className="mono">{box.program}</td>
             </tr>
           ) : null}
           {box.venv !== "none" ? (
             <tr>
-              <th>Virtual environment</th>
+              <th>{t("arc.kv.venv")}</th>
               <td className="mono">{box.venv}</td>
             </tr>
           ) : null}
           {box.machine !== "none" ? (
             <tr>
-              <th>Runs on</th>
+              <th>{t("arc.kv.machine")}</th>
               <td className="mono">{box.machine}</td>
             </tr>
           ) : null}
           {box.count_from ? (
             <tr>
-              <th>The number on the box</th>
+              <th>{t("arc.kv.count")}</th>
               <td>
-                <span className="mono">{box.count}</span> — derived as{" "}
-                <span className="mono">{box.count_from}</span>
+                <T
+                  k="arc.kv.count.value"
+                  v={{
+                    n: <span className="mono">{box.count}</span>,
+                    from: <span className="mono">{box.count_from}</span>,
+                  }}
+                />
               </td>
             </tr>
           ) : null}
@@ -165,20 +185,23 @@ function Panel({ box, arch }: { box: ArchBox; arch: Architecture }) {
 
       {box.measured !== null ? (
         <div className="note warn">
-          <strong>This study never examined this component.</strong>
-          <div style={{ marginTop: 6, whiteSpace: "pre-wrap" }}>{box.why_not_measured?.trim()}</div>
+          <strong>{t("arc.neverExamined")}</strong>
+          <div style={{ marginTop: 6, whiteSpace: "pre-wrap" }} lang="en">
+            {box.why_not_measured?.trim()}
+          </div>
         </div>
       ) : (
         <>
           <p className="why">
-            <strong>Why these cases:</strong> {box.why_these_cases?.trim()}
+            <strong>{t("arc.whyTheseCases")}</strong>{" "}
+            <span lang="en">{box.why_these_cases?.trim()}</span>
           </p>
           <table className="grid">
             <thead>
               <tr>
-                <th style={{ width: 78 }}>Case</th>
-                <th style={{ width: 108 }}>Verdict</th>
-                <th>What it decided</th>
+                <th style={{ width: 78 }}>{t("pip.th.case")}</th>
+                <th style={{ width: 108 }}>{t("arc.th.verdict")}</th>
+                <th>{t("arc.th.decided")}</th>
               </tr>
             </thead>
             <tbody>
@@ -195,18 +218,16 @@ function Panel({ box, arch }: { box: ArchBox; arch: Architecture }) {
                       <VerdictBadge v={c.verdict} />
                     </td>
                     <td>
-                      {c.title}
+                      <span lang="en">{c.title}</span>
                       {c.restrictions.length ? (
                         <div style={{ marginTop: 3 }}>
                           {c.restrictions.map((r) => (
                             <span
                               key={r}
                               className={`chip ${blocked.includes(r) ? "blocked" : ""}`}
-                              title={
-                                blocked.includes(r)
-                                  ? "This restriction means the case colours nothing on this diagram."
-                                  : "A scope restriction on how the case may be cited."
-                              }
+                              title={t(
+                                blocked.includes(r) ? "arc.restrict.blocked" : "arc.restrict.scope",
+                              )}
                             >
                               {r}
                             </span>
@@ -227,17 +248,20 @@ function Panel({ box, arch }: { box: ArchBox; arch: Architecture }) {
 
 function Diagram({ d, arch }: { d: ArchDiagram; arch: Architecture }) {
   const [sel, setSel] = useState<string | null>(null);
+  const t = useT();
   const v = d.viewbox;
   const chosen = d.boxes.find((b) => b.id === sel) ?? null;
 
   return (
     <section className="archsec">
-      <h3>{d.label}</h3>
-      <p className="lede">{d.subtitle.trim()}</p>
+      <h3 lang="en">{d.label}</h3>
+      <p className="lede" lang="en">
+        {d.subtitle.trim()}
+      </p>
 
       <div className="archlegend">
         {Object.entries(arch.status_labels).map(([s, label]) => (
-          <span key={s} className="item" title={label}>
+          <span key={s} className="item" title={label} lang="en">
             <span className={`sw ${statusClass(s)}`} />
             {s.replace(/_/g, " ")}
             <span className="n">{d.boxes_by_status[s] ?? 0}</span>
@@ -250,7 +274,7 @@ function Diagram({ d, arch }: { d: ArchDiagram; arch: Architecture }) {
           className="archcanvas"
           style={{ width: v.width * SCALE, height: v.height * SCALE }}
           role="group"
-          aria-label={`${d.label}: ${d.n_boxes} components, ${d.n_edges} relations`}
+          aria-label={`${d.label}: ${t("arc.aria", { boxes: d.n_boxes, edges: d.n_edges })}`}
         >
           <div
             className="archinner"
@@ -282,27 +306,29 @@ function Diagram({ d, arch }: { d: ArchDiagram; arch: Architecture }) {
       </div>
 
       <p className="archhint">
-        {d.n_boxes} components, {d.n_edges} relations. Click a component for the cases behind its colour.
-        The arrows are authored; the positions are computed from them, and{" "}
-        <span className="mono">test_architecture_layout.py</span> asserts zero crossings and zero arrows
-        through a box as equalities — so an arrow you see meeting another is a defect, not a shortcut.
+        <T
+          k="arc.hint"
+          v={{
+            boxes: d.n_boxes,
+            edges: d.n_edges,
+            test: <span className="mono">test_architecture_layout.py</span>,
+          }}
+        />
       </p>
 
       {chosen ? (
         <Panel box={chosen} arch={arch} />
       ) : (
         <div className="archpanel empty">
-          <p style={{ margin: 0 }}>
-            No component selected. Every colour on the diagram is derived from the register at build time;
-            the panel here shows which cases produced it and which of them the citation policy says may
-            colour nothing.
-          </p>
+          <p style={{ margin: 0 }}>{t("arc.noSelection")}</p>
         </div>
       )}
 
       <details className="archwhy">
-        <summary>Why this diagram exists</summary>
-        <p style={{ whiteSpace: "pre-wrap", marginBottom: 0 }}>{d.why_this_diagram.trim()}</p>
+        <summary>{t("arc.whyDiagram")}</summary>
+        <p style={{ whiteSpace: "pre-wrap", marginBottom: 0 }} lang="en">
+          {d.why_this_diagram.trim()}
+        </p>
       </details>
     </section>
   );
@@ -310,37 +336,42 @@ function Diagram({ d, arch }: { d: ArchDiagram; arch: Architecture }) {
 
 export default function ArchitectureView() {
   const res = useAsync(loadArchitecture, []);
-  if (res.state === "loading") return <Loading what="the design diagrams" />;
+  const t = useT();
+  if (res.state === "loading") return <Loading what={t("arc.loading")} />;
   if (res.state === "error") return <ErrorPanel error={res.error} />;
   const arch = res.data;
 
   return (
     <>
-      <h2>Design diagrams</h2>
+      <h2>{t("nav.architecture")}</h2>
+      <VerbatimNote />
       <p className="lede">
-        Two pictures, and one rule that governs both: the boxes and arrows are authored in{" "}
-        <span className="mono">platform/curation/architecture.yaml</span> — which component a case is
-        ABOUT is a judgment, and no artifact in this repository records it — while every colour, count,
-        badge and coordinate on this page is recomputed at build time from the sealed register, the
-        published verdicts and the citation policy. Nothing here is typed twice.
+        <T
+          k="arc.lede"
+          v={{ file: <span className="mono">platform/curation/architecture.yaml</span> }}
+        />
       </p>
 
       {arch.diagrams.map((d) => (
         <Diagram key={d.id} d={d} arch={arch} />
       ))}
 
-      <h3>Coverage</h3>
+      <h3>{t("arc.h.coverage")}</h3>
       <p>
-        {arch.coverage.n_placed} of {arch.coverage.n_registered} registered case(s) appear on a diagram,
-        and {arch.coverage.n_unplaced} are excluded in writing. {arch.coverage.why}
+        {t("arc.coverage", {
+          placed: arch.coverage.n_placed,
+          registered: arch.coverage.n_registered,
+          unplaced: arch.coverage.n_unplaced,
+        })}{" "}
+        <span lang="en">{arch.coverage.why}</span>
       </p>
       {arch.unplaced_cases.length ? (
         <table className="grid">
           <thead>
             <tr>
-              <th style={{ width: 78 }}>Case</th>
-              <th style={{ width: 108 }}>Verdict</th>
-              <th>Why it is on no diagram</th>
+              <th style={{ width: 78 }}>{t("pip.th.case")}</th>
+              <th style={{ width: 108 }}>{t("arc.th.verdict")}</th>
+              <th>{t("arc.th.whyUnplaced")}</th>
             </tr>
           </thead>
           <tbody>
@@ -359,19 +390,17 @@ export default function ArchitectureView() {
                     </span>
                   ))}
                 </td>
-                <td style={{ whiteSpace: "pre-wrap" }}>{c.why.trim()}</td>
+                <td style={{ whiteSpace: "pre-wrap" }} lang="en">
+                  {c.why.trim()}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       ) : null}
 
-      <h3>The numbers on the boxes</h3>
-      <p style={{ color: "var(--fg-dim)" }}>
-        A box may display one derived count, named by the authored file and computed by the build. The
-        closed set is below, so a number on a box can always be traced to the thing that produced it — and
-        a metric this file could not compute fails the build rather than rendering blank.
-      </p>
+      <h3>{t("arc.h.metrics")}</h3>
+      <p style={{ color: "var(--fg-dim)" }}>{t("arc.metrics.body")}</p>
       <table className="grid archmetrics">
         <tbody>
           {Object.entries(arch.metrics)
@@ -388,8 +417,16 @@ export default function ArchitectureView() {
       </table>
 
       <p style={{ color: "var(--fg-faint)", fontSize: 12, marginTop: 14 }}>
-        Topology mapped by {arch.mapped_by} on <span className="mono">{arch.mapped_on}</span>.{" "}
-        {arch.note}
+        <T
+          k="arc.mappedBy"
+          v={{
+            // `mapped_by` is a self-description the curation file authored ("the maintainer of this
+            // repository"), not a name this SPA can translate, so it is quoted like any other field.
+            who: <span lang="en">{arch.mapped_by}</span>,
+            when: <span className="mono">{arch.mapped_on}</span>,
+          }}
+        />{" "}
+        <span lang="en">{arch.note}</span>
       </p>
     </>
   );

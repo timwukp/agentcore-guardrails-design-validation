@@ -13,8 +13,23 @@
 //
 // A guard with no test is a memory (`feedback_test_suite_over_memory`), and neither of these can be
 // checked by the Python publish gate: the gate reads the built bundle's bytes, not its behaviour.
+//
+// WHY THE REFUSALS ARE IDENTITIES AND NOT SENTENCES
+//
+// Both functions used to return English prose. A refusal is not diagnostic output — it is an instruction
+// to the reader about what to type next — so it has to exist in both languages, and a pure function that
+// imports nothing from React must not also decide which language a reader wants. So each refusal returns
+// a `Msg`: the key of the sentence plus the values to substitute, rendered by whichever view is showing
+// it. The tests then pin the refusal's IDENTITY rather than a word in its wording, which is the stronger
+// assertion of the two: `includes("hyphen")` also passed for a sentence that said the opposite.
 
 import type { AuditReport } from "./types";
+import type { Key } from "./strings";
+
+/** A sentence this module has decided to say, named rather than written. `vars` holds only values that
+ *  came from the reader or from the data — never a clause, because a clause assembled here would be
+ *  assembled in one language's grammar. */
+export type Msg = { key: Key; vars?: Record<string, string> };
 
 /** `measured_true` -> `st-measured_true`, derived rather than mapped. `check_site_invariants.py`'s
  *  `audit_vocabularies_are_styled` arm asserts every member of `controls.json`'s status vocabulary has a
@@ -32,7 +47,7 @@ const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 export const REPORT_SCHEMA = "grx-audit-report/1";
 
-export type Composed = { lines: string[]; refusal: string | null; substituted: boolean };
+export type Composed = { lines: string[]; refusal: Msg | null; substituted: boolean };
 
 /** Substitute the reader's values into the commands the payload published, or refuse and say why.
  *
@@ -50,32 +65,23 @@ export function compose(commands: string[], target: string, asOf: string): Compo
 
   if (t && !SAFE_WORD.test(t)) {
     const bad = [...t].find((ch) => !SAFE_WORD.test(ch)) ?? " ";
+    // A space gets its own sentence rather than being quoted into the other one: `" "` between quotation
+    // marks is the one character a reader cannot see, and "the character ' ' is not something a path
+    // contains" reads as a bug in the page.
     return {
       lines: commands,
       substituted: false,
       refusal:
-        `Not composed: ${bad === " " ? "a space" : `the character ${JSON.stringify(bad)}`} is not ` +
-        `something a repository URL or path contains, and pasting it into a shell command would ` +
-        `change what that command does. The template is shown unmodified.`,
+        bad === " "
+          ? { key: "aud.refuse.space" }
+          : { key: "aud.refuse.char", vars: { ch: JSON.stringify(bad) } },
     };
   }
   if (t.startsWith("-")) {
-    return {
-      lines: commands,
-      substituted: false,
-      refusal:
-        "Not composed: a value beginning with a hyphen would be read by the tool as an option rather " +
-        "than as your repository. The template is shown unmodified.",
-    };
+    return { lines: commands, substituted: false, refusal: { key: "aud.refuse.hyphen" } };
   }
   if (d && !ISO_DAY.test(d)) {
-    return {
-      lines: commands,
-      substituted: false,
-      refusal:
-        "Not composed: the report date must be an ISO day, `YYYY-MM-DD`. It is optional — leave it " +
-        "empty and the flag is dropped entirely, which is the deterministic form.",
-    };
+    return { lines: commands, substituted: false, refusal: { key: "aud.refuse.date" } };
   }
 
   const lines = commands.map((c) => {
@@ -95,33 +101,32 @@ export function compose(commands: string[], target: string, asOf: string): Compo
  * without it is either from a different tool — an `inventory.json` is the likely mistake, since it sits
  * beside the report and has a similar shape — or from a version whose fields this page would render as
  * missing. Both are reported rather than rendered. */
-export function decodeReport(text: string): { report: AuditReport } | { error: string } {
+export function decodeReport(text: string): { report: AuditReport } | { error: Msg } {
   let parsed: unknown;
   try {
     parsed = JSON.parse(text);
   } catch (e) {
-    return { error: `Not JSON: ${e instanceof Error ? e.message : String(e)}` };
+    // The parser's own message is passed through as a value and stays in English wherever the sentence
+    // around it is translated: it is `JSON.parse`'s diagnostic, and a reader searching for it needs the
+    // string the engine produced.
+    return {
+      error: { key: "aud.rep.notJson", vars: { why: e instanceof Error ? e.message : String(e) } },
+    };
   }
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    return { error: "The file parsed, but its top level is not a JSON object." };
+    return { error: { key: "aud.rep.notObject" } };
   }
   const r = parsed as Partial<AuditReport>;
   if (r.schema !== REPORT_SCHEMA) {
     return {
-      error:
-        `This file declares schema ${JSON.stringify(r.schema ?? null)}, not ` +
-        `${JSON.stringify(REPORT_SCHEMA)}. It may be an inventory.json — the parser's output — rather ` +
-        `than a report.json, or a report from a different version of the tool. Nothing is rendered ` +
-        `from it, because a report shape this page does not understand would show empty sections, and ` +
-        `empty sections read as "nothing found".`,
+      error: {
+        key: "aud.rep.wrongSchema",
+        vars: { got: JSON.stringify(r.schema ?? null), want: JSON.stringify(REPORT_SCHEMA) },
+      },
     };
   }
   if (!Array.isArray(r.controls) || !Array.isArray(r.recommendations)) {
-    return {
-      error:
-        "The file declares the right schema but carries no `controls` or `recommendations` array, so " +
-        "there is nothing in it this page could render.",
-    };
+    return { error: { key: "aud.rep.noArrays" } };
   }
   return { report: parsed as AuditReport };
 }

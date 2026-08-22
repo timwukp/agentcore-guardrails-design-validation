@@ -4,13 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow" />
-    <title>GRX Live — AgentCore guardrails design validation</title>
+    <!-- One static title, in English, replaced by `LocaleProvider` once a language is chosen. This is
+         the title of the document as served, before any JavaScript knows which language the reader
+         wants; it is deliberately the repository name, which is the same string in both. -->
+    <title>agentcore-guardrails-design-validation</title>
   </head>
   <body>
     <div id="root">
-      <noscript>
+      <noscript lang="en">
         This dashboard renders derived JSON in the browser and needs JavaScript. The same numbers are
         in the repository as markdown and JSON, which is the citable form.
+        <p lang="zh-TW">
+          本儀表板在瀏覽器中算繪推導出來的 JSON，需要 JavaScript。同樣的數字以 markdown 與 JSON
+          的形式存在版本庫裡，那才是可引用的形式。
+        </p>
       </noscript>
     </div>
     <script type="module" src="/src/main.tsx"></script>

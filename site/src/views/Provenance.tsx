@@ -17,6 +17,7 @@
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { loadManifest } from "../lib/data";
+import { T, useT, VerbatimNote } from "../lib/i18n";
 import { ErrorPanel, KV, Loading, useAsync } from "../components/ui";
 import type { Manifest } from "../lib/types";
 
@@ -47,33 +48,33 @@ function HashTable({
   extra,
 }: {
   rows: [string, string][];
+  /** Already-translated words naming what is being filtered, supplied by the section around it. */
   what: string;
   extra?: (path: string) => ReactNode;
 }) {
   const [q, setQ] = useState("");
+  const t = useT();
   const needle = q.trim().toLowerCase();
   const shown = rows.filter(([p]) => !needle || p.toLowerCase().includes(needle));
   return (
     <>
       <div className="facets">
         <div className="facet">
-          <label>filter {what}</label>
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="path fragment" />
+          <label>{t("prv.filter", { what })}</label>
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("prv.pathHint")} />
         </div>
         <div className="facet">
           <label>&nbsp;</label>
-          <span className="count mono">
-            {shown.length} of {rows.length} shown
-          </span>
+          <span className="count mono">{t("prv.shownOf", { n: shown.length, total: rows.length })}</span>
         </div>
       </div>
       <div className="scroll" style={{ maxHeight: 420 }}>
         <table className="grid">
           <thead>
             <tr>
-              <th>path</th>
+              <th>{t("prv.th.path")}</th>
               <th>sha256</th>
-              {extra ? <th>derived from</th> : null}
+              {extra ? <th>{t("prv.th.derivedFrom")}</th> : null}
             </tr>
           </thead>
           <tbody>
@@ -95,41 +96,53 @@ function HashTable({
 
 export default function Provenance() {
   const res = useAsync(loadManifest, []);
+  const t = useT();
   const m = res.state === "ok" ? res.data : null;
   const a = useMemo(() => (m ? audit(m) : null), [m]);
 
-  if (res.state === "loading") return <Loading what="the build manifest" />;
+  if (res.state === "loading") return <Loading what={t("prv.loading")} />;
   if (res.state === "error") return <ErrorPanel error={res.error} />;
   if (!m || !a) return null;
 
+  // Each problem is a whole translated sentence with its numbers substituted in, not English glued
+  // around a count: the clause order differs between the two languages, and a half-translated defect
+  // report is the one sentence on this page a reader must be able to act on.
   const problems = [
     !a.countsAgree &&
-      `The manifest declares ${m.n_outputs} outputs but hashes ${a.outputs.length}; those differ by ${
-        m.n_outputs - a.outputs.length
-      }, and only MANIFEST.json is expected to be unhashed.`,
+      t("prv.bad.outputCount", {
+        declared: m.n_outputs,
+        hashed: a.outputs.length,
+        diff: m.n_outputs - a.outputs.length,
+      }),
     !a.inputCountAgrees &&
-      `The manifest declares ${m.n_inputs} inputs but hashes ${a.inputs.length}.`,
+      t("prv.bad.inputCount", { declared: m.n_inputs, hashed: a.inputs.length }),
     a.hashedWithoutProvenance.length &&
-      `${a.hashedWithoutProvenance.length} hashed output(s) have no provenance entry: ${a.hashedWithoutProvenance.join(", ")}.`,
+      t("prv.bad.noProvenance", {
+        n: a.hashedWithoutProvenance.length,
+        files: a.hashedWithoutProvenance.join(", "),
+      }),
     a.provenanceWithoutHash.length &&
-      `${a.provenanceWithoutHash.length} provenance entr(ies) name a file that was not hashed: ${a.provenanceWithoutHash.join(", ")}.`,
+      t("prv.bad.noHash", {
+        n: a.provenanceWithoutHash.length,
+        files: a.provenanceWithoutHash.join(", "),
+      }),
     a.derivedFromNothing.length &&
-      `${a.derivedFromNothing.length} output(s) declare no inputs at all: ${a.derivedFromNothing.join(", ")}. An output derived from nothing is either a constant the build invented or a read it did not record.`,
+      t("prv.bad.noInputs", {
+        n: a.derivedFromNothing.length,
+        files: a.derivedFromNothing.join(", "),
+      }),
   ].filter((x): x is string => typeof x === "string" && x.length > 0);
 
   return (
     <>
-      <h2 className="view">Provenance</h2>
-      <p className="lede">
-        This payload was produced by one program from one tree, and both are named here by hash. Nothing
-        on this site was typed; every number was derived, and this is the record of what it was derived
-        from.
-      </p>
+      <h2 className="view">{t("nav.provenance")}</h2>
+      <VerbatimNote />
+      <p className="lede">{t("prv.lede")}</p>
 
       <div className={problems.length ? "note warn" : "note seal"}>
         {problems.length ? (
           <>
-            <strong>The manifest does not agree with itself.</strong>
+            <strong>{t("prv.disagrees")}</strong>
             <ul style={{ margin: "8px 0 0 18px" }}>
               {problems.map((p, n) => (
                 <li key={n}>{p}</li>
@@ -138,67 +151,82 @@ export default function Provenance() {
           </>
         ) : (
           <>
-            <strong>The manifest agrees with itself.</strong> {a.outputs.length} hashed outputs plus
-            MANIFEST.json equals the declared {m.n_outputs}; {a.inputs.length} hashed inputs equals the
-            declared {m.n_inputs}; every hashed output has a provenance entry and every provenance entry a
-            hash; no output claims to have been derived from nothing. Checked in the browser, from the
-            file, on load.
+            <strong>{t("prv.agrees")}</strong>{" "}
+            {t("prv.agrees.detail", {
+              outputs: a.outputs.length,
+              nOutputs: m.n_outputs,
+              inputs: a.inputs.length,
+              nInputs: m.n_inputs,
+            })}
           </>
         )}
       </div>
 
       <KV
         rows={[
-          ["build stamp", <span className="mono">{m.build_stamp}</span>],
-          ["produced by", <span className="mono">{m.tool}</span>],
-          ["inputs read", <span className="num">{m.n_inputs}</span>],
-          ["outputs written", <span className="num">{m.n_outputs}</span>],
+          [t("prv.kv.stamp"), <span className="mono">{m.build_stamp}</span>],
+          [t("prv.kv.producedBy"), <span className="mono">{m.tool}</span>],
+          [t("prv.kv.inputsRead"), <span className="num">{m.n_inputs}</span>],
+          [t("prv.kv.outputsWritten"), <span className="num">{m.n_outputs}</span>],
           [
-            "how to verify one",
-            <>
-              <span className="mono">shasum -a 256 &lt;file&gt;</span> — for an input, against the repo
-              tree at that stamp; for an output, against the JSON this site fetched. Both hashes are below.
-            </>,
+            t("prv.kv.howToVerify"),
+            <T
+              k="prv.kv.howToVerify.body"
+              // A command the reader runs, so it is marked English inside the translated sentence
+              // that tells them to run it — same reason as the audit page's command block.
+              v={{
+                cmd: (
+                  <span className="mono" lang="en">
+                    shasum -a 256 &lt;file&gt;
+                  </span>
+                ),
+              }}
+            />,
           ],
         ]}
       />
 
-      <div className="note">{m.note}</div>
+      <div className="note" lang="en">
+        {m.note}
+      </div>
 
       <section>
-        <h3>Inputs — the bytes the build read ({a.inputs.length})</h3>
-        <p style={{ color: "var(--fg-dim)", marginTop: 0 }}>
-          These are repository paths. A hash here proves which revision of a sealed artifact this payload
-          was built from, which is the only way to tell a re-derivation from a re-authoring.
-        </p>
+        <h3>{t("prv.h.inputs", { n: a.inputs.length })}</h3>
+        <p style={{ color: "var(--fg-dim)", marginTop: 0 }}>{t("prv.inputs.note")}</p>
         {a.unusedInputs.length ? (
           <div className="note">
-            {a.unusedInputs.length} input(s) were hashed but are not named by any output's provenance:{" "}
-            <span className="mono">{a.unusedInputs.join(", ")}</span>. That is expected for files read to
-            be verified rather than to be rendered — a seal is read to check it, not to publish it — and it
-            is listed rather than filtered so the distinction stays visible.
+            <T
+              k="prv.unusedInputs"
+              v={{
+                n: a.unusedInputs.length,
+                files: <span className="mono">{a.unusedInputs.join(", ")}</span>,
+              }}
+            />
           </div>
         ) : null}
-        <HashTable rows={Object.entries(m.inputs_sha256).sort()} what="inputs" />
+        <HashTable rows={Object.entries(m.inputs_sha256).sort()} what={t("prv.what.inputs")} />
       </section>
 
       <section>
-        <h3>Outputs — the bytes this site serves ({a.outputs.length})</h3>
-        <p style={{ color: "var(--fg-dim)", marginTop: 0 }}>
-          Each output's provenance is the set of inputs whose bytes it was derived from. MANIFEST.json is
-          the one output with no hash of its own, because a file cannot contain its own digest.
-        </p>
+        <h3>{t("prv.h.outputs", { n: a.outputs.length })}</h3>
+        <p style={{ color: "var(--fg-dim)", marginTop: 0 }}>{t("prv.outputs.note")}</p>
         <HashTable
           rows={Object.entries(m.outputs_sha256).sort()}
-          what="outputs"
+          what={t("prv.what.outputs")}
           extra={(p) => {
             const src = m.provenance[p] ?? [];
             return (
               <details>
                 <summary className="mono" style={{ fontSize: 11.5 }}>
-                  {src.length} input{src.length === 1 ? "" : "s"}
+                  {t("prv.nInputs", { n: src.length })}
                 </summary>
-                <div className="mono" style={{ fontSize: 11, whiteSpace: "pre-wrap", marginTop: 4 }}>
+                {/* The input file names this output was derived from — repository paths, marked
+                    English like every other path on the site. */}
+                <div
+                  className="mono"
+                  lang="en"
+                  style={{ fontSize: 11, whiteSpace: "pre-wrap", marginTop: 4 }}
+                >
                   {src.join("\n")}
                 </div>
               </details>

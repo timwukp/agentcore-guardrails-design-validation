@@ -254,6 +254,20 @@ export function markdown(src: string): ReactNode[] {
   return out;
 }
 
+/** `lang="en"` on the root, because EVERY caller passes an artifact's `body_md` — the findings, the
+ *  register documents, the citation policy, the audit report — and those are quoted English, verbatim,
+ *  in both editions of this site. Without the mark a screen reader on the Chinese edition inherits
+ *  `zh-TW` from `<html>` and pronounces a sealed English paragraph with Chinese phonology, which is a
+ *  second rendering of a quoted artifact and therefore the same defect class as paraphrasing it.
+ *
+ *  It is the ROOT and not each block deliberately: headings, table cells and code spans are produced
+ *  by `markdown()` several call layers down, and a mark applied per block is one a new block type
+ *  would silently be added without. If markdown in a translated string is ever rendered here, this
+ *  needs to become a prop — it must not quietly keep asserting English. */
 export function Markdown({ src }: { src: string }) {
-  return <div className="md">{markdown(src)}</div>;
+  return (
+    <div className="md" lang="en">
+      {markdown(src)}
+    </div>
+  );
 }

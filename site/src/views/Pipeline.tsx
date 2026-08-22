@@ -31,6 +31,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { loadPipeline } from "../lib/data";
+import { T, useT, VerbatimNote } from "../lib/i18n";
 import { ErrorPanel, Loading, useAsync } from "../components/ui";
 import type { PipelineCase, PipelineFamily, PipelineState } from "../lib/types";
 
@@ -39,8 +40,16 @@ import type { PipelineCase, PipelineFamily, PipelineState } from "../lib/types";
  *  a state with nothing wrong. */
 const stateClass = (s: string) => `s-${s.toLowerCase().replace(/\s+/g, "-")}`;
 
+/** The state words are the payload's own closed vocabulary, keyed on in `families.yaml` and in the
+ *  gate. They stay in English, like the verdict tokens: a reader who greps `pipeline.json` for
+ *  `REQUIRES A LOCAL RUN` must find the same string this badge shows. What the states MEAN is
+ *  translated — in the family rows and the cards below, which are this platform's own prose. */
 function StateBadge({ s }: { s: PipelineState | string }) {
-  return <span className={`badge ${stateClass(s)}`}>{s}</span>;
+  return (
+    <span className={`badge ${stateClass(s)}`} lang="en">
+      {s}
+    </span>
+  );
 }
 
 function CaseLinks({ ids }: { ids: string[] }) {
@@ -57,16 +66,17 @@ function CaseLinks({ ids }: { ids: string[] }) {
 }
 
 function FamilyRow({ fam, open, onToggle }: { fam: PipelineFamily; open: boolean; onToggle: () => void }) {
+  const t = useT();
   return (
     <>
       <tr onClick={onToggle} style={{ cursor: "pointer" }}>
         <td className="mono">{fam.family}</td>
-        <td>{fam.label}</td>
+        <td lang="en">{fam.label}</td>
         <td>
           <StateBadge s={fam.state} />
         </td>
         <td className="num">{fam.cadence_days ?? "—"}</td>
-        <td className="mono">{fam.last_observed_utc_day ?? "never"}</td>
+        <td className="mono">{fam.last_observed_utc_day ?? t("pip.never")}</td>
         <td className="num">{fam.days_since_last_observation ?? "—"}</td>
         <td className="num">{fam.n_cases}</td>
         <td className="num">{fam.n_with_verdict}</td>
@@ -78,15 +88,17 @@ function FamilyRow({ fam, open, onToggle }: { fam: PipelineFamily; open: boolean
         <tr>
           <td colSpan={11} style={{ background: "var(--bg-inset)" }}>
             <div style={{ padding: "4px 2px 10px" }}>
-              <p style={{ margin: "6px 0" }}>{fam.statement}</p>
+              {/* `statement`, `why_not_schedulable`, `replication_requirement` and `why_cadence` are
+                  the authored cadence file's own sentences, quoted. They are the material this page
+                  reports on, so they render verbatim; the labels around them are ours. */}
+              <p style={{ margin: "6px 0" }} lang="en">
+                {fam.statement}
+              </p>
               {fam.schedulable ? null : (
                 <div className="note warn">
-                  <div>
-                    Not schedulable, so it carries no cadence and can never be reported stale — nothing
-                    on this page should be read as pressure to re-run it.
-                  </div>
+                  <div>{t("pip.notSchedulable")}</div>
                   {fam.why_not_schedulable ? (
-                    <div style={{ marginTop: 6, whiteSpace: "pre-wrap" }}>
+                    <div style={{ marginTop: 6, whiteSpace: "pre-wrap" }} lang="en">
                       {fam.why_not_schedulable.trim()}
                     </div>
                   ) : null}
@@ -94,39 +106,40 @@ function FamilyRow({ fam, open, onToggle }: { fam: PipelineFamily; open: boolean
               )}
               {fam.network_position_sensitive && fam.replication_requirement ? (
                 <div className="note warn">
-                  <strong>What a replication of this family must hold fixed:</strong>
-                  <div style={{ marginTop: 6, whiteSpace: "pre-wrap" }}>
+                  <strong>{t("pip.replReq")}</strong>
+                  <div style={{ marginTop: 6, whiteSpace: "pre-wrap" }} lang="en">
                     {fam.replication_requirement.trim()}
                   </div>
                 </div>
               ) : null}
               {fam.why_cadence ? (
                 <p style={{ color: "var(--fg-dim)", whiteSpace: "pre-wrap", margin: "6px 0" }}>
-                  <strong>Why this cadence:</strong> {fam.why_cadence.trim()}
+                  <strong>{t("pip.whyCadence")}</strong>{" "}
+                  <span lang="en">{fam.why_cadence.trim()}</span>
                 </p>
               ) : null}
               <table className="grid" style={{ marginTop: 6 }}>
                 <tbody>
                   <tr>
-                    <th style={{ width: 260 }}>In disagreement with an archive</th>
+                    <th style={{ width: 260 }}>{t("pip.th.disagreement")}</th>
                     <td>
                       <CaseLinks ids={fam.cases_in_disagreement} />
                     </td>
                   </tr>
                   <tr>
-                    <th>Owes a second occasion (has a verdict, nothing archived)</th>
+                    <th>{t("pip.th.owesSecond")}</th>
                     <td>
                       <CaseLinks ids={fam.cases_owing_a_second_day} />
                     </td>
                   </tr>
                   <tr>
-                    <th>Observation day not derivable from the record</th>
+                    <th>{t("pip.th.dayUnknown")}</th>
                     <td>
                       <CaseLinks ids={fam.cases_whose_observation_day_is_unknown} />
                     </td>
                   </tr>
                   <tr>
-                    <th>No observed day at all</th>
+                    <th>{t("pip.th.noDay")}</th>
                     <td>
                       <CaseLinks ids={fam.cases_with_no_observed_day} />
                     </td>
@@ -144,8 +157,9 @@ function FamilyRow({ fam, open, onToggle }: { fam: PipelineFamily; open: boolean
 export default function Pipeline() {
   const res = useAsync(loadPipeline, []);
   const [open, setOpen] = useState<string | null>(null);
+  const t = useT();
 
-  if (res.state === "loading") return <Loading what="the pipeline state" />;
+  if (res.state === "loading") return <Loading what={t("pip.loading")} />;
   if (res.state === "error") return <ErrorPanel error={res.error} />;
   const p = res.data;
 
@@ -157,17 +171,24 @@ export default function Pipeline() {
 
   return (
     <>
-      <h2>Pipeline state</h2>
+      <h2>{t("nav.pipeline")}</h2>
+      <VerbatimNote />
       <p className="lede">
-        Derived at build time, as of <span className="mono">{p.as_of_utc_day}</span>. {p.as_of_note}
+        <T k="pip.lede" v={{ day: <span className="mono">{p.as_of_utc_day}</span> }} />{" "}
+        <span lang="en">{p.as_of_note}</span>
       </p>
 
       {p.as_of_precedes_some_observations.length ? (
         <div className="note warn">
-          {p.as_of_precedes_some_observations.length} case(s) carry an observation day AFTER the day this
-          payload was stamped, which means this build was stamped for an earlier day than the evidence it
-          read. Ages below are measured from the stamp and are floors, not exact figures:{" "}
-          <span className="mono">{p.as_of_precedes_some_observations.join(", ")}</span>
+          <T
+            k="pip.asOfWarn"
+            v={{
+              n: p.as_of_precedes_some_observations.length,
+              cases: (
+                <span className="mono">{p.as_of_precedes_some_observations.join(", ")}</span>
+              ),
+            }}
+          />
         </div>
       ) : null}
 
@@ -182,18 +203,14 @@ export default function Pipeline() {
         ))}
       </div>
 
-      <h3>Where the live verdict and an archived one disagree</h3>
-      <p>
-        {disagreeing.length} of {p.totals.n_cases} registered case(s). A disagreement is a finding: it
-        means the platform re-measured something and got a different answer, which is the outcome a
-        replication exists to be able to report.
-      </p>
+      <h3>{t("pip.h.disagree")}</h3>
+      <p>{t("pip.disagree.body", { n: disagreeing.length, total: p.totals.n_cases })}</p>
       <table className="grid">
         <thead>
           <tr>
-            <th>Case</th>
-            <th>Archived days</th>
-            <th>Archived verdict(s) that differ</th>
+            <th>{t("pip.th.case")}</th>
+            <th>{t("pip.th.archivedDays")}</th>
+            <th>{t("pip.th.archivedVerdicts")}</th>
           </tr>
         </thead>
         <tbody>
@@ -208,7 +225,9 @@ export default function Pipeline() {
               <td>
                 {c.disagreements.map((d) => (
                   <div key={d.file}>
-                    <span className="badge v-none">{d.verdict}</span>{" "}
+                    <span className="badge v-none" lang="en">
+                      {d.verdict}
+                    </span>{" "}
                     <span className="mono" style={{ fontSize: 11.5 }}>
                       {d.label}
                     </span>
@@ -220,30 +239,34 @@ export default function Pipeline() {
         </tbody>
       </table>
 
-      <h3>By family</h3>
+      <h3>{t("pip.h.byFamily")}</h3>
       <p style={{ color: "var(--fg-dim)" }}>
-        A row is a set of cases, not a job: there is no percentage and no completion figure here. Click a
-        row for the cases behind its numbers. The cadences and the sentences inside a row are authored,
-        in{" "}
-        <span className="mono">{families.find((f) => f.source)?.source ?? "an unstated file"}</span>{" "}
-        — read from the payload rather than written into this page, so a page that quoted a file it could
-        not name would say so here; every number is derived.
+        <T
+          k="pip.byFamily.note"
+          v={{
+            file: (
+              <span className="mono">
+                {families.find((f) => f.source)?.source ?? t("pip.byFamily.unstated")}
+              </span>
+            ),
+          }}
+        />
       </p>
       <div className="scroll">
         <table className="grid">
           <thead>
             <tr>
-              <th>Family</th>
-              <th>What it measures</th>
-              <th>State</th>
-              <th>Cadence (days)</th>
-              <th>Last observed</th>
-              <th>Age (days)</th>
-              <th>Cases</th>
-              <th>With a verdict</th>
-              <th>No observed day</th>
-              <th>≥2 archived days</th>
-              <th>Disagreeing</th>
+              <th>{t("pip.th.family")}</th>
+              <th>{t("pip.th.measures")}</th>
+              <th>{t("pip.th.state")}</th>
+              <th>{t("pip.th.cadence")}</th>
+              <th>{t("pip.th.lastObserved")}</th>
+              <th>{t("pip.th.age")}</th>
+              <th>{t("pip.th.cases")}</th>
+              <th>{t("pip.th.withVerdict")}</th>
+              <th>{t("pip.th.noObservedDay")}</th>
+              <th>{t("pip.th.twoArchived")}</th>
+              <th>{t("pip.th.disagreeing")}</th>
             </tr>
           </thead>
           <tbody>
@@ -259,40 +282,34 @@ export default function Pipeline() {
         </table>
       </div>
 
-      <h3>What the replication counts mean</h3>
+      <h3>{t("pip.h.replCounts")}</h3>
       <div className="cards">
         <div className="card">
           <div className="n">{p.totals.n_with_two_or_more_archived_days}</div>
-          <div className="k">case(s) with two or more archived days</div>
-          <div className="def">
-            Counted from the archive alone, and non-exclusively: today every one of these is also a
-            disagreement, so the agreeing bucket below reads 0.
-          </div>
+          <div className="k">{t("pip.card.twoArchived")}</div>
+          <div className="def">{t("pip.card.twoArchived.def")}</div>
         </div>
         <div className="card">
           <div className="n">{p.totals.n_one_archived_prior_day}</div>
-          <div className="k">case(s) with exactly one archived prior day</div>
+          <div className="k">{t("pip.card.oneArchived")}</div>
         </div>
         <div className="card">
           <div className="n">{p.totals.n_no_archived_prior_day}</div>
-          <div className="k">case(s) with nothing archived</div>
-          <div className="def">No prior occasion is established for these, whatever their verdict.</div>
+          <div className="k">{t("pip.card.noArchived")}</div>
+          <div className="def">{t("pip.card.noArchived.def")}</div>
         </div>
         <div className="card">
           <div className="n">{p.totals.n_with_no_observed_day}</div>
-          <div className="k">case(s) whose observation day is not derivable</div>
-          <div className="def">
-            The verdict files carry no machine-readable day stamp in a fixed place, so for these the
-            family reads NOT OBSERVED rather than "within cadence". Under-claiming freshness is
-            recoverable by reading the case; over-claiming it is what tells somebody a control was
-            checked last week.
-          </div>
+          <div className="k">{t("pip.card.noObservedDay")}</div>
+          <div className="def">{t("pip.card.noObservedDay.def")}</div>
         </div>
       </div>
-      <div className="note" style={{ marginTop: 12 }}>
+      <div className="note" style={{ marginTop: 12 }} lang="en">
         {p.totals.why_replication_is_counted_from_the_archive_only}
       </div>
-      <p style={{ color: "var(--fg-faint)", fontSize: 12, marginTop: 10 }}>{p.note}</p>
+      <p style={{ color: "var(--fg-faint)", fontSize: 12, marginTop: 10 }} lang="en">
+        {p.note}
+      </p>
     </>
   );
 }
