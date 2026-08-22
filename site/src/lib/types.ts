@@ -15,10 +15,24 @@ export type Verdict = "TRUE" | "FALSE" | "INCONCLUSIVE" | "RECORDED";
 
 export const VERDICTS: readonly Verdict[] = ["TRUE", "FALSE", "INCONCLUSIVE", "RECORDED"];
 
+/** A sentence THIS PLATFORM wrote, carried in both languages it publishes.
+ *
+ *  The shape is the provenance. A payload value of this shape is the platform's own voice and is meant
+ *  to be read in the reader's language; a payload value that is a bare `string` is either a sealed
+ *  quotation, which must never be translated, or authored prose still waiting for its second half —
+ *  and both of those render identically, verbatim English marked `lang="en"`. Nothing here can tell
+ *  those two apart, and nothing here needs to: which is which is decided from the bytes by
+ *  `platform/build/census_rendered_surfaces.py`, and the remaining count is the published backlog.
+ *
+ *  Both fields are required. An optional `zh` is a field that ships empty, and an empty translation
+ *  renders as a gap that reads as a finished sentence saying something else. `build_site_data.authored`
+ *  refuses a blank half, and refuses two identical halves, at build time. */
+export type Authored = { en: string; zh: string };
+
 /** A denominator, and the prose that says what it counts. Never rendered without its definition. */
 export interface Denominator {
   n: number;
-  definition: string;
+  definition: Authored;
   derived_from: string;
   /** Present on some denominators only: the cases the definition excludes, named. */
   unmapped?: string[];
@@ -258,6 +272,42 @@ export interface Manifest {
   provenance: Record<string, string[]>;
 }
 
+/** How much of this payload a zh-TW reader reads in English, and why.
+ *
+ *  THE ONE NUMBER SET IN THIS PAYLOAD THAT WAS NOT DERIVED BY THE BUILD
+ *
+ *  "Does a reader actually see this string" is a property of the rendered DOM in a chosen locale, so it
+ *  cannot be answered by reading the artifacts: it needs a browser walking every route in both
+ *  languages. `platform/build/census_rendered_surfaces.py` does that and writes a stamped file;
+ *  `build_site_data.translation_state` copies the counts here and records the census as a hashed build
+ *  input, so `measured_in` names the exact measurement and `/provenance` can show its sha256.
+ *
+ *  `rendered` is the denominator that matters, and it is much smaller than the payload: in the newest
+ *  census run (`rendered-surfaces-20260822T092500Z.json`), of 6,289 payload strings of 24 characters or
+ *  more, 1,958 are reachable on some route. Both figures move whenever a component changes what it puts
+ *  on screen, which is why the fields below are copied from the census at build time and these two are
+ *  named with the run they came from rather than stated as properties of the payload. Those split
+ *  three ways —
+ *  `identifiers` (no whitespace anywhere: a digest, an ARN, a `results/` path, which is not a sentence
+ *  in any language), `quoted_artifact` (the artifacts' own words, which must stay English), and
+ *  `authored` (this platform's prose). `authored_untranslated` is the backlog, and it is the number
+ *  `check_site_invariants.py` holds as a ceiling that may only fall. */
+export interface Translation {
+  measured_by: string;
+  /** The census file name. A UTC stamp, published so a reader can see how old the measurement is. */
+  measured_in: string;
+  routes_walked: number;
+  rendered: number;
+  quoted_artifact: number;
+  identifiers: number;
+  authored: number;
+  authored_untranslated: number;
+  /** Top five by characters owed, in that order — the field is a claim about ordering, and the build
+   *  sorts to satisfy it rather than slicing the census's key order. */
+  largest_producers: { producer: string; chars: number; strings: number; routes: string[] }[];
+  what_this_is_not: Authored;
+}
+
 /** Derived at build time from the verdict files and the archive. Nothing here is authored, and no
  *  count is stored: a page that wants a number asks this file, so the method walkthrough cannot
  *  drift from the corpus it describes. */
@@ -275,6 +325,7 @@ export interface Method {
     false_verdicts_without_the_caveat: string[];
     why_this_is_counted: string;
   };
+  translation: Translation;
   archive_days_by_case: Record<string, string[]>;
   n_cases_with_an_archive: number;
   n_cases_with_two_distinct_archive_days: number;
@@ -602,7 +653,7 @@ export interface AuditPage {
   report: AuditReport;
   markdown: string;
   tools: { parse: string; report: string; commands: string[] };
-  boundaries: { claim: string; how: string }[];
+  boundaries: { claim: Authored; how: Authored }[];
   note: string;
 }
 
@@ -650,7 +701,9 @@ export interface ArchBox {
   measured: string | null;
   why_not_measured: string | null;
   status: ArchStatus | string;
-  status_label: string;
+  /** What the colour means, in the reader's language. Authored by `build_site_data.ARCH_STATUS_LABEL`,
+   *  not quoted from the topology file — see the note on `Authored`. */
+  status_label: Authored;
   why_this_status: string;
   verdict_mix: Record<string, number>;
   restrictions: string[];
@@ -708,7 +761,7 @@ export interface Architecture {
     placed_on: Record<string, string[]>;
     why: string;
   };
-  status_labels: Record<string, string>;
+  status_labels: Record<string, Authored>;
   non_colouring_restrictions: string[];
   geometry: { box_w: number; box_h: number; col_pitch: number; row_pitch: number; why: string };
   mapped_by: string;

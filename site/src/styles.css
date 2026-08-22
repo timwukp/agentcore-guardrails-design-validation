@@ -1007,19 +1007,32 @@ details.raw > div {
   line-height: 16px;
 }
 
+/* One row per status, not a wrapped inline strip.
+ *
+ * The strip carried the sentence that says what a colour MEANS in a `title` attribute. A tooltip is
+ * absent on touch, absent to the keyboard, unreliable to a screen reader, and — once those five
+ * sentences were translated on 2026-08-22 — it was where the translation went to not be read: a browser
+ * census of both locales over every route found all five rendering NOWHERE as text. So the meaning is
+ * visible text, and the identifier a reader greps for stays beside it. */
 .archlegend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  margin: 10px 0;
+  display: grid;
+  gap: 6px 10px;
+  grid-template-columns: auto auto auto 1fr;
+  align-items: baseline;
+  margin: 10px 0 14px;
   font-size: 12px;
   color: var(--fg-dim);
 }
 
-.archlegend .item {
-  display: inline-flex;
+/* The swatch's own row-box, so a two-line meaning does not stretch the border into a tall rectangle. */
+.archlegend .swcell {
+  display: flex;
   align-items: center;
-  gap: 6px;
+  height: 1.2em;
+}
+
+.archlegend .means {
+  color: var(--fg-dim);
 }
 
 /* The swatch is drawn exactly as the box is — same width, same colour source, same `--st-style` — because

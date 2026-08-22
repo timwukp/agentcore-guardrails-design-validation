@@ -22,12 +22,12 @@
 // payload keys on — the four verdict words, the oracle-kind names, the guard names, the family ids and
 // the cost/runner/mutates vocabularies.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { loadFamilies, loadMethod } from "../lib/data";
 import { ErrorPanel, KV, Loading, useAsync } from "../components/ui";
-import { T, useT, VerbatimNote } from "../lib/i18n";
+import { A, T, useT, VerbatimNote } from "../lib/i18n";
 import { byCaseId } from "../lib/sort";
 import type { Method } from "../lib/types";
 
@@ -230,6 +230,113 @@ function Caveats({ m }: { m: Method }) {
   );
 }
 
+/** The translation measurement. Four cards over one denominator, the backlog as a warning, and the
+ *  producers that owe the most.
+ *
+ *  Every number here is rendered `x / rendered` rather than alone, because a bare "310 authored" is a
+ *  count with no window: it reads as a share of the site to anyone who does not already know that the
+ *  chrome is fully bilingual and outside the measurement entirely. The one figure that is not a
+ *  fraction is `rendered` itself, which is why its own card states what it is out of.
+ *
+ *  The producer table's field paths are payload keys, so they render `lang="en"` and mono in both
+ *  languages — `audit.json/report/controls[]` is not a sentence to be translated, it is a place to
+ *  look. */
+function Translation({ m }: { m: Method }) {
+  const tr = m.translation;
+  const t = useT();
+  return (
+    <>
+      <p>
+        <T
+          k="mth.s9.body"
+          v={{
+            tool: <span className="mono">build_site_data.py</span>,
+            census: <span className="mono">census_rendered_surfaces.py</span>,
+            routes: <strong>{tr.routes_walked}</strong>,
+            file: <span className="mono">{tr.measured_in}</span>,
+            prov: <Link to="/provenance">{t("nav.provenance")}</Link>,
+          }}
+        />
+      </p>
+      <div className="cards" style={{ marginBottom: 14 }}>
+        <div className="card">
+          <div className="n">{tr.rendered}</div>
+          <div className="k">{t("mth.tr.card.rendered")}</div>
+          <div className="def">{t("mth.tr.card.rendered.def")}</div>
+        </div>
+        <div className="card">
+          <div className="n">
+            {tr.identifiers} / {tr.rendered}
+          </div>
+          <div className="k">{t("mth.tr.card.identifiers")}</div>
+          <div className="def">{t("mth.tr.card.identifiers.def")}</div>
+        </div>
+        <div className="card">
+          <div className="n">
+            {tr.quoted_artifact} / {tr.rendered}
+          </div>
+          <div className="k">{t("mth.tr.card.artifact")}</div>
+          <div className="def">{t("mth.tr.card.artifact.def")}</div>
+        </div>
+        <div className="card">
+          <div className="n">
+            {tr.authored} / {tr.rendered}
+          </div>
+          <div className="k">{t("mth.tr.card.authored")}</div>
+          <div className="def">{t("mth.tr.card.authored.def")}</div>
+        </div>
+      </div>
+
+      <div className="note warn">
+        <strong>{t("mth.tr.backlog.head")}</strong>{" "}
+        <T
+          k="mth.tr.backlog.body"
+          v={{
+            n: <strong>{tr.authored_untranslated}</strong>,
+            a: <strong>{tr.authored}</strong>,
+            gate: <span className="mono">check_site_invariants.py</span>,
+          }}
+        />
+      </div>
+
+      <p style={{ marginBottom: 6 }}>{t("mth.tr.producers.head")}</p>
+      <div className="scroll" style={{ maxHeight: 260 }}>
+        <table className="grid">
+          <thead>
+            <tr>
+              <th>{t("mth.tr.col.producer")}</th>
+              <th>{t("mth.tr.col.chars")}</th>
+              <th>{t("mth.tr.col.strings")}</th>
+              <th>{t("mth.tr.col.routes")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tr.largest_producers.map((p) => (
+              <tr key={p.producer}>
+                <td className="mono" lang="en">
+                  {p.producer}
+                </td>
+                <td className="num">{p.chars}</td>
+                <td className="num">{p.strings}</td>
+                <td className="mono" lang="en">
+                  {p.routes.join(" ")}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="note" style={{ marginTop: 12 }}>
+        {/* `what_this_is_not` is one of the sentences this measurement is about, so it is bilingual in
+            the payload and resolved by `<A>` — a paragraph explaining the translation backlog, readable
+            only in the language the backlog is against, would be the first entry in it. */}
+        <strong>{t("mth.tr.notwhat")}</strong> <A v={tr.what_this_is_not} />
+      </div>
+    </>
+  );
+}
+
 function Replication({ m }: { m: Method }) {
   const t = useT();
   const twoDay = Object.entries(m.archive_days_by_case)
@@ -411,6 +518,15 @@ function FamilyTable() {
 export default function MethodView() {
   const res = useAsync(loadMethod, []);
   const t = useT();
+  // The verbatim banner on every payload view links to `/method#translation`, and it is the only
+  // deep link into this page. Without this the reader arrives at step 1 of eight and has to find, by
+  // scrolling, the block they were told the number was in — which is the same as not publishing it.
+  // Keyed on `res.state` as well as the hash because the target does not exist until the fetch lands.
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (res.state !== "ok" || hash !== "#translation") return;
+    document.getElementById("translation")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [res.state, hash]);
   if (res.state === "loading") return <Loading what={t("mth.loading")} />;
   if (res.state === "error") return <ErrorPanel error={res.error} />;
   const m = res.data;
@@ -498,6 +614,16 @@ export default function MethodView() {
           />
         </p>
       </Step>
+
+      {/* NOT numbered as a step, deliberately. Steps 1-8 are the chain a verdict passes through, and
+          numbering this ninth would state that translating the site is part of adjudicating a claim.
+          It is a property of this page rather than of the method, which is also why it is last: a
+          reader who came here from the banner is brought to it by the anchor, and a reader working
+          through the method in order reaches it after the method is over. */}
+      <section id="translation">
+        <h3>{t("mth.s9.title")}</h3>
+        <Translation m={m} />
+      </section>
     </>
   );
 }

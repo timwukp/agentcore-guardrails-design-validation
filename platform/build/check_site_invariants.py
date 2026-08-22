@@ -196,9 +196,13 @@ because `site/dist` predated the feature while the freshly built payload already
 stale-`dist/` defect arriving by accident is exactly what this arm is for.
 
 MUTATION-CHECKED — the arms that existed on 2026-08-20 by a one-off exercise, 19/19; arm 14 by nine
-committed mutants, arms 5 + 15 by eight more (2026-08-20, the Chinese edition), and arm 16 by eight
-(2026-08-22, the authored caveats), each killed by the arm that watches the property it broke, run
-against COPIES of the payload and `dist`
+committed mutants, arms 5 + 15 by eight more (2026-08-20, the Chinese edition), arm 16 by eight
+(2026-08-22, the authored caveats), and arm 17 by six with its own control (2026-08-22, the translation
+ratchet — a blanked `zh`, an English half copied into it, the shape deleted from a whole file, a
+translation written without lowering the ceiling, and two over the LEDGER rather than the payload:
+a census listing one string more than the ceiling allows, and one naming a path this payload does not
+have), each killed by the arm that watches the property it broke, run against COPIES of the payload
+and `dist`
 --------------------------------------------------------------------------------------------------
 A no-mutant control ran first and exited 0, so a red run is attributable to the assertions rather than
 to a copy the gate could not read at all. Two findings from that exercise are worth stating, because
@@ -309,6 +313,33 @@ NO_ZH = "沒有"
 
 MIN_DEFINITION_CHARS = 40
 
+# The Chinese half of a definition is held to a lower floor than the English one, and the ratio is not a
+# guess: Chinese carries roughly two to three times the content per character, so a faithful translation
+# of a 120-character English sentence lands near 50. A single floor applied to both would either pass a
+# stub in Chinese or fail an accurate translation. Measured across the five denominator definitions on
+# 2026-08-22: English 122-238 chars, Chinese 44-92.
+MIN_DEFINITION_CHARS_ZH = 20
+
+# The two halves an authored payload value carries. Named here because three arms below need to agree on
+# what "the prose in this field" means now that a field can hold either a bare string (a sealed quotation,
+# or authored prose not yet translated) or `{en, zh}`.
+AUTHORED_LANGS = ("en", "zh")
+
+
+def prose_halves(v) -> list[tuple[str, str]]:
+    """Every language a payload prose value carries, as (language, text).
+
+    A bare string yields one pair, labelled `en`, because that is what it renders as. An `{en, zh}` object
+    yields both. The reason this exists rather than `str(v)` at each call site is that `str()` of a dict
+    is its repr — 200-odd characters of braces and quotes — so an arm holding a MINIMUM LENGTH on prose
+    silently starts passing the moment the field's shape changes, measuring punctuation instead of
+    sentences. That is not hypothetical: `arm_denominators` did exactly this until 2026-08-22, the day the
+    field became an object, and it would have reported clean over five empty translations.
+    """
+    if isinstance(v, dict):
+        return [(k, str(v.get(k) or "")) for k in AUTHORED_LANGS]
+    return [("en", str(v or ""))]
+
 # Han ideographs. Deliberately no CJK punctuation: a "translation" consisting of `，` would satisfy a
 # punctuation-inclusive range while saying nothing, and nothing is the state this looks for.
 HAN = "㐀-䶿一-鿿豈-﫿"
@@ -343,6 +374,36 @@ MIN_CJK_RUNS = 300
 # the Chinese locale it found six unmarked surfaces, the largest being every rendered markdown body, and
 # reports zero after the fix.
 MIN_VERBATIM_MARKS = 60
+
+# Where the rendered-surface census writes its measurements. Read by `arm_authored_prose_is_bilingual`,
+# which cannot make the measurement itself: it needs a browser and a running preview server, and a
+# publish gate must need neither.
+CENSUS_DIR = REPO / "platform" / "census"
+
+# A floor on `{en, zh}` values in the payload, so deleting the feature fails instead of reporting zero
+# malformed ones. Measured 54 on 2026-08-22 (38 architecture box labels, 5 legend labels, 6 audit
+# boundary halves, 5 denominator definitions); the floor sits below that so translating one more surface
+# never fails the gate.
+MIN_AUTHORED_PROSE_OBJECTS = 40
+
+# The ceiling on rendered authored payload paths that still hold a bare English string. A CEILING rather
+# than an assertion of zero because a gate that fails on the whole backlog blocks every publish and gets
+# switched off within a day; a ceiling that may only fall makes the gap a published number that cannot
+# grow. Both directions are checked: above it is a regression, below it is a translation somebody wrote
+# without lowering the number, and slack left above the measurement is where the next regression hides.
+#
+# Set from `platform/census/rendered-surfaces-*.json`, whose backlog list is the ledger it counts over.
+# History, so a reader can see which way it has moved:
+#   310  2026-08-22  first honest measurement (755 before identifiers — digests, ARNs and paths — were
+#                    separated out of the count; the census over-reported by 59% for one afternoon)
+#   299  2026-08-22  17 sentences converted to `{en, zh}`: the 3 audit boundary promises with their 3
+#                    `how` lines, the 5 denominator definitions, the 5 diagram status labels, and this
+#                    block's own `what_this_is_not`. Only 11 of the 17 left the backlog, and the reason
+#                    is worth keeping: the 5 status labels rendered ONLY in a `title` attribute, so the
+#                    census never saw them as text and they were never in the backlog to leave. They
+#                    were also, for that reason, five translations no reader could read. The legend now
+#                    renders them as visible text.
+MAX_UNTRANSLATED_RENDERED = 299
 
 
 class Gate:
@@ -751,10 +812,18 @@ def arm_denominators(g: Gate, payload: Path) -> dict:
     denominators = load(payload, "denominators.json")
     g.check(arm, len(denominators) >= 4, f"only {len(denominators)} denominator(s) in the payload")
     for name, block in denominators.items():
-        definition = str(block.get("definition", ""))
-        g.check(arm, len(definition) >= MIN_DEFINITION_CHARS,
-                f"{name}'s definition is {len(definition)} chars; these four numbers differ for "
-                "stated reasons and the statement is the point")
+        raw = block.get("definition")
+        # Both halves are checked, and a definition that is still a bare string is not a failure here:
+        # this arm's subject is whether a number arrives with a statement of what it counts, and an
+        # English-only statement is one. Whether it OUGHT to be translated is a different claim with a
+        # different producer — `arm_authored_prose_is_bilingual` below — and merging the two would make
+        # this failure message name the wrong repair.
+        for lang, definition in prose_halves(raw):
+            floor = MIN_DEFINITION_CHARS_ZH if lang == "zh" else MIN_DEFINITION_CHARS
+            g.check(arm, len(definition) >= floor,
+                    f"{name}'s definition is {len(definition)} chars in {lang}, below the floor of "
+                    f"{floor}; these four numbers differ for stated reasons and the statement is "
+                    f"the point")
         g.check(arm, isinstance(block.get("n"), int), f"{name}.n is not an integer")
         g.check(arm, bool(block.get("derived_from")), f"{name} does not name what it was derived from")
     g.note(arm, ", ".join(f"{k}={v.get('n')}" for k, v in sorted(denominators.items())))
@@ -1137,6 +1206,180 @@ def arm_authored_caveats_are_marked(g: Gate, payload: Path, dist: Path, bundle: 
             passed="the authored box is cued by a dashed border, which survives greyscale")
 
 
+def arm_authored_prose_is_bilingual(g: Gate, payload: Path, census_dir: Path) -> None:
+    """Prose this platform wrote reaches a zh-TW reader in Chinese — and the remaining gap is monotone.
+
+    WHAT THIS ARM IS FOR
+
+    Until 2026-08-22 the site had one rule about payload prose: it is the artifacts' own words, so it
+    renders verbatim English marked `lang="en"`, and a banner tells a Chinese reader why. A browser census
+    of both locales over every route measured what is actually on screen and the rule was false for a
+    third of it: of the 1,946 payload strings a reader reached that morning, 767 were quoted artifact and
+    310 were this platform's own prose — the definitions of the denominators, the promises about what the
+    audit will not touch, the sentence saying what each diagram colour means. The banner was not
+    describing a translation gap. It was telling the reader the gap was a principle.
+
+    Those are the numbers from the run that FALSIFIED the rule
+    (`platform/census/rendered-surfaces-20260822T081918Z.json`) and they are dated for that reason: the
+    newest run of the same script measures 1,958 reachable and 316 authored, because the five diagram
+    status labels moved out of a `title` attribute and into visible text the same day. Two runs, two
+    numbers, one property — which is why the arm below counts the CEILING out of the census file it reads
+    at gate time instead of out of any sentence in this docstring.
+
+    The repair is structural: an authored value is `{en, zh}` and a sealed quotation stays a bare string,
+    so the default a person writes without thinking about any of this renders verbatim English. This arm
+    is what stops that from silently rotting back.
+
+    THE THREE THINGS IT CHECKS, AND WHY THEY ARE THREE
+
+    1. Every `{en, zh}` object in the payload carries both halves, non-blank and DIFFERENT. Blank is the
+       failure the shape exists to prevent — a gap on the page reads as a finished sentence saying
+       something else — and identical halves are the subtler one: copying the English into `zh` satisfies
+       every structural check while giving the reader nothing, and it removes the string from the backlog,
+       so the number would improve by exactly the amount of work not done.
+    2. A FLOOR on how many such objects exist. Without it, deleting the feature reports clean: zero
+       objects means zero malformed objects (`feedback_zero_file_scan_is_error`).
+    3. A CEILING on how many of the census's own backlog paths still hold a bare string. A gate that
+       failed on the whole backlog would block every publish and be disabled within a day, which is how
+       an i18n gate normally dies. A ceiling that may only fall makes the gap a published number that
+       cannot grow, and the work to remove it incremental.
+
+    WHAT IT CANNOT SEE, WHICH IS WHERE THE NEXT DEFECT WILL BE
+
+    * Whether a `zh` half MEANS what its `en` half means. Nothing mechanical can. Two non-blank, distinct
+      strings is the whole of what is asserted, and a mistranslation passes.
+    * A NEW authored surface that renders and is not translated. The ledger's members come from the
+      census, and the census needs a browser and a preview server, which a publish must not require. So a
+      surface added after the last census run is invisible here until somebody re-runs it. That is why
+      the arm prints which census file the ceiling refers to: a number whose measurement is not named is
+      a number nobody can check has gone stale.
+    * Whether the ceiling ever went UP. This arm asserts the count against the constant; only review sees
+      the constant's history. The constant carries the measured value it replaced for exactly that reason.
+    """
+    arm = "authored_prose_is_bilingual"
+
+    # ---- 1 and 2: the shape, everywhere it occurs
+    malformed: list[str] = []
+    n_objects = 0
+
+    def walk(node, path: str) -> None:
+        nonlocal n_objects
+        if isinstance(node, dict):
+            if set(node) == set(AUTHORED_LANGS) and all(isinstance(v, str) for v in node.values()):
+                n_objects += 1
+                en, zh = node["en"].strip(), node["zh"].strip()
+                if not en or not zh:
+                    malformed.append(f"{path}: {'zh' if en else 'en'} is blank")
+                elif en == zh:
+                    malformed.append(f"{path}: both halves are the same text, so the reader gets "
+                                     f"English while the backlog counts this as translated")
+                return
+            for k, v in node.items():
+                walk(v, f"{path}/{k}")
+        elif isinstance(node, list):
+            for i, v in enumerate(node):
+                walk(v, f"{path}[{i}]")
+
+    files = sorted(payload.rglob("*.json"))
+    if not files:
+        cannot_run(f"no JSON under {payload}; a walk over nothing finds no malformed prose")
+    for f in files:
+        walk(json.loads(f.read_text(encoding="utf-8")), f.relative_to(payload).as_posix())
+
+    g.check(arm, not malformed,
+            f"{len(malformed)} authored value(s) do not carry two real languages: {malformed[:4]}",
+            passed=f"{n_objects} authored value(s) carry both languages, each non-blank and distinct")
+    g.check(arm, n_objects >= MIN_AUTHORED_PROSE_OBJECTS,
+            f"the payload carries {n_objects} `{{en, zh}}` value(s), below the floor of "
+            f"{MIN_AUTHORED_PROSE_OBJECTS}. Zero malformed values is what a payload with the feature "
+            f"deleted also reports, so the count is asserted rather than assumed")
+
+    # ---- 3: the ceiling, over the paths the census named
+    censuses = sorted(census_dir.glob("rendered-surfaces-*.json")) if census_dir.is_dir() else []
+    if not censuses:
+        cannot_run(f"no census under {census_dir}; the untranslated ceiling has no ledger to count "
+                   f"against and a missing measurement is not a clean one")
+    measurement = censuses[-1]          # stamped names, so the last by name is the most recent
+    census_doc = json.loads(measurement.read_text(encoding="utf-8"))
+    backlog = census_doc.get("backlog") or []
+    g.check(arm, bool(backlog) or MAX_UNTRANSLATED_RENDERED == 0,
+            f"{measurement.name} lists an empty backlog while the ceiling is "
+            f"{MAX_UNTRANSLATED_RENDERED}; an empty ledger cannot hold a non-zero ceiling to account")
+
+    def resolve(doc_root: Path, path: str):
+        """Follow a census path like `audit.json/report/controls[3]/says` into the payload.
+
+        The file part is found by taking the LONGEST leading run of segments that names a real file, not
+        the first one: `cases/F1-24.json/record/what_true_does_not_prove` has a two-segment file, and
+        splitting on the first `/` reported 58 of these as "cases is not in the payload" — which the
+        unresolved check below then reported as a stale ledger. A path grammar guessed from the flat
+        files is a grammar that breaks on the payload's one subdirectory.
+        """
+        segs = path.split("/")
+        f, rest = None, ""
+        for i in range(len(segs), 0, -1):
+            cand = doc_root.joinpath(*segs[:i])
+            if cand.is_file():
+                f, rest = cand, "/".join(segs[i:])
+                break
+        if f is None:
+            return None, f"{path}: no leading segment of it names a file in the payload"
+        node = json.loads(f.read_text(encoding="utf-8"))
+        for seg in re.findall(r"[^/\[\]]+|\[\d+\]", rest):
+            if seg.startswith("["):
+                i = int(seg[1:-1])
+                if not isinstance(node, list) or i >= len(node):
+                    return None, f"{path} does not resolve ({seg})"
+                node = node[i]
+            else:
+                if not isinstance(node, dict) or seg not in node:
+                    return None, f"{path} does not resolve ({seg})"
+                node = node[seg]
+        return node, None
+
+    # Counted per STRING, not per path, because the published number is a count of strings: 299 backlog
+    # rows sit at 603 payload paths (one string occurs at 50 of them), and counting paths made the gate
+    # report 545 against a ceiling of 299 — two names for two different quantities, one of which nothing
+    # publishes (`feedback_two_numbers_two_claims`). A string counts as still-English if ANY of its
+    # occurrences is a bare value: the reader who reaches that one is reading English.
+    still_bare, unresolved = [], []
+    for row in backlog:
+        paths = row.get("payload_paths") or []
+        bare_here = False
+        for path in paths:
+            node, err = resolve(payload, path)
+            if err:
+                unresolved.append(err)
+            elif isinstance(node, str):
+                bare_here = True
+        if bare_here:
+            still_bare.append(row.get("text", "")[:80])
+
+    # An unresolved path is not a small problem to be skipped. The ceiling is a count over this ledger,
+    # so a ledger whose members no longer exist is a ceiling measured against a different payload —
+    # which reads as progress (`feedback_abort_hides_coverage`: count the lines, do not drop them).
+    g.check(arm, not unresolved,
+            f"{len(unresolved)} census backlog path(s) do not exist in this payload, so the ceiling "
+            f"below is counted over a ledger that no longer describes it — re-run "
+            f"`census_rendered_surfaces.py`: {unresolved[:3]}",
+            passed=f"every path in {measurement.name}'s backlog resolves in this payload")
+
+    n = len(still_bare)
+    g.check(arm, n <= MAX_UNTRANSLATED_RENDERED,
+            f"{n} rendered authored string(s) still reach a zh-TW reader in English, above the ceiling "
+            f"of {MAX_UNTRANSLATED_RENDERED}. The ceiling only ever falls: a new untranslated surface "
+            f"has to be translated, not admitted. First few: {still_bare[:3]}")
+    g.check(arm, n >= MAX_UNTRANSLATED_RENDERED,
+            f"{n} rendered authored string(s) are still bare but the ceiling says "
+            f"{MAX_UNTRANSLATED_RENDERED}, so {MAX_UNTRANSLATED_RENDERED - n} translation(s) have been "
+            f"written without lowering it. Lower `MAX_UNTRANSLATED_RENDERED` to {n}: a ceiling kept "
+            f"above the measurement is slack that the next regression disappears into.",
+            passed=f"{n} string(s) still bare, exactly the published ceiling, measured by "
+                   f"{measurement.name}")
+    g.note(arm, f"ledger {measurement.name}: {len(backlog)} backlog string(s), {n} still bare, "
+                f"{n_objects} value(s) translated")
+
+
 def arm_audit_report_is_licensed(g: Gate, payload: Path, census: dict, census_cases: set[str]) -> None:
     """The published audit report may only recommend what a citable verdict licenses.
 
@@ -1377,6 +1620,14 @@ def main(argv: list[str] | None = None) -> int:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--payload", type=Path, default=DEFAULT_PAYLOAD)
     parser.add_argument("--dist", type=Path, default=DEFAULT_DIST)
+    # The rendered-surface census directory. Overridable for the same reason `--payload` is: the
+    # ceiling's UPWARD direction — a new untranslated surface appearing — cannot be produced by mutating
+    # the payload, because the count is over paths the census listed and a payload mutation can only
+    # translate one of them, never add one. Without this flag that half of the ratchet would be
+    # unmutated, i.e. asserted and never demonstrated. `publish_web.py` passes nothing and gets the
+    # repo's own measurements.
+    parser.add_argument("--census-dir", type=Path, default=CENSUS_DIR,
+                        help="directory of rendered-surfaces-*.json (default: platform/census)")
     parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args(argv)
 
@@ -1403,6 +1654,7 @@ def main(argv: list[str] | None = None) -> int:
     arm_both_languages_shipped(g, bundle, args.dist.expanduser())
     arm_audit_vocabularies_are_styled(g, payload, args.dist.expanduser())
     arm_authored_caveats_are_marked(g, payload, args.dist.expanduser(), bundle)
+    arm_authored_prose_is_bilingual(g, payload, args.census_dir.expanduser())
     arm_audit_report_is_licensed(g, payload, census, census_cases)
     arm_architecture_colours_are_licensed(g, payload, census, census_cases, args.dist.expanduser())
     arm_oracles(g, payload)

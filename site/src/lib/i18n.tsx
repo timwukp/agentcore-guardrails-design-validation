@@ -17,6 +17,25 @@
 //     own language, by `payload.verbatim.note` — an untranslated block that says nothing about why it
 //     is untranslated is indistinguishable from a missing translation.
 //
+// AND THE PART OF THAT DIVISION THAT WAS FALSE
+//
+// The second bullet said "the payload is the artifacts' own words" and the site was built on it: every
+// payload surface renders `lang="en"` and the Chinese banner tells the reader that the English they are
+// looking at is quoted evidence. A browser census of both locales over every route
+// (`platform/build/census_rendered_surfaces.py`, first run 2026-08-22) measured what is actually on
+// screen and the claim did not survive: of 1,946 payload strings a reader reaches, 767 are quoted
+// artifact and 310 are THIS PLATFORM'S OWN PROSE — the denominator definitions, the audit boundary
+// promises, the architecture status sentences. The banner was not describing a translation gap; it was
+// telling the reader that the gap was a principle.
+//
+// So the payload is not one thing, and a comment cannot be what sorts it. An authored payload value now
+// has the SHAPE `{en, zh}` (`types.Authored`, emitted by `build_site_data.authored`) and a sealed
+// quotation stays a bare string, which makes the default — writing a plain string literal — render
+// verbatim English. `useAuthored` below resolves the shape, and marks `lang="en"` only on the values
+// where English is what the reader gets. What has not been converted yet is counted, not described: the
+// census publishes the remaining number and `check_site_invariants.py` holds it as a ceiling that may
+// only fall.
+//
 // WHY THE DICTIONARY IS KEYED ONCE, WITH BOTH LANGUAGES IN ONE ENTRY
 //
 // The obvious shape is two objects, `en` and `zh`, and the obvious failure is a key in one and not the
@@ -38,8 +57,10 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 import { STRINGS } from "./strings";
 import type { Key } from "./strings";
+import type { Authored } from "./types";
 
 export type Locale = "en" | "zh-TW";
 
@@ -166,6 +187,51 @@ export function T({ k, v }: { k: Key; v?: Record<string, ReactNode> }) {
   );
 }
 
+/** What a payload prose value resolves to: the text to show, and whether it is English on a page that
+ *  is not. `lang` is `undefined` when the reader is getting their own language — setting `lang="en"` on
+ *  a Chinese sentence would pick the Latin font stack for CJK glyphs and hand a screen reader the wrong
+ *  phonology, which is the same defect as omitting it on an English one, in the other direction. */
+export type Resolved = { text: string; lang?: "en" };
+
+/** Resolve one authored-or-sealed payload value for this reader.
+ *
+ *  Takes `Authored | string` rather than `Authored` on purpose. Most payload surfaces are still bare
+ *  strings, and a signature that refused them would force every call site to be converted in one commit
+ *  — which is how a migration becomes a branch nobody merges. A bare string resolves to English marked
+ *  `lang="en"`, which is the correct rendering both for a sealed quotation and for authored prose whose
+ *  translation has not been written: the reader sees English either way, and is told it is English.
+ *
+ *  A component therefore never asks which kind it has, and cannot get the answer wrong. */
+export function useAuthored(): (v: Authored | string | null | undefined) => Resolved {
+  const { locale } = useLocale();
+  return useCallback(
+    (v: Authored | string | null | undefined): Resolved => {
+      if (v == null) return { text: "" };
+      if (typeof v === "string") return { text: v, lang: "en" };
+      // `zh` is required by the type and non-blank by the builder, so the fallback is unreachable
+      // through the payload. It is here because `v` can also arrive from a hand-written fixture, and a
+      // blank sentence on the page is worse than an English one.
+      if (locale !== "en" && v.zh?.trim()) return { text: v.zh };
+      return { text: v.en, lang: "en" };
+    },
+    [locale],
+  );
+}
+
+/** The same resolution, rendered. `<A v={x} />` puts the sentence in a `<span lang="en">` when English
+ *  is what the reader is getting, and in a bare fragment when it is their own language — so no call
+ *  site has to remember the `lang` rule, and none can apply it to a translated sentence. */
+export function A({ v, className }: { v: Authored | string | null | undefined; className?: string }) {
+  const a = useAuthored();
+  const { text, lang } = a(v);
+  if (!lang && !className) return <>{text}</>;
+  return (
+    <span lang={lang} className={className}>
+      {text}
+    </span>
+  );
+}
+
 /** The language switch. Two buttons rather than a `<select>`: with exactly two options a select costs
  *  a click to discover what the other one is, and `aria-pressed` states which language is showing
  *  without needing the label to be readable in the language the reader does not have. */
@@ -196,10 +262,16 @@ export function LocaleToggle() {
  *  be telling the reader that English is in English. */
 export function VerbatimNote() {
   const { locale } = useLocale();
+  const t = useT();
   if (locale === "en") return null;
   return (
     <p className="verbatim">
-      <T k="payload.verbatim.note" />
+      {/* The link carries the anchor: the counts sit at the END of an eight-step page, and a link that
+          lands the reader at step 1 has told them a number is published without showing it to them. */}
+      <T
+        k="payload.verbatim.note"
+        v={{ link: <Link to="/method#translation">{t("nav.method")}</Link> }}
+      />
     </p>
   );
 }

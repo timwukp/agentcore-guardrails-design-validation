@@ -20,7 +20,7 @@ are about a BUILD STEP rather than about a claim in a payload file — a tree-sh
 `dist/` is invisible to every check that reads the source — and because the one guard that reads bytes
 is the one that keeps finding the phrase in places that are not sentences.
 
-A fifth group arrived on 2026-08-22 with the authored caveats.
+A fifth group arrived on 2026-08-22 with the authored caveats and the translation ratchet.
 
 The remaining arms (typed totals, figure bytes, seals) are left to the one-off exercise recorded in the
 gate's own docstring. That is a stated limit, not an oversight — and the limit is where the next
@@ -77,10 +77,16 @@ def payload(tmp_path_factory) -> Path:
     return out
 
 
-def run_gate(payload: Path, dist: Path = DIST) -> subprocess.CompletedProcess:
-    return subprocess.run([sys.executable, str(GATE), "--payload", str(payload),
-                           "--dist", str(dist), "--verbose"],
-                          capture_output=True, text=True, cwd=REPO)
+def run_gate(payload: Path, dist: Path = DIST,
+             census_dir: Path | None = None) -> subprocess.CompletedProcess:
+    # `census_dir` is passed only by the tests that mutate the LEDGER rather than the payload. The
+    # untranslated ceiling counts payload paths a browser census listed, and a payload mutation can only
+    # ever translate one of those, never add one — so without a second census directory the upward half
+    # of that ratchet would be asserted in the gate and demonstrated nowhere.
+    cmd = [sys.executable, str(GATE), "--payload", str(payload), "--dist", str(dist), "--verbose"]
+    if census_dir is not None:
+        cmd += ["--census-dir", str(census_dir)]
+    return subprocess.run(cmd, capture_output=True, text=True, cwd=REPO)
 
 
 def copy_of(payload: Path, tmp_path: Path, tag: str) -> Path:
@@ -119,9 +125,10 @@ def _mutate(payload: Path, rel: str, edit) -> None:
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8")
 
 
-def expect_killed(payload: Path, arm: str, phrase: str) -> None:
-    proc = run_gate(payload)
-    assert proc.returncode == 1, f"the gate exited {proc.returncode}, so the mutant survived"
+def expect_killed(payload: Path, arm: str, phrase: str, census_dir: Path | None = None) -> None:
+    proc = run_gate(payload, census_dir=census_dir)
+    assert proc.returncode == 1, (f"the gate exited {proc.returncode}, so the mutant survived"
+                                  f"\n{(proc.stdout + proc.stderr)[-2000:]}")
     body = proc.stdout + proc.stderr
     assert f"[{arm}]" in body, f"killed by some other arm, not {arm}:\n{body[-2000:]}"
     assert phrase in body, f"{arm} fired but not for the reason under test:\n{body[-2000:]}"
@@ -828,5 +835,202 @@ def test_a_bundle_with_no_chinese_head_sentence_fails_the_publish(payload, tmp_p
     dist = _mutate_js(DIST, "nozhhead", tmp_path,
                       lambda s: s.replace("後來的讀者", "另一位讀者"))
     expect_dist_killed(payload, dist, CAVEAT_ARM, "後來的讀者")
+
+
+# --------------------------------------------------------------- arm 17: authored prose is bilingual
+#
+# Added 2026-08-22, the day the site's one rule about payload prose turned out to be false for a third of
+# it. Every payload string rendered `lang="en"` under a banner telling a Chinese reader that the English
+# was quoted evidence; a browser census of both locales over every route measured 1,946 strings a reader
+# reached that morning, of which 310 were this platform's own sentences — the denominator definitions, the
+# promises about the reader's AWS account, the sentences saying what each diagram colour means. Those two
+# numbers are the falsifying run (`rendered-surfaces-20260822T081918Z.json`); the newest run says 1,958
+# and 316, and neither pair is asserted anywhere — see `arm_authored_prose_is_bilingual`'s docstring for
+# why the ceiling is the only one a gate reads.
+#
+# The repair is a SHAPE (`{en, zh}` for authored, a bare string for a sealed quotation), so the mutants
+# here are shape mutants: a half blanked, a half copied, the shape deleted wholesale. The last two are
+# ledger mutants, and they are why the gate takes `--census-dir` at all: the ceiling counts strings a
+# browser census listed, and no payload edit can add one.
+
+PROSE_ARM = "authored_prose_is_bilingual"
+
+
+def _authored_paths(payload: Path) -> list[tuple[str, list]]:
+    """Every `{en, zh}` value in the payload, as (file, key path) pairs."""
+    found: list[tuple[str, list]] = []
+
+    def walk(node, rel: str, keys: list) -> None:
+        if isinstance(node, dict):
+            if set(node) == {"en", "zh"} and all(isinstance(v, str) for v in node.values()):
+                found.append((rel, keys))
+                return
+            for k, v in node.items():
+                walk(v, rel, keys + [k])
+        elif isinstance(node, list):
+            for i, v in enumerate(node):
+                walk(v, rel, keys + [i])
+
+    for f in sorted(payload.rglob("*.json")):
+        walk(json.loads(f.read_text(encoding="utf-8")), f.relative_to(payload).as_posix(), [])
+    return found
+
+
+def _at(doc, keys: list):
+    for k in keys[:-1]:
+        doc = doc[k]
+    return doc, keys[-1]
+
+
+def _newest_census() -> Path:
+    files = sorted((REPO / "platform" / "census").glob("rendered-surfaces-*.json"))
+    assert files, "no rendered-surface census in the repo; the ceiling has no ledger"
+    return files[-1]
+
+
+def _census_dir_with(tmp_path: Path, tag: str, edit) -> Path:
+    """A census directory holding one mutated copy of the repo's newest measurement.
+
+    Written under a LATER stamp than any real census, because the gate reads the newest by name and a
+    fixture that sorted earlier would leave the real measurement in force and the mutant unread — a green
+    test proving nothing (`feedback_probe_must_reach_the_code`).
+    """
+    out = tmp_path / f"census-{tag}"
+    out.mkdir()
+    doc = json.loads(_newest_census().read_text(encoding="utf-8"))
+    edit(doc)
+    (out / "rendered-surfaces-29991231T235959Z.json").write_text(
+        json.dumps(doc, indent=2, ensure_ascii=False, sort_keys=True), encoding="utf-8")
+    return out
+
+
+def _first_bare_backlog_row(payload: Path) -> tuple[dict, str, list]:
+    """A census backlog row whose first payload path still resolves to a bare string, with that path
+    split into (file, keys). The mutants below need a real untranslated surface rather than a made-up
+    one: a path this payload does not have would be killed by the unresolved check instead."""
+    doc = json.loads(_newest_census().read_text(encoding="utf-8"))
+    for row in doc.get("backlog") or []:
+        for path in row.get("payload_paths") or []:
+            segs = path.split("/")
+            for i in range(len(segs), 0, -1):
+                if payload.joinpath(*segs[:i]).is_file():
+                    rel = "/".join(segs[:i])
+                    keys: list = []
+                    for seg in re.findall(r"[^/\[\]]+|\[\d+\]", "/".join(segs[i:])):
+                        keys.append(int(seg[1:-1]) if seg.startswith("[") else seg)
+                    node = json.loads((payload / rel).read_text(encoding="utf-8"))
+                    try:
+                        holder, last = _at(node, keys)
+                        if isinstance(holder[last], str):
+                            return row, rel, keys
+                    except (KeyError, IndexError, TypeError):
+                        pass
+                    break
+    raise AssertionError("no backlog row resolves to a bare string in this payload")
+
+
+def test_the_bilingual_arm_no_mutant_control(payload: Path):
+    """The control for the five mutants below, and it asserts more than rc 0: it asserts the arm LOOKED.
+    An arm whose census went missing exits 2, and an arm whose payload happened to carry no `{en, zh}`
+    value at all would report zero malformed ones — both of which are what a passing run looks like from
+    the outside."""
+    proc = run_gate(payload)
+    assert proc.returncode == 0, (proc.stdout + proc.stderr)[-3000:]
+    assert f"[{PROSE_ARM}]" in proc.stdout, "the arm produced no note, so it may not have run at all"
+    assert "backlog string(s)" in proc.stdout and "value(s) translated" in proc.stdout
+    assert len(_authored_paths(payload)) >= 40, "the payload carries almost no authored prose objects"
+
+
+def test_a_blank_chinese_half_fails_the_publish(payload, tmp_path):
+    """The defect the shape exists to prevent. A blank `zh` renders as a gap, and a gap reads as a
+    finished sentence saying something else — which is worse than the English it replaced, because the
+    reader cannot tell that anything is missing."""
+    mutant = copy_of(payload, tmp_path, "prose-blank")
+    rel, keys = next((r, k) for r, k in _authored_paths(mutant) if r == "audit.json")
+
+    def edit(doc):
+        holder, last = _at(doc, keys)
+        holder[last]["zh"] = "   "
+
+    _mutate(mutant, rel, edit)
+    # The phrase names the LANGUAGE, not just the state: "is blank" alone would also match a
+    # message about a missing English half, i.e. a kill for the mirror-image defect.
+    expect_killed(mutant, PROSE_ARM, "zh is blank")
+
+
+def test_english_copied_into_the_chinese_half_fails_the_publish(payload, tmp_path):
+    """The subtler mutant, and the one a structural check alone would pass: both halves present, both
+    non-blank, both strings. The reader gets English, and the string leaves the backlog — so the
+    published number improves by exactly the amount of work not done."""
+    mutant = copy_of(payload, tmp_path, "prose-copied")
+    rel, keys = next((r, k) for r, k in _authored_paths(mutant) if r == "audit.json")
+
+    def edit(doc):
+        holder, last = _at(doc, keys)
+        holder[last]["zh"] = holder[last]["en"]
+
+    _mutate(mutant, rel, edit)
+    expect_killed(mutant, PROSE_ARM, "both halves are the same text")
+
+
+def test_deleting_the_shape_everywhere_cannot_report_clean(payload, tmp_path):
+    """The vacuity guard. Collapse every `{en, zh}` in `architecture.json` back to its English half and
+    the malformed count is zero, because there is nothing left to be malformed
+    (`feedback_zero_file_scan_is_error`). The count is asserted against a floor rather than assumed to be
+    non-trivial."""
+    mutant = copy_of(payload, tmp_path, "prose-deleted")
+    keyed = [k for r, k in _authored_paths(mutant) if r == "architecture.json"]
+    assert len(keyed) >= 16, f"only {len(keyed)} objects in architecture.json; the floor cannot be crossed"
+
+    def edit(doc):
+        for keys in keyed:
+            holder, last = _at(doc, keys)
+            holder[last] = holder[last]["en"]
+
+    _mutate(mutant, "architecture.json", edit)
+    expect_killed(mutant, PROSE_ARM, "below the floor of")
+
+
+def test_a_translation_written_without_lowering_the_ceiling_fails(payload, tmp_path):
+    """The downward half of the ratchet, which exists because slack is where the next regression hides.
+    Translate one string the census listed and the count falls below the published ceiling; the gate
+    fails and names the number to write. A ceiling left above the measurement would absorb the next
+    untranslated surface silently."""
+    mutant = copy_of(payload, tmp_path, "prose-below")
+    _row, rel, keys = _first_bare_backlog_row(mutant)
+
+    def edit(doc):
+        holder, last = _at(doc, keys)
+        holder[last] = {"en": holder[last], "zh": "這是一個為了測試而寫的中文句子，內容與英文不同。"}
+
+    _mutate(mutant, rel, edit)
+    expect_killed(mutant, PROSE_ARM, "without lowering it")
+
+
+def test_a_new_untranslated_surface_fails_the_publish(payload, tmp_path):
+    """The upward half, mutated through the LEDGER because nothing else can produce it: the count is over
+    paths a census listed, so a payload edit can only ever translate one. A census listing one more
+    untranslated string than the ceiling allows is exactly what a new authored surface looks like the
+    next time somebody runs the browser walk."""
+    row, rel, keys = _first_bare_backlog_row(payload)
+    twin = dict(row)
+    twin["text"] = "a second untranslated sentence the census found on this build"
+    twin["payload_paths"] = list(row.get("payload_paths") or [])
+    census = _census_dir_with(tmp_path, "over", lambda d: d["backlog"].append(twin))
+    # Same payload, unmutated: the mutation is entirely in the measurement, so the kill is attributable
+    # to the ceiling rather than to anything the builder emitted.
+    expect_killed(payload, PROSE_ARM, "above the ceiling of", census_dir=census)
+
+
+def test_a_ledger_naming_a_path_this_payload_does_not_have_fails(payload, tmp_path):
+    """A stale ledger must not be counted as progress. The ceiling is a count over the census's own
+    paths, so a census taken against a different payload measures a different thing and reads as
+    improvement (`feedback_abort_hides_coverage` — count the lines, do not drop them). The arm fails
+    rather than skipping the paths it cannot follow."""
+    def edit(doc):
+        doc["backlog"][0]["payload_paths"] = ["denominators.json/registered/a_field_that_never_existed"]
+
+    census = _census_dir_with(tmp_path, "stale", edit)
+    expect_killed(payload, PROSE_ARM, "do not exist in this payload", census_dir=census)
 
 
