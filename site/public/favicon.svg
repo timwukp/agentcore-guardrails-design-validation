@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="four verdicts">
+  <!-- The four verdicts, four equal bars, in the order the site sorts them: FALSE, INCONCLUSIVE,
+       RECORDED, TRUE. EQUAL, deliberately. Heights proportional to 23/20/2/46 would put a chart in a
+       16-pixel icon, and a chart drawn from four typed numbers is a second source for counts this
+       platform derives — it would go stale the first time a case was added and nothing would notice.
+       Equal bars encode the vocabulary, not a distribution, which is also the only claim an icon can
+       carry honestly.
+
+       The hexes are the stylesheet's, and they are checked: `check_site_invariants.py` arm 18 reads
+       every colour in this file out of the SERVED bytes and fails the publish unless each one is a
+       colour `styles.css` declares. That check is why this file may repeat the palette rather than
+       having to be generated from it — `--v-inconclusive` changed on 2026-08-22, and a hand-copied
+       icon with no check is exactly the copy that would still be grey. -->
+  <rect width="32" height="32" rx="6" fill="#10141a" />
+  <rect x="5" y="7" width="4" height="18" rx="1.5" fill="#d08a3e" />
+  <rect x="11" y="7" width="4" height="18" rx="1.5" fill="#d086ab" />
+  <rect x="17" y="7" width="4" height="18" rx="1.5" fill="#8a7bd0" />
+  <rect x="23" y="7" width="4" height="18" rx="1.5" fill="#2fa19b" />
+</svg>

@@ -20,7 +20,13 @@ are about a BUILD STEP rather than about a claim in a payload file — a tree-sh
 `dist/` is invisible to every check that reads the source — and because the one guard that reads bytes
 is the one that keeps finding the phrase in places that are not sentences.
 
-A fifth group arrived on 2026-08-22 with the authored caveats and the translation ratchet.
+A fifth group arrived on 2026-08-22 with the authored caveats and the translation ratchet, and a sixth
+with the palette (arm 18). The palette group is here for the sharpest version of the reason: that
+property was false in served bytes for the whole life of the site while every structural check passed.
+`--v-inconclusive` had a class token, a rule that reached the badge and a contrast ratio clearing AA,
+and it was still this stylesheet's own de-emphasis colour — a defect measurable only in the colour
+itself, and invisible to anything reading the source, because the source is where the wrong colour is
+written.
 
 The remaining arms (typed totals, figure bytes, seals) are left to the one-off exercise recorded in the
 gate's own docstring. That is a stated limit, not an oversight — and the limit is where the next
@@ -1034,3 +1040,150 @@ def test_a_ledger_naming_a_path_this_payload_does_not_have_fails(payload, tmp_pa
     expect_killed(payload, PROSE_ARM, "do not exist in this payload", census_dir=census)
 
 
+# --- arm 18: the verdict palette
+#
+# Here rather than in the one-off exercise for the reason the two arms above it are: the property is
+# about SERVED BYTES, and it was already false in served bytes for the whole life of the site. Every
+# structural check passed while `--v-inconclusive` was drawn in this stylesheet's own de-emphasis colour
+# — the class token was present, the rule reached the badge, the contrast cleared AA at 4.66:1 — and the
+# defect was visible only as a measurement of the colour itself. Nothing that reads the source can see
+# it either, because the source is where the wrong colour is written.
+#
+# All six mutants are edits to a COPIED `dist/`, like arms 14/15's, since a stylesheet is not in the
+# payload manifest.
+
+PALETTE_ARM = "verdict_palette_is_readable"
+
+
+def expect_css_killed(payload: Path, dist: Path, phrase: str) -> None:
+    proc = run_gate(payload, dist)
+    assert proc.returncode == 1, f"the gate exited {proc.returncode}, so the mutant survived"
+    body = proc.stdout + proc.stderr
+    assert f"[{PALETTE_ARM}]" in body, body[-2000:]
+    assert phrase in body, body[-2000:]
+
+
+def test_the_palette_arm_no_mutant_control(payload: Path):
+    """An unmutated `dist/` passes, and the arm produced its measurements rather than skipping — a
+    control that only checks rc 0 cannot tell a passing arm from an absent one."""
+    proc = run_gate(payload)
+    assert proc.returncode == 0, (proc.stdout + proc.stderr)[-3000:]
+    notes = [line for line in proc.stdout.splitlines() if f"[{PALETTE_ARM}]" in line]
+    assert len(notes) >= 6, notes
+    assert any("contrast" in n for n in notes), notes
+    assert any("chroma" in n for n in notes), notes
+    assert any("ΔE" in n for n in notes), notes
+
+
+def test_the_verdict_colour_that_shipped_as_a_grey_fails_the_publish(payload, tmp_path):
+    """The exact colour this site served until 2026-08-22, restored. It clears AA on all three
+    backgrounds, so contrast cannot be what kills it: at Lab chroma 10.4 it is the chroma of `--fg-dim`
+    and ΔE 5 from `--fg-faint`, i.e. the verdict for 20 of 91 outcomes drawn in the colour that means
+    "this matters less"."""
+    dist = _mutate_css(DIST, "grey-inconclusive", tmp_path,
+                       "--v-inconclusive:#d086ab", "--v-inconclusive:#7c8798")
+    expect_css_killed(payload, dist, "Lab chroma 10.4")
+
+
+def test_a_verdict_colour_under_aa_fails_the_publish(payload, tmp_path):
+    """Contrast, held against the worst of the three page backgrounds rather than the best. #6d5fa8 is
+    the same violet at a lower lightness: measured chroma 43.9 and ΔE 37 or more from every other colour
+    in the sheet, so the chroma and separation halves stay green and the kill (3.11:1, worst background)
+    is attributable to SC 1.4.3 alone."""
+    dist = _mutate_css(DIST, "dim-recorded", tmp_path, "--v-recorded:#8a7bd0", "--v-recorded:#6d5fa8")
+    expect_css_killed(payload, dist, "WCAG 2.1 SC 1.4.3")
+
+
+def test_two_verdicts_a_reader_cannot_tell_apart_fail_the_publish(payload, tmp_path):
+    """Separation. RECORDED moved next to INCONCLUSIVE: both stay bright, both stay chromatic, both clear
+    AA — and two of the four outcomes become one category on screen."""
+    dist = _mutate_css(DIST, "collided", tmp_path, "--v-recorded:#8a7bd0", "--v-recorded:#d18cae")
+    expect_css_killed(payload, dist, "under 15")
+
+
+def test_a_verdict_with_no_stylesheet_rule_fails_the_publish(payload, tmp_path):
+    """Renamed, not deleted, so only a whole-token match kills it: `.v-INCONCLUSIVE` is still in the file
+    as `.v-INCONCLUSIVE-badge`, and a substring test would call the renamed-away rule present."""
+    dist = _mutate_css(DIST, "unstyled-verdict", tmp_path, ".v-INCONCLUSIVE", ".v-INCONCLUSIVE-badge")
+    expect_css_killed(payload, dist, "INCONCLUSIVE")
+
+
+def test_a_verdict_colour_the_arm_cannot_parse_is_not_a_pass(payload, tmp_path):
+    """A colour rewritten in a form this arm does not read must FAIL, not drop silently out of every
+    floor. `rgb()` is legal CSS and renders identically, which is what makes the silent version of this
+    the dangerous one: the gate would report clean over a palette it never measured."""
+    dist = _mutate_css(DIST, "rgb-verdict", tmp_path,
+                       "--v-inconclusive:#d086ab", "--v-inconclusive:rgb(208,134,171)")
+    expect_css_killed(payload, dist, "is not declared as a hex colour")
+
+
+def test_a_stylesheet_missing_a_page_background_cannot_report_clean(payload, tmp_path):
+    """The contrast floor is meaningless without the surfaces the text is drawn on, so a sheet declaring
+    fewer than three backgrounds is rc 2 — a gate that cannot run must not report clean."""
+    dist = _mutate_css(DIST, "no-inset", tmp_path, "--bg-inset:#0b0e13;", "")
+    proc = run_gate(payload, dist)
+    assert proc.returncode == 2, f"exited {proc.returncode}; a gate that cannot run must not pass"
+    assert "fewer than three page backgrounds" in (proc.stdout + proc.stderr)
+
+
+def _mutate_dist_file(dist: Path, tag: str, tmp_path: Path, rel: str, edit) -> Path:
+    """Copy `dist` and rewrite ONE named file through `edit`, asserting the edit landed.
+
+    `_mutate_css` and `_mutate_js` each rewrite a whole class of files; the icon and the served markup
+    are single files, and a mutant that silently missed either would leave the gate's clean exit proving
+    nothing (`feedback_probe_must_reach_the_code`). `edit` may return the text unchanged only if the file
+    is being removed, which the callers do themselves.
+    """
+    out = copy_dist(dist, tmp_path / f"dist-{tag}")
+    target = out / rel
+    assert target.is_file(), f"{rel} is not in the built dist, so this mutant would prove nothing"
+    before = target.read_text(encoding="utf-8")
+    after = edit(before)
+    assert after != before, f"the mutation did not change {rel}"
+    target.write_text(after, encoding="utf-8")
+    return out
+
+
+def test_a_verdict_colour_typed_into_a_component_fails_the_publish(payload, tmp_path):
+    """Property 4, mutated into the exact shape it was repaired from: a `stroke` on the series tick,
+    written as a hex. The stylesheet is unchanged and every floor above still passes, so the kill is
+    attributable to the second-source check alone."""
+    dist = _mutate_js(DIST, "typed-hex", tmp_path,
+                      lambda text: text.replace("className:`tick`,", "className:`tick`,stroke:`#2fa19b`,", 1))
+    expect_css_killed(payload, dist, "hex literal in the JS bundle")
+
+
+def test_an_icon_drawn_in_a_colour_the_stylesheet_does_not_declare_fails(payload, tmp_path):
+    """The icon repeats the palette, and this is the check that licenses the repetition. #7c8798 is the
+    grey INCONCLUSIVE shipped as until 2026-08-22 — i.e. the mutant is an icon left behind by the change
+    the rest of this arm was written for."""
+    dist = _mutate_dist_file(DIST, "stale-icon", tmp_path, "favicon.svg",
+                             lambda text: text.replace('fill="#d086ab"', 'fill="#7c8798"'))
+    expect_css_killed(payload, dist, "which the stylesheet does not declare")
+
+
+def test_a_served_page_with_no_icon_link_fails_the_publish(payload, tmp_path):
+    """The original defect: no icon at all, one console error on every first page load. A console with an
+    expected error in it is a console nobody reads, which is where the next real error goes unread."""
+    dist = _mutate_dist_file(DIST, "no-icon", tmp_path, "index.html",
+                             lambda text: re.sub(r"""<link[^>]*rel="icon"[^>]*>""", "", text))
+    expect_css_killed(payload, dist, "<link rel=icon> element(s)")
+
+
+def test_an_absolute_icon_href_fails_the_publish(payload, tmp_path):
+    """`/favicon.svg` is the spelling every tutorial gives and it 404s under the `v/<stamp>/` prefix this
+    site is actually published at. The file is present and correct; only the path is wrong, which is the
+    version of this defect that looks fine in a dev server at the root."""
+    dist = _mutate_dist_file(DIST, "abs-icon", tmp_path, "index.html",
+                             lambda text: text.replace('href="./favicon.svg"', 'href="/favicon.svg"'))
+    expect_css_killed(payload, dist, "404s under the `v/<stamp>/` prefix")
+
+
+def test_an_icon_link_pointing_at_nothing_fails_the_publish(payload, tmp_path):
+    """The link survives a file that does not: a `public/` cleared by a bad build, or an icon renamed
+    without the markup following. The reader gets the same console error as having no link at all."""
+    dist = copy_dist(DIST, tmp_path / "dist-icon-missing")
+    icon = dist / "favicon.svg"
+    assert icon.is_file(), "the built dist carries no favicon, so this mutant would prove nothing"
+    icon.unlink()
+    expect_css_killed(payload, dist, "and no such file is in")

@@ -7,15 +7,37 @@
 //    FALSE verdict locates a place where published guidance did not hold under measurement, which is
 //    the study's most valuable output, and an INCONCLUSIVE verdict says nothing was established — a
 //    result that a percentage would silently convert into a failure. Any summary statistic over the
-//    mix would also need a denominator, and the four denominators below differ for stated reasons, so
+//    mix would also need a denominator, and the denominators on this page differ for stated reasons, so
 //    there is no single number a rate could honestly be taken over.
 //
 // 2. NO DENOMINATOR WITHOUT ITS DEFINITION. Each count renders beside the prose that says what it
-//    counts and the artifact it was derived from, because the four differ and the differences are the
+//    counts and the artifact it was derived from, because they differ and the differences are the
 //    interesting part. A reader who sees only the numbers will assume the smallest is the real one and
 //    the rest are rounding.
 //
 // Every number on this page comes out of `denominators.json` / `census.json`. None is written here.
+//
+// SECTION ORDER, AND WHAT IT IS NOT ALLOWED TO CLAIM. The verdict mix and the no-pass-rate denial come
+// first, then the denominator cards, then the case table. Until 2026-08-22 it was the other way round:
+// five cards, each carrying a definition paragraph, two exclusion lists and a file glob, stood between
+// the reader and the only four numbers that say what this study found — the mix was reliably off the
+// first screen at 1440×900.
+//
+// This ordering is ORIENTATION, and that is the whole of the claim. Hornbæk, Bederson & Plaisant 2002
+// (ACM ToCHI 9(4) 362-389, n = 32) is the closest measurement to hand, and it measured against the
+// comfortable version of this argument: overview-plus-detail produced no reliable improvement in task
+// correctness, subjects recalled individual objects BETTER without the overview, and about 80% preferred
+// having one regardless of whether it helped them. So: a reader who says the page is clearer now has
+// told us about a preference, and a preference is not a validation. Nothing here — not this comment, not
+// `ovw.startHere`, not the copy — may say the order helps anyone understand the study. What it does is
+// put the counts where a reader who leaves after eight seconds will still have seen them, and the
+// definitions one screen further down where a reader who is going to use a number will still meet them
+// before using it. Rule 2 is unchanged: no count renders without its definition beside it.
+//
+// What this order cannot fix, and is not pretending to: a reader who reads only the mix has read four
+// integers whose denominators are three screens of prose away, which is exactly the misreading rule 2
+// exists to prevent. That is why the mix panel's own note ends by naming the denominators rather than
+// by summarising them, and why the cards were moved rather than collapsed.
 
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
@@ -34,11 +56,12 @@ import { byCaseId, distinct } from "../lib/sort";
 const ANY = "*any*";
 const NO_VERDICT = "*noverdict*";
 
-/** The four denominators read as a narrowing sequence — registered, then eligible, then published,
- *  then mapped — and that order is the argument for why they differ. Alphabetical order (which is what
- *  `Object.entries` gives) puts `claim_mapped` first and makes the set look like five unrelated
+/** The denominators read as a narrowing sequence — registered, then eligible, then published, then
+ *  mapped, then triaged — and that order is the argument for why they differ. Alphabetical order (which
+ *  is what `Object.entries` gives) puts `claim_mapped` first and makes the set look like five unrelated
  *  integers, which is the reading the definitions exist to prevent. Any key the build adds later that
- *  is not in this list still renders, after these, rather than disappearing. */
+ *  is not in this list still renders, after these, rather than disappearing — which is also why this
+ *  comment names the sequence instead of counting it. */
 const DENOM_ORDER = ["registered", "verdict_eligible", "published", "claim_mapped", "claims_triaged"];
 
 function orderDenominators(d: Denominators): [string, Denominator][] {
@@ -89,9 +112,23 @@ function DenominatorCard({ k, d }: { k: string; d: Denominator }) {
           ))}
         </div>
       ))}
-      <div className="src" lang="en">
-        {d.derived_from}
-      </div>
+      {/* NATIVE `<details>`, not a `useState` toggle, and the reason is a measurement rather than a
+          preference. `census_rendered_surfaces.py` opens every `<details>` on the page before it
+          collects text and records the strings it found that way as `behind_disclosure`, so a native
+          disclosure keeps this path inside the rendered census and inside the browser's find-in-page. A
+          conditional render would have deleted it from the DOM — and since the translation backlog
+          ceiling is a count of rendered untranslated strings, collapsing prose out of the DOM would have
+          lowered that number by hiding text rather than by translating it. A gate that a UI change can
+          satisfy by hiding its subject is a gate measuring the wrong thing, so the UI must not be able
+          to do that.
+          What is behind it is a file path or a glob: the reader who wants it is going to open the file,
+          and the reader who doesn't was being asked to scroll past five of them to reach the counts. */}
+      <details className="srcwrap">
+        <summary>{t("ovw.src.summary")}</summary>
+        <div className="src" lang="en">
+          {d.derived_from}
+        </div>
+      </details>
     </div>
   );
 }
@@ -183,21 +220,13 @@ export default function Overview() {
       <h2 className="view">{t("nav.census")}</h2>
       <VerbatimNote />
       <p className="lede">{t("ovw.lede")}</p>
-
-      <section>
-        <h3>{t("ovw.h.denominators")}</h3>
-        {denom.state === "loading" ? (
-          <Loading what={t("ovw.loading.denominators")} />
-        ) : denom.state === "error" ? (
-          <ErrorPanel error={denom.error} />
-        ) : (
-          <div className="cards">
-            {orderDenominators(denom.data).map(([k, d]) => (
-              <DenominatorCard key={k} k={k} d={d} />
-            ))}
-          </div>
-        )}
-      </section>
+      {/* The link label is `nav.method` — the same string the sidebar entry uses — so the sentence names
+          the destination the way the reader will recognise it, and a rename happens in one place. No
+          anchor: this one points at the top of the page, because the whole page is the answer to "what
+          is one verdict". */}
+      <p className="starthere">
+        <T k="ovw.startHere" v={{ link: <Link to="/method">{t("nav.method")}</Link> }} />
+      </p>
 
       <section>
         <h3>{t("ovw.h.mix")}</h3>
@@ -217,6 +246,21 @@ export default function Overview() {
             </div>
             <SealPanel seal={census.data.seal} />
           </>
+        )}
+      </section>
+
+      <section>
+        <h3>{t("ovw.h.denominators")}</h3>
+        {denom.state === "loading" ? (
+          <Loading what={t("ovw.loading.denominators")} />
+        ) : denom.state === "error" ? (
+          <ErrorPanel error={denom.error} />
+        ) : (
+          <div className="cards">
+            {orderDenominators(denom.data).map(([k, d]) => (
+              <DenominatorCard key={k} k={k} d={d} />
+            ))}
+          </div>
         )}
       </section>
 
