@@ -10,8 +10,8 @@
 <!-- provenance
 {
   "status": "AMENDMENT_DEFERRED",
-  "cases": ["F6-1_3_4_9", "F6-2_5", "F6-6_7_8"],
-  "cases_note": "These are the case_id values the F6 call records actually carry, and the gate matches on that field, so they are what must be declared here. They are PRODUCER GROUP ids, not verdict case ids: one producer serves several cases and stamps every record with the group's name. The nine verdicts this finding covers map onto them as F6-1_3_4_9 -> {F6-1, F6-3, F6-4, F6-9} (4033 records), F6-2_5 -> {F6-2, F6-5} (5631), F6-6_7_8 -> {F6-6, F6-7, F6-8} (9287). Consequence for the gate: its per-case day scoping degrades to per-producer scoping for these cases, so a day credited to one member is credited to all of its group. That is harmless here only because a group's members are always observed in the same producer invocation. Declaring a real verdict id such as 'F6-6' instead would match zero records and the gate would fail loudly, which is the right direction but for the wrong reason. Same root cause as FUTURE-WORK item 34's second reason: a guard keyed on a case id cannot see a producer that serves several cases at once.",
+  "cases": ["F6-1", "F6-2", "F6-3", "F6-4", "F6-5", "F6-6", "F6-7", "F6-8", "F6-9"],
+  "cases_note": "The nine verdict ids this finding is about, declared as themselves. Until 2026-08-22 this field could not say that: it read [\"F6-1_3_4_9\", \"F6-2_5\", \"F6-6_7_8\"] -- PRODUCER GROUP ids, not case ids -- because one F6 producer serves several cases and stamps every record with the group's name, and check_amendment_readiness.observation_days() compared case_id for equality, so declaring 'F6-6' matched zero of its own 9,287 records and the gate reported a nine-case finding as resting on records that were never written. That defect is FUTURE-WORK item 34's second reason and is now fixed: the gate resolves both sides through lib/case_ids.py, so F6-6 reaches F6-6_7_8's records. Re-measured after the change (results/ITEM34-GATE-DELTA.json): the day set is unchanged at ['2026-08-11', '2026-08-19'], i.e. this edit buys honesty in the declaration and moves no number the finding rests on. WHAT THE FIX DOES NOT BUY, stated because the old note claimed it as the price and a reader could now think it was paid: the gate's day scoping is STILL per-producer for these nine cases, and no matcher can change that, because the granularity is in the data -- F6-6's second day is established by a record stamped F6-6_7_8, which is equally F6-7's and F6-8's record. A day credited to one member is credited to its whole group. That is tolerable here only because a group's members are always observed in one producer invocation, so there is no day a member did not in fact run; it would stop being tolerable the moment a producer wrote a group directory for a subset of its cases. Per-case day scoping for F6 requires the producer to stamp per-case case_ids, which is a producer change and not a gate change. Mapping, for a reader checking the counts: F6-1_3_4_9 -> {F6-1, F6-3, F6-4, F6-9} (4,033 records), F6-2_5 -> {F6-2, F6-5} (5,631), F6-6_7_8 -> {F6-6, F6-7, F6-8} (9,287).",
   "evidence_runs": ["r20260810T130945Z"],
   "utc_days": ["2026-08-10", "2026-08-11", "2026-08-19"],
   "blocked_on": "Nothing that a further run can supply, and the status is the closest the gate's vocabulary comes to that. Three cases DISAGREE across days (F6-2, F6-5, F6-8), which PREREGISTRATION.yaml makes a finding rather than a fix-up, so no amendment is licensed for them on this data at all -- not deferred pending more days. For the six that agree, F6-6's n_met went true->false (n_usable 999 < planned_n 1000, traced in section 4 to two TCP resets), so it does not clear the bar either. Any future amendment resting on an F6 tail comparison additionally needs a successor oracle kind with a decisiveness requirement, which PREREGISTRATION.yaml is sealed against -- FUTURE-WORK item 32(c) scopes that to future pre-registrations only. Recorded here because the gate has no DISAGREEMENT status: an earlier draft of this block used 'OBSERVED' and the gate correctly refused it, which is itself the register item.",
@@ -187,6 +187,20 @@ alone suffices:
    `http_status` with an empty message. A guard keyed on error *codes* is blind to them whatever names
    its list holds, which is why the closing condition for this defect has to be a predicate over the
    record's success flag rather than a longer list.
+
+**All three are fixed as of 2026-08-22, and the fix was verified against these same records rather
+than against a fixture.** `transient_failures()` now gates on `ok is False` and uses the error names
+only to choose a label, and `_scoped()` resolves a path component through `lib/case_ids.py`. Re-run
+over `evidence/r20260810T130945Z` for 2026-08-19 it finds **8 of 8**: `ReadTimeoutError`, `http_500`
+×3, `ProtocolError` ×3, `http_404` — and attributes four to each of F6-2 and F6-5 and four to each of
+F6-6, F6-7 and F6-8, so those five cases now report `clean_observation: false` where the driver
+reported `true`. F6-1, F6-3, F6-4 and F6-9 stay clean, which is correct: their group had no failed
+call. The numbers in this section are therefore no longer things only this document knows —
+`tools/tests/test_day2_replicate_failures.py` asserts the count and the five affected cases over the
+real tree, and carries a mutation arm showing the old name-keyed rule sees none of the four shapes.
+Note what does **not** change: this finding's verdicts, its disagreements, and F6-6's lost bar are all
+unaffected. A guard that now fires does not re-adjudicate a run; it means the caveat is recorded by the
+instrument instead of by hand in this paragraph.
 
 **Two of those four aborts cost F6-6 its amendment bar.** The denominators, derived from the verdict
 files rather than read off a summary:

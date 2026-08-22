@@ -859,6 +859,46 @@ re-examined, since it protects a directory the producer may never write to; and 
 double producer that writes under a *different* run id than the flag it was given and requires the
 driver to adjudicate rather than return 2 — an echoing double would never reach this path.
 
+**CLOSED 2026-08-22.** All four conditions met, and the one that took the work is (d).
+
+(a) `recorded_run_ids(before, after)` reads the run id out of the verdict files the producer
+**re-emitted** — `run_id` at the top level or inside `record`, changed files only, since an unchanged
+file is not evidence of anything this run did. `main()` computes `after`/`changed` first, derives
+`effective = recorded or [run_id]`, and sums `fresh_records`, `zero_call_capture` and
+`transient_failures` over `effective` rather than over the minted id. The warrant is the one this
+project already uses: `evidence_date()` prefers a record's own timestamp to the name of the file
+holding it, and a flag is a **request** where a record is a fact.
+
+(b) The mismatch is printed as `!! THE PRODUCER IGNORED --run-id`, published in the results JSON as
+`run_ids_effective` and `producer_honoured_run_id` alongside the asked-for `run_id` — two fields
+because they are two claims, and a reader who finds nothing under `run_id` alone must be able to tell
+"the flag was ignored" from "the run never happened". An effective id that is neither the minted one
+nor any named case's day-1 id is **rc 2**, unadjudicated: without that floor the derivation would
+accept a producer resuming a *third* run's state and count its old records as today's observation.
+When the adopted id **is** a day-1 id — the real case — the run is adjudicated and the driver says so,
+noting that only records dated today are counted and that item 29 tracks the roll-up a re-run
+overwrites.
+
+(c) Re-examined and **kept, with its scope written down in the code**. Both pre-run guards reason about
+the id the driver *asks for*, so neither can see the directory that actually receives the records; they
+are correct for a producer that honours the flag and cost nothing, so they stay, but the comment now
+says plainly that the check which matters is `recorded_run_ids` after the producer returns — because
+for five days the pre-run pair *looked* like the protection (`feedback_guard_scope_is_a_claim`), and
+`main()` prints the same caveat at runtime so it reaches an operator reading the log rather than only a
+reader of the source.
+
+(d) `tools/tests/test_day2_replicate_failures.py`, **17 arms**, drives the real `main()` against a
+temp repo tree with a producer double that **lies**: it writes its evidence and stamps its verdict file
+with the day-1 run id whatever `--run-id` it is handed, exactly as the three F6 producers did. Rc 0,
+`run_ids_effective == ["r20260810T000000Z"]`, `producer_honoured_run_id: false`, 3 fresh records. The
+arm that makes it a test rather than a demonstration is its pair: with `recorded_run_ids` stubbed to
+`[]` — the pre-fix behaviour — the *same* double returns **rc 2**, while an **echoing** double returns
+rc 0 under both versions. That last arm is kept in the file, named
+`test_a_producer_that_honours_the_flag_still_passes_under_the_old_derivation`, as the record of the
+test that would have been written instead and would have shipped the bug
+(`feedback_unreachable_branch_in_fake`). Two further arms keep the rc-2 path reachable when it is
+genuinely true: a producer that writes nothing, and one whose recorded id is unplaceable.
+
 ### 34. The guard against counting a failed probe as an observation missed all eight of a run's failed calls, for three independent reasons
 
 **Evidence.** `transient_failures()` was written after F8-5 (2026-08-15) precisely so a throttled probe
@@ -916,6 +956,115 @@ and still match — a finding about F6-6 should not have to name F6-7's records 
 on **this run's** records — all eight, not just the named ones — since a guard that reported clean over
 a 70-second timeout is indistinguishable from no guard at all until it is shown to fail on the real
 data.
+
+**CLOSED 2026-08-22.**
+
+(a) `failure_reason(record)` gates on **`ok is False`** and everything after the gate only chooses the
+*label*. `TRANSIENT_ERRORS` survives as a label-supplier and carries a comment saying in as many words
+that it is no longer the gate. Refinement order: a known service code, then a botocore/urllib3
+transport class — matched against `error_class` *and* against the leading `ClassName:` token of
+`error_message`, because that is the only place the three `ProtocolError` records put it — then a 5xx
+status from `http_status` or `ResponseMetadata.HTTPStatusCode`, then any code, then any status, then
+`unclassified_failure`. **An unrecognised failure is still reported**, which is the design decision
+worth naming: one of the eight is a bare **404** (an MCP session expiry, JSON-RPC `-32004`), transient
+in effect and 4xx in shape, so a rule admitting only 5xx would have dropped it. A failed call whose
+reason we cannot name is precisely the one an operator needs to see. `ok` *missing* counts as a failure
+only when some error field is set, so a producer that omits the flag cannot hide a raised call while a
+record carrying neither is left alone.
+
+**The first fix for (a) was too wide, and two pre-existing arms caught it — that is the part of this
+closure worth reading.** Gating on `ok is False` alone made F8-5's two `ValidationException` probes
+into holes in its observation. They are the opposite: F8-5 exists to check that a topic definition at
+the tier limit is accepted and one over it rejected, so **the rejection is the data**, and a guard that
+caveated it would put a permanent false alarm on the case — the failure mode this very item warns about
+("a gate that fires on things it should not is one people learn to bypass"). `ok is False` cannot tell
+"the service refused to look" from "the service looked and said no", and both of F8-5's outcomes are
+`ok: false` with `retry_attempts: 0`.
+
+So the classification is three-valued, in two functions composed by `transient_failures`:
+`failure_reason` reports **every** failed call, and `service_answered` decides whether that failure is
+the service's answer *about the request*. It reads the **HTTP status first**, with the error code only
+as a presence test: no status at all (the call never got an answer — `ReadTimeoutError`,
+`ProtocolError`), any 5xx, or 408/425/429 is a refusal; a failure that names nothing is a refusal,
+which is what reaches the bare 404 whose every error field is empty; a `TRANSIENT_ERRORS` code is a
+refusal by override; and only an explicit service exception on a 4xx the service *chose* is an answer.
+Status-first matters because it takes the two common refusals off any name list — throttling carries
+429 and server-side failure carries 5xx — so `TRANSIENT_ERRORS` is load-bearing **only** for a service
+that returns a refusal as a plain 400. That residual is in the dangerous direction, so it is asserted
+by an arm rather than left to be discovered, and it is the one place in the file where a name still
+decides anything.
+
+Two arms of `tools/tests/test_day2_replicate_compare.py` — written for F8-5 in August and untouched
+since — went red on the too-wide version. One of them was also, on inspection, asserting behaviour
+over a record shape `lib/evidence.py` **cannot produce**: it planted `error_code` with no
+`http_status`, and `error_code` is set only in the `ClientError` branch (`lib/evidence.py:498-501`),
+which always carries `ResponseMetadata.HTTPStatusCode` (:512). The fixture now plants the real
+F8-5 shapes (`ValidationException`/400 and `ThrottlingException`/429) and the claim it tests is
+unchanged; a new arm pins the safe default in the other direction, that a failure with no status is a
+hole whatever it is called, since mis-reading a refusal as an answer is what corrupted F8-5's verdict
+while mis-reading an answer as a hole only costs a caveat.
+
+(b) The resolver is its own module, `lib/case_ids.py`, because two consumers needed it in **opposite**
+directions and a second copy would have drifted. It is a **rule, not a list** — a joined numeric group
+expands (`F6-6_7_8` → F6-6, F6-7, F6-8), otherwise the shortest case-id prefix standing before a
+separator qualifies one case (`F3-4-pii-us_social_security_number` → F3-4), otherwise nothing — and the
+separator is load-bearing: `F6-2_5` never means `F6-25` and `F8-50` is never credited to F8-5. Writing
+it as an enumeration was tried first and **its own real-tree test failed it** on 22 `F3-4-pii-*` and 4
+`F3-8-tagged-*` names where the `_` sits inside a *stratum*; `lib/tests/test_case_ids.py` (**27 arms**)
+now walks `evidence/` and fails if any on-disk `case_id` resolves to nothing, or if fewer than five
+names resolve to more than one case — so a resolver that only ever returned the head cannot pass it.
+`day2_replicate._scoped` and `check_amendment_readiness.observation_days` both go through it.
+
+The widening of a **replication** gate was measured before being trusted, since handing a finding a
+second calendar day it did not earn turns the gate into a rubber stamp. `tools/item34_gate_delta.py`
+runs both matching rules over the same records and writes `results/ITEM34-GATE-DELTA.json`; it exits
+non-zero if any finding crosses `MIN_DAYS` on the rule change alone, and it runs each arm against the
+`cases` declaration **that arm was written for** — its first run exited 1 because it did not, comparing
+the old rule against the new nine-case F6 declaration and attributing to the resolver a change the
+declaration edit had caused. A comparison that moves two variables cannot attribute what it finds.
+Measured over 12 evidence-bearing
+findings / 24,880 matched records: **three findings match more records and not one day set moves** —
+FINDING-F3-10 2,701 → 3,040 (its own PII strata), FINDING-F5-4A 409 → 601, FINDING-F6-DAY2 18,951 →
+18,957 — and `check_amendment_readiness.py`'s full output is **byte-identical** before and after. So the
+change bought the ability to declare a real case id and moved no number any finding rests on.
+
+`FINDING-F6-DAY2-DECISIVENESS.md` was then rewritten to declare the nine real verdict ids instead of
+the three producer-group strings, which is what (b) existed for — and its `cases_note` now states the
+part the fix does **not** buy, because the old note claimed it as the price and a reader could think it
+had been paid: day scoping for those nine cases is **still per-producer**, and no matcher can change
+that. The granularity is in the data — F6-6's second day is established by a record stamped
+`F6-6_7_8`, which is equally F6-7's — so per-case scoping needs the *producer* to stamp per-case ids.
+Tolerable only because a group's members are always observed in one invocation.
+
+(c) Verified against the run itself, not a fixture. Over `evidence/r20260810T130945Z` for 2026-08-19
+the rewritten guard reports **8 of 8** — `ReadTimeoutError`, `http_500` ×3, `ProtocolError` ×3,
+`http_404` — and attributes four to each of F6-2/F6-5 and four to each of F6-6/F6-7/F6-8, so five cases
+flip to `clean_observation: false` while F6-1/F6-3/F6-4/F6-9 stay clean because their group had no
+failed call. Controls: a case with no records in the run and a day with no records both report clean,
+so the widening did not simply make everything dirty. `tools/tests/test_day2_replicate_failures.py`,
+**24 arms**, pins all of it — the four real record shapes as fixtures reduced from the actual files,
+the real-tree count and the five affected cases, F8-5's two real shapes on both sides of
+`service_answered`, an invented 429/408/5xx whose code appears in no list of ours still not an answer,
+the documented 400 residual asserted rather than inferred, a successful call carrying a stale error
+field still not a failure, and the **mutation arm**: the shipped name-keyed rule is re-created and
+asserted to see **none** of the four shapes, so every other assertion in the file is non-vacuous.
+
+**One naming change ships with this.** `results[].transient_error_calls` → `failed_calls`, its
+`error_code` → `reason`, and `cases_with_transient_failures` → `cases_with_failed_calls`, with a
+`schema_change` block in the run entry. The set now holds every failed call and `reason` can be
+`http_404` or `unclassified_failure`, neither of which is a service error code, so the old keys claimed
+something narrower than the data supports (`feedback_label_must_match_computation`). Every value under
+the old keys in every earlier file in `results/` is `[]`, so nothing published changes meaning.
+
+**A residual this closure does not remove.** `tools/day2_adjudicate_offline.py` emitted a `basis`
+sentence justifying the run-wide view as seeing what `transient_failures()` cannot "because no
+error-name list and no case scoping" — a claim about the *other* function, and half of it expired the
+moment the name list did. The producer's literal is corrected to name the one surviving reason (no case
+filter). `results/day2_replication_2026-08-19.json` still carries the **pre-fix** sentence, because it
+is a dated derived artifact and hand-editing one to agree with today's code is how a record stops being
+evidence; it was true when written and is superseded here. Re-running the adjudicator over the archived
+snapshot would refresh it without moving a number, and is deliberately not done in the same change that
+altered the code it describes.
 
 ### 35. The redaction gate read every published byte for five days and could not see the account ID in twenty of them, because both guards anchored the identifier on `\b`
 
@@ -1058,8 +1207,27 @@ first: restoring the nine-extension allowlist (16 red), removing the latin-1 fal
 only the firing pattern (2), masking only the first occurrence (1). All four verified 2026-08-20 with
 the subject's sha256 checked back to its pre-mutation value
 (`feedback_killed_harness_races_next`). **(a)–(d) are met; this instance closes with the PR that
-carries them.** The two residuals recorded above — the unretractable pre-fix blob and the
-ASCII-flanked digit run — keep the item open.
+carries them.**
+
+**Which residual actually keeps this item open — the two clauses above disagreed, 2026-08-22.**
+This paragraph used to read "the two residuals recorded above — the unretractable pre-fix blob and
+the ASCII-flanked digit run — keep the item open", and clause (e) three paragraphs earlier says the
+opposite in as many words: *"This item does not close on that residual being closed — it closes on it
+being stated, because closing it would cost 281 false findings."* Both sentences are in the same item
+and only one can be its closing rule. (e) is the considered one — it carries the measurement (281 of
+11,679 digests) that makes the trade, and an arm asserts the limit — so the ASCII-flanked digit run is
+**stated, not outstanding**, and does not keep this item open. The sentence that re-opened it was
+written for the third instance's paragraph and over-reached into the item's rule.
+
+So exactly **one** thing does: clause (b)'s pre-fix blob. It is not a code fix at all — masking
+forward cannot un-write a blob that stays reachable by SHA, so the remedy is a **decision recorded
+before any flip to public**, and (b) says it "belongs in whatever checklist governs that flip".
+Measured 2026-08-22: **no such checklist exists in this repository** — a grep for one finds only this
+sentence and the same sentence quoted in `results/FINDING-P1-REDACTION-ENCODING.md`. That is the
+defect one level up, and the same shape as the item this register opened at line 12: a control that
+exists only as a sentence saying it ought to exist. **This item closes when that checklist is a file**
+that names the pre-fix blob, the commit (`3f3c398b`), and the decision to be taken, so the flip cannot
+happen without someone reading it. Nothing else about item 35 is outstanding.
 
 ---
 
