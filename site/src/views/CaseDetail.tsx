@@ -438,46 +438,40 @@ function SpanJoin({ join }: { join: Record<string, unknown> }) {
 
       {points.length ? (
         <>
+          {/* THE COLOURS COME FROM CLASSES, AND THE TICKS ARE ALL ONE COLOUR.
+              Both halves of that were wrong until 2026-08-22. The four hexes here were typed literals —
+              a second source for a palette whose single source is `styles.css`, so the day
+              `--v-inconclusive` changed, two of the places it is drawn would have kept the old value with
+              nothing to notice. And row 0's ticks were `#2fa19b` with every other row's `#8a7bd0`: the
+              TRUE teal and the RECORDED violet, spent here on "arm 1" and "arm 2" of a timeline that has
+              no verdict in it at all. A reader who has learned this platform's four hues on the case page
+              above meets two of them here meaning something else.
+              The rows are already separated by vertical position and named by the label beside them, so
+              one neutral tick colour says everything two hues said. `check_site_invariants.py` arm 18 now
+              fails the publish on a verdict hex typed into the bundle. */}
           <svg className="series-svg" viewBox={`0 0 1000 ${H}`} preserveAspectRatio="none">
             {arms.map(([arm], n) => (
               <g key={arm}>
-                <text x={4} y={22 * n + 14} fill="#6c7a8b" fontSize={9} fontFamily="monospace">
+                <text className="lab" x={4} y={22 * n + 14} fontSize={9} fontFamily="monospace">
                   {arm}
                 </text>
-                <line
-                  x1={0}
-                  x2={1000}
-                  y1={22 * n + 18}
-                  y2={22 * n + 18}
-                  stroke="#263140"
-                  strokeWidth={1}
-                />
+                <line className="base" x1={0} x2={1000} y1={22 * n + 18} y2={22 * n + 18} />
               </g>
             ))}
             {points.map((p, n) => {
               const row = arms.findIndex(([a]) => a === p.arm);
               const x = ((p.t - t0) / span) * 998 + 1;
               return (
-                <line
-                  key={n}
-                  x1={x}
-                  x2={x}
-                  y1={22 * row + 8}
-                  y2={22 * row + 18}
-                  stroke={row === 0 ? "#2fa19b" : "#8a7bd0"}
-                  strokeWidth={0.6}
-                  opacity={0.75}
-                />
+                <line className="tick" key={n} x1={x} x2={x} y1={22 * row + 8} y2={22 * row + 18} />
               );
             })}
             {cur ? (
               <line
+                className="cursor"
                 x1={((cur.t - t0) / span) * 998 + 1}
                 x2={((cur.t - t0) / span) * 998 + 1}
                 y1={0}
                 y2={H}
-                stroke="#5aa9e6"
-                strokeWidth={1}
               />
             ) : null}
           </svg>

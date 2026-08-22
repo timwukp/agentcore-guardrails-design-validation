@@ -28,6 +28,12 @@
 // promises, the architecture status sentences. The banner was not describing a translation gap; it was
 // telling the reader that the gap was a principle.
 //
+// Those are the FIRST run's numbers, and they are the ones worth quoting here because they are what
+// falsified the claim. They are not what `/provenance` shows a reader: the counts on screen come from the
+// newest census (1,958 reachable, 316 authored, as of `rendered-surfaces-20260822T092500Z.json`), which
+// is higher because the five architecture status sentences moved out of a `title` attribute — where they
+// were five translations nobody could read — and into visible text.
+//
 // So the payload is not one thing, and a comment cannot be what sorts it. An authored payload value now
 // has the SHAPE `{en, zh}` (`types.Authored`, emitted by `build_site_data.authored`) and a sealed
 // quotation stays a bare string, which makes the default — writing a plain string literal — render

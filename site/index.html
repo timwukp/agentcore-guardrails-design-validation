@@ -8,6 +8,14 @@
          the title of the document as served, before any JavaScript knows which language the reader
          wants; it is deliberately the repository name, which is the same string in both. -->
     <title>agentcore-guardrails-design-validation</title>
+    <!-- A RELATIVE href, like every other asset URL here, because `vite.config.ts` sets `base: "./"` so
+         one bundle serves both the CloudFront root and a `v/<stamp>/` prefix. `/favicon.svg` would 404
+         under the prefix — and a favicon 404 is not cosmetic here: it was the only console error on the
+         landing route, and a console with one expected error in it is a console nobody reads.
+         SVG only, no `.ico` fallback: the browsers that need one cannot run this SPA either. It is a
+         FILE rather than a `data:` URI because the CSP served by `site-stack.ts` is `img-src 'self'`,
+         and widening that for an icon would widen it for everything. -->
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
   </head>
   <body>
     <div id="root">

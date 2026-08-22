@@ -77,7 +77,29 @@ export const STRINGS = {
     "每一個已登記的案例、它的判定，以及它所推導自的那項主張。下面的數字在每一次建置時都會從產物重新計算，" +
       "並沒有以「一個數字」的形式被存放在任何地方。",
   ],
+  // The orientation line under the lede, and the claim it is careful NOT to make. Hornbæk, Bederson &
+  // Plaisant 2002 (ACM ToCHI 9(4), n = 32) measured task performance with and without an overview: no
+  // reliable correctness benefit, better recall of individual objects WITHOUT the overview, and ~80%
+  // subjective preference for having one either way. So a "start here" link is worth shipping because
+  // readers ask for one, and it may not be described — here or in a comment — as helping anybody
+  // understand the study. `{link}` is the Method route under its own nav label, so the sentence names
+  // the destination a reader will recognise in the sidebar.
+  "ovw.startHere": [
+    "New here: {link} explains what one verdict is and how it was reached. It is orientation only — the counts on this page are the study, and nothing on the method page is a summary of them.",
+    "第一次來：{link} 說明的是「一項判定是什麼、它是怎麼得出的」。那只是給你一個方位 —— 這一頁上的數字才是這項研究本身，方法頁上沒有任何東西是它們的摘要。",
+  ],
   "ovw.h.denominators": ["Denominators, each with what it counts", "各個分母，以及各自算的是什麼"],
+  // The disclosure over the five `derived_from` values. Those are FILE PATHS AND GLOBS, useful to a
+  // reader who is going to open them and noise to everyone else, and five of them stacked under five
+  // definitions is what pushed the verdict mix off the first screen. `<details>` rather than a React
+  // conditional on purpose: the text stays in the DOM, so find-in-page still reaches it and the browser
+  // census still counts it (`census_rendered_surfaces.py` opens every `<details>` and records
+  // `behind_disclosure`). Collapsing prose out of the DOM would have improved the translation backlog
+  // number by hiding strings rather than by translating them.
+  "ovw.src.summary": [
+    "where each count was derived from",
+    "每個數字是從哪裡推導出來的",
+  ],
   "ovw.loading.denominators": ["denominators", "分母"],
   "ovw.loading.census": ["the census", "案例總表"],
   "ovw.excl.unmapped": ["not mapped to a claim:", "沒有對應到主張："],
@@ -101,11 +123,20 @@ export const STRINGS = {
     "There is no pass rate on this platform.",
     "這個平台上沒有通過率。",
   ],
+  // The last sentence carried TWO stale facts until 2026-08-22, and both were of the same kind: a
+  // property of the page typed into a sentence, where nothing recomputes it.
+  //   - "the four denominators" — `denominators.json` has published FIVE since `claims_triaged` was
+  //     added, and `Overview.tsx` renders every key the payload carries, so the page a reader was
+  //     looking at showed five cards under a sentence that said four.
+  //   - "above" — the denominator cards now render BELOW this panel.
+  // Neither says "denominators" wrongly, so neither could be caught by grepping for a claim; both are
+  // fixed the same way, by naming the set without counting it or locating it. If a sixth denominator is
+  // derived tomorrow this sentence stays true, which is the only property worth having here.
   "ovw.noRatio.body": [
-    "INCONCLUSIVE is a result, not a missing one: it records that the measurement did not establish the claim either way, and it licenses no amendment to the design document. FALSE is not a defect in the study — it is where the guidance did not hold, which is what the work was for. Dividing any of these counts by any of the four denominators above would produce a number none of the definitions support.",
+    "INCONCLUSIVE is a result, not a missing one: it records that the measurement did not establish the claim either way, and it licenses no amendment to the design document. FALSE is not a defect in the study — it is where the guidance did not hold, which is what the work was for. Dividing any of these counts by any of the denominators on this page would produce a number none of the definitions support.",
     "INCONCLUSIVE 是一種結果，不是「缺了一個結果」：它記下的是這次測量在任何方向上都沒有建立起那項主張，" +
       "而且它不授權對設計文件做任何修改。FALSE 也不是本研究的缺陷 —— 它標出的正是指引沒有成立的地方，" +
-      "而那就是這些工作的目的。把這些數字中的任何一個，除以上面四個分母中的任何一個，" +
+      "而那就是這些工作的目的。把這些數字中的任何一個，除以這一頁上的任何一個分母，" +
       "都會得到一個沒有任何一條定義支撐的數字。",
   ],
   "ovw.h.cases": ["Cases", "案例"],

@@ -185,7 +185,7 @@ claim whose false form this project has already published once), the audit-repor
 file that instructs a reader), arm 14 (the only one that states a conclusion about a component in a
 single colour), and arms 5 + 15 (the only properties that are about a BUILD STEP rather than about a
 claim in a payload file — nothing that reads the source can see a tree-shaken dictionary or a stale
-`dist/`). The rest rest on the one-off exercise recorded below, which is a memory rather than a test
+`dist/`). The rest rely on the one-off exercise recorded below, which is a memory rather than a test
 (`feedback_test_suite_over_memory`): it cannot notice the day an arm stops looking. Extending the
 harness to them is register work, and the limit is stated here rather than left to be inferred from the
 absence of tests. Arm 16 is pinned too, by eight mutants in the same harness (2026-08-22) — five over the
@@ -195,14 +195,24 @@ earned its keep before it had a single mutant: adding it turned three EXISTING t
 because `site/dist` predated the feature while the freshly built payload already carried the prose. A
 stale-`dist/` defect arriving by accident is exactly what this arm is for.
 
+Arm 18 is pinned by eleven mutants and its own control, all over `dist/`, for a reason the arms above it
+do not have: the property was FALSE in served bytes for the entire life of the site while every
+structural check passed. The class token was there, the rule reached the badge, the contrast cleared AA
+— the defect was visible only as a measurement of the colour itself, and nothing that reads the source
+can see it either, because the source is where the wrong colour is written.
+
 MUTATION-CHECKED — the arms that existed on 2026-08-20 by a one-off exercise, 19/19; arm 14 by nine
 committed mutants, arms 5 + 15 by eight more (2026-08-20, the Chinese edition), arm 16 by eight
-(2026-08-22, the authored caveats), and arm 17 by six with its own control (2026-08-22, the translation
+(2026-08-22, the authored caveats), arm 17 by six with its own control (2026-08-22, the translation
 ratchet — a blanked `zh`, an English half copied into it, the shape deleted from a whole file, a
 translation written without lowering the ceiling, and two over the LEDGER rather than the payload:
 a census listing one string more than the ceiling allows, and one naming a path this payload does not
-have), each killed by the arm that watches the property it broke, run against COPIES of the payload
-and `dist`
+have), and arm 18 by eleven with its own control (2026-08-22, the palette — the grey INCONCLUSIVE that
+actually shipped, a verdict under AA, two verdicts ΔE 3 apart, a verdict rule renamed away, a colour
+rewritten as `rgb()` so it would drop out of every floor unmeasured, a stylesheet missing a page
+background (rc 2), a verdict hex typed into a component, an icon left in the old colour, no icon link at
+all, an absolute icon href, and a link pointing at a file that is not there), each killed by the arm that
+watches the property it broke, run against COPIES of the payload and `dist`
 --------------------------------------------------------------------------------------------------
 A no-mutant control ran first and exited 0, so a red run is attributable to the assertions rather than
 to a copy the gate could not read at all. Two findings from that exercise are worth stating, because
@@ -1071,6 +1081,243 @@ def arm_audit_vocabularies_are_styled(g: Gate, payload: Path, dist: Path) -> Non
                    f"in {len(sheets)} stylesheet(s)")
 
 
+# ------------------------------------------------------------------- arm 18: the verdict palette
+#
+# WCAG 2.1 SC 1.4.3 (Contrast Minimum), normal text: 4.5:1. This is the only floor in this group with a
+# published basis, and it is held against ALL THREE page backgrounds rather than the one a designer had
+# in mind. The same four colours are also drawn as bar fills, where SC 1.4.11 asks 3:1 of a graphical
+# object — satisfied a fortiori by 4.5, so it is not a second check.
+AA_CONTRAST = 4.5
+
+# JUDGEMENTS, not citations. The literature pass of 2026-08-22 returned zero surviving sources on ordered
+# five-value categorical scales, so no published warrant exists for any particular palette and none is
+# claimed. Both floors were set from a MEASUREMENT of the shipped sheet, and the measurement is what they
+# defend:
+#
+# * `--v-inconclusive` shipped as #7c8798 until 2026-08-22 — Lab chroma 10.4, the chroma of this sheet's
+#   own `--fg-dim` (10.7) and `--fg-faint` (11.0), at ΔE 10 and ΔE 5 from them. The verdict for "nothing
+#   was established" was drawn in the colour the site uses for "this matters less", directly above prose
+#   calling it a result rather than a missing one. It is now #d086ab: chroma 34.5, nearest neighbour ΔE 35.
+# * The four verdict colours now measure chroma 32.9-54.0, and their tightest separation from any other
+#   named colour in the sheet is ΔE 19 (`--v-false` amber against `--seal` gold, both pre-existing).
+#
+# The floors sit BELOW those measurements with margin, so they fail a regression rather than freezing
+# today's exact values as a requirement. What this cannot see, stated rather than left to be inferred: a
+# new colour landing 15-19 ΔE from amber is as close as the closest pair shipping today and would pass;
+# and nothing here measures colour-blind separation. The redundancy carrying that load is the letter and
+# the count inside every badge (`T46 F23 I20 R2`), which is text rather than colour, and the per-status
+# counts in the architecture legend.
+MIN_VERDICT_CHROMA = 25
+MIN_VERDICT_SEPARATION = 15
+
+
+def _hex_rgb(value: str) -> tuple[int, int, int]:
+    h = value.lstrip("#")
+    if len(h) == 3:
+        h = "".join(c * 2 for c in h)
+    return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))  # type: ignore[return-value]
+
+
+def _luminance(value: str) -> float:
+    """WCAG 2.1 relative luminance."""
+    def channel(v: int) -> float:
+        c = v / 255.0
+        return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+    r, g, b = (channel(v) for v in _hex_rgb(value))
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def _contrast(a: str, b: str) -> float:
+    la, lb = _luminance(a), _luminance(b)
+    return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
+
+
+def _lab(value: str) -> tuple[float, float, float]:
+    """CIE L*a*b* under D65, which is the space the two judgement floors are expressed in.
+
+    sRGB distance is not a perceptual distance — #7c8798 and #6c7a8b differ by 16 in every channel and
+    are the same colour to a reader — so a floor stated in hex arithmetic would have passed the defect
+    this arm exists for.
+    """
+    def channel(v: int) -> float:
+        c = v / 255.0
+        return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+    r, g, b = (channel(v) for v in _hex_rgb(value))
+    x = (0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.95047
+    y = 0.2126 * r + 0.7152 * g + 0.0722 * b
+    z = (0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.08883
+
+    def f(t: float) -> float:
+        return t ** (1 / 3) if t > 0.008856 else 7.787 * t + 16 / 116
+    fx, fy, fz = f(x), f(y), f(z)
+    return 116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)
+
+
+def _chroma(value: str) -> float:
+    _, a, b = _lab(value)
+    return (a * a + b * b) ** 0.5
+
+
+def _delta_e(a: str, b: str) -> float:
+    """CIE76. Chosen over CIEDE2000 because both floors here are coarse (15 and 25 units) and CIE76 is
+    short enough to be read and re-derived by hand from this file; the two metrics do not disagree about
+    whether a pair is 5 apart or 35 apart, which is the only question asked below."""
+    return sum((x - y) ** 2 for x, y in zip(_lab(a), _lab(b))) ** 0.5
+
+
+def _css_hex_properties(css: str) -> dict[str, str]:
+    """Every `--name: #hex` custom property in the served sheet, name without the dashes.
+
+    Only hex values are collected, and the arm FAILS on a required name it cannot find rather than
+    skipping it: a colour rewritten as `rgb()`, `color-mix()` or a keyword would otherwise silently drop
+    out of every floor below and the gate would report clean over an unmeasured palette.
+    """
+    return {m.group(1): m.group(2).lower()
+            for m in re.finditer(r"--([a-z0-9-]+)\s*:\s*(#[0-9a-fA-F]{3,6})\s*(?=[;}])", css)}
+
+
+def arm_verdict_palette_is_readable(g: Gate, payload: Path, dist: Path, bundle: str) -> None:
+    """Every verdict the census publishes reaches the reader as a legible colour that is not a grey.
+
+    Five properties over the BUILT stylesheet, with the verdict vocabulary read from the payload so a
+    fifth verdict cannot arrive unstyled:
+
+    1. Each verdict has a `.v-<VERDICT>` rule and a `--v-<verdict>` colour. Same mechanism, and same
+       reason, as arms 11/13/14: the class is derived in the component from the payload token.
+    2. Contrast against all three page backgrounds clears `AA_CONTRAST`. These colours are TEXT colours
+       (`.badge`, `.chip`, `--st`), not decoration.
+    3. Chroma and separation clear the two judgement floors above. This is the half that would have
+       caught the shipped defect: `--v-inconclusive` passed AA at 4.66 the whole time it was drawn in
+       the site's de-emphasis colour, so contrast alone says nothing about whether a category reads as a
+       category. A pass rate is what this platform refuses to compute, and rendering one of the four
+       outcomes as absent data computes one by implication.
+    4. THE PALETTE HAS ONE SOURCE. No verdict colour appears as a hex literal in the JS bundle, and every
+       colour in the served favicon is one the stylesheet declares. Same defect as `no_hardcoded_totals`
+       and the same repair: on 2026-08-22 `CaseDetail.tsx` held four typed hexes, two of them the TRUE
+       and RECORDED hues spent on rows of a timeline containing no verdict — so the day INCONCLUSIVE
+       changed, a second copy of the palette would have gone on rendering the old value unremarked.
+    5. The favicon is registered with a RELATIVE href and the file is there. `vite.config.ts` sets
+       `base: "./"` precisely so one bundle serves the CloudFront root and a `v/<stamp>/` prefix; an
+       absolute `/favicon.svg` 404s under the prefix, which is where this site is actually published.
+
+    What it cannot see: whether the hue is a GOOD choice — no published basis for that exists and none is
+    claimed (see the floors) — and anything about the bar geometry, which `.mixbar` sizes from counts the
+    payload derives. It also reads the sheet, not the screen: a rule shadowed by a later single-class
+    selector is the 2026-08-20 defect described in arm 14, and it is arm 14, not this one, that watches
+    the colour actually reach the box. Property 4 reads hex literals only — a verdict colour retyped into
+    the bundle as `rgb(47,161,155)` is the same defect and would pass.
+    """
+    arm = "verdict_palette_is_readable"
+    verdicts = sorted((load(payload, "census.json").get("verdict_mix") or {}))
+    g.check(arm, len(verdicts) >= 4,
+            f"census.json publishes {len(verdicts)} verdict(s); with fewer than the four this study "
+            "produced, every floor below would be scoped to a vocabulary that is missing a category")
+    sheets = sorted((dist / "assets").glob("*.css")) if (dist / "assets").is_dir() else []
+    if not sheets:
+        cannot_run(f"no stylesheet under {dist}/assets — the palette cannot be measured, and a missing "
+                   "check is not a pass")
+    css = "\n".join(p.read_text(encoding="utf-8", errors="replace") for p in sheets)
+    props = _css_hex_properties(css)
+
+    # Whole class tokens, as in arms 11/13/14: `.v-TRUE` must not answer for a renamed `.v-TRUEISH`.
+    unstyled = [v for v in verdicts if not re.search(rf"\.v-{re.escape(v)}(?![\w-])", css)]
+    g.check(arm, not unstyled,
+            f"{unstyled} render as badges with no rule in the stylesheet",
+            passed=f"all {len(verdicts)} verdict(s) have a .v-<VERDICT> rule")
+
+    want = {v: f"v-{v.lower()}" for v in verdicts}
+    absent = sorted(name for name in want.values() if name not in props)
+    if not g.check(arm, not absent,
+                   f"--{{{','.join(absent)}}} is not declared as a hex colour in the served stylesheet, "
+                   "so the floors below would pass over a palette nobody measured",
+                   passed=f"{len(want)} verdict colour(s) declared as hex"):
+        return
+
+    backgrounds = {n: props[n] for n in ("bg", "bg-raised", "bg-inset") if n in props}
+    if len(backgrounds) < 3:
+        cannot_run("the served stylesheet declares fewer than three page backgrounds "
+                   f"(found {sorted(backgrounds)}); the contrast floor needs the surfaces these "
+                   "colours are actually drawn on")
+
+    dim = []
+    for verdict, name in sorted(want.items()):
+        colour = props[name]
+        worst_bg, worst = min(((b, _contrast(colour, c)) for b, c in backgrounds.items()),
+                              key=lambda kv: kv[1])
+        g.check(arm, worst >= AA_CONTRAST,
+                f"{verdict} ({colour}) contrasts {worst:.2f}:1 against --{worst_bg}, under the "
+                f"{AA_CONTRAST}:1 of WCAG 2.1 SC 1.4.3 for normal text",
+                passed=f"{verdict} {colour} contrast {worst:.2f}:1 (worst of three backgrounds, "
+                       f"--{worst_bg})")
+        chroma = _chroma(colour)
+        if chroma < MIN_VERDICT_CHROMA:
+            dim.append(f"{verdict} ({colour}) has Lab chroma {chroma:.1f}, under {MIN_VERDICT_CHROMA}")
+    g.check(arm, not dim,
+            f"{dim} — a verdict drawn at the chroma of --fg-dim ({_chroma(props.get('fg-dim', '#94a3b4')):.1f}) "
+            "is drawn in this site's de-emphasis colour, which reads as absent data rather than as one of "
+            "four outcomes",
+            passed=f"all {len(want)} verdict colour(s) at chroma {MIN_VERDICT_CHROMA}+")
+
+    # Every other named colour in the sheet, not only the other verdicts: the pair that made the shipped
+    # defect legible was a verdict against `--fg-faint`, which is not a verdict at all.
+    others = {n: c for n, c in props.items() if n not in want.values() and n not in backgrounds}
+    close = []
+    for verdict, name in sorted(want.items()):
+        for other, colour in sorted({**others, **{k: props[k] for k in want.values()}}.items()):
+            if other == name:
+                continue
+            d = _delta_e(props[name], colour)
+            if d < MIN_VERDICT_SEPARATION:
+                close.append(f"{verdict} (--{name}) is ΔE {d:.0f} from --{other}, under "
+                             f"{MIN_VERDICT_SEPARATION}")
+    g.check(arm, not close, f"{close} — two colours a reader cannot tell apart encode one category",
+            passed=f"every verdict colour is ΔE {MIN_VERDICT_SEPARATION}+ from every other of the "
+                   f"{len(props)} named colour(s) in the sheet")
+
+    typed = sorted({props[name] for name in want.values() if props[name] in bundle.lower()})
+    g.check(arm, not typed,
+            f"{typed} appear(s) as a hex literal in the JS bundle. The stylesheet is the palette's one "
+            "source; a colour typed into a component is a copy that keeps rendering the old value after "
+            "the source changes, with nothing to notice it",
+            passed=f"no verdict colour is typed into the bundle ({len(bundle)} bytes read)")
+
+    # The icon. Registered in the served markup, present as a file, and drawn in colours the sheet
+    # declares — three properties that fail independently, because an icon is the one asset a reader sees
+    # before any of the rest of this and the one nobody looks at again.
+    index = dist / "index.html"
+    if not index.is_file():
+        cannot_run(f"{index} does not exist, so what the reader is served cannot be read")
+    html = index.read_text(encoding="utf-8", errors="replace")
+    icons = re.findall(r"""<link[^>]*rel=["']icon["'][^>]*>""", html, re.I)
+    if not g.check(arm, len(icons) == 1,
+                   f"{len(icons)} <link rel=icon> element(s) in the served index.html; a missing one is "
+                   "the console error every reader's first page load carries, and two is two answers",
+                   passed="one <link rel=icon> in the served index.html"):
+        return
+    href = re.search(r"""href=["']([^"']+)["']""", icons[0])
+    if not g.check(arm, href is not None, f"the icon link carries no href: {icons[0]}"):
+        return
+    ref = href.group(1)
+    g.check(arm, not ref.startswith("/") and "://" not in ref,
+            f"the icon href is {ref!r}. An absolute path 404s under the `v/<stamp>/` prefix this site is "
+            "published at, which is the whole reason vite.config.ts sets base './'",
+            passed=f"the icon href is relative ({ref})")
+    icon = (dist / ref.lstrip("./")).resolve()
+    if not g.check(arm, icon.is_file() and dist.resolve() in icon.parents,
+                   f"the served markup links {ref!r} and no such file is in {dist}",
+                   passed=f"{icon.name} is in the served tree"):
+        return
+    declared = set(props.values())
+    strays = sorted({m.group(0).lower()
+                     for m in re.finditer(r"#[0-9a-fA-F]{3,6}(?![0-9a-fA-F])",
+                                          icon.read_text(encoding="utf-8", errors="replace"))}
+                    - declared)
+    g.check(arm, not strays,
+            f"{icon.name} is drawn in {strays}, which the stylesheet does not declare. The icon is the "
+            "one place a copy of the palette is allowed, and it is allowed because this check exists",
+            passed=f"{icon.name} uses only colours the stylesheet declares")
+
+
 def arm_authored_caveats_are_marked(g: Gate, payload: Path, dist: Path, bundle: str) -> None:
     """A caveat this platform wrote must reach the reader marked as this platform's, never as the run's.
 
@@ -1653,6 +1900,7 @@ def main(argv: list[str] | None = None) -> int:
     arm_pipeline_states_are_styled(g, payload, args.dist.expanduser())
     arm_both_languages_shipped(g, bundle, args.dist.expanduser())
     arm_audit_vocabularies_are_styled(g, payload, args.dist.expanduser())
+    arm_verdict_palette_is_readable(g, payload, args.dist.expanduser(), bundle)
     arm_authored_caveats_are_marked(g, payload, args.dist.expanduser(), bundle)
     arm_authored_prose_is_bilingual(g, payload, args.census_dir.expanduser())
     arm_audit_report_is_licensed(g, payload, census, census_cases)
