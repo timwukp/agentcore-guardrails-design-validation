@@ -417,8 +417,144 @@ def derive_citation_policy(inputs: dict[str, str]) -> dict:
 
 DATE_RE = re.compile(r"(20\d{2}-\d{2}-\d{2})")
 
+# The one field a verdict of each direction may carry to bound its own reading. A caveat is only owed
+# where the verdict has a direction to over-read: INCONCLUSIVE and RECORDED are answered by a rule on
+# the case page, and a rule cannot drift from its verdict the way a per-case sentence can.
+CAVEAT_FIELD_FOR = {"TRUE": "what_true_does_not_prove", "FALSE": "what_false_does_not_prove"}
 
-def derive_method(published: dict, archive: dict, cases: dict) -> dict:
+
+def caveat_census(published: dict) -> dict:
+    """Who owes a caveat, who carries one in the record, and who is silent. THE single producer.
+
+    Extracted from `derive_method` so that `check_caveats.py` can import it instead of recomputing it.
+    A second implementation of this rule is not a cross-check, it is a second definition: the repo
+    already shipped one wrong caveat-coverage number (39, in `platform/audit/report.py`'s docstring)
+    that came from an unscoped count of the same fields, and the fix for that class of defect is one
+    producer with one definition, imported by everything that needs it.
+
+    `platform/audit/report.py` deliberately counts something DIFFERENT — nine caveat field names over
+    all 91 cases, for the audit report's own purpose — and publishes its own derivation. Two numbers,
+    two claims: neither may be inferred from the other.
+    """
+    verdict_of = {cid: pub["verdict"] for cid, pub in published.items() if pub.get("verdict")}
+    out: dict[str, dict] = {}
+    for direction, field in sorted(CAVEAT_FIELD_FOR.items()):
+        owed = sorted(c for c, v in verdict_of.items() if v == direction)
+        have = sorted(c for c in owed
+                      if str((published[c].get("record") or {}).get(field) or "").strip())
+        out[direction] = {"field": field, "owed": owed, "have": have,
+                          "silent": sorted(set(owed) - set(have))}
+    return out
+
+
+def off_direction_caveats(published: dict) -> list[dict]:
+    """Caveats the record carries for a direction its verdict never reached.
+
+    `caveat_census` is scoped to the direction a verdict actually has, which is correct for measuring
+    coverage — but it means every sentence written about the OTHER direction falls outside every number
+    the site publishes. Unnumbered is uncounted: prose the producers wrote that appears in no census is
+    prose nobody can notice went missing.
+
+    Two kinds land here, and `verdict_has_a_direction` separates them, because conflating them would
+    reproduce in miniature the defect this whole area is fixing:
+
+      True  — a TRUE or FALSE case that also carries the opposite direction's sentence. The record
+              genuinely carries the pair, and the case page has always shown it in a collapsed
+              "the record also carries the caveat for the opposite outcome" toggle. Visible, uncounted.
+      False — an INCONCLUSIVE or RECORDED case, whose verdict has no direction at all. The sentence
+              bounds a reading the measurement never reached. 9 cases: 8 INCONCLUSIVE plus the RECORDED
+              F5-4b, whose 793 characters the page used to contradict outright by asserting the record
+              carried no such statement.
+
+    Neither is coverage and neither may be added to the coverage numbers. A caveat about a TRUE reading
+    does not bound an INCONCLUSIVE verdict; it bounds a verdict the case never returned.
+    """
+    out: list[dict] = []
+    for cid in sorted(published):
+        verdict = published[cid].get("verdict")
+        record = published[cid].get("record") or {}
+        for direction, field in sorted(CAVEAT_FIELD_FOR.items()):
+            if direction == verdict:
+                continue
+            text = str(record.get(field) or "").strip()
+            if text:
+                out.append({"case": cid, "verdict": verdict, "field": field,
+                            "bounds_a_reading_of": direction, "chars": len(text),
+                            "verdict_has_a_direction": verdict in CAVEAT_FIELD_FOR})
+    return out
+
+
+def derive_caveats(inputs: dict[str, str], published: dict) -> dict:
+    """The AUTHORED caveats for the cases whose record carries none — read, checked, never merged.
+
+    `platform/curation/caveats.yaml` holds a sentence for each case in the `silent` set above. It is
+    published as its OWN count under its OWN name. `cases_with_what_*_does_not_prove` keeps meaning
+    "the record carries it" forever, because that is the number a reader can check against the
+    artifacts; folding authored prose into it would redefine a published number silently and erase the
+    distinction between what the study recorded and what the platform later wrote.
+
+    Checked in BOTH directions here as well as in `check_caveats.py`, because the build must never
+    emit a caveat attached to the wrong verdict. An entry for a case that ALREADY carries the record's
+    own sentence is fatal, not ignored: the page would then show a platform paraphrase in the slot
+    where an artifact exists, which is the one substitution this platform may never make.
+    """
+    rel = "platform/curation/caveats.yaml"
+    data = _yaml_no_duplicate_keys(read_text(ROOT / "platform" / "curation" / "caveats.yaml", inputs),
+                                   rel)
+    entries = data.get("caveats")
+    if not isinstance(entries, dict) or not entries:
+        die(f"{rel} carries no `caveats` mapping")
+
+    census = caveat_census(published)
+    silent = {c: d for d in census.values() for c in d["silent"]}
+    silent_direction = {c: k for k, d in census.items() for c in d["silent"]}
+
+    extra = [c for c in sorted(entries) if c not in silent]
+    if extra:
+        die(f"{rel} authors a caveat for {extra}, which is not in the published silent set. Either "
+            f"the record already carries its own sentence — in which case this file would shadow an "
+            f"artifact with a paraphrase — or the case's verdict changed and the caveat outlived it.")
+    missing = [c for c in sorted(silent) if c not in entries]
+    if missing:
+        die(f"{rel} authors no caveat for {missing}, which the census publishes as silent. A case "
+            f"page there says only 'this record states no limits' and stops.")
+
+    by_case: dict[str, dict] = {}
+    for cid in sorted(entries):
+        e = entries[cid]
+        if not isinstance(e, dict):
+            die(f"{rel}: {cid} is not a mapping")
+        unknown = sorted(set(e) - {"verdict", "why", "derived_from"})
+        if unknown:
+            die(f"{rel}: {cid} carries unknown key(s) {unknown}. A misspelt key reads as a caveat "
+                f"with no provenance, which is exactly what this file exists to prevent.")
+        if e.get("verdict") != silent_direction[cid]:
+            die(f"{rel}: {cid} is authored for verdict {e.get('verdict')!r} but the published "
+                f"verdict is {silent_direction[cid]!r}. A caveat that outlives a verdict change is "
+                f"worse than no caveat.")
+        why = str(e.get("why") or "").strip()
+        if not why:
+            die(f"{rel}: {cid} carries no `why`")
+        src = e.get("derived_from")
+        if not isinstance(src, list) or not src:
+            die(f"{rel}: {cid} carries no `derived_from` list naming the record fields it reads")
+        by_case[cid] = {"why": why, "derived_from": sorted(str(s) for s in src),
+                        "verdict": e["verdict"]}
+
+    for field in ("authored_by", "authored_on", "authored_from", "review_status"):
+        if not str(data.get(field) or "").strip():
+            die(f"{rel} carries no `{field}`. These sentences are not the study's words and the page "
+                f"must be able to say whose they are.")
+    return {
+        "by_case": by_case,
+        "provenance": {k: data[k] for k in
+                       ("authored_by", "authored_on", "authored_from", "review_status")},
+        "n_authored": len(by_case),
+    }
+
+
+def derive_method(inputs: dict[str, str], published: dict, archive: dict, cases: dict,
+                  caveats_authored: dict) -> dict:
     """Derived structure of the adjudication itself: kinds, guards, and who is replicated.
 
     Every number the method walkthrough states is computed here rather than written in the page. The
@@ -430,7 +566,6 @@ def derive_method(published: dict, archive: dict, cases: dict) -> dict:
     """
     kinds: dict[str, int] = {}
     guards: dict[str, int] = {}
-    caveats = {"what_true_does_not_prove": 0, "what_false_does_not_prove": 0}
     verdict_of: dict[str, str] = {}
     for cid, pub in published.items():
         rec = pub.get("record") or {}
@@ -453,19 +588,12 @@ def derive_method(published: dict, archive: dict, cases: dict) -> dict:
                 else:
                     guards["(guard recorded without a name)"] = guards.get(
                         "(guard recorded without a name)", 0) + 1
-        for key in caveats:
-            if str(rec.get(key) or "").strip():
-                caveats[key] += 1
         if pub.get("verdict"):
             verdict_of[cid] = pub["verdict"]
 
-    # A caveat is only owed where the verdict has a direction to over-read.
-    owed_true = sorted(c for c, v in verdict_of.items() if v == "TRUE")
-    owed_false = sorted(c for c, v in verdict_of.items() if v == "FALSE")
-    have_true = sorted(c for c in owed_true
-                       if str((published[c].get("record") or {}).get("what_true_does_not_prove") or "").strip())
-    have_false = sorted(c for c in owed_false
-                        if str((published[c].get("record") or {}).get("what_false_does_not_prove") or "").strip())
+    # A caveat is only owed where the verdict has a direction to over-read. `caveat_census` is the
+    # single producer of that rule; nothing here recomputes it.
+    census = caveat_census(published)
 
     days_by_case: dict[str, list[str]] = {}
     disagreeing: list[dict] = []
@@ -485,20 +613,49 @@ def derive_method(published: dict, archive: dict, cases: dict) -> dict:
     # reports the archive's own distinct days and leaves the stronger assertion to
     # check_site_invariants.py, which reads the evidence timestamps. Reporting the weaker number here
     # is deliberate: an over-claimed replication count is the exact defect this file guards against.
+    off_direction = off_direction_caveats(published)
     return {
         "kinds": dict(sorted(kinds.items())),
         "guard_names": dict(sorted(guards.items(), key=lambda kv: (-kv[1], kv[0]))),
         "caveats": {
-            "cases_with_what_true_does_not_prove": len(have_true),
-            "true_verdicts": len(owed_true),
-            "true_verdicts_without_the_caveat": sorted(set(owed_true) - set(have_true)),
-            "cases_with_what_false_does_not_prove": len(have_false),
-            "false_verdicts": len(owed_false),
-            "false_verdicts_without_the_caveat": sorted(set(owed_false) - set(have_false)),
+            "cases_with_what_true_does_not_prove": len(census["TRUE"]["have"]),
+            "true_verdicts": len(census["TRUE"]["owed"]),
+            "true_verdicts_without_the_caveat": census["TRUE"]["silent"],
+            "cases_with_what_false_does_not_prove": len(census["FALSE"]["have"]),
+            "false_verdicts": len(census["FALSE"]["owed"]),
+            "false_verdicts_without_the_caveat": census["FALSE"]["silent"],
             "why_this_is_counted": "The case page renders 'what this verdict does not prove' for every "
                                    "case and says so explicitly when the record carries no such "
                                    "statement. Counting it here makes the gap a number rather than "
                                    "something a reader would have to notice one case at a time.",
+            # A SECOND claim with a second name, never folded into the four numbers above. Those count
+            # what the RECORD carries, which is what a reader can check against `results/phase1/`.
+            # This counts what the PLATFORM wrote afterwards about cases whose record is silent. A
+            # reader who cannot tell the two apart cannot tell an artifact from a paraphrase.
+            "cases_with_an_authored_caveat": caveats_authored["n_authored"],
+            # Parenthesised deliberately: `a | b - c` binds as `a | (b - c)` in Python, which would
+            # leave every silent TRUE case in this list forever and make the number look like a
+            # backlog that authoring cannot clear.
+            "cases_still_silent_after_authoring": sorted(
+                (set(census["TRUE"]["silent"]) | set(census["FALSE"]["silent"]))
+                - set(caveats_authored["by_case"])),
+            "what_an_authored_caveat_is": "A bound on the reading, written by a later reader of the "
+                                          "record rather than by the run that produced it, for the "
+                                          "cases the record leaves silent. It is rendered marked as "
+                                          "authored, is never merged into the counts above, and "
+                                          "carries the provenance below.",
+            "authored_provenance": caveats_authored["provenance"],
+            # A THIRD claim, again separately named. See `off_direction_caveats`: these are sentences the
+            # producers wrote that no coverage number can see, because they are about the direction the
+            # verdict did not take. Counted so they cannot go missing unnoticed; never added to coverage.
+            "caveats_for_a_direction_the_verdict_did_not_reach": off_direction,
+            "of_those_on_a_verdict_with_no_direction": sorted(
+                d["case"] for d in off_direction if not d["verdict_has_a_direction"]),
+            "what_the_off_direction_count_is_not": "Not coverage. A sentence bounding a TRUE reading "
+                                                  "does not bound an INCONCLUSIVE or RECORDED verdict, "
+                                                  "and none of these cases is owed a caveat of its own. "
+                                                  "They are counted because prose in no census is prose "
+                                                  "nobody can notice went missing.",
         },
         "archive_days_by_case": {c: d for c, d in days_by_case.items() if d},
         "n_cases_with_an_archive": sum(1 for d in days_by_case.values() if d),
@@ -1641,6 +1798,8 @@ def main(argv: list[str] | None = None) -> int:
         figures = derive_figures(inputs, args.figure_check_rc)
     with scope() as s_families:
         families = derive_families(inputs, cases)
+    with scope() as s_caveats:
+        caveats_authored = derive_caveats(inputs, published)
 
     restricted: dict[str, list[str]] = {}
     for r in policy.get("restrictions", []):
@@ -1723,8 +1882,10 @@ def main(argv: list[str] | None = None) -> int:
         + s_families.sorted() + s_controls.sorted() + s_figures.sorted() + s_registers.sorted())
     put("audit.json", audit, s_audit.sorted() + s_register.sorted() + s_published.sorted()
         + s_policy.sorted())
-    put("method.json", derive_method(published, archive, cases),
-        s_register.sorted() + s_published.sorted() + s_archive.sorted())
+    # `caveats.yaml` is a source of this file: the authored count and its provenance are read out of
+    # it, so a reader who wants to check whose sentences those are needs the file named here.
+    put("method.json", derive_method(inputs, published, archive, cases, caveats_authored),
+        s_register.sorted() + s_published.sorted() + s_archive.sorted() + s_caveats.sorted())
 
     n_series = 0
     for cid in sorted(cases):
@@ -1744,9 +1905,17 @@ def main(argv: list[str] | None = None) -> int:
             "record": light,
             "series_available": sorted(heavy),
         }
+        # Attached OUTSIDE `record`, deliberately. `record` is the verdict file's own bytes, and a
+        # reader comparing the page to `results/phase1/<case>.json` must find them identical. An
+        # authored sentence placed inside it would be indistinguishable from something the run wrote.
+        authored = caveats_authored["by_case"].get(cid)
+        if authored:
+            page["authored_caveat"] = dict(authored, **caveats_authored["provenance"])
         # This case's OWN sources, not the build's. The verdict file and the archives are named per
         # case; the register, triage and citation policy are shared and are read for every page.
         case_sources = s_register.sorted() + s_claims.sorted() + s_policy.sorted()
+        if authored:
+            case_sources += s_caveats.sorted()
         for name in ([pub["file"]] if pub.get("file") else []) + pub.get("_no_verdict_files", []):
             case_sources.append(str((PHASE1 / name).relative_to(ROOT)))
         for a in archive.get(cid, []):

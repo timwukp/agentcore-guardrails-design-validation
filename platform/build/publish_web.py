@@ -138,6 +138,26 @@ CURATION_GATES = [
             "the register does not license is the loudest wrong claim this platform could make.",
     },
     {
+        "name": "caveat curation gate",
+        "curation": "platform/curation/caveats.yaml",
+        "emits": "method.json",
+        "script": "check_caveats.py",
+        "args": [],
+        "absent": "no bounds have been authored for the cases whose record states none",
+        "ungated_means":
+            "These are the only sentences on the site that speak in the platform's own voice on a page "
+            "where the reader is looking at a verdict, for the 49 cases whose record bounds nothing. "
+            "Ungated, three specific failures ship silently. A caveat authored for a case whose record "
+            "already carries its own sentence puts a paraphrase where an artifact exists. A caveat left "
+            "attached after a verdict flips is read as current. And a verdict resting on a "
+            "non-observation — 0 events in n trials, a nonsignificant difference, a probe set that saw "
+            "nothing — whose caveat neither states a ceiling nor names a rival world producing the same "
+            "data is the exact over-read the section exists to prevent, written by us rather than by a "
+            "reader. This gate is also the only thing holding the boundary the count depends on: "
+            "authored coverage is a separate claim from what the record carries, and merging them is "
+            "how '39 of 91' got into a docstring.",
+    },
+    {
         "name": "control curation gate (+ field-path re-introspection)",
         "curation": "platform/curation/controls.yaml",
         "emits": "controls.json",

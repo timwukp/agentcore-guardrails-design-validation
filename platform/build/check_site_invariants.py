@@ -129,6 +129,52 @@ THE ARMS, and what each one would have caught
     the verbatim rule as the browser experiences it rather than as a comment describes it: `lang`
     chooses the font stack and the screen reader's phonology, and `.verbatim` is what makes a quoted
     English block look quoted rather than look like prose somebody forgot to translate.
+16. `authored_caveats_are_marked` — the 49 case pages carrying a bound this platform WROTE must reach the
+    reader marked as this platform's, not as the run's. The payload count agrees with the pages, the
+    sentence sits outside `record` (which stays byte-identical to the verdict file), no authored sentence
+    stands on a case whose record already speaks, all four provenance fields are present, and the bundle
+    carries the head sentence in BOTH languages plus the provenance line. The styling half is a repeat of
+    arms 11/13 with the lesson attached: `.note.authored` must not merely have a class token, it must
+    declare `dashed` — a border STYLE, because a token that was in the stylesheet while every box rendered
+    the same slate is a defect already shipped here once, and hue alone carries nothing in greyscale. The
+    unreviewed count is a LEDGER, not a failure: all 49 are unreviewed today, so an arm that failed on it
+    would be an arm that has to be disabled to publish.
+17. `authored_prose_is_bilingual` — the payload prose this platform WROTE reaches a Chinese reader in
+    Chinese, and the part that does not yet is a number that may only fall. Arm 15 checks that the
+    Chinese edition shipped; this one exists because that edition was built on a false premise. The site
+    rendered every payload string `lang="en"` and told a zh-TW reader it was quoted evidence; a browser
+    census of both locales over every route (`census_rendered_surfaces.py`) measured 1,958 strings a
+    reader reaches, of which 767 are quoted artifact and 316 are this platform's own sentences — the
+    denominator definitions, the audit's promises about somebody's AWS account, the diagram colour
+    wordings. Those three come out of `platform/census/rendered-surfaces-20260822T092500Z.json` and are
+    quoted here WITH the file name, because every one of them moves when a component changes what it
+    renders: 310 authored strings were reachable before the diagram status labels started serving their
+    Chinese halves, and re-reading them from the newest census is the only way this paragraph stays a
+    measurement. The one number a gate enforces is the backlog ceiling below, not any of these.
+    So the arm checks three things: every `{en, zh}` value carries two non-blank and DIFFERENT
+    halves (identical halves pass every structural check, give the reader nothing, and remove the string
+    from the backlog, so the number would improve by exactly the work not done); a FLOOR on how many such
+    values exist, because deleting the feature otherwise reports zero malformed ones; and a CEILING on
+    how many of the census's own backlog paths still hold a bare string, checked in BOTH directions —
+    above it is a regression, below it is a translation written without lowering the number, and slack
+    left above the measurement is where the next regression hides. What it cannot see is stated on the
+    function: whether a translation MEANS what it translates, and any authored surface added since the
+    last census run.
+18. `verdict_palette_is_readable` — every verdict the census publishes reaches the reader as a legible
+    colour that is not a grey, and the palette has ONE source. Contrast against all three page
+    backgrounds clears WCAG 2.1 SC 1.4.3 (4.5:1, the only cited floor in the arm); Lab chroma and
+    pairwise ΔE clear two floors that are judgements and are labelled as such. That second half is the
+    half with a defect behind it: `--v-inconclusive` shipped from the first commit as #7c8798, Lab chroma
+    10.4, which is the chroma of this stylesheet's own `--fg-dim` and `--fg-faint` — the two colours it
+    uses to mean "this matters less" — at ΔE 10 and ΔE 5 from them. So the verdict for 20 of 91 outcomes
+    was drawn in the site's de-emphasis colour, directly under prose calling it a result rather than a
+    missing one, and it passed AA at 4.66:1 the whole time it did. Rendering one of four outcomes as
+    absent data computes by implication the pass rate this platform refuses to compute. Plus: no verdict
+    colour appears as a hex literal in the JS bundle (four were typed into `CaseDetail.tsx`, two of them
+    the TRUE and RECORDED hues spent on rows of a timeline containing no verdict), the favicon is drawn
+    only in colours the sheet declares, and the icon is linked with a RELATIVE href — `/favicon.svg`
+    404s under the `v/<stamp>/` prefix this site is published at, and a missing icon was the only
+    console error on the landing route.
 
 Exit 0 = all arms pass. 1 = a violation. 2 = the gate could not run (missing payload, unreadable
 JSON): a gate that cannot run must not report clean (`feedback_guard_tool_exit_codes`).
@@ -142,11 +188,17 @@ claim in a payload file — nothing that reads the source can see a tree-shaken 
 `dist/`). The rest rest on the one-off exercise recorded below, which is a memory rather than a test
 (`feedback_test_suite_over_memory`): it cannot notice the day an arm stops looking. Extending the
 harness to them is register work, and the limit is stated here rather than left to be inferred from the
-absence of tests.
+absence of tests. Arm 16 is pinned too, by eight mutants in the same harness (2026-08-22) — five over the
+payload, three over `dist/` — because the styling half is the exact shape of the defect that got past arms
+11 and 13 on 2026-08-20, and leaving it on a one-off exercise would repeat the choice that failed. It also
+earned its keep before it had a single mutant: adding it turned three EXISTING tests in that harness red,
+because `site/dist` predated the feature while the freshly built payload already carried the prose. A
+stale-`dist/` defect arriving by accident is exactly what this arm is for.
 
 MUTATION-CHECKED — the arms that existed on 2026-08-20 by a one-off exercise, 19/19; arm 14 by nine
-committed mutants and arms 5 + 15 by eight more (2026-08-20, the Chinese edition), each killed by the
-arm that watches the property it broke, run against COPIES of the payload and `dist`
+committed mutants, arms 5 + 15 by eight more (2026-08-20, the Chinese edition), and arm 16 by eight
+(2026-08-22, the authored caveats), each killed by the arm that watches the property it broke, run
+against COPIES of the payload and `dist`
 --------------------------------------------------------------------------------------------------
 A no-mutant control ran first and exited 0, so a red run is attributable to the assertions rather than
 to a copy the gate could not read at all. Two findings from that exercise are worth stating, because
@@ -950,6 +1002,141 @@ def arm_audit_vocabularies_are_styled(g: Gate, payload: Path, dist: Path) -> Non
                    f"in {len(sheets)} stylesheet(s)")
 
 
+def arm_authored_caveats_are_marked(g: Gate, payload: Path, dist: Path, bundle: str) -> None:
+    """A caveat this platform wrote must reach the reader marked as this platform's, never as the run's.
+
+    49 case pages carry a sentence bounding what their verdict does not establish, and no run produced any
+    of them: `platform/curation/caveats.yaml` was authored against each case's own record, because the
+    record itself says nothing. That is a defensible thing to publish and an indefensible thing to publish
+    unmarked — a reader who cannot tell the two apart has been handed a later reader's reasoning at the
+    evidentiary strength of a measurement, which is the one substitution this platform exists to refuse.
+
+    `check_caveats.py` enforces the rules over the AUTHORED FILE. This arm is about the SHIPPED ARTIFACT,
+    and the failures it can see are the ones that happen after that gate passes:
+
+    * The prose is in the payload but the box that distinguishes it is not in the bundle — a component
+      refactor, a bad merge, a `dist/` from before the feature. The sentence then renders in whatever box
+      catches it, i.e. as the record's own.
+    * `.note.authored` has a class token in the CSS but no declaration that changes anything. That is not
+      hypothetical here: a token present in the stylesheet while all 38 boxes still rendered slate is a
+      defect this repository has already shipped once (`feedback_class_token_is_not_a_colour`). So the
+      rule must carry `dashed` — a border STYLE, not a hue, so the cue survives greyscale and the 8% of
+      readers for whom hue alone carries nothing.
+    * The sentence migrated INTO `record`. `record` is meant to be byte-identical to
+      `results/phase1/<case>.json`, so a reader diffing the two finds nothing added. An authored sentence
+      inside it silently makes a producer-written artifact partly hand-written, and every downstream
+      consumer that trusts `record` inherits that.
+    * An authored caveat landed on a case whose record already carries its own. `check_caveats.py` refuses
+      that against the census; this checks it against what shipped, because the two can disagree if the
+      payload was built from a different verdict set than the gate read.
+
+    What this arm cannot see: whether any of the 49 sentences is TRUE of its case. That is a human read,
+    and `review_status` says in the payload that no human has done it yet. An arm asserting the provenance
+    fields exist is not an arm asserting the prose is right, and the ledger below counts the unreviewed
+    ones so the gap has a number rather than a disclaimer.
+    """
+    arm = "authored_caveats_are_marked"
+    method = load(payload, "method.json").get("caveats") or {}
+    declared = method.get("cases_with_an_authored_caveat")
+    files = sorted((payload / "cases").glob("*.json")) if (payload / "cases").is_dir() else []
+    if not files:
+        cannot_run(f"no case payloads under {payload}/cases — the authored caveats cannot be checked, "
+                   "and a missing check is not a pass")
+
+    carried: dict[str, dict] = {}
+    inside_record: list[str] = []
+    shadowing: list[str] = []
+    incomplete: list[str] = []
+    unreviewed: list[str] = []
+    for f in files:
+        try:
+            d = json.loads(f.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            cannot_run(f"{f.name} is not readable JSON; a payload this arm cannot parse must not pass")
+        cid = str(d.get("case") or f.stem)
+        record = d.get("record") or {}
+        if "authored_caveat" in record:
+            inside_record.append(cid)
+        a = d.get("authored_caveat")
+        if not isinstance(a, dict):
+            continue
+        carried[cid] = a
+        # The same field-per-verdict rule the builder uses. Named here rather than imported so this arm
+        # states the claim it is checking instead of agreeing with the code it is checking.
+        own = {"TRUE": "what_true_does_not_prove", "FALSE": "what_false_does_not_prove"}.get(
+            str(d.get("verdict")))
+        if own and str(record.get(own) or "").strip():
+            shadowing.append(cid)
+        missing = [k for k in ("why", "verdict", "derived_from", "authored_by", "authored_on",
+                               "authored_from", "review_status") if not a.get(k)]
+        if missing:
+            incomplete.append(f"{cid}({','.join(missing)})")
+        if str(a.get("review_status")) != "reviewed_by_a_human":
+            unreviewed.append(cid)
+
+    g.check(arm, bool(carried),
+            "no case payload carries an `authored_caveat`, so every check below is vacuous. Either the "
+            "curation stopped reaching the build, or the feature was removed while its gate stayed",
+            passed=f"{len(carried)} case page(s) carry an authored caveat")
+    g.check(arm, declared == len(carried),
+            f"method.json publishes cases_with_an_authored_caveat={declared} while {len(carried)} case "
+            f"page(s) actually carry one. The count and the pages are two claims and must be derived "
+            f"from the same build, or the site states a coverage figure no page supports",
+            passed=f"the published count ({declared}) is the number of pages carrying one")
+    g.check(arm, not inside_record,
+            f"{inside_record} carry `authored_caveat` INSIDE `record`, which is supposed to be "
+            f"byte-identical to the verdict file. An authored sentence there makes a producer's artifact "
+            f"partly hand-written, invisibly to everything downstream that trusts it",
+            passed="every authored caveat sits outside `record`, so the records stay diffable")
+    g.check(arm, not shadowing,
+            f"{shadowing} carry BOTH an authored caveat and their own verdict's caveat in the record. The "
+            f"authored one would then stand where the study's own sentence belongs",
+            passed="no authored caveat stands where the record already speaks")
+    g.check(arm, not incomplete,
+            f"{incomplete} carry an authored caveat with a field missing. A page that cannot say who "
+            f"wrote a sentence, when, or from what, presents it at the record's strength",
+            passed=f"all {len(carried)} carry `why`, `derived_from` and four provenance fields")
+
+    # A ledger, not a failure. Every one of the 49 is unreviewed today, and an arm that failed on that
+    # would have to be disabled to publish at all — so it counts them and says so, which is the same
+    # shape as the exemption ceilings elsewhere in this file.
+    g.check(arm, len(unreviewed) <= len(carried),
+            "impossible by construction; the ledger below is the point",
+            passed=f"{len(unreviewed)} of {len(carried)} authored caveat(s) are not yet reviewed by a "
+                   f"human, and each page says so in its own provenance line")
+
+    # The head sentence is what tells a reader whose sentence this is. It is checked as a distinctive
+    # fragment rather than in full because the bundle is minified and the string may be split.
+    for fragment, why in (
+        ("written by a later reader", "the English head sentence, which is the only thing on the page "
+                                     "that says the bound was not written by the run"),
+        ("後來的讀者", "the Chinese head sentence — a zh-TW reader would otherwise see the box with no "
+                    "statement of who wrote what is in it"),
+        ("Review status", "the provenance line, which carries the unreviewed status into view"),
+    ):
+        g.check(arm, fragment in bundle,
+                f"the bundle does not contain {fragment!r} — {why}. The payload still carries "
+                f"{len(carried)} authored sentence(s), so they would render as the record's own",
+                passed=f"{fragment!r} is in the shipped bundle")
+
+    sheets = sorted((dist / "assets").glob("*.css")) if (dist / "assets").is_dir() else []
+    if not sheets:
+        cannot_run(f"no stylesheet under {dist}/assets — the authored box's cue cannot be checked, and "
+                   "a missing check is not a pass")
+    css = "\n".join(p.read_text(encoding="utf-8", errors="replace") for p in sheets)
+    rules = re.findall(r"\.note\.authored(?![\w-])[^{]*\{([^}]*)\}", css)
+    g.check(arm, bool(rules),
+            "the stylesheet has no `.note.authored` rule, so a sentence this platform wrote is styled "
+            "exactly like a sentence the run wrote",
+            passed=f"`.note.authored` has {len(rules)} rule(s)")
+    g.check(arm, any("dashed" in r for r in rules),
+            f"`.note.authored` exists but no rule in it declares `dashed`: {rules}. A class token that "
+            f"changes nothing visible is the defect this repository already shipped once — the cue has "
+            f"to be a border STYLE, because hue alone carries nothing in greyscale or for a reader with "
+            f"a colour vision deficiency",
+            passed="the authored box is cued by a dashed border, which survives greyscale")
+
+
 def arm_audit_report_is_licensed(g: Gate, payload: Path, census: dict, census_cases: set[str]) -> None:
     """The published audit report may only recommend what a citable verdict licenses.
 
@@ -1215,6 +1402,7 @@ def main(argv: list[str] | None = None) -> int:
     arm_pipeline_states_are_styled(g, payload, args.dist.expanduser())
     arm_both_languages_shipped(g, bundle, args.dist.expanduser())
     arm_audit_vocabularies_are_styled(g, payload, args.dist.expanduser())
+    arm_authored_caveats_are_marked(g, payload, args.dist.expanduser(), bundle)
     arm_audit_report_is_licensed(g, payload, census, census_cases)
     arm_architecture_colours_are_licensed(g, payload, census, census_cases, args.dist.expanduser())
     arm_oracles(g, payload)

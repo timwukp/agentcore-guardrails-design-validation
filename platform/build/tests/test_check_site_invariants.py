@@ -20,6 +20,8 @@ are about a BUILD STEP rather than about a claim in a payload file — a tree-sh
 `dist/` is invisible to every check that reads the source — and because the one guard that reads bytes
 is the one that keeps finding the phrase in places that are not sentences.
 
+A fifth group arrived on 2026-08-22 with the authored caveats.
+
 The remaining arms (typed totals, figure bytes, seals) are left to the one-off exercise recorded in the
 gate's own docstring. That is a stated limit, not an oversight — and the limit is where the next
 extension goes, not a line to stop reading at.
@@ -696,3 +698,135 @@ def test_a_stylesheet_with_no_verbatim_rule_fails_the_publish(payload, tmp_path)
     own prose, and a sealed quotation reads as a translation somebody forgot."""
     dist = _mutate_css(DIST, "noverbatim", tmp_path, ".verbatim", ".verbatim-block")
     expect_dist_killed(payload, dist, LOCALE_ARM, "no `.verbatim` rule")
+
+
+# --------------------------------------------------------------------------- the authored caveats
+#
+# 49 case pages carry a bound that no run produced: `platform/curation/caveats.yaml` was written against
+# each case's own record, because the record itself states no limits. Publishing that is defensible;
+# publishing it UNMARKED is the substitution this platform exists to refuse, because a later reader's
+# reasoning would then reach the reader at the evidentiary strength of a measurement.
+#
+# `check_caveats.py` and its own test file cover the authored FILE. These mutants cover what happens
+# after that gate passes — and the reason they are committed rather than left to a one-off exercise is
+# that this harness has already demonstrated the failure mode: on 2026-08-22 three tests in this file
+# went red because `site/dist` predated the feature while the freshly-built payload carried the prose.
+# That is precisely a stale-`dist/` defect, arriving by accident, caught by the arm. A one-off exercise
+# would have recorded a memory of one bundle instead (`feedback_test_suite_over_memory`).
+#
+# Both layers get mutated: the payload for the provenance and shadowing rules, `dist/` for the two that
+# are about served bytes.
+
+CAVEAT_ARM = "authored_caveats_are_marked"
+
+
+def _case_with_authored(payload: Path) -> tuple[str, dict]:
+    """A case page carrying an authored caveat, chosen from the payload rather than named here.
+
+    Named victims go vacuous the day that case's record acquires its own sentence and the builder stops
+    emitting an authored one for it (`feedback_scope_as_namelist`), and a vacuous mutant is a test that
+    passes by mutating nothing.
+    """
+    files = sorted((payload / "cases").glob("*.json"))
+    assert files, "the payload holds no case pages"
+    for f in files:
+        d = json.loads(f.read_text(encoding="utf-8"))
+        if isinstance(d.get("authored_caveat"), dict):
+            return f"cases/{f.name}", d
+    pytest.fail("no case page carries an authored caveat, so every mutant below would be vacuous")
+
+
+def test_a_published_authored_count_no_page_supports_fails_the_publish(payload, tmp_path):
+    """The count and the pages are two claims (`feedback_two_numbers_two_claims`). A figure a reader can
+    quote — "49 cases carry an authored bound" — must be the number of pages that actually do, and the
+    two are derived from the same build precisely so that a drift between them is a publish failure
+    rather than a discrepancy nobody recomputes."""
+    mutant = copy_of(payload, tmp_path, "caveat-count")
+    _mutate(mutant, "method.json",
+            lambda d: d["caveats"].__setitem__("cases_with_an_authored_caveat",
+                                               d["caveats"]["cases_with_an_authored_caveat"] - 1))
+    expect_killed(mutant, CAVEAT_ARM, "case page(s) actually carry one")
+
+
+def test_an_authored_caveat_moved_inside_the_record_fails_the_publish(payload, tmp_path):
+    """`record` is meant to be byte-identical to `results/phase1/<case>.json`, so a reader diffing the two
+    finds nothing added. An authored sentence inside it makes a producer-written artifact partly
+    hand-written — invisibly, and to every downstream consumer that trusts `record` at once.
+
+    The mutant KEEPS the top-level copy, so the count arm still passes and the kill is attributable to
+    the placement rule alone."""
+    rel, _ = _case_with_authored(payload)
+    mutant = copy_of(payload, tmp_path, "caveat-inrecord")
+    _mutate(mutant, rel, lambda d: d["record"].__setitem__("authored_caveat", d["authored_caveat"]))
+    expect_killed(mutant, CAVEAT_ARM, "INSIDE `record`")
+
+
+def test_an_authored_caveat_standing_where_the_record_speaks_fails_the_publish(payload, tmp_path):
+    """The ceiling, and the more dangerous direction of it. `check_caveats.py` refuses this against the
+    census; this arm refuses it against what SHIPPED, because the two disagree exactly when the payload
+    was built from a different verdict set than the gate read — and in that state the platform's
+    paraphrase would stand in the slot holding the study's own sentence."""
+    rel, doc = _case_with_authored(payload)
+    field = {"TRUE": "what_true_does_not_prove",
+             "FALSE": "what_false_does_not_prove"}[doc["verdict"]]
+    mutant = copy_of(payload, tmp_path, "caveat-shadow")
+    _mutate(mutant, rel, lambda d: d["record"].__setitem__(
+        field, "The record's own sentence, arriving after the authored one was already written."))
+    expect_killed(mutant, CAVEAT_ARM, "carry BOTH an authored caveat")
+
+
+def test_an_authored_caveat_with_no_review_status_fails_the_publish(payload, tmp_path):
+    """Blanked rather than deleted, because a blank is what a half-finished authoring pass leaves. Without
+    it the box renders the bound and the byline and says nothing about whether a human has ever read the
+    sentence — and unreviewed prose presented without that word is prose presented as reviewed."""
+    rel, _ = _case_with_authored(payload)
+    mutant = copy_of(payload, tmp_path, "caveat-noreview")
+    _mutate(mutant, rel, lambda d: d["authored_caveat"].__setitem__("review_status", ""))
+    expect_killed(mutant, CAVEAT_ARM, "with a field missing")
+
+
+def test_a_payload_that_carries_no_authored_caveat_at_all_cannot_report_clean(payload, tmp_path):
+    """The vacuity guard, and the one mutant here that is not about a wrong value. Strip the prose from
+    every page AND fix the published count to match, and every other check in this arm passes over an
+    empty set — the state in which a feature was removed while its gate stayed green
+    (`feedback_zero_file_scan_is_error`). The arm must fail on having nothing to check."""
+    mutant = copy_of(payload, tmp_path, "caveat-none")
+    for f in sorted((mutant / "cases").glob("*.json")):
+        doc = json.loads(f.read_text(encoding="utf-8"))
+        if "authored_caveat" in doc:
+            _mutate(mutant, f"cases/{f.name}", lambda d: d.pop("authored_caveat"))
+    _mutate(mutant, "method.json",
+            lambda d: d["caveats"].__setitem__("cases_with_an_authored_caveat", 0))
+    expect_killed(mutant, CAVEAT_ARM, "no case payload carries an `authored_caveat`")
+
+
+def test_a_stylesheet_with_no_authored_rule_fails_the_publish(payload, tmp_path):
+    """Renamed, not deleted, like the other stylesheet mutants: the rule stays visible in the file and
+    only a whole-token match kills it. Without it a sentence this platform wrote is styled exactly like a
+    sentence the run wrote, which is the whole distinction the box exists to draw."""
+    dist = _mutate_css(DIST, "noauthored", tmp_path, ".note.authored", ".note.authored-box")
+    expect_dist_killed(payload, dist, CAVEAT_ARM, "no `.note.authored` rule")
+
+
+def test_an_authored_rule_that_changes_nothing_visible_fails_the_publish(payload, tmp_path):
+    """The mutant that matters most here, and the one the 2026-08-20 defect proves is not hypothetical:
+    the class token stays in the stylesheet, the rule stays, the selector still matches — and the box
+    looks identical to the record's (`feedback_class_token_is_not_a_colour`). `dashed` swapped for
+    `solid` leaves a rule that declares a border colour and nothing that distinguishes the box in
+    greyscale or for a reader with a colour vision deficiency, so hue is the only cue left and for some
+    readers there is no cue at all."""
+    dist = _mutate_css(DIST, "notdashed", tmp_path,
+                       ".note.authored{border-left-style:dashed", ".note.authored{border-left-style:solid")
+    expect_dist_killed(payload, dist, CAVEAT_ARM, "no rule in it declares `dashed`")
+
+
+def test_a_bundle_with_no_chinese_head_sentence_fails_the_publish(payload, tmp_path):
+    """The zh half, for the same reason the pass-rate denial is checked in both languages: an English-only
+    marking makes the Chinese edition a different platform. A zh-TW reader would see the dashed box and
+    the byline with no sentence saying the bound was not written by the run — and the English head is
+    still present, so the kill is attributable to the Chinese half alone."""
+    dist = _mutate_js(DIST, "nozhhead", tmp_path,
+                      lambda s: s.replace("後來的讀者", "另一位讀者"))
+    expect_dist_killed(payload, dist, CAVEAT_ARM, "後來的讀者")
+
+

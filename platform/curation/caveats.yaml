@@ -1,0 +1,511 @@
+# What a verdict does not prove — for the 49 cases whose RECORD carries no such statement.
+# AUTHORED, and that is why it lives here beside `families.yaml` and `controls.yaml`.
+#
+# WHAT THIS FILE IS FOR
+#
+# `build_site_data.py` already derives, counts and publishes the gap: `method.json` → `caveats`
+# reports 19 of 46 TRUE verdicts and 1 of 23 FALSE verdicts carrying a `what_*_does_not_prove`
+# sentence, and publishes the exact case lists for the 27 + 22 = 49 that do not. The case page
+# already renders the absence as a warn box naming the missing field. So nothing was hidden. What was
+# missing is the sentence itself: 49 pages that say "this record states no limits" and stop there.
+#
+# A reader who reaches one of those 49 pages has a verdict, an oracle and an instrument, and no
+# statement of the reading the evidence will not support. That is exactly where over-reading happens,
+# and it is worst on the verdicts that look most conclusive.
+#
+# WHY THIS IS NOT WRITTEN INTO THE VERDICT FILES
+#
+# `results/phase1/*.json` are producer-written artifacts. Hand-editing a caveat into one would make a
+# derived file a typed file, and would make the published coverage number unfalsifiable: the census
+# that reports the gap would report it closed because someone typed into the thing being counted.
+# These sentences were written AFTER the run, by someone reading the record, and the file they live in
+# says so.
+#
+# THE COUNT THIS FILE DOES NOT TOUCH
+#
+# `cases_with_what_true_does_not_prove` / `cases_with_what_false_does_not_prove` mean, and will keep
+# meaning, "the RECORD carries it". Nothing here is added to them. Authored coverage is a SECOND
+# claim with a second name (`cases_with_an_authored_caveat`) and a second derivation, and the case
+# page renders an authored caveat visibly distinct from the record's own sentence. Merging them would
+# silently redefine a number the site has already published, and would erase the distinction between
+# what the study recorded and what the platform later wrote about it — which is the whole reason a
+# reader can trust the first kind.
+#
+# THE CEILING, NOT JUST THE FLOOR
+#
+# `check_caveats.py` fails in BOTH directions. A case in the published `*_without_the_caveat` list
+# with no entry here is a gap. An entry here for a case that is NOT in that list is worse: it would
+# mean this file is shadowing a sentence the record already carries, so the reader would be shown a
+# platform paraphrase where an artifact exists. Both are build failures.
+#
+# `verdict:` is restated on every entry, and checked against the payload. It is redundant on purpose:
+# a caveat is a bound on a specific reading, and a caveat that outlives a verdict change is worse than
+# no caveat at all.
+#
+# WHAT THESE SENTENCES MAY AND MAY NOT SAY
+#
+# Every `why` is licensed by that case's own record and nothing else — its oracle text, its n, its
+# arms, its guards, its blockers, its citation restrictions. `derived_from` names which. Three rules
+# bind the wording, and `check_caveats.py` enforces the first two mechanically:
+#
+#   1. A zero-event or nonsignificant result is NEVER written as demonstrating absence. Greenland,
+#      Senn, Rothman, Carlin, Poole, Goodman & Altman, Eur J Epidemiol 31:337-350 (2016), items #4 and
+#      #6: "It is simply false to claim that statistically nonsignificant results support a test
+#      hypothesis", and a p > 0.05 does not mean "absence of an effect was shown or demonstrated".
+#      Where a case observed zero events, the caveat states the one-sided 95% ceiling at that n
+#      instead — 0 in 120 is a rate below about 2.5%, not a rate of 0.
+#   2. A value outside an interval is NEVER described as refuted or excluded. Same paper, item #20.
+#      This bites hardest on F6-8, whose own citation restriction records that the day-2 slope CI
+#      OVERLAPS the documented range and that `CI_OVERLAPS` cannot distinguish that from containment.
+#   3. No caveat introduces a fact that is not in the record. A sentence that needs a new measurement
+#      is a case, not a caveat.
+#
+# The one-sided ceilings quoted below are 1 - 0.05^(1/n), the rule-of-three form, computed from each
+# case's own usable n: n=10 → 26%, n=120 → 2.5%, n=300 → 1.0%.
+
+# Provenance of the prose itself, published so a reader can discount it accordingly. These are not
+# the study's words. They were written by a language model reading each record, and the distinction
+# between an artifact's own statement of its limits and a later reader's is exactly the distinction
+# this platform exists to keep visible.
+authored_by: claude-opus-5
+authored_on: "2026-08-22"
+authored_from: "each case's own published record in site/dist/data/cases/<case>.json"
+review_status: unreviewed_by_a_human
+
+caveats:
+
+  # ---------------------------------------------------------------- F0: the document's own references
+  F0-1:
+    verdict: "TRUE"
+    derived_from: [oracle_text]
+    why: >-
+      that any §10 reference SUPPORTS the row that cites it. The oracle asks for HTTP 200 and one
+      shared content word between the fetched page title and the title the row states, which a page
+      that is topically adjacent and substantively wrong will satisfy. It also dates the check rather
+      than the links: every URL resolved on the run day, and nothing in this case observes what they
+      return later.
+
+  # ---------------------------------------------------------------- F1: API surface, read from the SDK
+  F1-5:
+    verdict: "TRUE"
+    derived_from: [oracle_text, instrument]
+    why: >-
+      that both modes behave as their names suggest, nor that the service accepts only these two. The
+      instrument reads the botocore service models locally under the pinned .venv-oracle with no call
+      to AWS, so this is the SDK's enumeration on one SDK build: a mode the service accepts over raw
+      HTTP but does not describe in the model would be invisible here. What the modes DO is F4-1
+      through F4-3.
+  F1-7:
+    verdict: "TRUE"
+    derived_from: [oracle_text, instrument]
+    why: >-
+      that any of the six categories detects anything, which is F3-1, nor that the set is the same in
+      every Region or tier. It is an exact-set match against the botocore model read locally on one
+      pinned SDK build — a statement about how the API is described, not about what it does.
+  F1-18:
+    verdict: "TRUE"
+    derived_from: [oracle_text, n_per_arm, arms]
+    why: >-
+      that the lattice is a service contract. Every score was harvested from this study's own arms at
+      one threshold placement, one guardrail configuration and one Region, 300 trials per arm; an
+      intermediate value produced by a configuration outside that arm set would falsify the claim and
+      this design has no instrument that could see it. F3-9's ceiling of at most 7 reachable operating
+      points rests on the same run, so the two do not corroborate each other independently.
+  F1-22:
+    verdict: "TRUE"
+    derived_from: [oracle_text, instrument]
+    why: >-
+      that the operations work, that they are enabled in any account, or that they exist in any
+      Region. The instrument reads four botocore service models locally on one pinned SDK build, so a
+      capability split found here is a property of the SDK's description of the API. Nothing was
+      called.
+
+  F1-24:
+    verdict: "FALSE"
+    derived_from: [oracle_text, instrument, arms]
+    why: >-
+      that a policy mixing both condition forms EVALUATES the way a reader would expect. The
+      observation is control-plane only: a sacrificial CreatePolicy settled ACTIVE, and no request was
+      ever sent through the accepted policy. An engine that consults both conditions and an engine that
+      stores both and silently honours one would have looked the same to this arm, because the only
+      thing measured was that the grammar accepted the string. It is also one accepted form, on one
+      policy engine, on one day.
+  F1-25:
+    verdict: "FALSE"
+    derived_from: [oracle_text, instrument, arms]
+    why: >-
+      that the accepted construct performs pattern matching. Acceptance by the policy grammar is not
+      evaluation — the arm settled ACTIVE and no traffic followed — so a pattern that is stored and
+      then ignored, or treated as a literal string, would produce exactly this observation.
+  F1-28:
+    verdict: "FALSE"
+    derived_from: [oracle_text, arms, no_power_claim]
+    why: >-
+      that PII is handled in every tool-use shape. The arms that ran cover 65 of 65 cells each, but
+      they are this study's own request shapes; the record states that this is a conjunction over
+      deterministic cells rather than a rate, which means one firing cell in a shape not in the arm
+      set would decide the case and no arm here could have seen it.
+
+  # ---------------------------------------------------------------- F2: determinism
+  F2-1:
+    verdict: "TRUE"
+    derived_from: [oracle_text, planned_n, guards]
+    why: >-
+      that pure-Cedar evaluation is deterministic. Zero decision flips in 300 identical calls bounds
+      the flip rate from above — the one-sided 95% ceiling at n=300 is about 1.0% — and a flip rate
+      anywhere below that ceiling is fully compatible with this observation. The permit was one narrow
+      hand-authored rule on one gateway, exercised at a single boundary value.
+  F2-2:
+    verdict: "FALSE"
+    derived_from: [oracle_text, planned_n, arms]
+    why: >-
+      that the guardrail score is deterministic. The verdict records that non-degeneracy was NOT
+      observed — one distinct value in 300 identical calls — which is not the same finding as a score
+      that cannot vary. It bounds the rate at which a second value appears at about 1.0% one-sided at
+      n=300, on one fixed input, one guardrail and one threshold placement.
+  F2-4:
+    verdict: "FALSE"
+    derived_from: [oracle_text, blockers]
+    why: >-
+      that flip rate is insensitive to threshold placement. This case records two blockers: n_usable
+      = 299 against a pre-registered 300, and the mandatory mutation arm did not run or did not
+      invert. The mutation arm is the one that would have shown the instrument can see a flip at all,
+      so an insensitive flip rate and an instrument blind to flips produce the same data here, and
+      this case cannot tell them apart.
+  F2-5:
+    verdict: "FALSE"
+    derived_from: [oracle_text, instrument, planned_n]
+    why: >-
+      that ApplyGuardrail is deterministic. All 300 responses being byte-identical in verdict and
+      score bounds the rate of a differing response at about 1.0% one-sided at n=300; it does not
+      establish 0. The calls were sequential, on one input, with source=INPUT and outputScope=FULL — a
+      concurrent caller, another Region or another input shape is unobserved.
+
+  # ---------------------------------------------------------------- F3: filter efficacy
+  F3-1:
+    verdict: "TRUE"
+    derived_from: [oracle_text, planned_n, instrument]
+    why: >-
+      that recall is high, only that its Wilson lower bound clears 0.5 at the recommended threshold on
+      this study's own corpus. Recall is a joint property of a corpus and a threshold, and a reader's
+      traffic is a different corpus. It says nothing about how often benign content is blocked, which
+      is F3-2.
+  F3-2:
+    verdict: "TRUE"
+    derived_from: [oracle_text, planned_n]
+    why: >-
+      that the false-positive rate is 0. A Wilson upper bound below 5% is a ceiling on this corpus at
+      the recommended threshold, and any rate under that ceiling is compatible with what was observed.
+      "Benign" here is this study's construction of benign.
+  F3-3:
+    verdict: "TRUE"
+    derived_from: [oracle_text, planned_n]
+    why: >-
+      that hard negatives are safe at any threshold, nor that 10% is a reassuring bound. At n=58 the
+      ceiling is wide and one further block would move it materially, and the 58 items are this
+      study's own construction of text that superficially resembles an attack.
+  F3-4:
+    verdict: "FALSE"
+    derived_from: [oracle_text, planned_n, instrument]
+    why: >-
+      that the entity is never detected. A Wilson upper bound below 0.5 at n=11 is a statement about a
+      small sample of this study's own examples of that entity type, in one configuration where every
+      entity was set to BLOCK. Different example text for the same documented entity type is a
+      different measurement.
+  F3-5:
+    verdict: "TRUE"
+    derived_from: [oracle_text, no_power_claim]
+    why: >-
+      that the topic definition generalises. Disjoint Wilson intervals show discrimination on one
+      topic definition and one corpus at 60 per cell — and the record states that n was NOT
+      pre-registered, so this case carries no power claim and a smaller true separation could not have
+      been ruled out by design.
+  F3-6:
+    verdict: "TRUE"
+    derived_from: [oracle_text, no_power_claim]
+    why: >-
+      that no unlisted term ever blocks. The record states the zero-event result carries a one-sided
+      ceiling at this n rather than a zero, and that n was not pre-registered — so the ceiling
+      describes what happened rather than a sensitivity anyone designed for. The near-miss list is
+      this study's own.
+  F3-7:
+    verdict: "TRUE"
+    derived_from: [oracle_text, no_power_claim, instrument]
+    why: >-
+      that contextual grounding separates grounded from ungrounded content in general. The record
+      states that observations are correlated and that n was not pre-registered, so no power claim is
+      available: a separation smaller than the one seen would not have been ruled out. The measurement
+      is on this study's grounding corpus with a three-block request shape.
+  F3-8:
+    verdict: "FALSE"
+    derived_from: [oracle_text, planned_n, instrument]
+    why: >-
+      that the subtype is undetectable. Read what the oracle actually rests on: recall for that
+      subtype is bounded ABOVE by its Wilson upper limit at n=87, and that upper bound falling below
+      the 0.5 the document implies is what decides the case. A bound below 0.5 is not a recall of 0,
+      and it is measured at the recommended threshold on this study's own phrasings of the subtype — a
+      higher strength setting, or different phrasings, is a different measurement. The between-subtype
+      comparison was pre-registered as secondary and is not what this verdict rests on.
+  F3-9:
+    verdict: "TRUE"
+    derived_from: [oracle_text, instrument]
+    why: >-
+      that the recommended threshold is the right one for a reader's traffic. Youden's J weights
+      sensitivity and specificity equally, which is a choice this study made, and a reader who pays
+      more for a false block has a different optimum. The ceiling of at most 7 reachable points is a
+      property of ApplyGuardrail's 4-setting inputStrength knob — the record notes that
+      InvokeGuardrailChecks returns a continuous severityScore with no lattice, so the ceiling does not
+      transfer to that API.
+  F3-10:
+    verdict: "FALSE"
+    derived_from: [oracle_text, instrument, guards]
+    why: >-
+      that the per-request score-to-label join is unrecoverable by any means. What was measured is
+      that CloudWatch metrics ALONE, at 1-minute aggregation, do not carry the linkage. The record is
+      explicit about the mechanism and therefore about the limit: it marks the failure character
+      `conditional_on_request_rate`, with 57 series colliding inside a single mixed-label minute
+      bucket. At one scored request per bucket there would be nothing to collide, so a traffic pattern
+      in which the join does survive could not have been seen by this arm. A reader with span-level
+      tracing enabled (F7-5) or with their own request-side logging holds an instrument this case did
+      not use. The defect is in §7.1's workflow as written, not in observability generally.
+
+  # ---------------------------------------------------------------- F4: engine and policy semantics
+  F4-1:
+    verdict: "TRUE"
+    derived_from: [oracle_text, planned_n, instrument]
+    why: >-
+      that denial is guaranteed. Zero passes in 120 trials bounds the pass rate at about 2.5%
+      one-sided, not at 0. One gateway, one caller role and one benign request shape were exercised,
+      over signed MCP tools/call POSTs.
+  F4-2:
+    verdict: "TRUE"
+    derived_from: [oracle_text, planned_n, guards]
+    why: >-
+      that LOG_ONLY never blocks. Zero blocks in 120 trials bounds the block rate at about 2.5%
+      one-sided. The paired guard establishes only that the ENFORCE cell denied THIS request, so what
+      was measured is one request that ENFORCE denies, not the class of them.
+  F4-3:
+    verdict: "TRUE"
+    derived_from: [oracle_text, planned_n, n_usable]
+    why: >-
+      precedence in configurations this 2x2 did not include. Zero blocks in the deciding cell — engine
+      LOG_ONLY plus policy ACTIVE, n_usable = 120 — bounds the block rate at about 2.5% one-sided
+      rather than setting it at 0, and any rate below that ceiling is fully compatible with what was
+      seen. It is also one request shape: nothing here shows what happens when several policies
+      disagree among themselves, or when either axis takes a value outside the two tested.
+  F4-4:
+    verdict: "TRUE"
+    derived_from: [oracle_text, planned_n, guards]
+    why: >-
+      that default-deny holds for every request shape. The matched/unmatched distinction is
+      instantiated through `context.input.amount`, which the record marks as an UNVERIFIED path — it
+      appears nowhere in the document under test and only in this study's own Cedar samples — so
+      "matches no policy" is realised here by one synthetic attribute. Zero allows in 120 bounds the
+      allow rate at about 2.5% one-sided, not at 0.
+  F4-5:
+    verdict: "TRUE"
+    derived_from: [oracle_text, planned_n, guards]
+    why: >-
+      that forbid wins in every conflict. One hand-authored permit and one hand-authored forbid on one
+      gateway were tested; the guard establishes only that the permit was granting before the forbid
+      was added. Zero allows in 120 bounds the allow rate at about 2.5% one-sided.
+  F4-6:
+    verdict: "FALSE"
+    derived_from: [oracle_text, instrument, planned_n]
+    why: >-
+      that the denying policy ID is unobtainable. What was read is the denial response's status,
+      headers and body on one gateway over signed MCP POSTs; CloudWatch metrics (F9-2) and the policy
+      spans (F7-5) are separate instruments this case did not consult. Nor does it establish that the
+      status code is wrong for every class of denial.
+
+  # ---------------------------------------------------------------- F5: bypass routes and tagging
+  F5-1:
+    verdict: "TRUE"
+    derived_from: [oracle_text, arms, guards, planned_n]
+    why: >-
+      that the route is closed for any other principal or any other tool. The closed arm is 120 of 120
+      denied for one runtime execution role against one echo Lambda, and the granted arm's purpose is
+      narrower than it looks: it shows the target was real, which is what makes the deny load-bearing
+      rather than an artifact of a missing resource. Zero executions in 120 bounds the execution rate
+      at about 2.5% one-sided.
+  F5-2:
+    verdict: "TRUE"
+    derived_from: [oracle_text, arms, guards, planned_n]
+    why: >-
+      that the policy engine cannot be disabled by any path. One API, UpdateGateway, was attempted by
+      one role against one gateway. The full grant-and-restore chain shows the mutation WOULD have
+      been consequential had it been permitted; it does not enumerate the other APIs that reach the
+      same state. Zero acceptances in 120 bounds the rate at about 2.5% one-sided.
+  F5-6:
+    verdict: "TRUE"
+    derived_from: [oracle_text, arms, guards, planned_n]
+    why: >-
+      that untagged content is never filtered. The untagged arm's Wilson upper bound is near 0 on this
+      study's own 60-attack corpus, with one model and one guardrail held fixed across four arms. The
+      paired design shows a difference between tagged and untagged on this corpus; it does not
+      establish that tagging CAUSES detection in general.
+  F5-7a:
+    verdict: "FALSE"
+    derived_from: [oracle_text]
+    why: >-
+      which side of the mismatch is wrong going forward. describe-vpc-endpoint-services is a
+      point-in-time read from one account's vantage in the Regions queried, and AWS adds endpoint
+      services over time, so this dates the document against one observation day rather than
+      establishing a permanent gap. Note what an absent name can mean: a service that exists but is
+      not offered to this account's vantage would produce exactly this observation, so "not returned"
+      is not the same finding as "does not exist". Endpoint-service existence is also not reachability:
+      nothing here connected through one.
+
+  # ---------------------------------------------------------------- F6: latency (see citation_restrictions)
+  F6-1:
+    verdict: "FALSE"
+    derived_from: [oracle_text, instrument, citation_restrictions]
+    why: >-
+      what latency a reader will see. The estimator is a paired difference of client-measured wall
+      clocks, and this case's own citation restriction records that a re-run from a different client
+      or network position is NOT a replication of it, because position is the dimension a replication
+      must hold fixed. The 50-200 ms figure it contradicts is labelled ILLUSTRATIVE in the document
+      under test, so what is settled is a number, not a capability.
+  F6-2:
+    verdict: "FALSE"
+    derived_from: [oracle_text, citation_restrictions, planned_n]
+    why: >-
+      anything about the p99 tail, in either direction. This case's own citation restriction records
+      that the day-2 p99 confidence intervals are 435 ms and 375 ms wide against a 400 ms band, so
+      neither day decides the tail. What is citable is p50 and p90 against the documented 100-500 ms
+      band, and the server-reported latency drop between 2026-08-10 and 2026-08-19.
+  F6-3:
+    verdict: "FALSE"
+    derived_from: [oracle_text, instrument, citation_restrictions]
+    why: >-
+      that Cedar evaluation costs this much anywhere else. The reading is a server-reported span
+      duration, AgentCore.Policy.AuthorizeAction.durationNano, in the cedar_only arm on one gateway
+      with this study's policy set: policy count, policy complexity and Region are all fixed. The same
+      client-position restriction as the rest of F6 applies.
+  F6-4:
+    verdict: "FALSE"
+    derived_from: [oracle_text, instrument, citation_restrictions]
+    why: >-
+      per-call cost at a reader's call rate. The estimator subtracts the cedar_only arm's median from
+      the guardrail arm, so it is a difference of medians on one testbed rather than a per-call
+      measurement, and the 50-200 ms figure it is compared against is labelled ILLUSTRATIVE in the
+      document under test.
+  F6-5:
+    verdict: "FALSE"
+    derived_from: [oracle_text, citation_restrictions]
+    why: >-
+      anything about the p99 tail, in either direction — the same restriction as F6-2 applies, and
+      neither day's interval is narrow enough to decide it. It also settles nothing about parallelism:
+      the oracle notes that §5.1 makes no parallelism claim, and this case did not vary the number of
+      output policies, so whether output evaluation is parallel or linear in policy count remains
+      unmeasured.
+  F6-6:
+    verdict: "TRUE"
+    derived_from: [oracle_text, blockers, planned_n]
+    why: >-
+      that the documented total is a useful predictor. The band it falls inside runs from about 800 ms
+      to over 31 s, so containment is a weak test — a band that wide would contain most plausible
+      measurements, and a reader cannot plan against it. This case also records n_usable = 999 against
+      a pre-registered 1000, so the pre-registered n was not met.
+  F6-7:
+    verdict: "TRUE"
+    derived_from: [oracle_text, guards, planned_n]
+    why: >-
+      that the hops do not overlap. A residual that is non-negative within its confidence interval is
+      consistent with additivity; it does not exclude an overlap too small for the interval at n=200
+      to resolve. The decomposition also rests on two instruments agreeing in sign rather than on any
+      direct observation of concurrency.
+  F6-8:
+    verdict: "FALSE"
+    derived_from: [oracle_text, citation_restrictions]
+    why: >-
+      that the slope lies outside 165-750 ms. This case's own citation restriction records that the
+      day-2 slope interval OVERLAPS the documented range by 13.6 ms with 36% of the interval above
+      750, and that a CI_OVERLAPS oracle cannot distinguish that from containment. What is citable is
+      that per-turn growth is large relative to the documented range — not that any value has been
+      excluded.
+
+  # ---------------------------------------------------------------- F7: observability
+  F7-1:
+    verdict: "FALSE"
+    derived_from: [oracle_text, instrument, guards]
+    why: >-
+      that the absent metrics do not exist. The record states that both instruments surface only
+      metrics which reported data in roughly the last two weeks, so "absent" here means "no datapoints
+      in the read window after traffic that should have produced them". A metric that fires only under
+      conditions this study never created would look identical.
+  F7-5:
+    verdict: "TRUE"
+    derived_from: [oracle_text, n_per_arm, arms]
+    why: >-
+      that spans are never emitted while tracing is off. The off arm is 10 calls with 0 joins over a
+      600-second join window, which bounds the emission rate only at about 26% one-sided at n=10, and
+      a span delivered after that window closed would read as absent. Its value is as the mutation that
+      removes "did we enable it" as a confound for the other observability claims, not as a rate.
+  F9-2:
+    verdict: "TRUE"
+    derived_from: [oracle_text]
+    why: >-
+      that the metrics fire on every unevaluable policy. One way of making a policy unevaluable was
+      exercised, on one gateway, with the metric read after traffic that should have produced it; a
+      different failure mode of evaluation may be silent. Nothing here establishes the metric's
+      latency or completeness.
+
+  # ---------------------------------------------------------------- F8: Regions and tiers
+  F8-1:
+    verdict: "FALSE"
+    derived_from: [oracle_text, instrument]
+    why: >-
+      the correct Region list going forward. One CreatePolicyEngine mutation per Region, from one
+      account, on one day; Region availability changes and account-level entitlement can differ, so
+      this dates the document rather than fixing the set. That difference is the limit, not a footnote
+      to it: a Region where the service is present and the mutation would succeed for an entitled
+      account, but fails for this one, would produce exactly this observation. Note also what the
+      instrument measures: the record states List* returns 200 everywhere and is deliberately not used,
+      so the observation is mutation acceptance, not entitlement.
+  F8-2:
+    verdict: "TRUE"
+    derived_from: [oracle_text, planned_n, instrument]
+    why: >-
+      that CLASSIC provides no protection for those languages. The oracle's own form is statistical
+      INDISTINGUISHABILITY from the benign false-positive rate at 60 per cell, and a nonsignificant
+      difference is not a demonstration of absence. What this establishes is that a design at this n
+      could not detect protection; a small true effect is compatible with the same data. The corpus is
+      this study's own zh-TW, zh-CN, ja and ko examples at HIGH.
+  F8-3:
+    verdict: "TRUE"
+    derived_from: [oracle_text, planned_n, instrument]
+    why: >-
+      that STANDARD is adequate for those languages. A paired McNemar improvement over CLASSIC on the
+      same 60-per-cell corpus is a difference, not a level: a tier can be significantly better than an
+      ineffective one and still miss most of what a reader cares about. "Broad" is the document's word
+      — three CJK languages were measured, not the tier's advertised set.
+  F8-4:
+    verdict: "FALSE"
+    derived_from: [oracle_text, instrument, no_power_claim]
+    why: >-
+      that PROMPT_LEAKAGE performs equally on the two tiers. It works on CLASSIC, which is what makes
+      the document's tier-gating claim false; the record states that the arm sizes were stated rather
+      than designed and that no power claim is available, so no comparison of detection QUALITY
+      between tiers can be drawn from this case.
+  F8-5:
+    verdict: "FALSE"
+    derived_from: [oracle_text, probes, no_power_claim]
+    why: >-
+      what the length limits actually are. Four deterministic probes at the limit and the limit plus
+      one, per tier, decide the specific pair the document names; a limit enforced on a different
+      field, or elsewhere in the request, is unobserved. The record states n is vacuous here — the
+      result rests on four service responses, each decided individually, not on a rate.
+
+  # ---------------------------------------------------------------- F10: billing
+  F10-3:
+    verdict: "FALSE"
+    derived_from: [oracle_text, instrument]
+    why: >-
+      that input tagging has no billing effect anywhere. It compares tagged against untagged
+      ApplyGuardrail on one RAG-shaped prompt at two content blocks per call, reading the text-unit
+      counter the pinned SDK model exposes; a different operation, a different prompt shape or a
+      pricing change is a different measurement. So the reading is bounded by the instrument twice
+      over: a tagging discount that applies only above some block count, or only to another operation,
+      would produce exactly this observation of identical counts. And identical text-unit counts are
+      not identical cost — this case reads a unit counter, never an invoice.
