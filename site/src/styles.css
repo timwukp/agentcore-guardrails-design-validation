@@ -317,6 +317,19 @@ section > h3 {
 .note.seal {
   border-left-color: var(--seal);
 }
+/* An authored bound — written by a later reader of the record, not by the run that produced it.
+   The cue is DASHED, not merely a different colour: the whole reason this box exists is that a reader
+   must not mistake it for the record's own sentence, and a distinction carried only by hue is no
+   distinction at all for the reader who cannot see the hue. The dash reads as provisional at a glance
+   and survives a greyscale print. The provenance line inside the box carries the same fact in words,
+   so a reader who perceives neither border still gets it. */
+.note.authored {
+  border-left-style: dashed;
+  border-left-color: var(--accent);
+}
+.note.authored p {
+  margin: 8px 0 0;
+}
 .note strong {
   color: var(--fg);
 }

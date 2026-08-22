@@ -104,10 +104,27 @@ def as_text(value, limit: int = 700) -> str:
 def read_case_caveats() -> dict[str, dict]:
     """Per case: its verdict, and its own statement of what that verdict does not prove.
 
-    `present: False` is a fact about the study that the report is required to print. 39 of the 91
-    published cases carry no such statement, and a FALSE verdict with no stated limit is precisely
-    where a reader over-reads — so the report says "this case records no statement of what its verdict
-    does not prove" rather than printing nothing and letting the silence read as "no limits".
+    `present: False` is a fact about the study that the report is required to print: a FALSE verdict
+    with no stated limit is precisely where a reader over-reads, so the report says "this case records
+    no statement of what its verdict does not prove" rather than printing nothing and letting the
+    silence read as "no limits".
+
+    HOW MANY, AND WHY NO NUMBER APPEARS IN THIS SENTENCE
+
+    This docstring used to say "39 of the 91 published cases carry no such statement". That was wrong
+    twice over. The value this function's own scan yields is 33, not 39; 39 was the number of TIMES the
+    field name `what_true_does_not_prove` occurs across the corpus, which counts INCONCLUSIVE, FALSE and
+    RECORDED cases that carry the opposite verdict's field. A count of occurrences is not a count of
+    cases. So no count is written here now — the caller renders the number this function derives, and a
+    test asserts it. A number that lives only in prose is a number nothing checks.
+
+    THIS COUNT IS NOT THE SITE'S COUNT, AND THEY ARE NOT MEANT TO AGREE
+
+    `CAVEAT_FIELDS` is nine field names over all 91 published cases: "does the record say anything at
+    all about limits". The site payload asks a narrower question — does a case carry the field named for
+    ITS OWN verdict direction, over the 69 TRUE and FALSE cases that have a direction to over-read —
+    and publishes 49 silent. Two definitions, two numbers, both derived. Neither is a correction of the
+    other, and neither may be quoted without naming which question it answers.
     """
     out: dict[str, dict] = {}
     for path in sorted(PHASE1.glob("*.json")):

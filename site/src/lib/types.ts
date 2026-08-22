@@ -110,6 +110,23 @@ export interface CaseDetail {
   citation_restrictions: CitationRestriction[];
   series_available: string[];
   record: Record<string, unknown>;
+  /** A bound on the reading written by a later reader of the record, for the cases the record itself
+   *  leaves silent. Deliberately OUTSIDE `record`, so a reader diffing this page against
+   *  `results/phase1/<case>.json` finds the record byte-identical and cannot mistake authored prose for
+   *  a producer's own sentence. Absent on every case whose record speaks for itself. */
+  authored_caveat?: AuthoredCaveat;
+}
+
+/** @see CaseDetail.authored_caveat — the provenance travels with the sentence, because a caveat whose
+ *  author is stated somewhere else on the page is a caveat read as the study's own. */
+export interface AuthoredCaveat {
+  why: string;
+  verdict: string;
+  derived_from: string[];
+  authored_by: string;
+  authored_on: string;
+  authored_from: string;
+  review_status: string;
 }
 
 export interface RegisterItem {

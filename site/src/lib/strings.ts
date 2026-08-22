@@ -781,6 +781,46 @@ export const STRINGS = {
     "這份記錄同時帶著相反結果的那一條但書",
   ],
 
+  // RECORDED is not a weaker verdict — it is a case whose oracle was pre-registered with NO expected
+  // direction ("OUTCOME UNKNOWN — that is the experiment"), so either outcome was a finding before the
+  // measurement ran. There is therefore no direction to over-read, and the absent-caveat warning that
+  // used to fire here was answering a question the case never asked.
+  "cs.dnp.recorded.head": [
+    "{v} was pre-registered with no expected direction.",
+    "{v} 在預先登記時就沒有設定預期方向。",
+  ],
+  "cs.dnp.recorded.body": [
+    "The oracle for this case states that the outcome is unknown and that either result is a finding, so there is no direction here for a reader to over-read and no caveat is owed for one. What the observation does and does not reach is bounded by the oracle text and the guards above.",
+    "這個案例的判準明確寫著結果未知、兩種結果都算發現，所以這裡沒有一個方向會讓讀者讀得太遠，也就不欠任何一條方向性的但書。" +
+      "這次觀察到得了哪裡、到不了哪裡，由上面的判準原文和防護條件界定。",
+  ],
+
+  // A verdict with no direction — INCONCLUSIVE, RECORDED — is owed no caveat of its own, so the absent
+  // box must not fire for it and must not name a field that belongs to another direction. But the
+  // record may still carry a sentence bounding a reading the verdict never reached, and 9 cases do.
+  // Showing it labelled for what it is beats both dropping it and mislabelling it as this verdict's.
+  "cs.dnp.otherDirection": [
+    "the record bounds a {v} reading of this measurement, which this verdict did not reach",
+    "這份記錄界定了這次測量在 {v} 方向上可以讀到多遠，而這個判定並沒有走到那裡",
+  ],
+
+  // Authored caveats. Rendered visibly apart from a record sentence because the difference in who
+  // wrote it is the whole point: the record's sentence is evidence, this one is a later reader's
+  // reasoning about that evidence, and a reader who cannot tell them apart has been given the weaker
+  // one at the strength of the stronger.
+  "cs.dnp.authored.head": [
+    "The record states no limits. This bound was written by a later reader of it, not by the run.",
+    "記錄本身沒有寫下限制。下面這條界線是後來的讀者從記錄裡讀出來寫的，不是那次執行寫的。",
+  ],
+  "cs.dnp.authored.provenance": [
+    "Authored by {by} on {on}, from {from}. Review status: {status}. It is counted separately from the record's own caveats and is never merged into them.",
+    "由 {by} 在 {on} 依據 {from} 撰寫。審閱狀態：{status}。它與記錄自帶的但書分開計數，永遠不會被併進去。",
+  ],
+  "cs.dnp.authored.unreviewed": [
+    "not yet reviewed by a human",
+    "尚未經過人工審閱",
+  ],
+
   "cs.g.th.guard": ["guard", "防護條件"],
   "cs.g.th.held": ["held", "是否成立"],
   "cs.g.th.testWhy": ["what it tested, and why", "它測了什麼、為什麼要測"],

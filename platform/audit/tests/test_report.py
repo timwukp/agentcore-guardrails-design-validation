@@ -393,8 +393,11 @@ def test_a_disagreement_between_templates_attaches_no_measurement(tmp_path, cont
 
 
 def test_a_case_with_no_stated_limits_says_so(tmp_path, controls):
-    """39 of 91 cases state nothing about what their verdict does not prove. Silence there would read
-    as 'no limits', which is the opposite of the truth."""
+    """Some published cases state nothing about what their verdict does not prove, and silence there
+    would read as 'no limits' — the opposite of the truth. No count is asserted here on purpose: this
+    docstring used to say "39 of 91", which was an occurrence count of one field name masquerading as a
+    case count, and the true value under `read_case_caveats`' own definition is 33. The arm below
+    asserts the property and guards against vacuity; the number is derived where it is rendered."""
     caveats = report_mod.read_case_caveats()
     silent = {c for c, v in caveats.items() if not v["present"]}
     assert silent, "every case states its limits; this arm is vacuous"

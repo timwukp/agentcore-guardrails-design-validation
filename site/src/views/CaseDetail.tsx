@@ -10,6 +10,17 @@
 // Rendering the absence makes an unwritten caveat a visible deficiency instead of an invisible one —
 // and it is visible: of the FALSE verdicts in this build, one carries the statement.
 //
+// Since then a third state sits between "the record says it" and "nothing says it": an AUTHORED bound,
+// written by a later reader of the record for the 49 cases the record leaves silent. It renders in a
+// dashed box carrying its own provenance, and it is counted under its own name — never merged into
+// `cases_with_what_*_does_not_prove`, whose definition is "the record carries it". Two counts, two
+// claims. The absent box still renders for any owed case that has neither.
+//
+// Two verdicts are owed no caveat of their own and must not be told they are missing one. INCONCLUSIVE
+// establishes nothing in either direction, and RECORDED was pre-registered with no expected direction
+// at all. Both get a box stating that, derived from the verdict by rule rather than from 22 hand-written
+// sentences that could drift from it.
+//
 // The oracle text is quoted verbatim in a monospace block and never paraphrased, summarised or
 // truncated, because it is sealed: it was fixed before the measurement ran, its hash is recomputed on
 // every build, and a paraphrase on the way to the screen would be an unversioned amendment to the
@@ -19,7 +30,12 @@ import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { loadCase, loadFamilies, loadSeries } from "../lib/data";
-import type { ArchiveEntry, CaseDetail as Case, Verdict } from "../lib/types";
+import type {
+  ArchiveEntry,
+  AuthoredCaveat as AuthoredCaveatType,
+  CaseDetail as Case,
+  Verdict,
+} from "../lib/types";
 import { T, useT, VerbatimNote } from "../lib/i18n";
 import {
   Body,
@@ -132,15 +148,42 @@ function hydrate(
   return { record: out, unresolved };
 }
 
+/** Which caveat field is named for a verdict's own direction — and, for the two verdicts that have no
+ *  direction, nothing.
+ *
+ *  This map replaces a ternary chain that fell through: `verdict === "FALSE" ? x : y` gave every
+ *  non-FALSE verdict the TRUE field. For INCONCLUSIVE that was invisible, because the INCONCLUSIVE
+ *  branch renders first. For the 2 RECORDED cases it was not: F5-4b carries 793 characters under
+ *  `what_true_does_not_prove` and the page told the reader "this verdict record carries no such
+ *  statement", naming a field the case does carry. A lookup that returns undefined for an unlisted
+ *  verdict cannot fall through to a neighbour's field; a ternary chain always can. */
+const CAVEAT_FIELD_FOR: Record<string, string> = {
+  TRUE: "what_true_does_not_prove",
+  FALSE: "what_false_does_not_prove",
+};
+
+function caveatText(rec: Record<string, unknown>, field: string | undefined): string | null {
+  if (!field) return null;
+  const v = rec[field];
+  return typeof v === "string" && v.trim() ? v : null;
+}
+
 /** The caveat section. `absent` is a rendered state, not a skipped one — see the header comment. */
 function DoesNotProve({ c }: { c: Case }) {
   const rec = c.record;
-  const forFalse = rec["what_false_does_not_prove"];
-  const forTrue = rec["what_true_does_not_prove"];
-  const mine = c.verdict === "FALSE" ? forFalse : c.verdict === "TRUE" ? forTrue : null;
-  const key = c.verdict === "FALSE" ? "what_false_does_not_prove" : "what_true_does_not_prove";
-  const other = c.verdict === "FALSE" ? forTrue : forFalse;
   const t = useT();
+  const ownField = c.verdict ? CAVEAT_FIELD_FOR[c.verdict] : undefined;
+  const mine = caveatText(rec, ownField);
+  const authored = c.authored_caveat;
+
+  // Every caveat field the record carries that is NOT this verdict's own. For a TRUE or FALSE case
+  // that is the opposite direction's sentence, which the record genuinely carries as a pair. For an
+  // INCONCLUSIVE or RECORDED case there is no "opposite": the sentence bounds a reading the
+  // measurement never reached, and 9 cases carry one. Both were previously reachable only through the
+  // collapsed raw-record dump at the bottom of the page.
+  const others = Object.entries(CAVEAT_FIELD_FOR)
+    .filter(([, field]) => field !== ownField && caveatText(rec, field))
+    .map(([direction, field]) => ({ direction, text: caveatText(rec, field) as string }));
 
   return (
     <section>
@@ -155,19 +198,28 @@ function DoesNotProve({ c }: { c: Case }) {
             v={{ t: <span lang="en">TRUE</span>, f: <span lang="en">FALSE</span> }}
           />
         </div>
-      ) : typeof mine === "string" && mine.trim() ? (
+      ) : c.verdict === "RECORDED" ? (
+        <div className="note warn">
+          <strong>
+            <T k="cs.dnp.recorded.head" v={{ v: <span lang="en">RECORDED</span> }} />
+          </strong>{" "}
+          {t("cs.dnp.recorded.body")}
+        </div>
+      ) : mine ? (
         // The caveat is the record's own sentence about its own verdict. Translating it here would
         // produce a bound on the reading whose only source is this website.
         <div className="note" lang="en">
           {mine}
         </div>
-      ) : (
+      ) : authored ? (
+        <AuthoredCaveat a={authored} />
+      ) : ownField ? (
         <div className="note warn">
           <strong>{t("cs.dnp.absent.head")}</strong>{" "}
           <T
             k="cs.dnp.absent.body"
             v={{
-              field: <code lang="en">{key}</code>,
+              field: <code lang="en">{ownField}</code>,
               verdict: (
                 <span className="mono" lang="en">
                   {c.verdict ?? t("cs.dnp.verdictWord")}
@@ -176,18 +228,55 @@ function DoesNotProve({ c }: { c: Case }) {
             }}
           />
         </div>
-      )}
-      {typeof other === "string" && other.trim() ? (
-        <details className="raw">
-          <summary>{t("cs.dnp.opposite")}</summary>
+      ) : null}
+      {others.map((o) => (
+        <details className="raw" key={o.direction}>
+          <summary>
+            {ownField ? (
+              t("cs.dnp.opposite")
+            ) : (
+              <T k="cs.dnp.otherDirection" v={{ v: <span lang="en">{o.direction}</span> }} />
+            )}
+          </summary>
           <div>
             <p style={{ color: "var(--fg-dim)" }} lang="en">
-              {other}
+              {o.text}
             </p>
           </div>
         </details>
-      ) : null}
+      ))}
     </section>
+  );
+}
+
+/** An authored bound, rendered so a reader cannot mistake it for the record's own sentence.
+ *
+ *  The `note authored` class carries the visual distinction and the provenance line carries the verbal
+ *  one, because either alone fails a different reader: a colour is invisible to someone reading the
+ *  page as text, and a provenance line four lines down is invisible to someone skimming the box. The
+ *  `why` completes the section heading — "What this verdict does not prove: that ..." — which is why it
+ *  starts lower-case and mid-clause. */
+function AuthoredCaveat({ a }: { a: AuthoredCaveatType }) {
+  const t = useT();
+  const status =
+    a.review_status === "unreviewed_by_a_human" ? t("cs.dnp.authored.unreviewed") : a.review_status;
+  return (
+    <div className="note authored">
+      <strong>{t("cs.dnp.authored.head")}</strong>
+      <p lang="en">{a.why}</p>
+      <p style={{ color: "var(--fg-dim)", fontSize: "0.85em" }}>
+        <T
+          k="cs.dnp.authored.provenance"
+          v={{
+            by: <span lang="en">{a.authored_by}</span>,
+            on: <span className="mono">{a.authored_on}</span>,
+            from: <span lang="en">{a.authored_from}</span>,
+            status: <strong>{status}</strong>,
+          }}
+        />{" "}
+        <code lang="en">{a.derived_from.join(", ")}</code>
+      </p>
+    </div>
   );
 }
 
