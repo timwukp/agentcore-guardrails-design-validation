@@ -17,10 +17,27 @@ type Entry = readonly [en: string, zhTW: string];
 export const STRINGS = {
   // ------------------------------------------------------------------ language and the verbatim rule
   "locale.switch": ["Language", "語言"],
+  // Two reasons English appears on a Chinese page, and until 2026-08-22 this note gave only one of
+  // them. It said quoted artifact text stays English — true — and offered no other explanation, so the
+  // only available reading was that every English block on the page was sealed evidence. A browser
+  // census of both locales measured otherwise: a third of the payload prose a reader reaches is this
+  // platform's own writing, including the definitions of its denominators. The note was not
+  // describing a translation gap; it was telling the reader the gap was a principle.
+  //
+  // So the second clause names the other reason and links to the count, which is derived by
+  // `census_rendered_surfaces.py` and published in `method.json` rather than written here — a number in
+  // a UI string is a number no gate reads.
+  // The `{link}` label is `nav.method`, not a phrase of its own: the link goes to the page whose own
+  // navigation entry already names it in both languages, and a second wording of that name is a second
+  // thing to keep in step with the route.
   "payload.verbatim.note": [
-    "Quoted artifact text on this page stays in English.",
+    "Quoted artifact text on this page stays in English. Some of the English here is not quoted, " +
+      "though — it is this platform's own prose whose translation is not written yet, and both counts " +
+      "are measured and published under {link}.",
     "本頁引用的產物原文一律保留英文：判定、oracle_text、案例標題與報告內容是被封印或被推導出來的原始措辭，" +
-      "中文改寫會變成第二份說法，而它唯一的出處就只是這個網站。要比對 results/ 底下的檔案，讀者必須搜尋同一個字串。",
+      "中文改寫會變成第二份說法，而它唯一的出處就只是這個網站。要比對 results/ 底下的檔案，讀者必須搜尋同一個字串。" +
+      "但頁面上的英文不只有這一種：另有一部分是本平台自己寫的說明文字，中文還沒補上。兩者的數量都經過量測，" +
+      "公布在{link}。",
   ],
 
   // ------------------------------------------------------------------ shell
@@ -1157,6 +1174,67 @@ export const STRINGS = {
       "放在{citations}裡，每一個案例頁面也是從同一個檔案渲染出來的 —— 所以規則和它的顯示不可能漂開。" +
       "本研究在上面這些事情上做不到的地方，會被寫進{register}，而不是被悄悄修掉。",
   ],
+
+  // ------------------------------------------------ step 9: the translation measurement
+  //
+  // These keys exist because `payload.verbatim.note` promises the reader that both kinds of English on
+  // the page are "measured and published", and a promise of a published number has to land somewhere a
+  // reader can reach. The note links here. Every figure below comes from `method.json.translation`,
+  // which is copied from a browser census — the one number set in the payload this build did not derive
+  // itself — so the measurement's file name is rendered beside the counts rather than left in the
+  // manifest.
+  "mth.s9.title": [
+    "How much of this page is in English, and which English it is",
+    "這個頁面有多少是英文，以及那是哪一種英文",
+  ],
+  "mth.s9.body": [
+    "Every other number on this page was derived from the artifacts by {tool}. This one could not be: whether a reader actually reaches a given string is a property of the rendered page in a chosen language, so it takes a browser. {census} walks all {routes} routes in both languages, collects every text node, and matches it against the payload. The counts below are that measurement, copied here; the measurement itself is {file}, and its checksum is in {prov}.",
+    "本頁其他每一個數字，都是 {tool} 從產物裡推導出來的。這一組沒辦法：一個字串讀者到底看不看得到，" +
+      "是「某個語言下、已經畫出來的頁面」的性質，所以需要一個真的瀏覽器。{census} 會用兩種語言各走過全部 " +
+      "{routes} 個頁面，收集每一個文字節點，再拿去和 payload 比對。下面的數字就是那一次量測的結果，複製過來的；" +
+      "量測本身是 {file} 這個檔案，它的雜湊值放在{prov}裡。",
+  ],
+  "mth.tr.card.rendered": ["Reachable on some route", "讀者在某個頁面看得到"],
+  "mth.tr.card.rendered.def": [
+    "Payload strings of 24 characters or more that appear in the rendered page on at least one route, out of every such string in the payload. This is the denominator for everything below: a string nobody reaches owes nobody a translation.",
+    "長度 24 個字元以上、而且至少在一個頁面上真的被畫出來的 payload 字串，分母是 payload 裡所有這種字串。" +
+      "下面所有比例都以這個數為分母：沒有人看得到的字串，不欠任何人一份翻譯。",
+  ],
+  "mth.tr.card.identifiers": ["Not a sentence in any language", "在任何語言裡都不是句子"],
+  "mth.tr.card.identifiers.def": [
+    "Contains no whitespace at all: a sha256 digest, an ARN, a CloudFormation resource id, a results/ path. Asked first, because \"whose words are these\" has a true and useless answer for a string that has no words.",
+    "整串裡面連一個空白都沒有：sha256 雜湊值、ARN、CloudFormation 資源 id、results/ 底下的路徑。" +
+      "這個問題被放在最前面問，因為對一串沒有字的字串去問「這是誰寫的字」，會得到一個正確但沒有用的答案。",
+  ],
+  "mth.tr.card.artifact": ["The artifacts' own words", "產物自己的措辭"],
+  "mth.tr.card.artifact.def": [
+    "Occurs verbatim in a file under results/ or claims/, or in PREREGISTRATION.yaml. Stays English on purpose, in both languages: a Chinese paraphrase of a sealed claim is a second wording whose only source is this website.",
+    "在 results/、claims/ 底下的檔案或 PREREGISTRATION.yaml 裡逐字出現過。它在兩種語言下都刻意保持英文：" +
+      "把一個已封印的判定改寫成中文，就是生出第二種說法，而那種說法唯一的出處只有這個網站。",
+  ],
+  "mth.tr.card.authored": ["This platform's own prose", "本平台自己寫的說明文字"],
+  "mth.tr.card.authored.def": [
+    "Neither of the above: sentences this build writes about its own numbers — the denominator definitions, the audit boundary promises, the architecture status wordings. There is no reason for these to be English, and the ones that still are are counted, not described.",
+    "上面兩種都不是：這是本次建置自己針對自己的數字寫下的句子 —— 分母的定義、審計邊界的承諾、架構狀態的說法。" +
+      "這些沒有任何理由要是英文；還是英文的那些會被「數出來」，而不是用一句話帶過。",
+  ],
+  "mth.tr.backlog.head": ["Still English for a Chinese reader", "中文讀者目前仍讀到英文的部分"],
+  "mth.tr.backlog.body": [
+    "{n} of the {a} authored strings a reader reaches have no Chinese yet. That number is held as a ceiling by {gate}, which fails the build if it rises — and also if a translation is written without lowering it, because slack in a ratchet is where the next regression hides. It is not a quality claim about the translations that do exist: no measurement here reads meaning.",
+    "讀者看得到的 {a} 個平台自撰字串裡，有 {n} 個還沒有中文。這個數字被 {gate} 當成上限盯著：" +
+      "它一旦上升，建置就失敗 —— 而且如果有人補了翻譯卻沒有把上限一起調低，同樣失敗，" +
+      "因為棘輪上留下的空隙，正是下一次退步藏身的地方。它不是在說「已經有的翻譯品質好」：" +
+      "這裡沒有任何量測讀得懂語意。",
+  ],
+  "mth.tr.producers.head": [
+    "Where the remaining English comes from, largest five by characters owed",
+    "剩下的英文是誰產生的（依欠翻譯的字元數排前五名）",
+  ],
+  "mth.tr.col.producer": ["Payload field", "payload 欄位"],
+  "mth.tr.col.chars": ["Characters", "字元數"],
+  "mth.tr.col.strings": ["Strings", "字串數"],
+  "mth.tr.col.routes": ["Routes", "出現的頁面"],
+  "mth.tr.notwhat": ["What these numbers are not", "這些數字不是什麼"],
 
   // ------------------------------------------------------------------ design diagrams
   //

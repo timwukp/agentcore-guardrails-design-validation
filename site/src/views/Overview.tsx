@@ -23,7 +23,7 @@ import { loadCensus, loadDenominators } from "../lib/data";
 import type { CensusRow, Denominator, Denominators, Verdict } from "../lib/types";
 import { VERDICTS } from "../lib/types";
 import { ErrorPanel, Loading, VerdictBadge, useAsync } from "../components/ui";
-import { T, useT, VerbatimNote } from "../lib/i18n";
+import { A, T, useT, VerbatimNote } from "../lib/i18n";
 import type { Key } from "../lib/strings";
 import { byCaseId, distinct } from "../lib/sort";
 
@@ -66,13 +66,17 @@ function DenominatorCard({ k, d }: { k: string; d: Denominator }) {
     <div className="card">
       <div className="n">{d.n}</div>
       {/* The denominator's name is `denominators.json`'s own key — `verdict_eligible`, not a phrase — and
-          it is what a reader greps the payload for, so it stays in English in both languages. The
-          definition beside it is the artifact's own prose, quoted for the same reason. */}
+          it is what a reader greps the payload for, so it stays in English in both languages.
+          The definition is NOT: this comment used to say it was "the artifact's own prose, quoted for
+          the same reason", and it never was. `build_site_data.derive_denominators` composes those five
+          sentences; they are this platform explaining why 93, 92, 91 and 90 differ, which is the one
+          thing on this page a reader cannot skip. They are `Authored` now, so `<A>` gives the reader
+          their own language and marks `lang="en"` only if it is falling back. */}
       <div className="k" lang="en">
         {k.replace(/_/g, " ")}
       </div>
-      <div className="def" lang="en">
-        {d.definition}
+      <div className="def">
+        <A v={d.definition} />
       </div>
       {excluded.map(([label, cases]) => (
         <div className="def" key={label}>

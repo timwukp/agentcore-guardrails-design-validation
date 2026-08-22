@@ -78,6 +78,10 @@ PHASE1 = RESULTS / "phase1"
 ARCHIVE = PHASE1 / "archive"
 FIGURES = RESULTS / "figures"
 TRIAGE = ROOT / "claims" / "triage.csv"
+# Where `census_rendered_surfaces.py` leaves its measurements. One stamped file per run, kept rather
+# than overwritten: the counts only mean anything next to the payload they were taken over, so an
+# older census staying on disk is what lets a reader see that a number moved and when.
+CENSUS_DIR = ROOT / "platform" / "census"
 
 # Deliberately a SIBLING of the repository, not a directory inside it. The reason is in the
 # docstring; the enforcement is in `main()`, which refuses any output root under ROOT.
@@ -108,6 +112,43 @@ def die(msg: str) -> None:
 
 def sha256_bytes(b: bytes) -> str:
     return hashlib.sha256(b).hexdigest()
+
+
+# --------------------------------------------------------------------------------------------
+# Whose sentence is this — carried by the SHAPE of the value, not by a table beside it.
+#
+# The payload holds two kinds of prose and they are governed in opposite directions. A quoted oracle
+# sentence must never be translated: it is hashed into `meta.oracle_registry` and rendered verbatim so
+# that no restatement can drift from it. A sentence this platform wrote about how to read its own
+# numbers must be translated, or a zh-TW reader is handed the platform's voice in a language they did
+# not choose while a banner tells them the English is quoted evidence.
+#
+# Both are strings. Nothing about `"cases in the sealed register ..."` distinguishes it from
+# `oracle_text` when a component receives it, which is why the site currently marks BOTH `lang="en"`
+# and tells the reader both are artifacts. A side table of translatable keys would fix the rendering
+# and rot immediately: a new key defaults to whatever the table's author last remembered.
+#
+# So the value's own shape answers the question. `authored(en, zh)` emits `{"en": ..., "zh": ...}`; a
+# sealed quotation stays a bare `str`. A component that receives a bare string cannot translate it
+# because there is nothing to translate, and a component that receives the object cannot render the
+# wrong language because both are present. The default — a plain string literal, which is what someone
+# writes without thinking about this at all — is the SAFE direction: it renders verbatim English.
+#
+# Both languages are required and neither may be blank. A `zh` that is optional is a field that ships
+# empty, and an empty translation renders as a gap that reads as a finished sentence saying something
+# else. The census at `platform/census/` measures how many rendered authored strings are still bare
+# strings; that count is the backlog, and it is the one this shape is here to drive to zero.
+def authored(en: str, zh: str) -> dict[str, str]:
+    """One sentence this platform wrote, in both languages it publishes."""
+    for lang, s in (("en", en), ("zh", zh)):
+        if not isinstance(s, str) or not s.strip():
+            die(f"authored() got an empty `{lang}`; a blank translation renders as a gap that reads "
+                f"as a finished sentence. The other half was: {en[:80] or zh[:80]!r}")
+    if en.strip() == zh.strip():
+        die(f"authored() got the same text for both languages: {en[:80]!r}. An untranslated string "
+            f"must stay a bare `str` so it renders verbatim and is counted in the backlog, rather "
+            f"than claiming a translation the reader does not get.")
+    return {"en": en, "zh": zh}
 
 
 # --------------------------------------------------------------------------------------------
@@ -293,40 +334,63 @@ def derive_denominators(cases: dict, published: dict, by_case: dict, rows: list)
     untestable = sorted(c for c in cases if c not in with_verdict and _untestable(cases[c]))
     eligible = n_registered - len(untestable)
     mapped = sorted(set(by_case) & set(cases))
+    unmapped = sorted(set(cases) - set(mapped))
+    # The count of unmapped cases is INTERPOLATED rather than written out as "the three", which is what
+    # this sentence said until 2026-08-22. A number living inside a justification string is a number no
+    # gate reads (`feedback_prose_is_not_verified`): the list beside it is derived, so the day a fourth
+    # case stopped being pointed at, the prose would have gone on saying three and been believed.
+    n_unmapped_en = {0: "None", 1: "The one", 2: "The two", 3: "The three"}.get(
+        len(unmapped), f"The {len(unmapped)}")
     return {
         "registered": {
             "n": n_registered,
-            "definition": "cases in the sealed register `claims/triage_rules.py::CASES`, whose "
-                          "sha256 PREREGISTRATION.yaml declares. This is the only number that "
-                          "cannot change without breaking a seal.",
+            "definition": authored(
+                "cases in the sealed register `claims/triage_rules.py::CASES`, whose sha256 "
+                "PREREGISTRATION.yaml declares. This is the only number that cannot change without "
+                "breaking a seal.",
+                "封存登錄檔 `claims/triage_rules.py::CASES` 中的案例，其 sha256 由 "
+                "PREREGISTRATION.yaml 宣告。這是唯一一個「不破壞封印就無法改變」的數字。"),
             "derived_from": "claims/triage_rules.py"},
         "verdict_eligible": {
             "n": eligible,
-            "definition": f"registered minus the case(s) whose own sealed oracle declares them "
-                          f"untestable ({', '.join(untestable) or 'none'}). Being eligible is a "
-                          f"property of the oracle, not of whether the run happened.",
+            "definition": authored(
+                f"registered minus the case(s) whose own sealed oracle declares them untestable "
+                f"({', '.join(untestable) or 'none'}). Being eligible is a property of the oracle, "
+                f"not of whether the run happened.",
+                f"已登錄的案例數，扣除那些「其封存判準本身即宣告無法檢驗」的案例"
+                f"（{', '.join(untestable) or '無'}）。是否具備資格，取決於判準本身，"
+                f"而非該次執行是否發生過。"),
             "untestable": untestable,
             "derived_from": "claims/triage_rules.py oracle text"},
         "claim_mapped": {
             "n": len(mapped),
-            "definition": "registered cases that at least one row of `claims/triage.csv` points "
-                          "at. The three that no claim points at are correct: two are API-surface "
-                          "facts about the service model rather than about a document sentence, "
-                          "and one is untestable.",
-            "unmapped": sorted(set(cases) - set(mapped)),
+            "definition": authored(
+                f"registered cases that at least one row of `claims/triage.csv` points at. "
+                f"{n_unmapped_en} that no claim points at are correct: two are API-surface facts "
+                f"about the service model rather than about a document sentence, and one is "
+                f"untestable.",
+                f"至少被 `claims/triage.csv` 的一列指向的已登錄案例。沒有任何主張指向的那 "
+                f"{len(unmapped)} 個案例是正確的：其中兩個是關於服務模型的 API 介面事實，"
+                f"而非關於文件中的某句話，另一個則無法檢驗。"),
+            "unmapped": unmapped,
             "derived_from": "claims/triage.csv `cases` column, whitespace-tokenised"},
         "published": {
             "n": len(with_verdict),
-            "definition": "cases with a verdict on disk under `results/phase1/`, excluding "
-                          "`archive/`. A published verdict is not the same as a citable one — see "
-                          "citation_policy.json.",
+            "definition": authored(
+                "cases with a verdict on disk under `results/phase1/`, excluding `archive/`. A "
+                "published verdict is not the same as a citable one — see citation_policy.json.",
+                "在 `results/phase1/` 下有判定結果存檔的案例，不含 `archive/`。已發布的判定"
+                "不等於可引用的判定 —— 見 citation_policy.json。"),
             "outstanding": sorted(
                 c for c in cases if c not in with_verdict and c not in untestable),
             "derived_from": "results/phase1/*.json"},
         "claims_triaged": {
             "n": len(rows),
-            "definition": "rows in `claims/triage.csv`. Rows, not claims: a merge group can hold "
-                          "several rows pointing at one canonical claim.",
+            "definition": authored(
+                "rows in `claims/triage.csv`. Rows, not claims: a merge group can hold several rows "
+                "pointing at one canonical claim.",
+                "`claims/triage.csv` 中的列數。是列，不是主張：一個合併群組可以有好幾列指向"
+                "同一個正規主張。"),
             "derived_from": "claims/triage.csv"},
     }
 
@@ -553,6 +617,74 @@ def derive_caveats(inputs: dict[str, str], published: dict) -> dict:
     }
 
 
+def translation_state(inputs: dict[str, str]) -> dict:
+    """How much English a zh-TW reader is reading, and why — copied from the last browser census.
+
+    WHY THIS IS COPIED RATHER THAN COMPUTED
+
+    Every other number in this payload is derived by this script from the artifacts. This one cannot be:
+    "does a reader see this string" is a property of the rendered DOM in a chosen locale, and answering it
+    needs a browser and a running preview server. `census_rendered_surfaces.py` makes the measurement and
+    writes it to `platform/census/`; this reads the most recent one and republishes the counts so the site
+    can state its own backlog instead of a banner implying there isn't one.
+
+    So it is a COPY, and copies go stale. Two things make that visible rather than silent: the census file
+    name (a UTC stamp) is published beside the numbers so a reader can see how old the measurement is, and
+    `check_site_invariants.arm_authored_prose_is_bilingual` counts the same ledger against the payload it
+    is about to publish, so a census taken over a different payload fails the gate.
+
+    A missing census is fatal. The alternative — publishing the page with the block absent — renders as a
+    site with no translation backlog, which is the claim the census was written to stop being made.
+    """
+    stamps = sorted(CENSUS_DIR.glob("rendered-surfaces-*.json")) if CENSUS_DIR.is_dir() else []
+    if not stamps:
+        die(f"no rendered-surface census under {CENSUS_DIR}. The zh-TW reader is told on every page that "
+            f"the English they see is counted; publishing without the count makes that a claim with no "
+            f"artifact behind it. Run `platform/build/census_rendered_surfaces.py`.")
+    latest = stamps[-1]
+    # Through `read_text`, not `json.loads(latest.read_text())`: the census is an INPUT to this build
+    # like every artifact, so its sha256 belongs in `MANIFEST.json` and its path in `method.json`'s
+    # source list. A number copied out of a file nobody can identify is a number with no provenance.
+    doc = json.loads(read_text(latest, inputs))
+    counts = doc.get("counts") or {}
+    needed = ("of_those_rendered_somewhere", "rendered_and_artifact", "rendered_and_authored",
+              "rendered_authored_and_identical_in_both_locales",
+              "rendered_and_an_identifier_not_prose")
+    missing = [k for k in needed if not isinstance(counts.get(k), int)]
+    if missing:
+        die(f"{latest.name} is missing count(s) {missing}; it was written by an older version of the "
+            f"census and the page would show a partial breakdown as a whole one.")
+    return {
+        "measured_by": "platform/build/census_rendered_surfaces.py",
+        "measured_in": latest.name,
+        "routes_walked": len((doc.get("how") or {}).get("routes") or []),
+        "rendered": counts["of_those_rendered_somewhere"],
+        "quoted_artifact": counts["rendered_and_artifact"],
+        "identifiers": counts["rendered_and_an_identifier_not_prose"],
+        "authored": counts["rendered_and_authored"],
+        "authored_untranslated": counts["rendered_authored_and_identical_in_both_locales"],
+        # SORTED BY `chars`, because the field is called `largest_producers` and the census writes
+        # `backlog_by_producer` in key order. Slicing that dict's first five entries published
+        # `MANIFEST.json/note` (404 characters) as a largest producer while the actual largest,
+        # `audit.json/markdown` at 37,483, was not in the list — a label describing a computation the
+        # code did not perform. The list is a top-five, so it needs the ordering it claims.
+        "largest_producers": [
+            {"producer": k, **v} for k, v in
+            sorted((doc.get("backlog_by_producer") or {}).items(),
+                   key=lambda kv: (-int(kv[1].get("chars") or 0), kv[0]))[:5]],
+        # Bilingual, and it would be absurd otherwise: a paragraph explaining the translation backlog,
+        # readable only in the language the backlog is against, would be the first entry in it.
+        "what_this_is_not": authored(
+            "Not a share of the site. It counts payload strings of 24 characters or more that a reader "
+            "reaches on some route; the navigation, headings and explanatory prose this platform writes "
+            "in `strings.ts` are fully bilingual and are in none of these numbers. It is also not a "
+            "claim that the translations that DO exist are accurate — no measurement here reads meaning.",
+            "這不是全站的比例。它計算的是「讀者在某個頁面上真的看得到、且長度達 24 個字元以上」的 payload "
+            "字串；導覽、標題與本平台在 `strings.ts` 裡自己寫的說明文字都是完整雙語，不在上面任何一個數字"
+            "裡面。它同樣不代表「已經有的翻譯是正確的」—— 這裡沒有任何量測讀得懂語意。"),
+    }
+
+
 def derive_method(inputs: dict[str, str], published: dict, archive: dict, cases: dict,
                   caveats_authored: dict) -> dict:
     """Derived structure of the adjudication itself: kinds, guards, and who is replicated.
@@ -657,6 +789,7 @@ def derive_method(inputs: dict[str, str], published: dict, archive: dict, cases:
                                                   "They are counted because prose in no census is prose "
                                                   "nobody can notice went missing.",
         },
+        "translation": translation_state(inputs),
         "archive_days_by_case": {c: d for c, d in days_by_case.items() if d},
         "n_cases_with_an_archive": sum(1 for d in days_by_case.values() if d),
         "n_cases_with_two_distinct_archive_days": sum(1 for d in days_by_case.values() if len(d) >= 2),
@@ -1201,11 +1334,21 @@ ARCH_NON_COLOURING = {"NEVER_CITE", "NOT_A_VERDICT", "UNMEASURED", "UNTESTABLE",
 # contested. Colouring it green would be defensible arithmetic and would bury the finding, which is
 # the only thing on the diagram a reader cannot afford to miss.
 ARCH_STATUS_LABEL = {
-    "contested": "measured, and the guidance did not hold somewhere on this component",
-    "validated_in_part": "measured, and the documented behaviour held for at least one claim",
-    "not_established": "measured, and nothing was established either way",
-    "context_only": "cases exist but none of them is a citable verdict about this component",
-    "not_measured": "this study never examined this component",
+    "contested": authored(
+        "measured, and the guidance did not hold somewhere on this component",
+        "已量測，且指引在此元件的某處並未成立"),
+    "validated_in_part": authored(
+        "measured, and the documented behaviour held for at least one claim",
+        "已量測，且文件所述的行為至少在一項主張上成立"),
+    "not_established": authored(
+        "measured, and nothing was established either way",
+        "已量測，但兩個方向都無法確立"),
+    "context_only": authored(
+        "cases exist but none of them is a citable verdict about this component",
+        "有相關案例，但其中沒有一個是可引用於此元件的判定"),
+    "not_measured": authored(
+        "this study never examined this component",
+        "本研究從未檢驗此元件"),
 }
 
 
@@ -1617,17 +1760,36 @@ def derive_audit(inputs: dict[str, str], stamp: str) -> dict:
                 "--as-of <YYYY-MM-DD> --out-json report.json --out-md report.md",
             ],
         },
+        # Translated first, ahead of every other authored surface, because these three sentences are
+        # the ones a reader is entitled to understand before deciding whether to run anything: they
+        # state what this platform will not touch. A promise about someone's AWS account, delivered in
+        # a language they did not choose, is not a promise they have been given.
         "boundaries": [
-            {"claim": "This platform never connects to your AWS account.",
-             "how": "Neither program takes a profile, a region or a credential, and neither imports "
-                    "boto3. The audit is a read of the files you point it at, on your machine."},
-            {"claim": "This platform never changes your repository.",
-             "how": "The submission directory is opened read-only, symlinks out of it are refused, and "
-                    "the only outputs are the two documents you name. No pull request is opened "
-                    "against anything you submit."},
-            {"claim": "Nothing you type into this page leaves your browser.",
-             "how": "The site is static files on S3 behind CloudFront. There is no API to post a repo "
-                    "to; the form composes the commands you run yourself."},
+            {"claim": authored(
+                "This platform never connects to your AWS account.",
+                "本平台從不連線到您的 AWS 帳戶。"),
+             "how": authored(
+                "Neither program takes a profile, a region or a credential, and neither imports "
+                "boto3. The audit is a read of the files you point it at, on your machine.",
+                "兩支程式都不接受 profile、region 或任何憑證，也都沒有 import boto3。稽核只是在您自己"
+                "的機器上，讀取您指定的檔案。")},
+            {"claim": authored(
+                "This platform never changes your repository.",
+                "本平台從不變更您的儲存庫。"),
+             "how": authored(
+                "The submission directory is opened read-only, symlinks out of it are refused, and "
+                "the only outputs are the two documents you name. No pull request is opened "
+                "against anything you submit.",
+                "送交目錄以唯讀方式開啟，指向目錄外的符號連結會被拒絕，唯一的產出就是您自己指定的那兩份"
+                "文件。不會對您送交的任何內容開啟 pull request。")},
+            {"claim": authored(
+                "Nothing you type into this page leaves your browser.",
+                "您在此頁面輸入的任何內容都不會離開您的瀏覽器。"),
+             "how": authored(
+                "The site is static files on S3 behind CloudFront. There is no API to post a repo "
+                "to; the form composes the commands you run yourself.",
+                "本網站是放在 CloudFront 後面的 S3 靜態檔案。沒有任何可以送出儲存庫的 API；表單只是"
+                "幫您組合出您自己執行的指令。")},
         ],
         "note": "The example below is derived at build time by running the two programs named above "
                 "over the checked-in example submission. It is not a stored output: change either "
@@ -1883,9 +2045,14 @@ def main(argv: list[str] | None = None) -> int:
     put("audit.json", audit, s_audit.sorted() + s_register.sorted() + s_published.sorted()
         + s_policy.sorted())
     # `caveats.yaml` is a source of this file: the authored count and its provenance are read out of
-    # it, so a reader who wants to check whose sentences those are needs the file named here.
-    put("method.json", derive_method(inputs, published, archive, cases, caveats_authored),
-        s_register.sorted() + s_published.sorted() + s_archive.sorted() + s_caveats.sorted())
+    # it, so a reader who wants to check whose sentences those are needs the file named here. So is the
+    # rendered-surface census, and its own scope is why: it is the only source of this build that was
+    # produced by a browser rather than by this script, so a reader who doubts the translation counts
+    # must be able to see WHICH measurement they came from without reading the whole input list.
+    with scope() as s_census:
+        method = derive_method(inputs, published, archive, cases, caveats_authored)
+    put("method.json", method, s_register.sorted() + s_published.sorted() + s_archive.sorted()
+        + s_caveats.sorted() + s_census.sorted())
 
     n_series = 0
     for cid in sorted(cases):

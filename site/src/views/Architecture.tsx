@@ -32,12 +32,12 @@
 // `check_site_invariants.py` greps the built stylesheet for exactly those shapes — so a status added to
 // the vocabulary later fails the publish rather than shipping as an unstyled box.
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Link } from "react-router-dom";
 import { loadArchitecture } from "../lib/data";
 import { statusClass } from "../lib/audit";
 import { ErrorPanel, Loading, useAsync, VerdictBadge } from "../components/ui";
-import { T, useT, VerbatimNote } from "../lib/i18n";
+import { A, T, useAuthored, useT, VerbatimNote } from "../lib/i18n";
 import type { ArchBox, ArchDiagram, ArchEdge, Architecture } from "../lib/types";
 
 /** How much smaller than its own coordinate space each diagram is drawn. The layout is generous — a
@@ -93,6 +93,7 @@ function Mix({ mix }: { mix: Record<string, number> }) {
 
 function Box({ box, sel, onSelect }: { box: ArchBox; sel: boolean; onSelect: () => void }) {
   const t = useT();
+  const authored = useAuthored();
   return (
     <button
       type="button"
@@ -102,7 +103,12 @@ function Box({ box, sel, onSelect }: { box: ArchBox; sel: boolean; onSelect: () 
         box.kind === "property" ? "prop" : ""
       }`}
       style={{ left: box.x, top: box.y, width: box.w, height: box.h }}
-      title={box.status_label}
+      // A `title` is a plain string, so this resolves the value rather than rendering `<A>`: there is no
+      // element to hang `lang` on inside an attribute. The tooltip is a CONVENIENCE and nothing rests on
+      // it — a tooltip is absent on touch, absent to the keyboard and unreliable to a screen reader, so
+      // the same sentence is visible text in the legend above the diagram. It was the only carrier until
+      // 2026-08-22, which is how five translated sentences came to render nowhere at all.
+      title={authored(box.status_label).text}
     >
       <span className="lab" lang="en">
         {box.label}
@@ -130,8 +136,14 @@ function Panel({ box, arch }: { box: ArchBox; arch: Architecture }) {
           {box.status.replace(/_/g, " ")}
         </span>
       </div>
-      {/* `detail`, `why_this_status`, `status_label` and `why_these_cases` are the authored topology
-          file's own sentences. They are quoted, not paraphrased, for the same reason `oracle_text` is. */}
+      {/* `detail`, `why_this_status` and `why_these_cases` are the authored topology file's own
+          sentences, quoted rather than paraphrased for the same reason `oracle_text` is — a second
+          wording of a claim about a component is a claim whose only provenance is the wording.
+
+          `status_label` is NOT one of them, and this comment named it as one until 2026-08-22. It is
+          `build_site_data.ARCH_STATUS_LABEL[box.status]`: five sentences this platform wrote to say what
+          each colour means. Quoting those verbatim gave a Chinese reader the legend to the whole picture
+          in English, so they are `Authored` and render through `<A>`. */}
       <p className="what" lang="en">
         {box.detail.trim()}
       </p>
@@ -139,7 +151,7 @@ function Panel({ box, arch }: { box: ArchBox; arch: Architecture }) {
         <strong>{t("arc.whyColour")}</strong> <span lang="en">{box.why_this_status}</span>
       </p>
       <p className="why">
-        <strong>{t("arc.colourMeans")}</strong> <span lang="en">{box.status_label}</span>
+        <strong>{t("arc.colourMeans")}</strong> <A v={box.status_label} />
       </p>
 
       <table className="grid archkv">
@@ -259,13 +271,28 @@ function Diagram({ d, arch }: { d: ArchDiagram; arch: Architecture }) {
         {d.subtitle.trim()}
       </p>
 
+      {/* Four columns — swatch, payload key, count, meaning — one row per status.
+
+          The meaning used to be a `title` attribute on the row. That is not a small difference: the
+          browser census of 2026-08-22 walked both locales over every route and found all five of these
+          sentences rendering nowhere as text, because a tooltip is not text. So the five sentences
+          this platform wrote to explain its own colours were unreadable without a hover on the very
+          page whose picture they are the key to, and translating them changed nothing for the reader
+          who needed the translation.
+
+          `lang="en"` sits on the KEY only. `not_established` is a payload identifier a reader greps
+          for and stays English in both languages; the sentence beside it is translated and would
+          inherit the wrong font stack and the wrong screen-reader phonology from an outer `lang`. */}
       <div className="archlegend">
         {Object.entries(arch.status_labels).map(([s, label]) => (
-          <span key={s} className="item" title={label} lang="en">
-            <span className={`sw ${statusClass(s)}`} />
-            {s.replace(/_/g, " ")}
+          <Fragment key={s}>
+            <span className={`swcell ${statusClass(s)}`}>
+              <span className="sw" />
+            </span>
+            <span lang="en">{s.replace(/_/g, " ")}</span>
             <span className="n">{d.boxes_by_status[s] ?? 0}</span>
-          </span>
+            <A v={label} className="means" />
+          </Fragment>
         ))}
       </div>
 

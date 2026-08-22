@@ -30,7 +30,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { loadAudit, loadControls } from "../lib/data";
 import { compose, obsClass, statusClass } from "../lib/audit";
-import { T, useT, VerbatimNote } from "../lib/i18n";
+import { A, T, useT, VerbatimNote } from "../lib/i18n";
 import { ErrorPanel, Loading, useAsync } from "../components/ui";
 import type { AuditPage, Control, ControlsDoc } from "../lib/types";
 
@@ -208,17 +208,21 @@ export default function Audit() {
 
       <h3>{t("aud.h.willNotDo")}</h3>
       <div className="cards">
+        {/* These three are promises about the reader's own AWS account, repository and browser, and they
+            are this platform's sentences rather than any artifact's. Rendering them verbatim English
+            under a banner that says English means "quoted evidence" told a Chinese reader that the
+            limits on what this tool touches were somebody else's claim they could not read. They are
+            the first authored surface converted to `{en, zh}` for that reason.
+
+            Keyed on `b.claim.en` rather than on the rendered text: a key that changes with the locale
+            remounts all three cards on every language switch. */}
         {a.boundaries.map((b) => (
-          <div className="card" key={b.claim}>
-            <div
-              className="k"
-              style={{ color: "var(--fg)", fontSize: 13.5, marginBottom: 6 }}
-              lang="en"
-            >
-              {b.claim}
+          <div className="card" key={typeof b.claim === "string" ? b.claim : b.claim.en}>
+            <div className="k" style={{ color: "var(--fg)", fontSize: 13.5, marginBottom: 6 }}>
+              <A v={b.claim} />
             </div>
-            <div className="def" lang="en">
-              {b.how}
+            <div className="def">
+              <A v={b.how} />
             </div>
           </div>
         ))}

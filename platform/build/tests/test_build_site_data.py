@@ -398,6 +398,48 @@ def test_the_split_moves_the_heavy_arrays_and_names_exactly_them(payload: Path):
 
 # --------------------------------------------------------------------------- derived counts
 
+def _gate_floor(name: str) -> int:
+    """One of `check_site_invariants.py`'s prose floors, read out of its SOURCE rather than retyped.
+
+    The floor is the publish gate's to own, and a copy of the number here would be a second source for
+    one rule: raise it in the gate and this test would keep passing a definition the publish rejects.
+    Reading it as TEXT rather than importing the module is deliberate — this file registers exactly one
+    module in `sys.modules` (see `SUBJECT_MODULE_NAME`), and `test_module_name_collisions.py` reads that
+    fact statically. If the constant is renamed or stops being a module-level literal this raises rather
+    than falling back to a default, because a floor that silently became 0 is worse than a broken test.
+    """
+    src = (BUILD / "check_site_invariants.py").read_text(encoding="utf-8")
+    m = re.search(rf"^{name} = (\d+)$", src, re.M)
+    assert m, f"{name} is no longer a module-level integer literal in check_site_invariants.py"
+    return int(m.group(1))
+
+
+def _assert_real_definition(name: str, definition) -> None:
+    """A denominator's definition is prose in BOTH languages, and long enough to be one.
+
+    This assertion used to be `len(definition) >= 40`. On 2026-08-22 the definitions became
+    `{en, zh}` objects and `len` of a two-key dict is 2 — so the test failed, which is the outcome it
+    is for. Worth naming the near miss: had the shape grown to 40 keys instead of 2, a length check
+    over a dict would have passed while asserting nothing about any sentence in it. The floors are the
+    gate's (`MIN_DEFINITION_CHARS`, `MIN_DEFINITION_CHARS_ZH`); the shape is asserted here.
+    """
+    assert isinstance(definition, dict), (
+        f"{name}: a definition is authored prose and must carry both halves as {{en, zh}}, not "
+        f"{type(definition).__name__} — a bare string here renders English to a Chinese reader"
+    )
+    assert set(definition) == {"en", "zh"}, f"{name}: definition keys are {sorted(definition)}"
+    floors = {"en": _gate_floor("MIN_DEFINITION_CHARS"), "zh": _gate_floor("MIN_DEFINITION_CHARS_ZH")}
+    for lang, text in definition.items():
+        assert isinstance(text, str) and len(text) >= floors[lang], (
+            f"{name}: the {lang} definition is {len(text) if isinstance(text, str) else text!r} "
+            f"characters, under the gate's floor of {floors[lang]} — that is a stub, not a definition"
+        )
+    assert definition["en"] != definition["zh"], (
+        f"{name}: both halves are the same text, which is how an untranslated definition passes as "
+        f"translated"
+    )
+
+
 def test_the_denominators_are_derivable_from_the_artifacts_not_typed(payload: Path):
     """Each of these is re-derived here from a different reading of the same tree. Two numbers
     produced by two paths must be derived twice and compared, never inferred from one another."""
@@ -417,7 +459,7 @@ def test_the_denominators_are_derivable_from_the_artifacts_not_typed(payload: Pa
     )
     for name, block in denominators.items():
         assert isinstance(block["n"], int)
-        assert len(block["definition"]) >= 40, f"{name} has no real definition"
+        _assert_real_definition(name, block["definition"])
         assert block["derived_from"], f"{name} does not name its source"
     # The four differ for stated reasons; if any two collapsed to one number the reader would have no
     # way to see that they measure different sets.
