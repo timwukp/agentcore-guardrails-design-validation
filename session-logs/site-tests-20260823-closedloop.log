@@ -1,0 +1,33 @@
+
+> grx-live@0.2.0 test
+> node --test 'src/lib/**/*.test.ts'
+
+✔ an empty form leaves the templates exactly as published (3.26525ms)
+✔ a git URL and a date are substituted at every occurrence (0.580166ms)
+✔ a local path with a tilde is accepted (0.702458ms)
+✔ an empty date DROPS the flag rather than substituting a clock reading (0.384916ms)
+✔ a shell metacharacter refuses to compose and the template is left alone (4.26725ms)
+✔ a value that would be read as an option refuses too (0.457833ms)
+✔ a space is refused by its own sentence, not quoted into the character one (2.738083ms)
+✔ a date that is not an ISO day refuses rather than being pasted in (0.722333ms)
+✔ a report with the right schema decodes (0.711125ms)
+✔ an inventory.json is refused by name rather than rendered as an empty report (0.567625ms)
+✔ a schema-less object, a JSON array, a JSON scalar and broken JSON are each refused (0.486ms)
+✔ the right schema with no arrays is still refused (0.269917ms)
+✔ badge classes are derived as the gate expects (1.259375ms)
+✔ the dictionary is not empty and every entry is a pair of two non-blank strings (13.026791ms)
+✔ every Chinese value contains Han characters, or is a named exception (6.905625ms)
+✔ no Chinese value is a copy of its English (1.467167ms)
+✔ every exception is really an exception (0.496375ms)
+✔ both languages of a key take exactly the same placeholders (6.98775ms)
+✔ no brace in any value is anything other than a placeholder (4.370958ms)
+✔ no value contains a case id (2.7405ms)
+✔ the pass rate is denied in both languages and asserted in neither (4.106042ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 566.121167

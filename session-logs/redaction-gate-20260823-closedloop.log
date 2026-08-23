@@ -1,0 +1,7 @@
+redaction gate: 960 file(s) under grx-validation/
+  extensions: ALL — inclusion is not keyed on the filename; a file that will not decode as UTF-8 is read as latin-1, not skipped
+  OOXML ['.docx', '.pptx', '.xlsx'] — 2 package(s) unzipped: agentcore_guardrails_best_practices_v1.4.pptx, agentcore_guardrails_best_practices_v1.4.zh-TW.pptx
+  skipped dirs ['.git', '.pytest_cache', '.staging', '.state', '.wheel_cache', '__pycache__', 'evidence', 'node_modules'] + any dir starting with ['.venv']
+  52,345,977 bytes read, 10968 reviewed exception(s) waived
+
+PASSED — no unredacted cloud identifiers in 960 scanned files.

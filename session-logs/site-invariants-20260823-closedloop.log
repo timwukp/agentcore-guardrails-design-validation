@@ -1,0 +1,57 @@
+  [manifest_liveness] 117 outputs match their recorded sha256, set equality both ways
+  [replication_needs_two_days] 3 case(s) span two distinct UTC days: ['F6-2', 'F6-5', 'F6-8']
+  [no_replication_claim_authored_by_the_build] 122 replication-named field(s) in the derived layer (93 vocabulary state(s) checked against the archive, 6 paragraph(s) found verbatim in the file their document names, 1 build-authored rationale(s) naming no case and no day); 3 case(s) may be presented as measured on two archived days: ['F6-2', 'F6-5', 'F6-8']
+  [no_replication_claim_authored_by_the_build] 20 replication-named field(s) under `record` are the producer's own values at the same paths
+  [bundle] 1 bundle(s), 400205 chars
+  [no_hardcoded_totals] none of ('93', '92', '91', '90', '46', '23', '20') appears as a string literal
+  [no_pass_rate] all 4 English occurrence(s) of the phrase are denials
+  [no_pass_rate] 4 Chinese denial(s), matching the English count
+  [denominators_carry_definitions] claim_mapped=90, claims_triaged=546, published=91, registered=93, verdict_eligible=92
+  [verdict_mix_sums_to_published] {'FALSE': 23, 'INCONCLUSIVE': 20, 'RECORDED': 2, 'TRUE': 46} sums to the published denominator 91
+  [citation_policy_is_wired_both_ways] 10 restriction(s) covering 40 case page(s), each wired both ways between the policy and the page that renders it
+  [figures_are_real_pngs] 7 PNG(s) verified byte for byte, numeric_check rc=0, missing=['fig-06']
+  [pipeline_states_are_styled] all 6 pipeline state(s) have a rule in 1 stylesheet(s)
+  [both_languages_shipped] 487 distinct Chinese run(s) in the bundle, floor 300
+  [both_languages_shipped] 158 element(s) mark their contents as verbatim English
+  [both_languages_shipped] `.verbatim` has a rule, so a quoted block reads as quoted
+  [audit_vocabularies_are_styled] all 5 status and 2 observation token(s) have a rule in 1 stylesheet(s)
+  [verdict_palette_is_readable] all 4 verdict(s) have a .v-<VERDICT> rule
+  [verdict_palette_is_readable] 4 verdict colour(s) declared as hex
+  [verdict_palette_is_readable] FALSE #d08a3e contrast 5.96:1 (worst of three backgrounds, --bg-raised)
+  [verdict_palette_is_readable] INCONCLUSIVE #d086ab contrast 6.19:1 (worst of three backgrounds, --bg-raised)
+  [verdict_palette_is_readable] RECORDED #8a7bd0 contrast 4.70:1 (worst of three backgrounds, --bg-raised)
+  [verdict_palette_is_readable] TRUE #2fa19b contrast 5.40:1 (worst of three backgrounds, --bg-raised)
+  [verdict_palette_is_readable] all 4 verdict colour(s) at chroma 25+
+  [verdict_palette_is_readable] every verdict colour is ΔE 15+ from every other of the 15 named colour(s) in the sheet
+  [verdict_palette_is_readable] no verdict colour is typed into the bundle (400205 bytes read)
+  [verdict_palette_is_readable] one <link rel=icon> in the served index.html
+  [verdict_palette_is_readable] the icon href is relative (./favicon.svg)
+  [verdict_palette_is_readable] favicon.svg is in the served tree
+  [verdict_palette_is_readable] favicon.svg uses only colours the stylesheet declares
+  [authored_caveats_are_marked] 49 case page(s) carry an authored caveat
+  [authored_caveats_are_marked] the published count (49) is the number of pages carrying one
+  [authored_caveats_are_marked] every authored caveat sits outside `record`, so the records stay diffable
+  [authored_caveats_are_marked] no authored caveat stands where the record already speaks
+  [authored_caveats_are_marked] all 49 carry `why`, `derived_from` and four provenance fields
+  [authored_caveats_are_marked] 49 of 49 authored caveat(s) are not yet reviewed by a human, and each page says so in its own provenance line
+  [authored_caveats_are_marked] 'written by a later reader' is in the shipped bundle
+  [authored_caveats_are_marked] '後來的讀者' is in the shipped bundle
+  [authored_caveats_are_marked] 'Review status' is in the shipped bundle
+  [authored_caveats_are_marked] `.note.authored` has 2 rule(s)
+  [authored_caveats_are_marked] the authored box is cued by a dashed border, which survives greyscale
+  [authored_prose_is_bilingual] 294 authored value(s) carry both languages, each non-blank and distinct
+  [authored_prose_is_bilingual] 5 producer(s) each clear their own floor (294 authored value(s) in total)
+  [authored_prose_is_bilingual] every path in rendered-surfaces-20260822T092500Z.json's backlog resolves in this payload
+  [authored_prose_is_bilingual] 299 string(s) still bare, exactly the published ceiling, measured by rendered-surfaces-20260822T092500Z.json
+  [authored_prose_is_bilingual] ledger rendered-surfaces-20260822T092500Z.json: 299 backlog string(s), 299 still bare, 294 value(s) translated
+  [audit_report_is_licensed] the report's verdict mix re-derives from census.json ({'FALSE': 23, 'INCONCLUSIVE': 20, 'RECORDED': 2, 'TRUE': 46})
+  [audit_report_is_licensed] 21 recommendation(s), each licensed only by a citable TRUE or FALSE verdict
+  [audit_report_is_licensed] no rate, score, grade or percentage anywhere on the audit page
+  [architecture_colours_are_licensed] all 3 diagram(s) clear 8 boxes each (50 in total)
+  [architecture_colours_are_licensed] every coloured box on 3 diagram(s) rests on a citable verdict (50 boxes checked)
+  [architecture_colours_are_licensed] 92 placed + 1 excluded covers all 93 registered case(s), disjointly
+  [architecture_colours_are_licensed] all 5 status and 3 edge-route token(s) have a rule in 1 stylesheet(s)
+  [architecture_colours_are_licensed] all 5 status(es) publish `--st` and the diagram box takes its border from it, so a box's colour is the status the payload put on it
+  [oracles_are_sealed] registry seal live over 93 declared oracles
+  [oracles_are_sealed] 93 case files carry a sealed, non-empty oracle
+PASSED — 56 site invariants hold over ../grx-site-payload
