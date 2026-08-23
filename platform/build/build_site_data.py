@@ -1675,6 +1675,186 @@ def derive_architecture(inputs: dict[str, str], cases: dict, published: dict,
     }
 
 
+# What each status means beside a PRACTICE, which is a different object from a diagram box: a practice
+# is one sentence of guidance, so "this study never examined it" is a statement about a recommendation
+# rather than about a component. The five states and their order are `box_status`'s — one rule set — and
+# only the wording differs, because a card that said "component" would be describing something else.
+PRACTICE_STATUS_LABEL = {
+    "contested": authored(
+        "measured, and the guidance did not hold somewhere",
+        "已量測，且此指引在某處並未成立"),
+    "validated_in_part": authored(
+        "measured, and it held for at least one of the claims tested",
+        "已量測，且在至少一項受測主張上成立"),
+    "not_established": authored(
+        "measured, and nothing was established either way",
+        "已量測，但兩個方向都無法確立"),
+    "context_only": authored(
+        "cases were examined, but none of them is a citable verdict about this practice",
+        "有檢驗過的案例，但其中沒有一個是可引用於此實務的判定"),
+    "not_measured": authored(
+        "this study never tested this practice — it rests on the documentation and on reasoning",
+        "本研究從未測試此實務，它依據的是官方文件與推論"),
+}
+
+# Where a practice's status came from. The distinction is published because the document attributes
+# evidence at two grains: a numbered sentence sometimes carries its own citation, and the notes under
+# the checkpoint carry the rest. A card coloured from its section's cases is making a weaker claim than
+# one coloured from its own, and a reader cannot tell the two apart from a colour.
+PRACTICE_STATUS_BASIS = {
+    "practice": authored(
+        "the cases this practice's own sentence cites",
+        "此實務句子本身所引用的案例"),
+    "section": authored(
+        "the cases cited elsewhere in this checkpoint — this sentence cites none of its own",
+        "此檢查點其他處所引用的案例，本句本身未引用任何案例"),
+    "none": authored(
+        "nothing: neither this sentence nor its checkpoint cites a case",
+        "沒有依據：本句與其所屬檢查點都未引用任何案例"),
+}
+
+
+def derive_practices(inputs: dict[str, str], cases: dict, published: dict,
+                     restricted: dict[str, list[str]]) -> dict:
+    """The 45 best practices, read out of both editions, with each one's evidence joined to it.
+
+    WHY NOTHING HERE IS AUTHORED
+    ----------------------------
+    The claim this page exists to make is that the design was *measured on this platform*, not asserted.
+    A practice sentence retyped into this repository would break that claim quietly in both directions:
+    the page would keep showing the old wording after the document was amended, and a citation typed
+    beside it would be this platform vouching for a link the document never made. So
+    `practices_source.py` parses both editions — sentence, phase, hop, checklist, and every one of the
+    324 case references — and the payload records each document's sha256 as an input.
+
+    WHY THE ADJUDICATION COMES FROM THE GATE'S OWN ENTRY POINT
+    ---------------------------------------------------------
+    `check_practices.adjudicate()` is imported rather than reimplemented, so the page and the gate
+    cannot disagree about which citations are unsettled. If it reports a violation this build DIES: a
+    payload derived from a rejected ledger would render seven open findings as ordinary results, which
+    is the exact failure the ledger was built to prevent.
+    """
+    # Both imported here rather than at module scope: the extractor mutates `sys.path` to reach
+    # `tools/deckgen`, and a build that does not derive practices should not inherit that.
+    import check_practices  # noqa: PLC0415 - the gate owns these rules; this is the one implementation
+    import practices_source  # noqa: PLC0415
+
+    rel_en = record_input(practices_source.EN_DOC, inputs)
+    rel_zh = record_input(practices_source.ZH_DOC, inputs)
+    rel_curation = record_input(check_practices.CURATION, inputs)
+
+    result = check_practices.adjudicate()
+    if result["findings"].items:
+        die(f"{rel_curation} does not adjudicate {rel_en} cleanly: "
+            f"{len(result['findings'].items)} violation(s). Run "
+            f"`platform/build/check_practices.py` for the list. A page built from this state would "
+            f"publish an unruled citation as a settled result.")
+    design = result["design"]
+
+    def annotate(case_id: str, where: str) -> dict:
+        if case_id not in cases:
+            die(f"{rel_en}: {where} cites {case_id}, which is not in the sealed register. Every chip "
+                f"under a practice has to resolve to a case a reader can open.")
+        pub = published.get(case_id) or {}
+        return {"case": case_id, "verdict": pub.get("verdict"),
+                "restrictions": restricted.get(case_id, []),
+                "family": cases[case_id][0], "title": cases[case_id][1]}
+
+    sections = {}
+    for s in design["sections"]:
+        annotated = [annotate(c, f"§{s['id']}") for c in s["section_cites"]]
+        status, why = box_status(annotated)
+        sections[s["id"]] = {**{k: s[k] for k in ("id", "chapter", "phase", "hop", "heading",
+                                                  "n_practices", "keys")},
+                             "cases": annotated, "n_cases": len(annotated),
+                             "status": status, "why_this_status": why}
+
+    practices, basis_count = [], {"practice": 0, "section": 0, "none": 0}
+    for p in design["practices"]:
+        own = [annotate(c, p["key"]) for c in p["cites"]]
+        section = sections[p["section"]]
+        basis = "practice" if own else ("section" if section["cases"] else "none")
+        evidence = own if basis == "practice" else (section["cases"] if basis == "section" else [])
+        status, why = box_status(evidence)
+        basis_count[basis] += 1
+        practices.append({
+            **{k: p[k] for k in ("key", "section", "n", "phase", "hop", "prose", "line")},
+            "cases": own, "n_cases": len(own), "asserted": p["asserted"],
+            "status": status, "why_this_status": why, "status_basis": basis,
+            "n_cases_in_basis": len(evidence),
+        })
+
+    cited = set(design["citation_census"]["cases"])
+    uncited = [annotate(c, "the coverage list") for c in sorted(set(cases) - cited)]
+
+    def ruling(m: dict) -> dict:
+        """One adjudicated citation, as the page shows it. The quoted span is the document's, not ours."""
+        return {k: m[k] for k in ("case", "asserted", "where", "line", "disposition", "kind", "why",
+                                 "evidence", "rule", "reason", "on_disk", "restrictions")
+                if k in m} | {
+            "unit": m.get("unit"), "register_item": m.get("register_item"),
+            "restriction": m.get("restriction"), "withheld": m.get("withheld"),
+            "blocked_on": m.get("blocked_on"),
+            "quoted": m["span"],
+        }
+
+    return {
+        "schema": "grx-practices-payload/1",
+        "documents": {
+            "en": {"path": rel_en, "sha256": inputs[rel_en]},
+            "zh": {"path": rel_zh, "sha256": inputs[rel_zh]},
+            "why": "The design is parsed out of these two files at build time. No practice sentence, "
+                   "phase, hop or case id is written anywhere in this repository, so an amendment to "
+                   "the document changes this page and moves these hashes.",
+        },
+        "marker": design["marker"], "marker_frequency": design["marker_frequency"],
+        "phases": design["phases"],
+        "sections": [sections[s["id"]] for s in design["sections"]],
+        "practices": practices,
+        "principles": design["principles"],
+        "anti_patterns": design["anti_patterns"],
+        "checklist": design["checklist"],
+        "n_practices": design["n_practices"],
+        "n_checklist_items": design["n_checklist_items"],
+        "citation_census": {
+            **design["citation_census"],
+            "n_assertions": design["n_assertions"],
+            "n_inside_a_practice": sum(len(p["cites"]) for p in design["practices"]),
+            "n_practices_carrying_one": basis_count["practice"],
+            "why_two_numbers": "The citations inside practice sentences and the practices carrying one "
+                               "are two different counts of two different things, derived separately.",
+        },
+        "coverage": {
+            "n_practices": design["n_practices"],
+            "by_status_basis": basis_count,
+            "n_registered": len(cases), "n_cited": len(cited), "n_uncited": len(uncited),
+            "uncited_cases": uncited,
+            "why": "Every practice is in exactly one basis bucket and every registered case is either "
+                   "cited by the document or on the uncited list, both checked at build time. This "
+                   "page states denominators; it computes no rate, because a share of 45 sentences "
+                   "would travel further than the reason it is not 45.",
+        },
+        "adjudications": {
+            "open": [ruling(m) for m in result["adjudications"] if m["kind"] == "open"],
+            "legal": [ruling(m) for m in result["adjudications"] if m["kind"] == "legal"],
+            "n_open": len(result["open_findings"]),
+            "n_legal": len(result["adjudications"]) - len(result["open_findings"]),
+            "n_assertions_needing_a_ruling": len(result["occurrences"]),
+            "ceiling": check_practices.MAX_OPEN_ADJUDICATIONS,
+            "adjudicated_on": _plain(result["adjudicated_on"], "practices.yaml:adjudicated_on"),
+            "adjudicated_against": result["adjudicated_against"],
+            "curation": {"path": rel_curation, "sha256": inputs[rel_curation]},
+            "why": "An OPEN entry is a published finding, not an exemption: the document asserts a "
+                   "verdict on a dimension results/CITATION-POLICY.md withholds. It names the register "
+                   "item it belongs to and what it is blocked on, and this page renders it as "
+                   "unsettled rather than as a result.",
+        },
+        "status_labels": PRACTICE_STATUS_LABEL,
+        "status_bases": PRACTICE_STATUS_BASIS,
+        "non_colouring_restrictions": sorted(ARCH_NON_COLOURING),
+    }
+
+
 def derive_audit(inputs: dict[str, str], stamp: str) -> dict:
     """Run the audit tools over the checked-in example submission and publish what they produced.
 
@@ -1987,6 +2167,11 @@ def main(argv: list[str] | None = None) -> int:
             inputs, cases, published, restricted,
             architecture_metrics(cases, published, restricted, archive, by_case, families, controls,
                                  figures, registers))
+    # The design page. After the register, the published verdicts and the citation policy, because every
+    # chip and every status beside a practice is read out of those three — and the adjudication of a
+    # citation the policy restricts cannot be decided before the policy has been read.
+    with scope() as s_practices:
+        practices = derive_practices(inputs, cases, published, restricted)
     # The audit page: the two command-line programs run over the checked-in example submission, in
     # process, so the published example is what the code does today rather than a stored output.
     with scope() as s_audit:
@@ -2042,6 +2227,12 @@ def main(argv: list[str] | None = None) -> int:
     put("architecture.json", architecture, s_arch.sorted() + s_register.sorted()
         + s_published.sorted() + s_policy.sorted() + s_archive.sorted() + s_claims.sorted()
         + s_families.sorted() + s_controls.sorted() + s_figures.sorted() + s_registers.sorted())
+    # The two v1.4 editions and the adjudication ledger are this file's own sources; the register, the
+    # published verdicts and the citation policy are the three the joins are made against. Naming all
+    # six is what lets a reader check the sentence this page is built to support — that each practice's
+    # evidence is a case in the sealed register, not a claim made beside it.
+    put("practices.json", practices, s_practices.sorted() + s_register.sorted()
+        + s_published.sorted() + s_policy.sorted())
     put("audit.json", audit, s_audit.sorted() + s_register.sorted() + s_published.sorted()
         + s_policy.sorted())
     # `caveats.yaml` is a source of this file: the authored count and its provenance are read out of

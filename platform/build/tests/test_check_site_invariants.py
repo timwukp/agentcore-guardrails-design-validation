@@ -936,7 +936,7 @@ def _first_bare_backlog_row(payload: Path) -> tuple[dict, str, list]:
 
 
 def test_the_bilingual_arm_no_mutant_control(payload: Path):
-    """The control for the five mutants below, and it asserts more than rc 0: it asserts the arm LOOKED.
+    """The control for the six mutants below, and it asserts more than rc 0: it asserts the arm LOOKED.
     An arm whose census went missing exits 2, and an arm whose payload happened to carry no `{en, zh}`
     value at all would report zero malformed ones — both of which are what a passing run looks like from
     the outside."""
@@ -983,7 +983,11 @@ def test_deleting_the_shape_everywhere_cannot_report_clean(payload, tmp_path):
     """The vacuity guard. Collapse every `{en, zh}` in `architecture.json` back to its English half and
     the malformed count is zero, because there is nothing left to be malformed
     (`feedback_zero_file_scan_is_error`). The count is asserted against a floor rather than assumed to be
-    non-trivial."""
+    non-trivial.
+
+    This arm did its job on 2026-08-23: `practices.json` arrived carrying 175 authored values, collapsing
+    all 43 of `architecture.json`'s left 187, and 187 cleared a whole-payload floor of 40 — so the gate
+    reported clean and this test failed. The floor is per producing file now, and this mutant is why."""
     mutant = copy_of(payload, tmp_path, "prose-deleted")
     keyed = [k for r, k in _authored_paths(mutant) if r == "architecture.json"]
     assert len(keyed) >= 16, f"only {len(keyed)} objects in architecture.json; the floor cannot be crossed"
@@ -995,6 +999,20 @@ def test_deleting_the_shape_everywhere_cannot_report_clean(payload, tmp_path):
 
     _mutate(mutant, "architecture.json", edit)
     expect_killed(mutant, PROSE_ARM, "below the floor of")
+
+
+def test_an_undeclared_producer_cannot_hide_behind_another_files_floor(payload: Path, tmp_path: Path):
+    """The other half of the per-file floor, and the half a name list cannot supply on its own
+    (`feedback_scope_as_namelist`). A floor per file protects only the files it names, so the next page to
+    author bilingual prose would be born unprotected — its values could all be deleted again and every
+    named producer would still clear its own floor. `families.json` gets one authored value here because
+    it is a real payload file the floor map does not name; the gate must ask for a floor rather than count
+    the value and move on."""
+    mutant = copy_of(payload, tmp_path, "prose-undeclared")
+    _mutate(mutant, "families.json",
+            lambda d: d.__setitem__("_probe", {"en": "a sentence written only for this mutant",
+                                               "zh": "這是一個只為這個變異而寫的中文句子"}))
+    expect_killed(mutant, PROSE_ARM, "no floor is declared")
 
 
 def test_a_translation_written_without_lowering_the_ceiling_fails(payload, tmp_path):

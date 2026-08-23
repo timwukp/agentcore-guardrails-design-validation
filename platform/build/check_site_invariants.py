@@ -391,10 +391,28 @@ MIN_VERBATIM_MARKS = 60
 CENSUS_DIR = REPO / "platform" / "census"
 
 # A floor on `{en, zh}` values in the payload, so deleting the feature fails instead of reporting zero
-# malformed ones. Measured 54 on 2026-08-22 (38 architecture box labels, 5 legend labels, 6 audit
-# boundary halves, 5 denominator definitions); the floor sits below that so translating one more surface
-# never fails the gate.
-MIN_AUTHORED_PROSE_OBJECTS = 40
+# malformed ones — stated PER FILE, with the set of files asserted by equality.
+#
+# It was a single whole-payload floor of 40 until 2026-08-23, measured 54 the day before (38 architecture
+# box labels, 5 legend labels, 6 audit boundary halves, 5 denominator definitions). Then `practices.json`
+# arrived carrying 175 authored values of its own, and the whole-payload count went to 230 — at which
+# point collapsing EVERY bilingual value in `architecture.json` back to its English half left 187 and
+# reported clean. The mutation arm written for exactly that deletion caught it. A total is one occurrence
+# of the property (`feedback_container_mark_is_one_occurrence`): the moment a second producer dwarfs the
+# first, the first can be deleted underneath the total.
+#
+# Measured 2026-08-23: practices 175, architecture 43, audit 6, denominators 5, method 1. Each floor sits
+# below its measurement so translating or adding one more surface never fails the gate — except
+# `method.json`, whose single value admits no margin, and where 1 is therefore the floor that deletion
+# still crosses. A file the builder gives authored prose to and that is absent here fails too, so a new
+# producer cannot inherit another file's margin (`feedback_scope_as_namelist`).
+MIN_AUTHORED_PROSE_OBJECTS = {
+    "practices.json": 120,
+    "architecture.json": 30,
+    "audit.json": 5,
+    "denominators.json": 4,
+    "method.json": 1,
+}
 
 # The ceiling on rendered authored payload paths that still hold a bare English string. A CEILING rather
 # than an assertion of zero because a gate that fails on the whole backlog blocks every publish and gets
@@ -1484,8 +1502,12 @@ def arm_authored_prose_is_bilingual(g: Gate, payload: Path, census_dir: Path) ->
        something else — and identical halves are the subtler one: copying the English into `zh` satisfies
        every structural check while giving the reader nothing, and it removes the string from the backlog,
        so the number would improve by exactly the amount of work not done.
-    2. A FLOOR on how many such objects exist. Without it, deleting the feature reports clean: zero
-       objects means zero malformed objects (`feedback_zero_file_scan_is_error`).
+    2. A FLOOR on how many such objects exist, PER PRODUCING FILE, plus the equality that says every
+       producer has a floor. Without a floor at all, deleting the feature reports clean: zero objects
+       means zero malformed objects (`feedback_zero_file_scan_is_error`). Without the floor being per
+       file, deleting one producer reports clean as soon as another producer is large enough to hold the
+       total up on its own — which is not a hypothetical: `practices.json` arriving with 175 values let
+       `architecture.json` lose all 43 of its own and still clear a whole-payload floor of 40.
     3. A CEILING on how many of the census's own backlog paths still hold a bare string. A gate that
        failed on the whole backlog would block every publish and be disabled within a day, which is how
        an i18n gate normally dies. A ceiling that may only fall makes the gap a published number that
@@ -1508,12 +1530,16 @@ def arm_authored_prose_is_bilingual(g: Gate, payload: Path, census_dir: Path) ->
     # ---- 1 and 2: the shape, everywhere it occurs
     malformed: list[str] = []
     n_objects = 0
+    # Counted per file as well as in total, because the floor below is per file. `walk` is called once per
+    # file with `rel` fixed, so the leaf never has to work out which file it came from.
+    per_file: dict[str, int] = {}
 
-    def walk(node, path: str) -> None:
+    def walk(node, path: str, rel: str) -> None:
         nonlocal n_objects
         if isinstance(node, dict):
             if set(node) == set(AUTHORED_LANGS) and all(isinstance(v, str) for v in node.values()):
                 n_objects += 1
+                per_file[rel] = per_file.get(rel, 0) + 1
                 en, zh = node["en"].strip(), node["zh"].strip()
                 if not en or not zh:
                     malformed.append(f"{path}: {'zh' if en else 'en'} is blank")
@@ -1522,24 +1548,36 @@ def arm_authored_prose_is_bilingual(g: Gate, payload: Path, census_dir: Path) ->
                                      f"English while the backlog counts this as translated")
                 return
             for k, v in node.items():
-                walk(v, f"{path}/{k}")
+                walk(v, f"{path}/{k}", rel)
         elif isinstance(node, list):
             for i, v in enumerate(node):
-                walk(v, f"{path}[{i}]")
+                walk(v, f"{path}[{i}]", rel)
 
     files = sorted(payload.rglob("*.json"))
     if not files:
         cannot_run(f"no JSON under {payload}; a walk over nothing finds no malformed prose")
     for f in files:
-        walk(json.loads(f.read_text(encoding="utf-8")), f.relative_to(payload).as_posix())
+        rel = f.relative_to(payload).as_posix()
+        walk(json.loads(f.read_text(encoding="utf-8")), rel, rel)
 
     g.check(arm, not malformed,
             f"{len(malformed)} authored value(s) do not carry two real languages: {malformed[:4]}",
             passed=f"{n_objects} authored value(s) carry both languages, each non-blank and distinct")
-    g.check(arm, n_objects >= MIN_AUTHORED_PROSE_OBJECTS,
-            f"the payload carries {n_objects} `{{en, zh}}` value(s), below the floor of "
-            f"{MIN_AUTHORED_PROSE_OBJECTS}. Zero malformed values is what a payload with the feature "
-            f"deleted also reports, so the count is asserted rather than assumed")
+    short = [f"{rel} carries {per_file.get(rel, 0)} `{{en, zh}}` value(s), below the floor of {floor}"
+             for rel, floor in sorted(MIN_AUTHORED_PROSE_OBJECTS.items())
+             if per_file.get(rel, 0) < floor]
+    g.check(arm, not short,
+            f"{'; '.join(short)}. Zero malformed values is what a file with the feature deleted also "
+            f"reports, so each producer's count is asserted rather than assumed — and asserted per file, "
+            f"because a total lets the largest producer cover a deletion in every other one",
+            passed=f"{len(MIN_AUTHORED_PROSE_OBJECTS)} producer(s) each clear their own floor "
+                   f"({n_objects} authored value(s) in total)")
+    # The other direction: a file the builder gave authored prose to and that no floor names. Without
+    # this, a new producer is protected by nothing at all while the total looks healthier for it.
+    undeclared = sorted(set(per_file) - set(MIN_AUTHORED_PROSE_OBJECTS))
+    g.check(arm, not undeclared,
+            f"{undeclared} carry `{{en, zh}}` value(s) and no floor is declared for them in "
+            f"MIN_AUTHORED_PROSE_OBJECTS, so deleting every one of them would report clean")
 
     # ---- 3: the ceiling, over the paths the census named
     censuses = sorted(census_dir.glob("rendered-surfaces-*.json")) if census_dir.is_dir() else []

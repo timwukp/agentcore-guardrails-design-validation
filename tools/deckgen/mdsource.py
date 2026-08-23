@@ -133,7 +133,18 @@ def clean_cell(text, drop_cites=True):
 
 def read_tables(path):
     """Every Markdown pipe-table in ``path``, in order, as ``(headers, rows)``."""
-    lines = open(path, encoding="utf-8").read().split("\n")
+    return read_tables_from_lines(open(path, encoding="utf-8").read().split("\n"))
+
+
+def read_tables_from_lines(lines):
+    """The same reader, over lines already in hand.
+
+    Split out for `platform/build/practices_source.py`, which needs the tables of ONE section
+    (§7.1's principles, §7.2's anti-patterns) and must not address them by a whole-document index —
+    an index is a hand-written locator that goes stale the moment a table is inserted above it. A
+    second table reader over a slice would be a second answer to the same question, so this is the
+    one implementation and `read_tables` is now a caller of it.
+    """
     tables, block, in_fence = [], None, False
     for line in lines:
         if line.startswith("```"):
