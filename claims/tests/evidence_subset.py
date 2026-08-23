@@ -71,6 +71,7 @@ reds when the subset legitimately shrinks, which is what the cap above does on p
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import sys
 from functools import lru_cache
@@ -183,7 +184,13 @@ def _scan(root: Path, runs: tuple[str, ...],
     set instead and it would agree with any cap, including a broken one
     (`feedback_identical_output_wrong_assertion`).
     """
-    wanted = set(cases)
+    # The gate's own expansion, imported rather than repeated. This line read `set(cases)` until
+    # 2026-08-23, i.e. it selected records by EQUALITY on `case_id` while the gate had already been
+    # changed to resolve joined timing groups (FUTURE-WORK item 34). The consequence was not a
+    # smaller copy but a wrong one: FINDING-F6-DAY2-DECISIVENESS.md declares `F6-2` and its records
+    # are stamped `F6-2_5`, so the subset kept none of them, and the four arms that need a two-day
+    # finding failed against a fixture that had dropped both of its days.
+    wanted = _GATE.declared_case_ids(cases)
     out: list[Path] = []
     days: set[tuple[str, str]] = set()
     kept_per_case_day: dict[tuple[str, str], int] = {}
@@ -204,7 +211,7 @@ def _scan(root: Path, runs: tuple[str, ...],
             if not isinstance(rec, dict):
                 out.append(rel)          # likewise: the gate has an opinion about this file
                 continue
-            if rec.get("case_id") not in wanted:
+            if not _GATE.record_matches(rec.get("case_id"), wanted):
                 continue
             ts = rec.get("t_start_utc")
             if not ts:
@@ -248,6 +255,47 @@ def case_days(root: Path = ROOT, runs: tuple[str, ...] | None = None,
     subset to reproduce. Read `str(t_start_utc)[:10]`, the same slice `observation_days()` takes.
     """
     return _scan(*_resolved(root, runs, cases))[1]
+
+
+def lib_modules_the_gate_imports(gate: Path = GATE) -> tuple[str, ...]:
+    """The `lib.` modules the gate imports, read out of the gate's own source.
+
+    Derived rather than listed, because a list is exactly what rotted. The gate gained
+    `from lib.case_ids import case_ids_in` (FUTURE-WORK item 34) and both scratch-tree builders
+    went on copying the same two files they always had, so every arm that runs the gate died on
+    `ModuleNotFoundError: No module named 'lib'` before a single check was reached — 25 arms in
+    `test_amendment_gate.py`, including both of its control arms, plus this module's own
+    same-days arm. A control arm that cannot run is not a control
+    (`feedback_guard_tool_exit_codes`, `feedback_probe_must_reach_the_code`).
+
+    `lib/` has no `__init__.py` — it is an implicit namespace package — so the copy is the module
+    files under a `lib/` directory and nothing else.
+    """
+    mods = tuple(sorted(set(re.findall(r"^(?:from|import) lib\.(\w+)",
+                                       gate.read_text(encoding="utf-8"), re.M))))
+    # A scan that finds nothing must not be read as a gate that needs nothing
+    # (`feedback_zero_file_scan_is_error`): the import is in the gate today, and if this pattern
+    # ever stops matching it, the copy quietly goes back to being incomplete.
+    assert mods, (f"found no `lib.` import in {gate.name}; either the gate stopped importing from "
+                  f"lib/ — in which case delete this — or the pattern stopped matching, which puts "
+                  f"the fixtures back in the state that cost 26 arms")
+    return mods
+
+
+def copy_gate_code(dst_root: Path, root: Path = ROOT) -> Path:
+    """The gate and everything it imports, at the same relative paths. Returns the copied gate.
+
+    One function for both scratch trees. `test_amendment_gate.py` and
+    `test_amendment_evidence_subset.py` each built their own, so the missing `lib/` had to be
+    found and fixed twice — the second site was still red after the first was green
+    (`feedback_fix_producer_not_janitor`).
+    """
+    dst_root.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(root / GATE.name, dst_root / GATE.name)
+    (dst_root / "lib").mkdir(exist_ok=True)
+    for mod in lib_modules_the_gate_imports():
+        shutil.copy2(root / "lib" / f"{mod}.py", dst_root / "lib" / f"{mod}.py")
+    return dst_root / GATE.name
 
 
 def copy_evidence_subset(dst_root: Path, root: Path = ROOT,

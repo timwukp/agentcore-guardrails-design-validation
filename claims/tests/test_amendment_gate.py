@@ -22,16 +22,17 @@ from pathlib import Path
 
 import pytest
 
-from evidence_subset import BLOCK_RE, GATE, ROOT, copy_evidence_subset
+from evidence_subset import BLOCK_RE, GATE, ROOT, copy_evidence_subset, copy_gate_code
 
 
 @pytest.fixture
 def tree(tmp_path: Path) -> Path:
     """A copy of the repo the mutants may edit freely.
 
-    The gate itself, the sealed pre-registration, the findings, and the SUBSET of
-    `evidence/` the gate's result can depend on — see `evidence_subset.py` for what that
-    is and why it is derived from the findings rather than listed here.
+    The gate itself, the `lib/` modules it imports, the sealed pre-registration, the
+    findings, and the SUBSET of `evidence/` the gate's result can depend on — see
+    `evidence_subset.py` for what that is and why it is derived from the findings rather
+    than listed here.
 
     This fixture used to copy `evidence/` whole, 198,452 KB in 28,716 files, once per arm:
     about 4.9 GB per run, and its docstring claimed "only what the gate reads is copied"
@@ -41,7 +42,7 @@ def tree(tmp_path: Path) -> Path:
     """
     dst = tmp_path / "repo"
     (dst / "results").mkdir(parents=True)
-    shutil.copy2(GATE, dst / GATE.name)
+    copy_gate_code(dst)
     shutil.copy2(ROOT / "PREREGISTRATION.yaml", dst / "PREREGISTRATION.yaml")
     for f in (ROOT / "results").glob("FINDING-*.md"):
         shutil.copy2(f, dst / "results" / f.name)
@@ -122,6 +123,23 @@ def test_control_arm_every_finding_is_actually_read(tree: Path) -> None:
     assert f"over {n} findings" in res.stdout, res.stdout
     for f in (tree / "results").glob("FINDING-*.md"):
         assert f.name in res.stdout, f"{f.name} never appeared in the summary"
+
+
+def test_the_copied_lib_modules_are_load_bearing(tree: Path) -> None:
+    """The fixture's `lib/` copy is demonstrated to matter, not assumed to.
+
+    Remove it and the gate dies on import: rc 1 with `No module named 'lib'` and not one check
+    reached. That is the state every arm in this file was in until this commit, and it is why the
+    needle is asserted — an import failure and a caught mutant are both "rc 1", and only the reason
+    tells them apart. Deleting the copy from the fixture on the grounds that it looks unnecessary
+    would put all 25 arms back, silently, in a suite that still reports the same number of reds it
+    always did.
+    """
+    shutil.rmtree(tree / "lib")
+    res = run(tree)
+    assert res.returncode != 0, f"the gate ran without lib/, so the copy proves nothing:\n{res.stdout}"
+    assert "No module named 'lib'" in res.stderr, res.stderr
+    assert "OK —" not in res.stdout, "the gate reported a verdict without importing what it reads with"
 
 
 # ------------------------------------------------------- the arm this file exists for

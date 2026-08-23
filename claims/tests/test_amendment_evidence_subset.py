@@ -40,8 +40,8 @@ from pathlib import Path
 import pytest
 
 from evidence_subset import (BLOCK_RE, EVIDENCE_SUBSET_CEILING_KB, GATE, RECORDS_PER_CASE_DAY,
-                             ROOT, _GATE, case_days, copy_evidence_subset, declared_provenance,
-                             subset_manifest)
+                             ROOT, _GATE, case_days, copy_evidence_subset, copy_gate_code,
+                             declared_provenance, subset_manifest)
 
 EVIDENCE = ROOT / "evidence"
 
@@ -232,8 +232,13 @@ def test_the_subset_yields_the_same_observation_days_as_the_full_tree(tmp_path):
 
     dst = tmp_path / "repo"
     (dst / "results").mkdir(parents=True)
-    for f in [GATE, ROOT / "PREREGISTRATION.yaml"]:
-        (dst / f.name).write_bytes(f.read_bytes())
+    # `copy_gate_code` rather than a copy of the gate alone: the gate imports `lib.case_ids`, and
+    # this arm spent a commit reporting "the gate fails against the subset tree" when what it had
+    # built was a tree the gate could not import in. The same omission was fixed in
+    # `test_amendment_gate.py`'s fixture first and was still red here
+    # (`feedback_fix_producer_not_janitor`), which is why the copy has one home now.
+    copy_gate_code(dst)
+    (dst / "PREREGISTRATION.yaml").write_bytes((ROOT / "PREREGISTRATION.yaml").read_bytes())
     for f in (ROOT / "results").glob("FINDING-*.md"):
         (dst / "results" / f.name).write_bytes(f.read_bytes())
     copy_evidence_subset(dst)

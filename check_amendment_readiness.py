@@ -72,6 +72,34 @@ def fatal(msg: str) -> int:
     return 2
 
 
+def declared_case_ids(cases) -> set[str]:
+    """The case ids a declaration denotes: the ids as written, plus every case each one names.
+
+    A named function rather than two lines inside `observation_days`, because a second consumer
+    has to apply the SAME rule and applied a different one. `claims/tests/evidence_subset.py`
+    builds the scratch `evidence/` tree the mutation arms run against by selecting records whose
+    `case_id` a finding declares — and it selected by EQUALITY, which is the defect this gate had
+    fixed in itself (FUTURE-WORK item 34). So FINDING-F6-DAY2-DECISIVENESS.md, which declares
+    `F6-2` against records stamped `F6-2_5`, contributed nothing to the subset, and every arm in
+    `test_amendment_gate.py` that needs a two-day finding failed against a fixture that had
+    dropped both days. Two matchers for one question agree only by luck
+    (`feedback_derive_from_every_producer`); this is the one, and the fixture imports it.
+    """
+    wanted = set(cases)
+    for c in cases:
+        wanted.update(case_ids_in(c))
+    return wanted
+
+
+def record_matches(cid: object, wanted: set[str]) -> bool:
+    """Whether a record stamped `cid` belongs to a declaration expanded by `declared_case_ids`.
+
+    Both directions are expanded because either side may be the joined or the qualified form —
+    see `observation_days` for which way the widening can go wrong and what bounds it.
+    """
+    return cid in wanted or bool(set(case_ids_in(cid)) & wanted)
+
+
 def observation_days(run_ids: list[str], cases: list[str], problems: list[str],
                      src: str) -> set[str]:
     """Distinct UTC calendar days across the evidence records OF THE DECLARED CASES.
@@ -118,10 +146,7 @@ def observation_days(run_ids: list[str], cases: list[str], problems: list[str],
     boundary. Re-derive that file rather than trusting this sentence.
     """
     days: set[str] = set()
-    # The declaration expanded once: the ids as written, plus every case each denotes.
-    wanted = set(cases)
-    for c in cases:
-        wanted.update(case_ids_in(c))
+    wanted = declared_case_ids(cases)   # the declaration expanded once, by the shared rule
     n_matched = 0
     for rid in run_ids:
         d = EVIDENCE / rid
@@ -141,8 +166,7 @@ def observation_days(run_ids: list[str], cases: list[str], problems: list[str],
                 problems.append(f"{src}: {p.relative_to(ROOT)} is not readable JSON "
                                 f"({e}), so its date cannot be counted")
                 continue
-            cid = rec.get("case_id")
-            if cid not in wanted and not (set(case_ids_in(cid)) & wanted):
+            if not record_matches(rec.get("case_id"), wanted):
                 continue
             n_matched += 1
             ts = rec.get("t_start_utc")
