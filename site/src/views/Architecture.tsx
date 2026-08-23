@@ -46,6 +46,11 @@ import type { ArchBox, ArchDiagram, ArchEdge, Architecture } from "../lib/types"
  *  Scaling the CONTAINER, not the coordinates, keeps the served geometry the geometry the test asserted. */
 const SCALE = 0.72;
 
+/** Which of the payload's diagrams belong to this page. The vocabulary is authored in
+ *  `platform/curation/architecture.yaml` and checked there, so a value that no diagram declares fails
+ *  the build rather than rendering a page with nothing on it. */
+const VIEW = "architecture";
+
 /** `spine` -> `e-spine`, same derivation as the status classes and for the same reason: a route added to
  *  the payload later must fail the stylesheet check rather than render as an unremarkable line. */
 const routeClass = (r: string) => `e-${r.toLowerCase()}`;
@@ -99,9 +104,12 @@ function Box({ box, sel, onSelect }: { box: ArchBox; sel: boolean; onSelect: () 
       type="button"
       onClick={onSelect}
       aria-pressed={sel}
-      className={`archbox ${statusClass(box.status)} ${sel ? "on" : ""} ${
-        box.kind === "property" ? "prop" : ""
-      }`}
+      // `box.satellite` is derived in `build_site_data`, where the layout that depends on the same rule
+      // reads it. This tested `box.kind === "property"` until 2026-08-23, which was a name list standing
+      // in for a property: the `alternative` kind added on the closed-loop diagram has the identical
+      // geometry — one parent, no children, its parent's row — and would have been drawn full-width in
+      // its parent's lane with nothing failing (`feedback_scope_as_namelist`).
+      className={`archbox ${statusClass(box.status)} ${sel ? "on" : ""} ${box.satellite ? "prop" : ""}`}
       style={{ left: box.x, top: box.y, width: box.w, height: box.h }}
       // A `title` is a plain string, so this resolves the value rather than rendering `<A>`: there is no
       // element to hang `lang` on inside an attribute. The tooltip is a CONVENIENCE and nothing rests on
@@ -110,9 +118,7 @@ function Box({ box, sel, onSelect }: { box: ArchBox; sel: boolean; onSelect: () 
       // 2026-08-22, which is how five translated sentences came to render nowhere at all.
       title={authored(box.status_label).text}
     >
-      <span className="lab" lang="en">
-        {box.label}
-      </span>
+      <A v={box.label} className="lab" />
       <span className="meta">
         {box.count !== null ? <span className="cnt">{box.count}</span> : null}
         {box.n_cases ? (
@@ -127,11 +133,19 @@ function Box({ box, sel, onSelect }: { box: ArchBox; sel: boolean; onSelect: () 
 
 function Panel({ box, arch }: { box: ArchBox; arch: Architecture }) {
   const t = useT();
+  // Resolved here rather than rendered through `<A>` because each of these four needs its `lang` on an
+  // element `<A>` does not own — a heading, and three paragraphs one of which keeps its newlines. The
+  // resolution is the same one either way, so a panel cannot mark a Chinese sentence `lang="en"`.
+  const authored = useAuthored();
+  const label = authored(box.label);
+  const detail = authored(box.detail);
+  const whyThese = authored(box.why_these_cases);
+  const whyNot = authored(box.why_not_measured);
   const nonCiting = new Set(arch.non_colouring_restrictions);
   return (
     <div className={`archpanel ${statusClass(box.status)}`}>
       <div className="head">
-        <h4 lang="en">{box.label}</h4>
+        <h4 lang={label.lang}>{label.text}</h4>
         <span className={`badge ${statusClass(box.status)}`} lang="en">
           {box.status.replace(/_/g, " ")}
         </span>
@@ -144,8 +158,8 @@ function Panel({ box, arch }: { box: ArchBox; arch: Architecture }) {
           `build_site_data.ARCH_STATUS_LABEL[box.status]`: five sentences this platform wrote to say what
           each colour means. Quoting those verbatim gave a Chinese reader the legend to the whole picture
           in English, so they are `Authored` and render through `<A>`. */}
-      <p className="what" lang="en">
-        {box.detail.trim()}
+      <p className="what" lang={detail.lang}>
+        {detail.text.trim()}
       </p>
       <p className="why">
         <strong>{t("arc.whyColour")}</strong> <span lang="en">{box.why_this_status}</span>
@@ -198,15 +212,15 @@ function Panel({ box, arch }: { box: ArchBox; arch: Architecture }) {
       {box.measured !== null ? (
         <div className="note warn">
           <strong>{t("arc.neverExamined")}</strong>
-          <div style={{ marginTop: 6, whiteSpace: "pre-wrap" }} lang="en">
-            {box.why_not_measured?.trim()}
+          <div style={{ marginTop: 6, whiteSpace: "pre-wrap" }} lang={whyNot.lang}>
+            {whyNot.text.trim()}
           </div>
         </div>
       ) : (
         <>
           <p className="why">
             <strong>{t("arc.whyTheseCases")}</strong>{" "}
-            <span lang="en">{box.why_these_cases?.trim()}</span>
+            <span lang={whyThese.lang}>{whyThese.text.trim()}</span>
           </p>
           <table className="grid">
             <thead>
@@ -261,14 +275,18 @@ function Panel({ box, arch }: { box: ArchBox; arch: Architecture }) {
 function Diagram({ d, arch }: { d: ArchDiagram; arch: Architecture }) {
   const [sel, setSel] = useState<string | null>(null);
   const t = useT();
+  const authored = useAuthored();
+  const label = authored(d.label);
+  const subtitle = authored(d.subtitle);
+  const whyDiagram = authored(d.why_this_diagram);
   const v = d.viewbox;
   const chosen = d.boxes.find((b) => b.id === sel) ?? null;
 
   return (
     <section className="archsec">
-      <h3 lang="en">{d.label}</h3>
-      <p className="lede" lang="en">
-        {d.subtitle.trim()}
+      <h3 lang={label.lang}>{label.text}</h3>
+      <p className="lede" lang={subtitle.lang}>
+        {subtitle.text.trim()}
       </p>
 
       {/* Four columns — swatch, payload key, count, meaning — one row per status.
@@ -301,7 +319,7 @@ function Diagram({ d, arch }: { d: ArchDiagram; arch: Architecture }) {
           className="archcanvas"
           style={{ width: v.width * SCALE, height: v.height * SCALE }}
           role="group"
-          aria-label={`${d.label}: ${t("arc.aria", { boxes: d.n_boxes, edges: d.n_edges })}`}
+          aria-label={`${label.text}: ${t("arc.aria", { boxes: d.n_boxes, edges: d.n_edges })}`}
         >
           <div
             className="archinner"
@@ -353,8 +371,8 @@ function Diagram({ d, arch }: { d: ArchDiagram; arch: Architecture }) {
 
       <details className="archwhy">
         <summary>{t("arc.whyDiagram")}</summary>
-        <p style={{ whiteSpace: "pre-wrap", marginBottom: 0 }} lang="en">
-          {d.why_this_diagram.trim()}
+        <p style={{ whiteSpace: "pre-wrap", marginBottom: 0 }} lang={whyDiagram.lang}>
+          {whyDiagram.text.trim()}
         </p>
       </details>
     </section>
@@ -379,9 +397,18 @@ export default function ArchitectureView() {
         />
       </p>
 
-      {arch.diagrams.map((d) => (
-        <Diagram key={d.id} d={d} arch={arch} />
-      ))}
+      {/* Filtered on the payload's own `view` key, not on a list of diagram ids kept here. The
+          closed-loop picture is the recommended DESIGN; this page is what the study measured, and the
+          two answer different questions — drawing the design here beside "what the study looked at"
+          would read as a claim that the design is what was tested. A page that named the diagrams it
+          draws would silently gain the next one added; a page that filters on the property gains
+          nothing it did not ask for, and `check_architecture.py` fails the build on a view no diagram
+          uses, so a typo here cannot quietly empty the page. */}
+      {arch.diagrams
+        .filter((d) => d.view === VIEW)
+        .map((d) => (
+          <Diagram key={d.id} d={d} arch={arch} />
+        ))}
 
       <h3>{t("arc.h.coverage")}</h3>
       <p>

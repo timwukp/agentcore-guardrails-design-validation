@@ -1304,12 +1304,15 @@ def derive_controls(inputs: dict[str, str], cases: dict, published: dict,
 # number of crossings is exactly ZERO rather than under some tolerance — an equality assertion, which
 # is available here only because the geometry is constrained enough to make it provable:
 #
-#   * the spine is a topological order of the non-property boxes, one per row, top to bottom;
-#   * a `kind: property` box has exactly one incoming edge and no outgoing edges (the gate enforces
-#     that), so it can be placed in its parent's own row, to the right, and its edge routed in a lane
-#     above that row — a band no spine edge and no other row's lane occupies;
+#   * the spine is a topological order of the non-satellite boxes, one per row, top to bottom, over
+#     the edges that are not feedback edges;
+#   * a satellite box (`SATELLITE_KINDS`) has exactly one incoming edge and no outgoing edges (the gate
+#     enforces that), so it can be placed in its parent's own row, to the right, and its edge routed in
+#     a lane above that row — a band no spine edge and no other row's lane occupies;
 #   * an edge that skips rows is routed in a left-hand gutter, in a lane chosen so that nested spans
-#     nest and the outer span takes the outer lane.
+#     nest and the outer span takes the outer lane. A feedback edge is one of these by construction:
+#     it must skip a row, because the adjacent-row band draws top-to-bottom and would lose its
+#     direction, and the builder refuses to draw one that does not.
 #
 # Every offset below is monotone in the lane index for exactly that reason: a stub that reached its
 # lane by crossing an inner lane's segment would be the one crossing the whole construction exists to
@@ -1321,6 +1324,24 @@ BOX_W, BOX_H = 200, 96
 ROW_GAP = 52                     # > the deepest property lane offset (10 + 11*(N-1)), so a lane never
 COL_PITCH = 274                  #   enters the row above; > the deepest riser (208 + 9*(N-1))
 ROW_PITCH = BOX_H + ROW_GAP
+
+# The two kinds the layout treats as a SATELLITE: exactly one incoming edge, no outgoing edge, placed
+# in its parent's own row with its edge in the band above. `property` is a facet OF its parent;
+# `alternative` is a substitute FOR it — §3.3 of the design document is Hop #2-ALT, a different way to
+# do Hop #2 rather than an attribute of it. The geometric contract is identical, which is why one tuple
+# governs both; the word beside the box is not, which is why there are two names. Labelling the ALT box
+# `property` would have been the smaller edit and would have told every reader that ApplyGuardrail is a
+# feature of Bedrock Guardrails input evaluation.
+SATELLITE_KINDS = ("property", "alternative")
+
+# The one edge kind that may point UP the page. §2 of the design document closes the loop — what the
+# AFTER phase learns changes what the BEFORE phase enforces — and a picture of a closed loop with no
+# back edge is a picture of an open one. A feedback edge is excluded from the topological order here and
+# from the acyclicity walk in `check_architecture.py`, which replaces those two checks with two narrower
+# ones rather than dropping them: the graph MINUS its feedback edges is still acyclic, and every
+# feedback edge must lie on a cycle in the full graph. Without that second arm `kind: feedback` would be
+# a word that exempts an ordinary forward edge from the ordering rule.
+FEEDBACK_EDGE_KIND = "feedback"
 
 # Restrictions that disqualify a case from COLOURING a box. Deliberately the same partition
 # `check_controls.py` applies to a control's findings (its RESTRICTION_NEVER | RESTRICTION_CONTEXT_ONLY),
@@ -1445,7 +1466,7 @@ def _spine_order(box_ids: list[str], edges: list[dict], rel: str, diagram: str) 
             if indeg[n] == 0:
                 ready = sorted([*ready, n], key=rank.get)
     if len(order) != len(box_ids):
-        die(f"{rel}: diagram {diagram} has a cycle among its non-property boxes "
+        die(f"{rel}: diagram {diagram} has a cycle among its spine boxes "
             f"({sorted(set(box_ids) - set(order))}). A pipeline diagram asserts an ORDER — sealed "
             f"before measured, replicated before amended — and a cycle means the file no longer "
             f"states one.")
@@ -1459,19 +1480,20 @@ def _layout(diagram: dict, boxes: dict[str, dict], edges: list[dict], rel: str) 
     picture's shape is a function of the topology alone, so a new verdict never moves a box, and a
     reader comparing two releases sees the annotation change and the structure stay put.
     """
-    spine = [b for b in boxes if boxes[b]["kind"] != "property"]
+    spine = [b for b in boxes if boxes[b]["kind"] not in SATELLITE_KINDS]
     order = _spine_order(spine, [e for e in edges
-                                 if boxes[e["from"]]["kind"] != "property"
-                                 and boxes[e["to"]]["kind"] != "property"],
+                                 if boxes[e["from"]]["kind"] not in SATELLITE_KINDS
+                                 and boxes[e["to"]]["kind"] not in SATELLITE_KINDS
+                                 and e["kind"] != FEEDBACK_EDGE_KIND],
                          rel, diagram["id"])
     row = {b: i for i, b in enumerate(order)}
 
-    # A property's parent is its single incoming edge's source; the gate proves there is exactly one,
+    # A satellite's parent is its single incoming edge's source; the gate proves there is exactly one,
     # so this lookup cannot be ambiguous. `sats[parent]` keeps authored order, which is what decides
     # which lane each one gets — and the lanes are monotone, so authored order is drawing order.
     sats: dict[str, list[str]] = {b: [] for b in order}
     for e in edges:
-        if boxes[e["to"]]["kind"] == "property":
+        if boxes[e["to"]]["kind"] in SATELLITE_KINDS:
             sats.setdefault(e["from"], []).append(e["to"])
 
     for b in order:
@@ -1486,7 +1508,7 @@ def _layout(diagram: dict, boxes: dict[str, dict], edges: list[dict], rel: str) 
     # ascending is what makes the outer lane the longer edge, which is the condition under which the
     # stubs cannot cross (a stub reaching an outer lane passes no inner lane's column).
     lanes: list[list[tuple[int, int]]] = []
-    skips = sorted([e for e in edges if boxes[e["to"]]["kind"] != "property"
+    skips = sorted([e for e in edges if boxes[e["to"]]["kind"] not in SATELLITE_KINDS
                     and abs(row[e["to"]] - row[e["from"]]) > 1],
                    key=lambda e: abs(row[e["to"]] - row[e["from"]]))
     lane_of: dict[int, int] = {}
@@ -1503,10 +1525,10 @@ def _layout(diagram: dict, boxes: dict[str, dict], edges: list[dict], rel: str) 
 
     for e in edges:
         src, dst = boxes[e["from"]], boxes[e["to"]]
-        if dst["kind"] == "property":
+        if dst["kind"] in SATELLITE_KINDS:
             kids = sats[e["from"]]
             n, k = len(kids), kids.index(e["to"])
-            # Monotone in k, and every offset decreasing: the riser of a further-out property sits
+            # Monotone in k, and every offset decreasing: the riser of a further-out satellite sits
             # closer to the box, its lane sits higher, and its exit from the parent sits higher. Any
             # one of the three reversed puts a stub across an inner lane.
             riser = src["x"] + BOX_W + 8 + 9 * (n - 1 - k)
@@ -1517,6 +1539,14 @@ def _layout(diagram: dict, boxes: dict[str, dict], edges: list[dict], rel: str) 
                            [drop, lane_y], [drop, dst["y"]]]
             e["route"], e["lane"] = "property", k + 1
         elif abs(dst["row"] - src["row"]) == 1:
+            if e["kind"] == FEEDBACK_EDGE_KIND:
+                # The adjacent-row band is drawn top-to-bottom, from the upper box's lower edge to the
+                # lower box's upper edge, so an up-pointing arrow placed in it renders identically to a
+                # down-pointing one. The whole content of a feedback edge is its direction, so the
+                # builder refuses rather than drawing the loop as another forward step.
+                die(f"{rel}: diagram {diagram['id']} puts the feedback edge {e['from']}->{e['to']} "
+                    f"between adjacent rows. Only the gutter route can show an arrow pointing back "
+                    f"up the page; in the spine band the reader sees a forward step.")
             top, bottom = sorted((src, dst), key=lambda b: b["y"])
             e["points"] = [[BOX_W / 2, top["y"] + BOX_H], [BOX_W / 2, bottom["y"]]]
             e["route"], e["lane"] = "spine", 0
@@ -1537,9 +1567,49 @@ def _layout(diagram: dict, boxes: dict[str, dict], edges: list[dict], rel: str) 
             "width": max(xs) - min(xs) + 2 * pad, "height": max(ys) - min(ys) + 2 * pad}
 
 
+def _section_detail(sid: str, s: dict) -> dict[str, str]:
+    """What a `from_section` box says about itself, built from the section's own derived fields.
+
+    A box that reads its evidence out of the design document must not carry a hand-written description
+    of that section: the two would be free to disagree the moment the document was amended, and the
+    box's copy is the one on the picture. So every number and every classification in this sentence is
+    the extractor's, and the only authored part is the sentence shape.
+    """
+    hop = s["hop"]
+    return authored(
+        f"§{sid} of the design document — the {s['phase']} phase, "
+        f"{f'checkpoint hop #{hop}' if hop else 'no numbered checkpoint hop'} — and the "
+        f"{s['n_practices']} numbered practice(s) under it. The heading, the phase, the hop and the "
+        f"case chips are all read out of the document at build time, so this box cannot describe a "
+        f"section the document no longer has.",
+        f"設計文件的 §{sid}——{s['phase']} 階段、"
+        f"{f'檢查點 Hop #{hop}' if hop else '不屬於任何編號檢查點'}——以及其下的 "
+        f"{s['n_practices']} 條編號實務。標題、階段、Hop 與案例標籤都在建置時從文件讀出，"
+        f"因此這個方框無法描述文件裡已不存在的章節。")
+
+
+def _section_why_these_cases(sid: str) -> dict[str, str]:
+    """Why a `from_section` box carries the cases it carries — and whose claim that is.
+
+    The distinction this sentence exists to make: on the other two diagrams a chip means *this
+    platform judged that this case is about this component*, and here it means *the document cites
+    this case in this section*. Those are different claims with different authors, and a reader
+    cannot tell them apart from a chip.
+    """
+    return authored(
+        f"Every case §{sid} cites, anywhere in the section. This is the document's own claim about "
+        f"its own evidence, parsed rather than retyped — a chip here is not this platform vouching "
+        f"for the link. `platform/build/check_practices.py` adjudicates each citation against the "
+        f"register and the citation policy before the build is allowed to draw it.",
+        f"§{sid} 全節所引用的每一個案例。這是文件對自身證據的主張，由程式解析而非人工重打——"
+        f"這裡的標籤不代表本平台為該連結背書。每一條引用都先由 "
+        f"`platform/build/check_practices.py` 對照登錄表與引用政策裁決，建置才准許把它畫出來。")
+
+
 def derive_architecture(inputs: dict[str, str], cases: dict, published: dict,
-                        restricted: dict[str, list[str]], metrics: dict[str, int]) -> dict:
-    """The authored topology of the two diagrams, with every annotation and coordinate derived here.
+                        restricted: dict[str, list[str]], metrics: dict[str, int],
+                        sections: dict[str, dict]) -> dict:
+    """The authored topology of the diagrams, with every annotation and coordinate derived here.
 
     The coverage claim is the arm worth reading twice. Placed cases plus the authored `unplaced_cases`
     must equal the register EXACTLY, both directions, because a diagram is a claim about coverage
@@ -1550,6 +1620,13 @@ def derive_architecture(inputs: dict[str, str], cases: dict, published: dict,
     The citation rules themselves are NOT re-implemented here; `platform/build/check_architecture.py`
     owns them and runs in the publish gate, importing the one status function from this module so
     there is a single rule set rather than two that can disagree.
+
+    `sections` is `derive_practices()`'s section table, keyed by section id, and it is a PARAMETER
+    rather than a second read of the design document for the same reason the metrics are: a box that
+    named §3.1 and then described it in its own words would be a second source of truth for the
+    document, and it is the box a reader screenshots. A box carrying `from_section` takes its label,
+    its description and its entire case set from that table, so its colour is computed from exactly
+    the cases the design page shows under the same heading — one derivation, two views of it.
     """
     rel = "platform/curation/architecture.yaml"
     path = ROOT / "platform" / "curation" / "architecture.yaml"
@@ -1589,7 +1666,29 @@ def derive_architecture(inputs: dict[str, str], cases: dict, published: dict,
                 die(f"{rel}: diagram {d['id']} holds a box with no `id`")
             if b["id"] in boxes:
                 die(f"{rel}: diagram {d['id']} defines the box {b['id']} twice")
-            annotated = [annotate(c, f"{d['id']}/{b['id']}") for c in (b.get("cases") or [])]
+            # A `from_section` box reads its label, its description and its whole case set out of the
+            # design document instead of carrying them. That is the same authored/derived split this
+            # file is built on, applied one level further: on the closed-loop diagram the judgment
+            # worth authoring is which section belongs in which box, and a second hand-written copy of
+            # the section's heading and citations would be a second source of truth for the document.
+            sid = b.get("from_section")
+            if sid is not None:
+                sid = str(sid)
+                if sid not in sections:
+                    die(f"{rel}: diagram {d['id']}/{b['id']} reads §{sid} out of the design document, "
+                        f"which has no such measured section. It carries {sorted(sections)}.")
+                s = sections[sid]
+                annotated = s["cases"]
+                if not annotated:
+                    die(f"{rel}: diagram {d['id']}/{b['id']} derives its cases from §{sid}, which "
+                        f"cites none. The box would render as not_measured with no sentence saying "
+                        f"so, which is the one state on this picture a reader must not have to guess.")
+                label, detail = s["heading"], _section_detail(sid, s)
+                why_these = _section_why_these_cases(sid)
+            else:
+                annotated = [annotate(c, f"{d['id']}/{b['id']}") for c in (b.get("cases") or [])]
+                label, detail = b.get("label"), b.get("detail")
+                why_these = b.get("why_these_cases")
             status, why = box_status(annotated)
             metric = b.get("count_from")
             mix: dict[str, int] = {}
@@ -1597,11 +1696,19 @@ def derive_architecture(inputs: dict[str, str], cases: dict, published: dict,
                 key = c["verdict"] or "no verdict"
                 mix[key] = mix.get(key, 0) + 1
             boxes[b["id"]] = {
-                "id": b["id"], "label": b.get("label"), "detail": b.get("detail"),
+                "id": b["id"], "label": label, "detail": detail,
                 "kind": b.get("kind"), "program": b.get("program"),
+                # Derived, not authored, and published rather than left for the view to recompute. The
+                # view needs to know that a box hangs off the one to its left — it draws it narrower and
+                # dimmer — and a view that asked `kind == "property"` would have gone on drawing the
+                # `alternative` kind full-width the day that kind was added, with no test failing
+                # (`feedback_scope_as_namelist`). The membership rule lives in exactly one place, here,
+                # where the layout that depends on it also reads it.
+                "satellite": b.get("kind") in SATELLITE_KINDS,
                 "venv": b.get("venv"), "machine": b.get("machine"),
+                "from_section": sid,
                 "cases": annotated, "n_cases": len(annotated),
-                "why_these_cases": b.get("why_these_cases"),
+                "why_these_cases": why_these,
                 "measured": b.get("measured"), "why_not_measured": b.get("why_not_measured"),
                 "status": status, "status_label": ARCH_STATUS_LABEL[status], "why_this_status": why,
                 "verdict_mix": mix,
@@ -1625,7 +1732,8 @@ def derive_architecture(inputs: dict[str, str], cases: dict, published: dict,
         for b in boxes.values():
             by_status[b["status"]] = by_status.get(b["status"], 0) + 1
         out_diagrams.append({
-            "id": d["id"], "label": d.get("label"), "subtitle": d.get("subtitle"),
+            "id": d["id"], "view": d.get("view"),
+            "label": d.get("label"), "subtitle": d.get("subtitle"),
             "why_this_diagram": d.get("why_this_diagram"),
             "boxes": _plain(list(boxes.values()), f"{rel}:{d['id']}.boxes"),
             "edges": _plain(edges, f"{rel}:{d['id']}.edges"),
@@ -2162,16 +2270,20 @@ def main(argv: list[str] | None = None) -> int:
     # After controls, families, figures and registers, because every number a diagram box displays is
     # one of theirs. The diagram counts nothing itself — a box names a metric and this table computes
     # it, so the picture cannot show a total that disagrees with the page it links to.
-    with scope() as s_arch:
-        architecture = derive_architecture(
-            inputs, cases, published, restricted,
-            architecture_metrics(cases, published, restricted, archive, by_case, families, controls,
-                                 figures, registers))
     # The design page. After the register, the published verdicts and the citation policy, because every
     # chip and every status beside a practice is read out of those three — and the adjudication of a
     # citation the policy restricts cannot be decided before the policy has been read.
     with scope() as s_practices:
         practices = derive_practices(inputs, cases, published, restricted)
+    # And BEFORE the architecture, which is the newer dependency: the closed-loop diagram's boxes take
+    # their headings and their cases from these sections rather than repeating them, so the section
+    # table has to exist before a box can be drawn from it.
+    with scope() as s_arch:
+        architecture = derive_architecture(
+            inputs, cases, published, restricted,
+            architecture_metrics(cases, published, restricted, archive, by_case, families, controls,
+                                 figures, registers),
+            {s["id"]: s for s in practices["sections"]})
     # The audit page: the two command-line programs run over the checked-in example submission, in
     # process, so the published example is what the code does today rather than a stored output.
     with scope() as s_audit:
@@ -2224,9 +2336,13 @@ def main(argv: list[str] | None = None) -> int:
     # Every source whose numbers a box can display, plus the three the annotation derives from. A
     # narrower list would let this file inherit a redaction exception it did not earn, and a wider one
     # would let it inherit one it should not have.
+    # `s_practices` is in this list because the closed-loop diagram's headings and case chips are read
+    # out of the two v1.4 editions. A diagram that quotes a document and does not name it as a source is
+    # a diagram whose reader cannot tell which edition it quotes.
     put("architecture.json", architecture, s_arch.sorted() + s_register.sorted()
         + s_published.sorted() + s_policy.sorted() + s_archive.sorted() + s_claims.sorted()
-        + s_families.sorted() + s_controls.sorted() + s_figures.sorted() + s_registers.sorted())
+        + s_families.sorted() + s_controls.sorted() + s_figures.sorted() + s_registers.sorted()
+        + s_practices.sorted())
     # The two v1.4 editions and the adjudication ledger are this file's own sources; the register, the
     # published verdicts and the citation policy are the three the joins are made against. Naming all
     # six is what lets a reader check the sentence this page is built to support — that each practice's

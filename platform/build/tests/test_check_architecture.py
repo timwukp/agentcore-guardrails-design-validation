@@ -25,6 +25,17 @@ WHY THE ARMS ASSERT rc == 2 AND NEVER rc == 1
 
 Both paths out of the gate — a finding and an unusable input — exit 2. 1 is what a Python traceback
 exits with, so an arm accepting 1 would accept a crash as a detection.
+
+WHY SOME ARMS ARE POSITIVE AND ONE OF THEM ASSERTS rc == 0
+
+A mutant can only show that a rule fires. Two of this gate's newer rules are about something the file
+does NOT say: a box that names `from_section` takes its cases from the design document, so the failure
+to worry about is the placement quietly not happening — no message, no finding, a diagram that reports
+nine sections' evidence as absent. There is no mutation of the YAML that produces that; it comes from
+reading the authored key instead of the resolved one. So `test_a_case_the_document_cites_stays_placed_
+with_no_authored_list` deletes every document-cited case from every authored list and requires rc **0**,
+and `test_the_real_file_reads_every_section_the_document_measures` closes the other direction — a
+section the document measures that no box reads is a hop missing from the picture with nothing saying so.
 """
 
 from __future__ import annotations
@@ -75,6 +86,26 @@ def never_cite(facts) -> list[str]:
     return sorted(c for c, rs in restrictions.items() if cc.RESTRICTION_NEVER & rs)
 
 
+@pytest.fixture(scope="module")
+def sections() -> dict[str, dict]:
+    """The design document's measured sections, through the gate's own reader.
+
+    Module-scoped because `read_sections()` runs `check_practices.adjudicate()`, and re-parsing two
+    editions of a 45-practice document once per arm would cost more than every other fixture combined.
+    """
+    return ca.read_sections()
+
+
+@pytest.fixture(scope="module")
+def section_cited(sections) -> set[str]:
+    """Every case the design document cites — placement this file cannot revoke by editing itself."""
+    return {c for s in sections.values() for c in (s.get("section_cites") or [])}
+
+
+def _section_box(data: dict) -> tuple[dict, dict]:
+    return _box(data, lambda b: b.get("from_section"), "reading its cases from a document section")
+
+
 def _pick(group: dict[str, list[str]], key: str) -> str:
     cases = group.get(key)
     if not cases:
@@ -116,8 +147,20 @@ def _unmeasured_box(data: dict) -> tuple[dict, dict]:
     return _box(data, lambda b: b.get("measured") is not None, "declared `measured: none`")
 
 
-def _property_box(data: dict) -> tuple[dict, dict]:
-    return _box(data, lambda b: b.get("kind") == "property", "kind: property")
+def _satellite_box(data: dict, kind: str) -> tuple[dict, dict]:
+    return _box(data, lambda b: b.get("kind") == kind, f"kind: {kind}")
+
+
+def _bilingual_diagram(data: dict) -> tuple[dict, dict]:
+    """The first diagram whose prose is authored in both languages, with its own subtitle.
+
+    Mutating a bare-string subtitle would test the string arm a second time; the bilingual arms need a
+    value that already has the mapping shape, so the mutation is the only difference.
+    """
+    for d in data["diagrams"]:
+        if isinstance(d.get("subtitle"), dict):
+            return d, d["subtitle"]
+    pytest.skip("no diagram currently carries a bilingual subtitle")
 
 
 # --------------------------------------------------------------------------- 0. the control
@@ -203,6 +246,47 @@ def test_one_diagram_is_below_the_floor(tmp_path, real, capsys):
     assert rc == 2 and "floor" in out, out
 
 
+def test_a_missing_view_vocabulary_stops_the_gate(tmp_path, real, capsys):
+    data = copy.deepcopy(real)
+    del data["vocabularies"]["view"]
+    rc, out = _run(tmp_path, data, capsys)
+    assert rc == 2 and "view" in out, out
+
+
+def test_a_diagram_with_no_view_is_caught(tmp_path, real, capsys):
+    """Which page draws a diagram is declared, not inferred. `Architecture.tsx` filters on this key, so a
+    diagram with no view is one both pages draw — and the evidence page would then show the design's own
+    loop under the heading 'what the study looked at', which is the one thing it is not."""
+    data = copy.deepcopy(real)
+    del _d(data)["view"]
+    rc, out = _run(tmp_path, data, capsys)
+    assert rc == 2 and "view" in out, out
+
+
+def test_a_view_outside_the_vocabulary_is_caught(tmp_path, real, capsys):
+    data = copy.deepcopy(real)
+    _d(data)["view"] = "both"
+    rc, out = _run(tmp_path, data, capsys)
+    assert rc == 2 and "vocabulary" in out, out
+
+
+def test_a_view_no_diagram_uses_is_caught(tmp_path, real, capsys):
+    """The other direction, and the one that decays silently: if every diagram moved to one page, the
+    unused view would stay declared and would go on describing a partition the file no longer makes."""
+    data = copy.deepcopy(real)
+    data["vocabularies"]["view"] = [*data["vocabularies"]["view"], "printable"]
+    rc, out = _run(tmp_path, data, capsys)
+    assert rc == 2 and "printable" in out, out
+
+
+def test_the_real_file_declares_a_diagram_in_every_view(real):
+    """Positive direction, over the real file: each declared view has at least one diagram, so the arms
+    that quantify over a view's diagrams are not quantifying over nothing."""
+    declared = set(real["vocabularies"]["view"])
+    used = {d.get("view") for d in real["diagrams"]}
+    assert declared == used, f"declared {sorted(declared)}, used {sorted(v for v in used if v)}"
+
+
 # --------------------------------------------------------------------------- 2. the diagram
 
 
@@ -212,6 +296,60 @@ def test_a_short_subtitle_or_justification_is_caught(tmp_path, real, capsys):
         _d(data)[key] = "x" * (floor - 1)
         rc, out = _run(tmp_path, data, capsys)
         assert rc == 2 and key in out, out
+
+
+def test_a_bilingual_value_saying_the_same_thing_twice_is_caught(tmp_path, real, capsys):
+    """`authored()`'s own rule, restated where the value is authored rather than emitted.
+
+    A `zh` that repeats the English claims a translation the reader does not get, and it is worse than an
+    untranslated string because the untranslated one is counted: `census_rendered_surfaces.py` measures
+    bare strings as the backlog, and a mapping is assumed done. So the dishonest shape is the one that
+    has to fail.
+    """
+    data = copy.deepcopy(real)
+    d, _ = _bilingual_diagram(data)
+    text = "x" * (ca.MIN_SUBTITLE + 10)
+    d["subtitle"] = {"en": text, "zh": text}
+    rc, out = _run(tmp_path, data, capsys)
+    assert rc == 2 and "both languages" in out, out
+
+
+def test_a_short_chinese_half_is_caught(tmp_path, real, capsys):
+    """Each half is held to its own floor. An arm reading only `en` would pass a `zh` trimmed to two
+    characters, and the reader of the Chinese page is the one who would find out."""
+    data = copy.deepcopy(real)
+    d, _ = _bilingual_diagram(data)
+    floor = int(ca.MIN_SUBTITLE * ca.ZH_LENGTH_RATIO)
+    d["subtitle"] = {"en": "x" * (ca.MIN_SUBTITLE + 10), "zh": "z" * (floor - 1)}
+    rc, out = _run(tmp_path, data, capsys)
+    assert rc == 2 and "subtitle.zh" in out, out
+
+
+def test_a_short_english_half_is_caught_at_the_full_floor(tmp_path, real, capsys):
+    """And the Chinese ratio must not have relaxed the English side on the way past."""
+    data = copy.deepcopy(real)
+    d, _ = _bilingual_diagram(data)
+    d["subtitle"] = {"en": "x" * (ca.MIN_SUBTITLE - 1), "zh": "z" * (ca.MIN_SUBTITLE + 10)}
+    rc, out = _run(tmp_path, data, capsys)
+    assert rc == 2 and "subtitle.en" in out, out
+
+
+def test_a_bilingual_value_with_a_third_key_is_caught(tmp_path, real, capsys):
+    """A mapping with an extra key loses whatever is in it silently — including a `zh-TW` somebody added
+    thinking the payload keyed languages by tag."""
+    data = copy.deepcopy(real)
+    d, _ = _bilingual_diagram(data)
+    d["subtitle"] = {"en": "x" * (ca.MIN_SUBTITLE + 10), "zh": "z" * (ca.MIN_SUBTITLE + 10),
+                     "zh-TW": "z" * (ca.MIN_SUBTITLE + 10)}
+    rc, out = _run(tmp_path, data, capsys)
+    assert rc == 2 and "exactly" in out, out
+
+
+def test_the_real_file_has_a_bilingual_diagram_at_all(real):
+    """Otherwise the four arms above are testing a shape the file does not use, and the day the last
+    bilingual value is deleted they would go on passing over bare strings."""
+    bilingual = [d["id"] for d in real["diagrams"] if isinstance(d.get("subtitle"), dict)]
+    assert bilingual, "no diagram carries a bilingual subtitle; the prose arms have gone vacuous"
 
 
 def test_a_duplicate_box_id_is_caught(tmp_path, real, capsys):
@@ -298,6 +436,65 @@ def test_every_program_named_by_the_real_file_exists():
     assert len(named) >= 8, f"only {len(named)} box(es) name a program; this check has gone thin"
     for p in named:
         assert (ca.ROOT / p).is_file(), p
+
+
+# ------------------------------------------- 3b. a box that reads a document section
+
+
+def test_a_section_that_the_document_does_not_have_is_caught(tmp_path, real, capsys):
+    """A box may name a section only if the design document has one, with citations of its own.
+
+    The section ids are the document's, and a renumbering there would otherwise leave a box silently
+    reading nothing: `sections.get(sid, {})` yields no cases, the box draws as not_measured, and the page
+    would report 'this study never looked' about a section the study covered.
+    """
+    data = copy.deepcopy(real)
+    _, box = _section_box(data)
+    box["from_section"] = "9.9"
+    rc, out = _run(tmp_path, data, capsys)
+    assert rc == 2 and "9.9" in out and "measured section" in out, out
+
+
+@pytest.mark.parametrize("key", sorted(ca.FROM_SECTION_DERIVES))
+def test_authoring_a_derived_key_beside_from_section_is_caught(tmp_path, real, capsys, key):
+    """The split, in the direction this file can break it: a second wording of a section is one wording
+    that can go stale, and it is the one on the picture."""
+    data = copy.deepcopy(real)
+    _, box = _section_box(data)
+    box[key] = ["F1-1"] if key == "cases" else ("none" if key == "measured" else "x" * 200)
+    rc, out = _run(tmp_path, data, capsys)
+    assert rc == 2 and key in out and "document" in out, out
+
+
+def test_the_real_file_reads_every_section_the_document_measures(real, sections):
+    """Positive direction, and a ceiling on the other side of `from_section`.
+
+    A section the document measures and no box reads is a piece of the design the diagram silently drops
+    — the reader sees five hops where the document prescribes six, and nothing in the payload says a
+    section is missing. This is the arm that would have caught the closed-loop diagram shipping with a
+    phase left out.
+    """
+    read = {str(b["from_section"]) for d in real["diagrams"] for b in d["boxes"]
+            if b.get("from_section")}
+    assert read == set(sections), f"the document measures {sorted(set(sections) - read)} that no box " \
+                                  f"reads, and boxes read {sorted(read - set(sections))} it does not " \
+                                  f"measure"
+
+
+def test_a_section_box_places_the_cases_the_document_cites(real, sections, capsys):
+    """The count, derived twice and compared — the placement census against the document's own citations.
+
+    `check_box` resolves a section box's cases and hands them to the coverage census; this asserts the
+    two agree, over the real file rather than a mutant. Two numbers are two claims, so neither is inferred
+    from the other (`feedback_two_numbers_two_claims`): the left side counts boxes in this file, the right
+    side counts citations in the document.
+    """
+    from_boxes = {c for d in real["diagrams"] for b in d["boxes"] if b.get("from_section")
+                  for c in sections[str(b["from_section"])]["section_cites"]}
+    from_doc = {c for s in sections.values() for c in s["section_cites"]}
+    assert from_boxes == from_doc, sorted(from_doc ^ from_boxes)
+    assert len(from_doc) >= 40, f"the document cites {len(from_doc)} distinct case(s); this arm would " \
+                                f"then be asserting almost nothing"
 
 
 # ------------------------------------------------------- 4. measured, or explicitly not
@@ -508,27 +705,95 @@ def test_an_isolated_box_is_caught(tmp_path, real, capsys):
     assert rc == 2 and "no edge at all" in out, out
 
 
-def test_a_property_box_with_a_second_parent_is_caught(tmp_path, real, capsys):
-    """The placement rule the crossing-free layout rests on. A property with two parents cannot sit in
-    one parent's row, and the layout would have to route an edge across the spine to reach it."""
+@pytest.mark.parametrize("kind", sorted(ca.SATELLITE_KINDS))
+def test_a_satellite_box_with_a_second_parent_is_caught(tmp_path, real, capsys, kind):
+    """The placement rule the crossing-free layout rests on, over every satellite kind.
+
+    A satellite with two parents cannot sit in one parent's row, and the layout would have to route an
+    edge across the spine to reach it. Parametrized over the kinds rather than written for `property`,
+    because `alternative` was added later and shares the whole contract — a rule checked for one of two
+    kinds is a rule the newer kind can walk past.
+    """
     data = copy.deepcopy(real)
-    d, prop = _property_box(data)
-    parent = next(e["from"] for e in d["edges"] if e["to"] == prop["id"])
+    d, sat = _satellite_box(data, kind)
+    parent = next(e["from"] for e in d["edges"] if e["to"] == sat["id"])
     other = next(b["id"] for b in d["boxes"]
-                 if b["id"] not in {prop["id"], parent} and b.get("kind") != "property")
-    d["edges"].append({"from": other, "to": prop["id"], "kind": "data_flow", "label": "also"})
+                 if b["id"] not in {sat["id"], parent} and b.get("kind") not in ca.SATELLITE_KINDS)
+    d["edges"].append({"from": other, "to": sat["id"], "kind": "data_flow", "label": "also"})
     rc, out = _run(tmp_path, data, capsys)
     assert rc == 2 and "incoming" in out, out
 
 
-def test_an_edge_out_of_a_property_box_is_caught(tmp_path, real, capsys):
+@pytest.mark.parametrize("kind", sorted(ca.SATELLITE_KINDS))
+def test_an_edge_out_of_a_satellite_box_is_caught(tmp_path, real, capsys, kind):
     data = copy.deepcopy(real)
-    d, prop = _property_box(data)
+    d, sat = _satellite_box(data, kind)
     target = next(b["id"] for b in d["boxes"]
-                  if b["id"] != prop["id"] and b.get("kind") != "property")
-    d["edges"].append({"from": prop["id"], "to": target, "kind": "data_flow", "label": "onward"})
+                  if b["id"] != sat["id"] and b.get("kind") not in ca.SATELLITE_KINDS)
+    d["edges"].append({"from": sat["id"], "to": target, "kind": "data_flow", "label": "onward"})
     rc, out = _run(tmp_path, data, capsys)
     assert rc == 2 and "outgoing" in out, out
+
+
+def test_a_feedback_label_does_not_buy_a_satellite_an_outgoing_edge(tmp_path, real, capsys):
+    """The reason the degree counts span the feedback edges as well as the ordering ones.
+
+    `feedback` is exempt from the acyclicity walk and from nothing else. If the degree checks had been
+    built over the order graph — the natural way to write them, since that is the graph the walk needs —
+    then labelling an edge `feedback` would let a satellite acquire a child, and the crossing-free
+    construction rests on satellites having none.
+    """
+    data = copy.deepcopy(real)
+    d, sat = _satellite_box(data, "property")
+    target = next(b["id"] for b in d["boxes"]
+                  if b["id"] != sat["id"] and b.get("kind") not in ca.SATELLITE_KINDS)
+    d["edges"].append({"from": sat["id"], "to": target,
+                       "kind": ca.FEEDBACK_EDGE_KIND, "label": "onward"})
+    rc, out = _run(tmp_path, data, capsys)
+    assert rc == 2 and "outgoing" in out, out
+
+
+def test_a_feedback_edge_that_closes_no_loop_is_caught(tmp_path, real, capsys):
+    """What replaces the acyclicity exemption, in the direction the label can be abused.
+
+    An edge marked `feedback` is not walked for cycles, so the label is a way to draw an arrow the
+    ordering rules would otherwise reject. The price is that it must actually close a loop: there has to
+    be a path from its head back to its tail. Without this arm, `feedback` reads as 'exempt this arrow
+    from the rules', which is a licence rather than a kind.
+    """
+    data = copy.deepcopy(real)
+    found = None
+    for d in data["diagrams"]:
+        adj: dict[str, list[str]] = {b["id"]: [] for b in d["boxes"]}
+        kinds = {b["id"]: b.get("kind") for b in d["boxes"]}
+        existing = set()
+        for e in d["edges"]:
+            adj[e["from"]].append(e["to"])
+            existing.add((e["from"], e["to"]))
+
+        def reaches(src: str, dst: str, adj: dict[str, list[str]] = adj) -> bool:
+            seen, stack = {src}, [src]
+            while stack:
+                for n in adj[stack.pop()]:
+                    if n == dst:
+                        return True
+                    if n not in seen:
+                        seen.add(n)
+                        stack.append(n)
+            return False
+
+        spine = [b for b in adj if kinds[b] not in ca.SATELLITE_KINDS]
+        found = next(((d, a, b) for a in spine for b in spine
+                      if a != b and (a, b) not in existing and not reaches(b, a)), None)
+        if found:
+            break
+    if not found:
+        pytest.skip("every ordered pair of spine boxes already has a return path, so a feedback edge "
+                    "that closes no loop cannot be built from the real topology")
+    d, a, b = found
+    d["edges"].append({"from": a, "to": b, "kind": ca.FEEDBACK_EDGE_KIND, "label": "back, allegedly"})
+    rc, out = _run(tmp_path, data, capsys)
+    assert rc == 2 and "closes no loop" in out and f"{a}->{b}" in out, out
 
 
 # --------------------------------------------------------------------------- 8. coverage
@@ -561,27 +826,67 @@ def test_a_case_both_placed_and_unplaced_is_caught(tmp_path, real, capsys):
     assert rc == 2 and box["cases"][0] in out, out
 
 
-def test_a_registered_case_that_is_neither_placed_nor_excluded_is_caught(tmp_path, real, capsys):
+def test_a_registered_case_that_is_neither_placed_nor_excluded_is_caught(
+        tmp_path, real, capsys, section_cited):
     """The ceiling, in the direction that matters: a case joining the register later must not be able to
     appear on no diagram and in no list. Invisible by construction is the failure mode this repository is
-    built against (`feedback_unnumbered_is_uncounted`)."""
+    built against (`feedback_unnumbered_is_uncounted`).
+
+    The case has to be one that ONLY this file places. Half the closed-loop diagram's boxes take their
+    cases from the design document's own citations, and no edit to this file can revoke those — which is
+    the point of `from_section` and is asserted directly in the arm below. Deleting a document-cited case
+    from every authored list here leaves it placed, so an arm that picked one would report the ceiling
+    broken when it is the derivation working.
+    """
     data = copy.deepcopy(real)
-    dropped = None
-    for d in data["diagrams"]:
-        for b in d["boxes"]:
-            if len(b.get("cases") or []) > 1:
-                dropped = b["cases"].pop()
-                break
-        if dropped:
-            break
-    assert dropped, "no box has two cases to drop one from"
-    # And out of the other diagram too, or the union still covers it.
+    dropped = next((c for d in data["diagrams"] for b in d["boxes"]
+                    for c in (b.get("cases") or [])
+                    if len(b["cases"]) > 1 and c not in section_cited), None)
+    assert dropped, "every case on a multi-case box is also cited by the design document; this arm " \
+                    "needs one whose only placement is authored here"
+    # Out of every box, in every diagram, or the union still covers it.
     for d in data["diagrams"]:
         for b in d["boxes"]:
             if dropped in (b.get("cases") or []):
                 b["cases"].remove(dropped)
     rc, out = _run(tmp_path, data, capsys)
     assert rc == 2 and dropped in out and "neither" in out, out
+
+
+def test_a_case_the_document_cites_stays_placed_with_no_authored_list(
+        tmp_path, real, capsys, section_cited):
+    """The positive direction of `from_section`, and the arm that would fail on the likeliest regression.
+
+    `check_box` returns the RESOLVED case list rather than `b["cases"]`, so a box that names a section
+    places what the document cites. Read the authored key instead and those boxes place nothing: the
+    coverage census would then report every document-cited case as unplaced, the ceiling would pass over
+    all nine boxes, and the legality rules would quantify over an empty set for half the diagram — the
+    shape a rule takes when it goes quiet (`feedback_derive_from_every_producer`).
+
+    So a case the document cites is deleted from every authored list in this file and the gate must still
+    exit 0. Nothing else is changed, and the control arm above proves the unmutated copy passes.
+    """
+    data = copy.deepcopy(real)
+    removed = 0
+    for d in data["diagrams"]:
+        for b in d["boxes"]:
+            keep = [c for c in (b.get("cases") or []) if c not in section_cited]
+            if b.get("cases") is None or keep == b["cases"]:
+                continue
+            removed += len(b["cases"]) - len(keep)
+            if keep:
+                b["cases"] = keep
+                continue
+            # A box stripped bare has to say so, or it fails the has-neither rule instead and this arm
+            # would 'detect' the wrong finding.
+            del b["cases"]
+            b.pop("why_these_cases", None)
+            b["measured"] = "none"
+            b["why_not_measured"] = "x" * (ca.MIN_WHY_NOT_MEASURED + 10)
+    assert removed >= 8, f"only {removed} authored placement(s) overlap the document's citations; this " \
+                         f"arm would then prove almost nothing"
+    rc, out = _run(tmp_path, data, capsys)
+    assert rc == 0, out
 
 
 def test_a_never_cite_case_missing_from_the_exclusion_list_is_caught(

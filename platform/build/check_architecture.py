@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Curation gate for `platform/curation/architecture.yaml` — the two diagrams' authored topology.
+"""Curation gate for `platform/curation/architecture.yaml` — the diagrams' authored topology.
 
 WHAT THIS GATE IS FOR
 =====================
@@ -28,6 +28,32 @@ of, because the weaker copy wins by being the one that ran. So it is imported, a
 identical to the partition `check_controls.py` applies to a control's findings. A divergence between
 the two files fails this gate rather than producing two differently-coloured views of one verdict.
 
+WHY A BOX MAY NAME A SECTION INSTEAD OF ITS OWN CASES
+=====================================================
+
+The closed-loop diagram draws the design document's six normative hops, and for those boxes the case
+set is not a judgment this repository gets to make — it is the document's own citation list. So such a
+box carries `from_section: "3.1"` and nothing else about §3.1: no heading, no description, no case list.
+`check_practices.py` is imported to supply the sections, and this gate refuses to run if that gate
+reports a finding, because a citation nobody has ruled on cannot be checked for placement. The rules
+below then apply to the RESOLVED case list, which is why `check_box` returns it — a coverage census
+reading `b["cases"]` would report every one of those boxes as placing nothing and pass.
+
+The one rule that is deliberately NOT applied to those boxes is the one-case-one-box ban. Nine cases
+are cited in two sections each, and §3.1 and §4.1 both citing F2-2 is a fact about the document rather
+than a duplication this file committed. The payload's `coverage.placed_on` publishes every box a case
+lands on, so the multiplicity is visible instead of edited out.
+
+WHY ONE EDGE KIND MAY POINT BACKWARDS
+=====================================
+
+The document's §2 closes its loop: what the AFTER phase learns changes what the BEFORE phase enforces.
+A picture of that with no back edge is a picture of an open pipeline. So `kind: feedback` is exempt
+from the acyclicity walk — and the exemption is paid for with a second arm, not taken for free. Every
+feedback edge must lie on a cycle in the full graph, or it is an ordinary forward edge wearing the one
+label that stops it being checked. The graph minus its feedback edges must still be acyclic, so the
+ordering claim the other two diagrams rest on is unchanged.
+
 WHY NO CASE ID APPEARS IN THIS FILE
 ===================================
 
@@ -54,13 +80,17 @@ CURATION = ROOT / "platform" / "curation" / "architecture.yaml"
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import check_controls as cc  # noqa: E402  - its loader, register reader and restriction reader
-from build_site_data import ARCH_NON_COLOURING, box_status  # noqa: E402  - the one status rule
+# The one status rule, the one satellite partition and the one name for a back edge. All three are
+# imported for the reason the docstring gives above: a second copy is a second answer.
+from build_site_data import (  # noqa: E402
+    ARCH_NON_COLOURING, FEEDBACK_EDGE_KIND, SATELLITE_KINDS, box_status,
+)
 
 SCHEMA = "grx-architecture/1"
 
 # Floors. A gate that passes over an empty file has told you nothing
 # (`feedback_zero_file_scan_is_error`).
-MIN_DIAGRAMS = 2
+MIN_DIAGRAMS = 3
 MIN_BOXES = 12
 MIN_EDGES = 12
 
@@ -72,13 +102,38 @@ MIN_WHY_NOT_MEASURED = 60
 MIN_SUBTITLE = 60
 MIN_WHY_DIAGRAM = 120
 
+# The same minimum, in characters, is a different requirement in the two languages: written Chinese
+# carries roughly twice the content per character, so holding a zh value to the English count would
+# make padding the cheapest way to pass. Half, applied to whichever minimum the field already has, so
+# there is one number per field rather than two to keep in step.
+ZH_LENGTH_RATIO = 0.5
+
+# A bilingual authored value, exactly as `build_site_data.authored()` emits it. A field may be a bare
+# string — which renders verbatim and is counted in the translation backlog — or this shape, and
+# nothing else: a mapping with a third key would silently lose it.
+AUTHORED_KEYS = {"en", "zh"}
+
 TOP_KEYS = {"schema", "vocabularies", "diagrams", "unplaced_cases", "mapped_by", "mapped_on", "note"}
-VOCAB_KEYS = {"kind", "venv", "machine", "edge_kind", "count_from"}
-DIAGRAM_KEYS = {"id", "label", "subtitle", "why_this_diagram", "boxes", "edges"}
+VOCAB_KEYS = {"kind", "venv", "machine", "edge_kind", "count_from", "view"}
+DIAGRAM_KEYS = {"id", "view", "label", "subtitle", "why_this_diagram", "boxes", "edges"}
 BOX_KEYS = {"id", "label", "detail", "kind", "program", "venv", "machine", "cases",
-            "why_these_cases", "measured", "why_not_measured", "count_from"}
+            "why_these_cases", "measured", "why_not_measured", "count_from", "from_section"}
 EDGE_KEYS = {"from", "to", "kind", "label"}
 UNPLACED_KEYS = {"case", "why"}
+
+# What a `from_section` box gets from the design document instead of from this file. Authoring any of
+# them beside `from_section` would put a second copy of the document's own heading, description and
+# citation list in a file the document cannot see — and the copy on the picture is the one that gets
+# screenshotted. `measured`/`why_not_measured` are here too: whether the section has evidence is
+# decided by whether the document cites any, and a box cannot pre-empt that answer.
+FROM_SECTION_DERIVES = {
+    "label": "the section's heading, in both languages, read out of the two editions",
+    "detail": "built from the section's own phase, hop and practice count",
+    "cases": "every case the section cites, parsed from the document",
+    "why_these_cases": "the same sentence for every such box: these are the document's citations",
+    "measured": "decided by whether the section cites a case",
+    "why_not_measured": "as above",
+}
 
 # Keys the BUILDER computes. Present in the authored file they would be a second source of truth for
 # a verdict or a coordinate, and the diagram's copy is the one a reader would remember. Named
@@ -105,6 +160,24 @@ FORBIDDEN_BOX_KEYS = {
 MEASURED_NONE = "none"
 
 
+def read_sections() -> dict[str, dict]:
+    """The design document's measured sections, from the gate that adjudicates their citations.
+
+    Imported rather than re-parsed. A box that says `from_section: "3.1"` is asserting that §3.1 exists
+    and that its citations are legal, and both of those are `check_practices.py`'s questions — asking
+    them a second way here would produce a second answer, and the weaker one would win by being the one
+    that ran (`feedback_derive_from_every_producer`). If that gate reports a finding, this one cannot
+    run: a citation nobody has ruled on cannot be checked for placement.
+    """
+    import check_practices as cp  # noqa: PLC0415 - only needed when the file names a section
+    result = cp.adjudicate()
+    if result["findings"].items:
+        cc.die(f"{cc.rel(cp.CURATION)} does not adjudicate the design document cleanly "
+               f"({len(result['findings'].items)} finding(s)), so the sections a box may read from are "
+               f"not settled. Run platform/build/check_practices.py; a missing check is not a pass.")
+    return {s["id"]: s for s in result["design"]["sections"]}
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -115,6 +188,7 @@ def main(argv: list[str] | None = None) -> int:
     data = cc.load_yaml_no_duplicate_keys(args.architecture)
     registered, verdicts = cc.read_verdicts()
     restrictions = cc.read_restrictions()
+    sections = read_sections()
 
     check_rule_sets_agree(f)
     vocab = check_shape(data, f)
@@ -127,7 +201,7 @@ def main(argv: list[str] | None = None) -> int:
             f.add(cc.rel(args.architecture), "a diagram has no `id`; an unidentified diagram sits "
                                              "outside every count on the page")
             continue
-        check_diagram(d, vocab, used, registered, verdicts, restrictions, placed, f)
+        check_diagram(d, vocab, used, registered, verdicts, restrictions, sections, placed, f)
 
     check_vocabulary_is_used(vocab, used, f)
     unplaced = check_unplaced(data, registered, f)
@@ -138,6 +212,43 @@ def main(argv: list[str] | None = None) -> int:
                f"in this gate would then pass over an empty set.")
     return f.report(f"{cc.rel(args.architecture)}: {len(diagrams)} diagram(s), "
                     f"{len(placed)} case(s) placed, {len(unplaced)} explicitly unplaced")
+
+
+# --------------------------------------------------------------------------------- prose
+
+
+def check_prose(value: object, minimum: int, at: str, key: str, why: str, f: cc.Findings) -> None:
+    """One authored field, in whichever of the two shapes it may take.
+
+    A bare string is the file's original shape and stays legal: it renders verbatim, in English, and
+    `census_rendered_surfaces.py` counts it in the translation backlog, so an untranslated sentence is
+    visible as a number rather than as nothing. The mapping shape is `build_site_data.authored()`'s, and
+    it is checked the way that function checks it — both halves present, both non-empty, and the two
+    DIFFERENT. `authored()` refuses `en == zh` because a value claiming a translation the reader does
+    not get is worse than one admitting it has none: the honest shape is counted, and the dishonest one
+    is not.
+
+    Both halves are held to a length, not just the English one. A `zh` field trimmed to two characters
+    would pass a check that only read `en`, and the reader of the Chinese page is the one who would find
+    out.
+    """
+    if isinstance(value, dict):
+        if set(value) != AUTHORED_KEYS:
+            f.add(at, f"`{key}` is a mapping with keys {sorted(value)}; a bilingual authored value "
+                      f"carries exactly {sorted(AUTHORED_KEYS)}, and a mapping with any other key "
+                      f"loses whatever is in it silently")
+            return
+        if str(value["en"]).strip() == str(value["zh"]).strip():
+            f.add(at, f"`{key}` carries the same text in both languages. `authored()` refuses that "
+                      f"shape: leave it a bare string so it renders verbatim and is counted in the "
+                      f"translation backlog, rather than claiming a translation the reader does not "
+                      f"get.")
+        for lang, floor in (("en", minimum), ("zh", int(minimum * ZH_LENGTH_RATIO))):
+            if len(str(value[lang]).strip()) < floor:
+                f.add(at, f"`{key}.{lang}` is under {floor} characters. {why}")
+        return
+    if len(str(value or "").strip()) < minimum:
+        f.add(at, f"`{key}` is under {minimum} characters. {why}")
 
 
 # --------------------------------------------------------------------------------- shape
@@ -202,19 +313,28 @@ def check_shape(data: dict, f: cc.Findings) -> dict:
 
 def check_diagram(d: dict, vocab: dict, used: dict[str, set[str]], registered: set[str],
                   verdicts: dict[str, str], restrictions: dict[str, set[str]],
-                  placed: dict[str, list[str]], f: cc.Findings) -> None:
+                  sections: dict[str, dict], placed: dict[str, list[str]], f: cc.Findings) -> None:
     where = f"diagram {d['id']}"
     extra = sorted(set(d) - DIAGRAM_KEYS)
     if extra:
         f.add(where, f"unknown key(s) {extra}")
-    if not str(d.get("label") or "").strip():
-        f.add(where, "has no `label`")
-    if len(str(d.get("subtitle") or "").strip()) < MIN_SUBTITLE:
-        f.add(where, f"`subtitle` is under {MIN_SUBTITLE} characters. It is the sentence that tells a "
-                     f"reader how to read the picture; without it they invent a reading.")
-    if len(str(d.get("why_this_diagram") or "").strip()) < MIN_WHY_DIAGRAM:
-        f.add(where, f"`why_this_diagram` is under {MIN_WHY_DIAGRAM} characters. A diagram nobody had "
-                     f"to justify is a diagram whose scope nobody chose.")
+    check_prose(d.get("label"), 1, where, "label", "A diagram with no title is a picture a reader "
+                                                   "has to name themselves.", f)
+    check_prose(d.get("subtitle"), MIN_SUBTITLE, where, "subtitle",
+                "It is the sentence that tells a reader how to read the picture; without it they "
+                "invent a reading.", f)
+    check_prose(d.get("why_this_diagram"), MIN_WHY_DIAGRAM, where, "why_this_diagram",
+                "A diagram nobody had to justify is a diagram whose scope nobody chose.", f)
+    # Which PAGE a diagram belongs to, and it is a declared value rather than a convention because the
+    # two pages render it differently: the architecture view quotes its authored English verbatim, and
+    # the design view resolves bilingual values. A diagram with no view would be rendered by both, and
+    # one of the two would show a reader a mapping where a sentence belongs.
+    view = d.get("view")
+    if view not in (vocab.get("view") or []):
+        f.add(where, f"has view={view!r}, outside the declared vocabulary {vocab.get('view')}. A "
+                     f"diagram whose page nobody declared is a diagram every page draws.")
+    else:
+        used["view"].add(view)
 
     boxes = d.get("boxes")
     if not isinstance(boxes, list) or len(boxes) < MIN_BOXES:
@@ -230,16 +350,23 @@ def check_diagram(d: dict, vocab: dict, used: dict[str, set[str]], registered: s
         if b["id"] in by_id:
             f.add(where, f"defines box {b['id']} twice")
         by_id[b["id"]] = b
-        check_box(b, where, vocab, used, registered, verdicts, restrictions, seen_case, f)
-        for c in b.get("cases") or []:
+        for c in check_box(b, where, vocab, used, registered, verdicts, restrictions, sections,
+                           seen_case, f):
             placed.setdefault(c, []).append(f"{d['id']}/{b['id']}")
 
     check_edges(d, by_id, vocab, used, f)
 
 
 def check_box(b: dict, where: str, vocab: dict, used: dict[str, set[str]], registered: set[str],
-              verdicts: dict[str, str], restrictions: dict[str, set[str]],
-              seen_case: dict[str, str], f: cc.Findings) -> None:
+              verdicts: dict[str, str], restrictions: dict[str, set[str]], sections: dict[str, dict],
+              seen_case: dict[str, str], f: cc.Findings) -> list[str]:
+    """One box. Returns the cases it places, which for a `from_section` box the document decides.
+
+    The return value exists because the coverage census has to count the cases the box actually
+    carries, and for half the closed-loop diagram that is not what this file says. A census that read
+    `b["cases"]` would report those boxes as placing nothing, and the ceiling would then pass over
+    them (`feedback_derive_from_every_producer`).
+    """
     at = f"{where}/{b['id']}"
     for key, why in sorted(FORBIDDEN_BOX_KEYS.items()):
         if key in b:
@@ -250,11 +377,26 @@ def check_box(b: dict, where: str, vocab: dict, used: dict[str, set[str]], regis
     if extra:
         f.add(at, f"unknown key(s) {extra}")
 
-    if not str(b.get("label") or "").strip():
-        f.add(at, "has no `label`")
-    if len(str(b.get("detail") or "").strip()) < MIN_DETAIL:
-        f.add(at, f"`detail` is under {MIN_DETAIL} characters. The box itself shows a label; the "
-                  f"detail is the only place a reader learns what the component actually is.")
+    # A box either describes itself or names a section of the design document. The two are exclusive,
+    # and this is where that is enforced, because every rule below branches on it.
+    sid = b.get("from_section")
+    if sid is not None:
+        sid = str(sid)
+        for key in sorted(FROM_SECTION_DERIVES):
+            if key in b:
+                f.add(at, f"reads §{sid} out of the design document and also authors `{key}` "
+                          f"({FROM_SECTION_DERIVES[key]}). Two wordings of one section is one wording "
+                          f"that can go stale, and it is the one on the picture.")
+        if sid not in sections:
+            f.add(at, f"names §{sid}, which is not a measured section of the design document. It "
+                      f"carries {sorted(sections)}; a section with no citations of its own is not in "
+                      f"that list and cannot colour a box.")
+    else:
+        check_prose(b.get("label"), 1, at, "label",
+                    "A box with no label is a rectangle a reader fills in.", f)
+        check_prose(b.get("detail"), MIN_DETAIL, at, "detail",
+                    "The box itself shows a label; the detail is the only place a reader learns what "
+                    "the component actually is.", f)
     for key in ("kind", "venv", "machine"):
         val = b.get(key)
         if val is None:
@@ -279,56 +421,78 @@ def check_box(b: dict, where: str, vocab: dict, used: dict[str, set[str]], regis
                       f"naming a program a reader cannot open is a box asserting machinery that may "
                       f"not exist.")
 
-    cases = b.get("cases") or []
+    if sid is not None:
+        cases = list(sections.get(sid, {}).get("section_cites") or [])
+        if sid in sections and not cases:
+            f.add(at, f"derives its cases from §{sid}, which cites none. The box would draw as "
+                      f"not_measured with no sentence saying so, and 'this study never looked' is the "
+                      f"one state on this picture a reader must never have to infer.")
+    else:
+        cases = b.get("cases") or []
     measured = b.get("measured")
     if cases and measured is not None:
         f.add(at, f"carries both `cases` and `measured: {measured!r}`. Exactly one is true of a box, "
                   f"and a box claiming both leaves a reader to choose.")
-    if not cases and measured is None:
+    if not cases and measured is None and sid is None:
         f.add(at, "has neither `cases` nor `measured: none`. A box with no cases and no statement "
                   "that nothing was measured renders as uncoloured, which reads as 'nothing to worry "
                   "about' — the one thing it does not mean.")
     if cases:
-        if len(str(b.get("why_these_cases") or "").strip()) < MIN_WHY:
-            f.add(at, f"`why_these_cases` is under {MIN_WHY} characters. Which cases are ABOUT a "
-                      f"component is the judgment this whole file exists to record.")
+        if sid is None:
+            check_prose(b.get("why_these_cases"), MIN_WHY, at, "why_these_cases",
+                        "Which cases are ABOUT a component is the judgment this whole file exists to "
+                        "record.", f)
         if len(set(cases)) != len(cases):
             f.add(at, "names a case twice, which would double-count it in the coverage census")
         for c in cases:
             if c not in registered:
                 f.add(at, f"names {c}, which is not in the sealed register")
                 continue
-            if c in seen_case:
-                f.add(at, f"names {c}, already placed on {seen_case[c]} in this diagram. One case "
-                          f"colouring two boxes of one picture says the same evidence twice.")
-            seen_case[c] = b["id"]
+            # The one-case-one-box rule is about AUTHORED placement: naming a case beside two
+            # components of one picture says the same evidence twice, in this file's own voice. It is
+            # deliberately not applied to a `from_section` box, because there the multiplicity is the
+            # DOCUMENT's — nine cases are cited in two sections each, and §3.1 and §4.1 citing F2-2
+            # is a fact about the document that this gate has no business editing out. The payload's
+            # `coverage.placed_on` publishes every box a case appears on, so the duplication is
+            # visible rather than suppressed.
+            if sid is None:
+                if c in seen_case:
+                    f.add(at, f"names {c}, already placed on {seen_case[c]} in this diagram. One case "
+                              f"colouring two boxes of one picture says the same evidence twice.")
+                seen_case[c] = b["id"]
             if cc.RESTRICTION_NEVER & restrictions.get(c, set()):
                 f.add(at, f"places {c}, which the citation policy marks "
                           f"{sorted(cc.RESTRICTION_NEVER & restrictions[c])}. It may be cited as "
-                          f"nothing at all, so it belongs in `unplaced_cases` with the reason.")
-    else:
+                          f"nothing at all, so it belongs in `unplaced_cases` with the reason."
+                          + (f" It arrives here from §{sid} of the design document, so the fix is to "
+                             f"the document's citation, not to this file." if sid else ""))
+    elif sid is None:
         if measured != MEASURED_NONE:
             f.add(at, f"has measured={measured!r}; the only permitted value is {MEASURED_NONE!r}")
-        if len(str(b.get("why_not_measured") or "").strip()) < MIN_WHY_NOT_MEASURED:
-            f.add(at, f"`why_not_measured` is under {MIN_WHY_NOT_MEASURED} characters. An unmeasured "
-                      f"box is the most easily misread state on the diagram and it is the one that "
-                      f"most needs a sentence.")
+        check_prose(b.get("why_not_measured"), MIN_WHY_NOT_MEASURED, at, "why_not_measured",
+                    "An unmeasured box is the most easily misread state on the diagram and it is the "
+                    "one that most needs a sentence.", f)
 
-    check_status(b, at, verdicts, restrictions, f)
+    check_status(cases, at, verdicts, restrictions, f)
+    return cases
 
 
-def check_status(b: dict, at: str, verdicts: dict[str, str], restrictions: dict[str, set[str]],
-                 f: cc.Findings) -> None:
+def check_status(cases: list[str], at: str, verdicts: dict[str, str],
+                 restrictions: dict[str, set[str]], f: cc.Findings) -> None:
     """Re-state the colouring rule in terms of VERDICT STRINGS, over the same shared function.
 
     Not a tautology: `box_status` decides by walking its own precedence, and these arms say what the
     answer must look like from outside — a green box needs a citable TRUE, a box supported only by
     restricted cases may not be green or red, and an INCONCLUSIVE-only box may never read as
     validated. If somebody folds INCONCLUSIVE into TRUE inside the rule, this fires.
+
+    Takes the RESOLVED case list rather than the box, so a `from_section` box's colour is checked the
+    same way as an authored one. Reading `b["cases"]` here would have made these four arms vacuous over
+    every box on the closed-loop diagram — which is the shape a rule takes when it goes quiet.
     """
     annotated = [{"case": c, "verdict": verdicts.get(c),
                   "restrictions": sorted(restrictions.get(c, set()))}
-                 for c in (b.get("cases") or [])]
+                 for c in cases]
     status, _ = box_status(annotated)
     citable = [c for c in annotated if c["verdict"] and not (set(c["restrictions"])
                                                             & ARCH_NON_COLOURING)]
@@ -362,7 +526,12 @@ def check_edges(d: dict, by_id: dict[str, dict], vocab: dict, used: dict[str, se
     seen: set[tuple[str, str]] = set()
     indeg: dict[str, int] = {b: 0 for b in by_id}
     outdeg: dict[str, int] = {b: 0 for b in by_id}
+    # `adj` is the ORDER graph — every edge except the feedback ones — and `adj_all` is the picture.
+    # The degree counts below span both, so a satellite cannot acquire a second parent or a child by
+    # calling the edge feedback.
     adj: dict[str, list[str]] = {b: [] for b in by_id}
+    adj_all: dict[str, list[str]] = {b: [] for b in by_id}
+    feedback: list[tuple[str, str]] = []
     for e in edges:
         if not isinstance(e, dict):
             f.add(where, f"holds an edge that is not a mapping: {e!r}")
@@ -382,9 +551,9 @@ def check_edges(d: dict, by_id: dict[str, dict], vocab: dict, used: dict[str, se
         if (a, b) in seen:
             f.add(where, f"edge {a}->{b} is declared twice; the second is drawn over the first")
         seen.add((a, b))
-        if not str(e.get("label") or "").strip():
-            f.add(where, f"edge {a}->{b} has no `label`. An unlabelled arrow says only that two "
-                         f"things are related, which the reader could already see.")
+        check_prose(e.get("label"), 1, where, f"edge {a}->{b} label",
+                    "An unlabelled arrow says only that two things are related, which the reader "
+                    "could already see.", f)
         kind = e.get("kind")
         if kind not in (vocab.get("edge_kind") or []):
             f.add(where, f"edge {a}->{b} has kind={kind!r}, outside the declared vocabulary")
@@ -392,37 +561,48 @@ def check_edges(d: dict, by_id: dict[str, dict], vocab: dict, used: dict[str, se
             used["edge_kind"].add(kind)
         indeg[b] += 1
         outdeg[a] += 1
-        adj[a].append(b)
+        adj_all[a].append(b)
+        if kind == FEEDBACK_EDGE_KIND:
+            feedback.append((a, b))
+        else:
+            adj[a].append(b)
 
     for bid, box in sorted(by_id.items()):
         if indeg[bid] + outdeg[bid] == 0:
             f.add(f"{where}/{bid}", "has no edge at all. An unconnected box is on the picture without "
                                     "being part of it, and a reader cannot tell whether that is a "
                                     "claim or an oversight.")
-        if box.get("kind") == "property":
-            # The rule the crossing-free layout rests on. A property with two parents, or with a
+        if box.get("kind") in SATELLITE_KINDS:
+            # The rule the crossing-free layout rests on. A satellite with two parents, or with a
             # child, cannot be placed in one row beside one parent, and the layout would then have to
-            # route an edge across the spine — which is where the crossings come from.
+            # route an edge across the spine — which is where the crossings come from. Both satellite
+            # kinds are bound by it: `property` and `alternative` differ in the word beside the box and
+            # in nothing the geometry can see.
+            kind_name = box.get("kind")
             if indeg[bid] != 1:
-                f.add(f"{where}/{bid}", f"is kind: property with {indeg[bid]} incoming edge(s), not "
-                                        f"exactly 1. A property is a property OF one component, and "
-                                        f"the layout places it in that component's row.")
+                f.add(f"{where}/{bid}", f"is kind: {kind_name} with {indeg[bid]} incoming edge(s), not "
+                                        f"exactly 1. A satellite hangs off ONE component, and the "
+                                        f"layout places it in that component's row.")
             if outdeg[bid] != 0:
-                f.add(f"{where}/{bid}", f"is kind: property with {outdeg[bid]} outgoing edge(s). A "
-                                        f"property is a leaf; an arrow out of one makes it a stage.")
-            for parent, kids in adj.items():
-                if bid in kids and by_id[parent].get("kind") == "property":
-                    f.add(f"{where}/{bid}", f"hangs off {parent}, which is itself a property")
+                f.add(f"{where}/{bid}", f"is kind: {kind_name} with {outdeg[bid]} outgoing edge(s). A "
+                                        f"satellite is a leaf; an arrow out of one makes it a stage.")
+            for parent, kids in adj_all.items():
+                if bid in kids and by_id[parent].get("kind") in SATELLITE_KINDS:
+                    f.add(f"{where}/{bid}", f"hangs off {parent}, which is itself a "
+                                            f"{by_id[parent].get('kind')}")
 
-    # Acyclicity, over every box. A pipeline diagram asserts an ORDER — sealed before measured,
-    # replicated before amended — and a cycle means it no longer states one.
+    # Acyclicity, over every box, and over every edge EXCEPT the feedback ones. A pipeline diagram
+    # asserts an ORDER — sealed before measured, replicated before amended — and a cycle means it no
+    # longer states one. The design document's loop is a real cycle and is drawn as one, which is why
+    # the exemption exists; the arm after this is what keeps the exemption from being a loophole.
     colour: dict[str, int] = {}
 
     def visit(node: str, path: list[str]) -> None:
         colour[node] = 1
         for nxt in adj[node]:
             if colour.get(nxt) == 1:
-                f.add(where, f"has a cycle: {' -> '.join([*path, node, nxt])}")
+                f.add(where, f"has a cycle among its non-feedback edges: "
+                             f"{' -> '.join([*path, node, nxt])}")
             elif colour.get(nxt) is None:
                 visit(nxt, [*path, node])
         colour[node] = 2
@@ -431,14 +611,40 @@ def check_edges(d: dict, by_id: dict[str, dict], vocab: dict, used: dict[str, se
         if colour.get(bid) is None:
             visit(bid, [])
 
+    # And the other half of that exemption. `kind: feedback` buys an edge out of the ordering rule, so
+    # without this arm it would be the word you write on a forward edge you did not want checked. A
+    # genuine back edge closes a loop, which means the graph must already contain a path from its head
+    # to its tail; an edge that closes nothing is a step, whatever it is labelled.
+    for a, b in feedback:
+        if not _reaches(b, a, adj_all):
+            f.add(where, f"edge {a}->{b} is kind: {FEEDBACK_EDGE_KIND} but no path leads from {b} back "
+                         f"to {a}, so it closes no loop. It is an ordinary forward edge holding the "
+                         f"one label that exempts it from the acyclicity check.")
+
+
+def _reaches(src: str, dst: str, adj: dict[str, list[str]]) -> bool:
+    """Whether `dst` is reachable from `src`. Breadth-first, so a cycle cannot make it loop."""
+    seen, queue = {src}, [src]
+    while queue:
+        node = queue.pop(0)
+        if node == dst:
+            return True
+        for nxt in adj.get(node, []):
+            if nxt not in seen:
+                seen.add(nxt)
+                queue.append(nxt)
+    return False
+
 
 def check_vocabulary_is_used(vocab: dict, used: dict[str, set[str]], f: cc.Findings) -> None:
-    """Both directions, for the four vocabularies that CLASSIFY something.
+    """Both directions, for the five vocabularies that CLASSIFY something.
 
-    `kind`, `venv`, `machine` and `edge_kind` label boxes and edges. A value declared there and used
-    nowhere is a rule that can never fire, and it makes the file read as covering ground it does not —
-    a declared `.venv-agentcore` asserts a virtual environment some step runs in, and the assertion
-    outlives the step.
+    `kind`, `venv`, `machine` and `edge_kind` label boxes and edges, and `view` labels a diagram with
+    the page that draws it. A value declared there and used nowhere is a rule that can never fire, and
+    it makes the file read as covering ground it does not — a declared `.venv-agentcore` asserts a
+    virtual environment some step runs in, and the assertion outlives the step. A declared `view` no
+    diagram carries asserts a page, which is the same defect with a larger blast radius: the page
+    either does not exist or exists and is empty.
 
     `count_from` is exempt, and not because checking it is inconvenient. It is not a classification: it
     is the closed set of derived numbers the BUILDER can supply, and `derive_architecture()` already

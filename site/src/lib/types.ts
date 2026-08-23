@@ -685,9 +685,20 @@ export type ArchStatus =
 
 export interface ArchBox {
   id: string;
-  label: string;
-  detail: string;
+  /** `Authored | string` throughout the prose fields, because the topology file may carry either a bare
+   *  English sentence or an `{en, zh}` pair — the closed-loop diagram was authored bilingual from its
+   *  first commit, the two older diagrams were not. `useAuthored()` resolves both and marks `lang="en"`
+   *  only where the reader is actually getting English, so no call site decides which kind it has. */
+  label: Authored | string;
+  detail: Authored | string;
   kind: string;
+  /** Derived in `build_site_data.derive_architecture`: this box has one parent, no children, and sits in
+   *  its parent's row. A view that tested `kind === "property"` instead would silently mis-draw the next
+   *  satellite kind added to the vocabulary (`feedback_scope_as_namelist`). */
+  satellite: boolean;
+  /** The design-document section this box takes its cases from, for the boxes that name one. Null for a
+   *  box whose cases are listed in the topology file itself. */
+  from_section: string | null;
   /** The repo-relative script this step runs, for the boxes that are steps. Null for a component in
    *  somebody else's deployment, which is most of the second diagram. */
   program: string | null;
@@ -695,11 +706,11 @@ export interface ArchBox {
   machine: string;
   cases: ArchCase[];
   n_cases: number;
-  why_these_cases: string | null;
+  why_these_cases: Authored | string | null;
   /** `"none"` when the authored file states in writing that this box was never measured; null when it
    *  carries cases instead. Exactly one of the two is ever set — the gate refuses both and neither. */
   measured: string | null;
-  why_not_measured: string | null;
+  why_not_measured: Authored | string | null;
   status: ArchStatus | string;
   /** What the colour means, in the reader's language. Authored by `build_site_data.ARCH_STATUS_LABEL`,
    *  not quoted from the topology file — see the note on `Authored`. */
@@ -728,7 +739,7 @@ export interface ArchEdge {
   from: string;
   to: string;
   kind: string;
-  label: string;
+  label: Authored | string;
   /** An axis-aligned polyline in the diagram's own coordinates. */
   points: [number, number][];
   route: ArchRoute | string;
@@ -737,9 +748,13 @@ export interface ArchEdge {
 
 export interface ArchDiagram {
   id: string;
-  label: string;
-  subtitle: string;
-  why_this_diagram: string;
+  /** Which page draws this diagram. `architecture` is the evidence page's own two; `design` is the
+   *  closed-loop picture of the recommended design, drawn by `Design.tsx`. A page filters on this rather
+   *  than on a list of diagram ids, so a fourth diagram lands on exactly one page by construction. */
+  view: string;
+  label: Authored | string;
+  subtitle: Authored | string;
+  why_this_diagram: Authored | string;
   boxes: ArchBox[];
   edges: ArchEdge[];
   viewbox: { min_x: number; min_y: number; width: number; height: number };

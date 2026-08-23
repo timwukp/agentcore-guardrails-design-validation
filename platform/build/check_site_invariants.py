@@ -408,7 +408,17 @@ CENSUS_DIR = REPO / "platform" / "census"
 # producer cannot inherit another file's margin (`feedback_scope_as_namelist`).
 MIN_AUTHORED_PROSE_OBJECTS = {
     "practices.json": 120,
-    "architecture.json": 30,
+    # 107, measured 2026-08-23, and the arithmetic is worth writing down because the number is a sum over
+    # four producers and a floor that only one of them can satisfy is not a floor:
+    #   38 + 12  box status labels, one per box on the three diagrams
+    #        3   the closed-loop diagram's own label, subtitle and justification
+    #        9   its three authored boxes' label / detail / why_not_measured
+    #       13   its edge labels
+    #       27   its nine section boxes' derived heading / detail / why_these_cases
+    #        5   the payload's top-level status vocabulary
+    # It was 30 against a measured 43 while only the two English diagrams existed; slack between a floor
+    # and its measurement is where a deletion hides, so it moves to the measurement.
+    "architecture.json": 107,
     "audit.json": 5,
     "denominators.json": 4,
     "method.json": 1,
@@ -432,6 +442,12 @@ MIN_AUTHORED_PROSE_OBJECTS = {
 #                    were also, for that reason, five translations no reader could read. The legend now
 #                    renders them as visible text.
 MAX_UNTRANSLATED_RENDERED = 299
+
+# Floors for the architecture view, per diagram rather than over the payload. `MIN_BOXES_PER_DIAGRAM` is
+# below the smallest diagram the file currently carries (12) with room for a legitimate simplification,
+# and its job is only to make "this diagram was emptied" a failure rather than a quieter total.
+MIN_DIAGRAMS = 3
+MIN_BOXES_PER_DIAGRAM = 8
 
 
 class Gate:
@@ -1771,7 +1787,7 @@ def arm_audit_report_is_licensed(g: Gate, payload: Path, census: dict, census_ca
 
 def arm_architecture_colours_are_licensed(g: Gate, payload: Path, census: dict,
                                           census_cases: set[str], dist: Path) -> None:
-    """No box on either diagram may be coloured by a verdict the census does not publish.
+    """No box on any diagram may be coloured by a verdict the census does not publish.
 
     The diagram is the artifact most likely to leave this platform on its own — screenshotted into a
     deck, pasted into a review — and it leaves without the case table underneath it. So a green box is
@@ -1799,8 +1815,9 @@ def arm_architecture_colours_are_licensed(g: Gate, payload: Path, census: dict,
     arm = "architecture_colours_are_licensed"
     arch = load(payload, "architecture.json")
     diagrams = arch.get("diagrams") or []
-    g.check(arm, len(diagrams) >= 2, f"architecture.json carries {len(diagrams)} diagram(s); every arm "
-                                     f"below quantifies over their boxes and would be vacuous")
+    g.check(arm, len(diagrams) >= MIN_DIAGRAMS,
+            f"architecture.json carries {len(diagrams)} diagram(s), below the floor of {MIN_DIAGRAMS}; "
+            f"every arm below quantifies over their boxes and would be vacuous")
 
     verdicts = {r["case"]: r.get("verdict") for r in census.get("rows", []) if isinstance(r, dict)}
     restrictions = {r["case"]: set(r.get("citation_restrictions") or [])
@@ -1811,8 +1828,17 @@ def arm_architecture_colours_are_licensed(g: Gate, payload: Path, census: dict,
             "would treat a NEVER_CITE case as ordinary support")
 
     boxes = [(d.get("id"), b) for d in diagrams for b in d.get("boxes") or []]
-    g.check(arm, len(boxes) >= 24, f"the two diagrams carry {len(boxes)} box(es) between them, too few "
-                                   f"for this arm to be reading the published payload")
+    # PER DIAGRAM, not over the total. A total of 24 was satisfiable by one 24-box diagram, so with three
+    # diagrams in the payload it would have passed while two of them were deleted whole — the same defect
+    # as a whole-payload authored-prose floor, one file over (`feedback_container_mark_is_one_occurrence`).
+    # Every arm below reads `boxes`, and a diagram that contributes none contributes no findings either.
+    thin = [f"{d.get('id')} carries {len(d.get('boxes') or [])}" for d in diagrams
+            if len(d.get("boxes") or []) < MIN_BOXES_PER_DIAGRAM]
+    g.check(arm, not thin,
+            f"{'; '.join(thin)} box(es), below the floor of {MIN_BOXES_PER_DIAGRAM} each; a diagram this "
+            f"thin is not the published payload and contributes nothing to the checks below",
+            passed=f"all {len(diagrams)} diagram(s) clear {MIN_BOXES_PER_DIAGRAM} boxes each "
+                   f"({len(boxes)} in total)")
 
     bad, ghost = [], []
     placed: set[str] = set()
