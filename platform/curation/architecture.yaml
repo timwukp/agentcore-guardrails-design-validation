@@ -1,4 +1,5 @@
-# The two diagrams this platform draws: how a verdict is made, and what the study looked at.
+# The three diagrams this platform draws: how a verdict is made, what the study looked at, and the
+# closed loop the design document prescribes.
 # AUTHORED topology, DERIVED annotation — and the split is the whole discipline of this file.
 #
 # WHAT THIS FILE IS FOR
@@ -54,6 +55,24 @@
 # diagram whose edges cross is a diagram a reader misreads (`feedback_diagram_layout_rules`), and
 # `platform/build/tests/test_architecture_layout.py` asserts zero crossings rather than trusting that
 # it looked fine once.
+#
+# WHY NINE BOXES NAME A SECTION INSTEAD OF LISTING THEIR OWN CASES
+#
+# The first two diagrams describe things only this file knows about, so their case lists are authored
+# here. The third describes the design document's own six-hop loop, and the document already states,
+# inline and in both languages, which case tested each of its 45 numbered practices — 338 citations,
+# extracted by `platform/build/practices_source.py` and adjudicated by `check_practices.py`. A box on
+# that diagram therefore carries `from_section: "4.1"` and nothing else: its label, its detail, its
+# cases and its status all come from the section. Typing those cases here would create a second list
+# that can silently drift from the document's, and the drift would show up as a green box beside a
+# practice the document says was contradicted. `from_section` and the six keys it derives are mutually
+# exclusive, and the gate fails on any box that sets both.
+#
+# One consequence is visible in the payload and deliberately not edited out: the document cites nine
+# cases under two different sections, so nine cases appear on two boxes of the third diagram. The
+# per-diagram duplicate ban applies to AUTHORED case lists only — an authored duplicate is a mapping
+# mistake, whereas a derived one is a fact about the document, and `coverage.placed_on` publishes the
+# multiplicity rather than hiding it.
 
 schema: grx-architecture/1
 
@@ -61,13 +80,28 @@ schema: grx-architecture/1
 # gate checks both directions: a value used but not declared here, and a value declared here that no
 # box uses — a stale vocabulary entry is a rule that can never fire.
 vocabularies:
-  kind: [actor, boundary, control, checkpoint, target, stage, artifact, property]
+  # `alternative` is a satellite like `property` — one parent, no children, drawn in its parent's row —
+  # and it exists because §3.3 of the design document is Hop #2-ALT: another way to do Hop #2, not an
+  # attribute of it. Calling it a property would have been one fewer word here and would have told
+  # every reader that ApplyGuardrail is a feature of Bedrock Guardrails input evaluation.
+  kind: [actor, boundary, control, checkpoint, target, stage, artifact, property, alternative]
   # `.venv-agentcore` is deliberately absent: the director harness has no box on either diagram yet,
   # and a venv declared here that nothing runs in would assert machinery this platform does not have.
   # It comes back with the box that uses it, not before.
   venv: [".venv-oracle", ".venv-figs", "none"]
   machine: [ec2_runner, macbook_only, laptop_or_runner, none]
-  edge_kind: [request_path, data_flow, governance, out_of_band]
+  # `feedback` is the one kind exempt from the ordering walk, because it is the one kind whose whole
+  # meaning is that it points back up the page. Every other edge must run down the topological order,
+  # and `check_architecture.py` replaces the exemption with two narrower arms: the graph minus the
+  # feedback edges must still be acyclic, and every feedback edge must lie on a cycle in the full
+  # graph — an edge labelled `feedback` that closes no loop is a mislabelled edge, not a loop.
+  edge_kind: [request_path, data_flow, governance, out_of_band, feedback]
+  # Which picture a diagram belongs to. Two diagrams describe THIS STUDY — its machine and its subject —
+  # and are rendered on `/architecture`; the third describes the DESIGN the study was testing, and is
+  # rendered on `/design` beside the practices it is a picture of. Without this key `Architecture.tsx`
+  # draws every diagram in the payload, so the design diagram would appear on the evidence page under
+  # the heading "what the study looked at", which is the one thing it is not.
+  view: [architecture, design]
   # The closed set of derived numbers a box may display. Each name is implemented once, in
   # `build_site_data.derive_architecture()`; a name here that the builder cannot compute fails the
   # build rather than rendering as a blank, and a number typed into this file would be a second,
@@ -90,6 +124,7 @@ diagrams:
 
   # =======================================================================================
   - id: verdict_pipeline
+    view: architecture
     label: "How a verdict is made"
     subtitle: >
       The machine that produced the 93 cases, one box per step, with the virtual environment and the
@@ -395,6 +430,7 @@ diagrams:
 
   # =======================================================================================
   - id: request_path
+    view: architecture
     label: "What the study looked at: one request through an AgentCore deployment"
     subtitle: >
       The controls a request passes on its way to a model and a tool, coloured by what this study
@@ -737,6 +773,233 @@ diagrams:
       - {from: enforced_guardrail, to: region_tier, kind: out_of_band, label: "availability"}
       - {from: enforced_guardrail, to: guardrail_lifecycle, kind: out_of_band, label: "authoring"}
 
+  # =======================================================================================
+  # The design's own picture, rendered on `/design` rather than on `/architecture`.
+  #
+  # Nine of its twelve boxes carry `from_section` and nothing else: their label, description, cases and
+  # colour are the design document's, extracted by `practices_source.py` and ruled on by
+  # `check_practices.py`. The three that do not are the three the document numbers but does not give a
+  # section to — the caller, model inference, and the moment of serving — and those carry the authored
+  # prose a `from_section` box may not.
+  #
+  # Every authored value here is bilingual, because this diagram renders on a page a Chinese reader
+  # reads in Chinese, and `check_site_invariants.py` holds the untranslated-string census to an
+  # equality: a new English-only rendered string fails the build rather than joining a backlog. The
+  # English halves are folded blocks and the Chinese halves are single quoted lines on purpose — YAML
+  # folding joins lines with a space, and a space inserted mid-sentence is invisible in English and
+  # wrong in Chinese.
+  - id: closed_loop
+    view: design
+    label:
+      en: "The design's closed loop: six checkpoint hops, and what this study found at each"
+      zh: "設計的閉環:六個檢查點 Hop,以及本研究在每個 Hop 上量到了什麼"
+    subtitle:
+      en: >
+        The loop §2.1 of the design document prescribes, read top to bottom: a request crosses the
+        numbered checkpoint hops in order, is served, and what is learned after serving returns to the
+        first hop. Each hop's colour is the verdicts of the cases the document itself cites under that
+        section — nothing on this picture was coloured by hand.
+      zh: "設計文件 §2.1 所規範的迴路,由上往下讀:一次請求依序穿過各個編號檢查點 Hop、被送達,而送達之後學到的事再回到第一個 Hop。每個 Hop 的顏色來自文件自己在該節引用的案例的裁決 —— 這張圖上沒有任何一格顏色是手寫的。"
+    why_this_diagram:
+      en: >
+        The other two diagrams are about this study. This one is about the thing the study was
+        testing: the design document prescribes a loop, and a loop is the one claim prose is worst at
+        — §2.1 states the six hops as a list, and a list cannot show that the last hop feeds the
+        first. Drawing it makes two things checkable that a reader would otherwise take on trust,
+        that the hops are ordered and that every hop's colour comes from the document's own citations
+        rather than from a second list somebody kept in step by hand.
+      zh: "另外兩張圖講的是本研究,這張講的是研究所測試的對象。設計文件規範了一個迴路,而迴路正是散文最難表達的一種主張 —— §2.1 用清單列出六個 Hop,而清單無法顯示最後一個 Hop 會回饋到第一個。把它畫出來,讓兩件原本只能靠信任的事變成可檢查的:Hop 之間有次序,而且每個 Hop 的顏色都來自文件自己的引用,不是來自某人手工維持同步的第二份清單。"
+
+    boxes:
+      - id: caller
+        label:
+          en: "The caller, outside every boundary"
+          zh: "呼叫方,位於所有邊界之外"
+        detail:
+          en: >
+            Whoever sends the request — an end user, another service, or a scheduled job. It is where
+            the loop starts and where the served response goes, and it is the one participant the
+            design cannot configure.
+          zh: "送出請求的一方 —— 終端使用者、另一個服務,或一個排程作業。迴路由此開始,回應也回到這裡;它是這個設計唯一無法設定的參與者。"
+        kind: actor
+        venv: "none"
+        machine: "none"
+        measured: none
+        why_not_measured:
+          en: >
+            An actor, not a checkpoint. Every case in this register has a configured mechanism as its
+            subject, so a coloured caller would be a claim about somebody's users rather than about
+            the design.
+          zh: "它是行為者,不是檢查點。本登錄中每個案例的主體都是一項被設定的機制,因此把呼叫方上色會變成對別人的使用者所下的斷言,而不是對這個設計。"
+
+      - id: hop_1
+        from_section: "3.1"
+        kind: checkpoint
+        venv: "none"
+        machine: "none"
+
+      - id: hop_2
+        from_section: "3.2"
+        kind: checkpoint
+        venv: "none"
+        machine: "none"
+
+      # Hop #2-ALT is a substitute for Hop #2, not a facet of it: the document offers it for models
+      # that are not on Bedrock, where Hop #2's input evaluation is unavailable. Drawn as a satellite
+      # because it has one parent and no children — the same geometry as a property — but under its own
+      # word, because `property` would tell every reader that the ApplyGuardrail API is a feature of
+      # Bedrock Guardrails input evaluation rather than the other way you can reach it.
+      - id: hop_2_alt
+        from_section: "3.3"
+        kind: alternative
+        venv: "none"
+        machine: "none"
+
+      - id: hop_3_inference
+        label:
+          en: "Hop #3: model inference (not a checkpoint)"
+          zh: "Hop #3:模型推論(不是檢查點)"
+        detail:
+          en: >
+            The model call itself. §2.1 numbers it so that one numbering covers the whole document,
+            and then says plainly that it is not a guardrail checkpoint: it appears in the latency
+            budget of §6.1 and in no control list.
+          zh: "模型呼叫本身。§2.1 給它一個編號,是為了讓整份文件共用同一套編號;文件接著明說它不是 guardrail 檢查點 —— 它只出現在 §6.1 的延遲預算裡,不出現在任何控制項清單中。"
+        kind: target
+        venv: "none"
+        machine: "none"
+        measured: none
+        why_not_measured:
+          en: >
+            The document's own §6.1 says it: Hop #3 was not given its own measured row because no
+            case re-measured model inference in isolation, so its v1.2 range stands unamended. An
+            unmeasured hop in the middle of a measured loop is what this colour is for.
+          zh: "文件 §6.1 自己說了:Hop #3 沒有自己的量測列,因為沒有任何案例單獨重新量測模型推論,所以它 v1.2 的範圍未經修訂而保留。一個被量測的迴路中間夾著一個未被量測的 Hop,正是這個顏色存在的理由。"
+
+      - id: hop_4
+        from_section: "4.1"
+        kind: checkpoint
+        venv: "none"
+        machine: "none"
+
+      - id: hop_5
+        from_section: "4.2"
+        kind: checkpoint
+        venv: "none"
+        machine: "none"
+
+      # Hangs off Hop #4 rather than off the phase, because a satellite takes exactly one parent and
+      # Hop #4 is the first hop the document's real-time observability section describes instrumenting.
+      # That is a judgment and it is the kind this file exists to hold: §4.3 spans the whole DURING
+      # phase, and pinning it to one box understates its reach while keeping the layout provably
+      # crossing-free. The section's own text, which the box shows, is what a reader actually reads.
+      - id: observability
+        from_section: "4.3"
+        kind: property
+        venv: "none"
+        machine: "none"
+
+      - id: hop_6
+        from_section: "5.1"
+        kind: checkpoint
+        venv: "none"
+        machine: "none"
+
+      - id: delivery
+        label:
+          en: "The response is served"
+          zh: "回應被送達"
+        detail:
+          en: >
+            The point at which the caller can read the answer. Everything above it can still block or
+            mask and nothing below it can, which is why the two sections hanging off this box are
+            labelled post-serving by the document rather than by this file.
+          zh: "呼叫方能讀到答案的那一刻。在它之上的每一步都還能封鎖或遮蔽,在它之下的都不能;這也是為什麼掛在這個方塊上的兩節,是文件自己標為「服務之後」,而不是這個檔案標的。"
+        kind: actor
+        venv: "none"
+        machine: "none"
+        measured: none
+        why_not_measured:
+          en: >
+            Not a mechanism. Serving is the boundary the AFTER phase is defined against, and the cases
+            that measured that phase sit on the hop #6, continuous-evaluation and optimization boxes
+            around it.
+          zh: "它不是一項機制。送達是 AFTER 階段用來定義自身的邊界,而量測該階段的案例都落在它周圍的 Hop #6、持續評估與最佳化三個方塊上。"
+
+      - id: continuous_eval
+        from_section: "5.2"
+        kind: property
+        venv: "none"
+        machine: "none"
+
+      - id: optimization_loop
+        from_section: "5.3"
+        kind: stage
+        venv: "none"
+        machine: "none"
+
+    edges:
+      - from: caller
+        to: hop_1
+        kind: request_path
+        label: {en: "a request arrives", zh: "請求抵達"}
+      - from: hop_1
+        to: hop_2
+        kind: request_path
+        label: {en: "authorized at the gateway", zh: "已在 Gateway 通過授權"}
+      - from: hop_2
+        to: hop_3_inference
+        kind: request_path
+        label: {en: "not blocked on input", zh: "輸入未被封鎖"}
+      - from: hop_3_inference
+        to: hop_4
+        kind: request_path
+        label: {en: "the model asks for a tool", zh: "模型要求呼叫工具"}
+      - from: hop_4
+        to: hop_5
+        kind: request_path
+        label: {en: "the action is permitted", zh: "該動作被允許"}
+      - from: hop_5
+        to: hop_6
+        kind: request_path
+        label: {en: "tool request and response, both inspected", zh: "工具請求與回應都已檢查"}
+      - from: hop_6
+        to: delivery
+        kind: request_path
+        label: {en: "not blocked, or masked", zh: "未被封鎖,或已遮蔽"}
+      - from: delivery
+        to: optimization_loop
+        kind: data_flow
+        label: {en: "what the loop learned", zh: "迴路學到的事"}
+      - from: hop_2
+        to: hop_2_alt
+        kind: out_of_band
+        label: {en: "the same evaluation, called directly", zh: "同一套評估,直接呼叫"}
+      - from: hop_4
+        to: observability
+        kind: out_of_band
+        label: {en: "watched while it runs", zh: "執行期間被觀察"}
+      - from: delivery
+        to: continuous_eval
+        kind: out_of_band
+        label: {en: "sampled after serving", zh: "送達之後抽樣"}
+      # Not a step in the request path: §3.1's gateway policy guardrails and §4.1's agent-to-tool
+      # authorization are the same Cedar engine, default-deny, evaluated at two different hops. A
+      # reader who configures one and not the other has a loop with a hole in it, and no arrow between
+      # the two boxes is what lets that read as two unrelated controls.
+      - from: hop_1
+        to: hop_4
+        kind: governance
+        label: {en: "the same Cedar engine, a second hop", zh: "同一個 Cedar 引擎,第二個 Hop"}
+      # The edge that makes this a loop rather than a pipeline, and the only one in this file exempt
+      # from the acyclicity walk. It earns the exemption twice over: without it the graph is still
+      # acyclic, and it lies on a cycle in the graph with it — both asserted in `check_architecture.py`
+      # rather than assumed here.
+      - from: optimization_loop
+        to: hop_1
+        kind: feedback
+        label: {en: "policies and thresholds, revised", zh: "政策與門檻,經過修訂"}
+
 # Every registered case that appears on no diagram, with the reason. The gate requires this list and
 # the placements together to account for the register exactly — no case may be in both, and none may
 # be in neither.
@@ -750,7 +1013,7 @@ unplaced_cases:
       reading the restriction exists to prevent.
 
 mapped_by: "the maintainer of this repository"
-mapped_on: 2026-08-20
+mapped_on: 2026-08-23
 note: >
   Topology and justifications authored here. Every colour, badge, chip and count on the rendered
   diagrams is derived at build time from results/_census.json, results/phase1/ and

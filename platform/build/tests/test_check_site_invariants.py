@@ -486,6 +486,41 @@ def test_a_case_both_placed_and_excluded_fails_the_publish(payload, tmp_path):
     expect_killed(mutant, ARCH_ARM, "appear in both")
 
 
+def _thinnest_diagram(payload: Path) -> tuple[int, str, int]:
+    arch = json.loads((payload / "architecture.json").read_text(encoding="utf-8"))
+    i, d = min(enumerate(arch["diagrams"]), key=lambda p: len(p[1].get("boxes") or []))
+    return i, d["id"], len(d["boxes"])
+
+
+def test_one_diagram_stripped_below_the_box_floor_cannot_report_clean(payload, tmp_path):
+    """The floor is per diagram, and this is the mutant a whole-payload total could not see.
+
+    Until 2026-08-23 the arm asserted `len(boxes) >= 24` over every diagram at once. With three diagrams
+    in the payload and fifty boxes between them, that total was satisfiable by any ONE of them — so two
+    could have been emptied whole and the gate would have reported the same clean line, because every
+    check below quantifies over the boxes that are there and a diagram contributing none contributes no
+    findings either (`feedback_container_mark_is_one_occurrence`). The mutant strips the smallest diagram
+    to one box under its own floor and leaves the other two untouched, which is exactly the state the
+    total could not distinguish from health.
+    """
+    i, did, n = _thinnest_diagram(payload)
+    keep = 7
+    assert n > keep, f"{did} already carries {n} box(es), so this mutation would change nothing"
+    mutant = copy_of(payload, tmp_path, "arch-thin")
+    _mutate(mutant, "architecture.json",
+            lambda d: d["diagrams"][i].__setitem__("boxes", d["diagrams"][i]["boxes"][:keep]))
+    expect_killed(mutant, ARCH_ARM, f"{did} carries {keep} box(es), below the floor of")
+
+
+def test_a_deleted_diagram_cannot_report_clean(payload, tmp_path):
+    """A diagram removed from the payload altogether. Every arm in this section is a `for` over the
+    diagrams, so the page losing one is the shape of failure that reads as a shorter clean report rather
+    than as an error (`feedback_zero_file_scan_is_error`)."""
+    mutant = copy_of(payload, tmp_path, "arch-dropped")
+    _mutate(mutant, "architecture.json", lambda d: d["diagrams"].pop())
+    expect_killed(mutant, ARCH_ARM, "diagram(s), below the floor of")
+
+
 def test_an_empty_non_colouring_set_cannot_report_clean(payload, tmp_path):
     """The licence checks are subtraction: a case colours a box unless a restriction withdraws it. If
     the payload stops carrying the restriction set, every check above still runs and every one of them

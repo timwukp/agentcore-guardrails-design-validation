@@ -13,11 +13,22 @@ WHY THE ASSERTIONS ARE EQUALITIES
 
 Zero crossings, zero edges through a box. Not "few" and not "within tolerance". The layout in
 `build_site_data._layout` is constrained precisely so that zero is achievable and provable — the spine
-is a single column of rows, property boxes sit in their parent's row with their edges routed in a band
+is a single column of rows, satellite boxes sit in their parent's row with their edges routed in a band
 above it, and row-skipping edges take nested lanes in a left gutter. Under those constraints a
 crossing can only come from a case the construction does not cover: two skip spans that properly
 overlap, which a single gutter cannot draw cleanly. Asserting equality is what makes that case a build
 failure with a name instead of a picture with a lie in it.
+
+WHY ONE EDGE KIND IS EXEMPT FROM THE ORDERING ARM, AND WHAT REPLACES THE EXEMPTION
+
+The closed-loop diagram is a loop: its last stage revises the policy the first hop enforces, and an
+arrow that shows that has to point back up the page. So `test_the_spine_is_one_box_per_row_in_
+topological_order` skips edges of kind `feedback` — and an exemption with nothing in its place is how a
+rule quietly stops applying to the one case it was widened for. Two arms take over. Here,
+`test_a_feedback_edge_points_up_the_page` requires every such edge to actually run upwards and to skip
+a row, so the label cannot be attached to an ordinary forward step; and in `check_architecture.py`, the
+graph minus its feedback edges must still be acyclic and every feedback edge must lie on a cycle in the
+full graph. Between them the exemption buys exactly one thing: an arrow that closes a loop.
 
 WHY A DELIBERATELY CROSSING FIXTURE IS PART OF THE FILE
 
@@ -44,9 +55,14 @@ pytest.importorskip("yaml", reason="the derivation itself refuses to run without
 
 # Floors. A layout check over an empty diagram passes trivially, which is the one result that must not
 # be reachable (`feedback_zero_file_scan_is_error`).
-MIN_DIAGRAMS = 2
+MIN_DIAGRAMS = 3
 MIN_BOXES = 12
 MIN_EDGES = 12
+# The one kind of edge the ordering arm below exempts, so there must be at least this many of them for
+# the exemption's replacement arm to assert anything. A count of zero would make
+# `test_a_feedback_edge_points_up_the_page` pass over an empty set, which is the shape a rule takes
+# when the diagram that needed the exemption is deleted and the exemption stays.
+MIN_FEEDBACK_EDGES = 1
 
 
 # --------------------------------------------------------------------------- geometry
@@ -142,13 +158,18 @@ def arch() -> dict:
     registers = bsd.derive_registers({})
     metrics = bsd.architecture_metrics(cases, published, restricted, archive, by_case, families,
                                       controls, figures, registers)
-    return bsd.derive_architecture({}, cases, published, restricted, metrics)
+    # The design document's sections, in the same order the builder resolves them: a box that names a
+    # section takes its cases from here, so a fixture that passed an empty mapping would lay out nine
+    # boxes of the closed-loop diagram as though they carried no evidence at all.
+    practices = bsd.derive_practices({}, cases, published, restricted)
+    sections = {s["id"]: s for s in practices["sections"]}
+    return bsd.derive_architecture({}, cases, published, restricted, metrics, sections)
 
 
 # --------------------------------------------------------------------------- the layout
 
 
-def test_the_payload_has_both_diagrams_and_neither_is_empty(arch):
+def test_the_payload_has_every_diagram_and_none_is_empty(arch):
     assert len(arch["diagrams"]) >= MIN_DIAGRAMS
     for d in arch["diagrams"]:
         assert d["n_boxes"] >= MIN_BOXES, d["id"]
@@ -203,31 +224,78 @@ def test_every_edge_starts_and_ends_on_its_boxes(arch):
                                 f"the boundary of {b['id']}"
 
 
-def test_a_property_box_sits_in_its_parents_row(arch):
-    """The placement rule the crossing-free construction rests on, asserted rather than assumed."""
+def test_a_satellite_box_sits_in_its_parents_row(arch):
+    """The placement rule the crossing-free construction rests on, asserted rather than assumed.
+
+    Over every satellite kind, not just `property`. `alternative` has the identical geometric contract —
+    one parent, no children, its parent's row — and reading only `property` here would have left the
+    construction's own precondition unchecked for the kind added last, which is the kind least likely to
+    have been drawn by hand.
+    """
     for d in arch["diagrams"]:
         at = {b["id"]: b for b in d["boxes"]}
-        parents = {e["to"]: e["from"] for e in d["edges"] if at[e["to"]]["kind"] == "property"}
+        parents = {e["to"]: e["from"] for e in d["edges"]
+                   if at[e["to"]]["kind"] in bsd.SATELLITE_KINDS}
         for box in d["boxes"]:
-            if box["kind"] != "property":
+            if box["kind"] not in bsd.SATELLITE_KINDS:
                 continue
             assert box["id"] in parents, f"{box['id']} has no incoming edge"
             parent = at[parents[box["id"]]]
-            assert parent["kind"] != "property", f"{box['id']} hangs off another property box"
+            assert parent["kind"] not in bsd.SATELLITE_KINDS, \
+                f"{box['id']} hangs off another satellite box"
             assert box["y"] == parent["y"], f"{box['id']} is not in {parent['id']}'s row"
             assert box["x"] > parent["x"], f"{box['id']} is not to the right of {parent['id']}"
 
 
 def test_the_spine_is_one_box_per_row_in_topological_order(arch):
+    """Every edge runs down the page — except the one kind whose meaning is that it does not.
+
+    A feedback edge is exempt here and re-checked in the arm below, because an exemption with nothing in
+    its place is how a rule stops applying to the case that needed it. `check_architecture.py` holds the
+    other half: the graph minus the feedback edges must still be acyclic, so this exemption cannot be
+    used to smuggle in a cycle among the forward edges.
+    """
     for d in arch["diagrams"]:
-        spine = [b for b in d["boxes"] if b["kind"] != "property"]
+        spine = [b for b in d["boxes"] if b["kind"] not in bsd.SATELLITE_KINDS]
         rows = [b["row"] for b in spine]
         assert sorted(rows) == list(range(len(spine))), f"{d['id']} rows are {sorted(rows)}"
         row_of = {b["id"]: b["row"] for b in spine}
         for e in d["edges"]:
+            if e["kind"] == bsd.FEEDBACK_EDGE_KIND:
+                continue
             if e["from"] in row_of and e["to"] in row_of:
                 assert row_of[e["from"]] < row_of[e["to"]], \
                     f"{d['id']}: {e['from']}->{e['to']} points up the page"
+
+
+def test_a_feedback_edge_points_up_the_page(arch):
+    """The replacement for the exemption above, and the reason the edge kind exists at all.
+
+    A `feedback` edge that happened to run downwards would be an ordinary step wearing a label that
+    switches off the acyclicity check — the one thing the kind must not be able to do. It is also
+    required to skip a row: the builder refuses an adjacent-row feedback edge, because in the spine band
+    the arrowhead is the only thing distinguishing it from a forward step, and a reader following the
+    column reads a step.
+    """
+    seen = 0
+    for d in arch["diagrams"]:
+        row_of = {b["id"]: b["row"] for b in d["boxes"]
+                  if b["kind"] not in bsd.SATELLITE_KINDS}
+        for e in d["edges"]:
+            if e["kind"] != bsd.FEEDBACK_EDGE_KIND:
+                continue
+            assert e["from"] in row_of and e["to"] in row_of, \
+                f"{d['id']}: {e['from']}->{e['to']} is a feedback edge onto a satellite box"
+            assert row_of[e["from"]] > row_of[e["to"]], \
+                f"{d['id']}: {e['from']}->{e['to']} is kind {bsd.FEEDBACK_EDGE_KIND} but runs down the " \
+                f"page, so it exempts a forward step from the acyclicity check"
+            assert row_of[e["from"]] - row_of[e["to"]] > 1, \
+                f"{d['id']}: {e['from']}->{e['to']} spans adjacent rows, where only its arrowhead " \
+                f"distinguishes it from the forward edge beside it"
+            seen += 1
+    assert seen >= MIN_FEEDBACK_EDGES, \
+        f"the payload holds {seen} feedback edge(s); the exemption in the arm above would then be " \
+        f"granted to nothing and checked against nothing"
 
 
 # --------------------------------------------------------------- the detectors are not vacuous
@@ -274,7 +342,8 @@ def test_a_properly_overlapping_pair_of_skip_spans_is_caught(arch):
     they exist to catch.
     """
     d = next(x for x in arch["diagrams"] if x["n_boxes"] >= MIN_BOXES)
-    spine = sorted([b for b in d["boxes"] if b["kind"] != "property"], key=lambda b: b["row"])
+    spine = sorted([b for b in d["boxes"] if b["kind"] not in bsd.SATELLITE_KINDS],
+                   key=lambda b: b["row"])
     assert len(spine) >= 8, "this arm needs a spine long enough to hold two overlapping spans"
     a, b, c, e = spine[0], spine[4], spine[2], spine[6]
     mid = bsd.BOX_H / 2
