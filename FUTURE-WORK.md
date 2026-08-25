@@ -273,9 +273,40 @@ is, and it is the same artifact the GRX Live plan calls `citation_policy.json`. 
 record for F6-2, F6-5 and F6-8: neither TRUE nor FALSE may be cited on the tail comparison, because
 n = 1,000 cannot adjudicate a 500 ms p99 threshold at this dispersion. (b) Chapter 10's table and Figure 3 carry the qualification, and
 the "correct thing to fail on" paragraph is rewritten to distinguish the p50/p90 claims (decisive on
-both days, inside the band on both days) from the p99 claim (not established either way); and (c) a
+both days, inside the band on both days) from the p99 claim (not established either way) — **and the
+same qualification reaches the seven sites in the v1.4 design document** (see the scope correction
+below); and (c) a
 successor `kind` with a decisiveness requirement is specified for any **future** pre-registration —
 `PREREGISTRATION.yaml` is sealed, so these cases cannot be re-scored and must not be.
+
+**Scope correction, 2026-08-23: condition (b) named only the paper, and the design document carries
+fourteen of these citation sites.** Until this amendment, (b) was satisfied by editing Chapter 10's
+table and Figure 3. It enumerated no other surface — so this item could have been **closed with the
+withheld comparison still asserted in the primary deliverable**, which is the artifact with the most
+readers and the only one an external reader is handed on its own.
+
+The v1.4 design document asserts a restricted F6 verdict in **seven** places, in **both** editions —
+fourteen citation sites. `platform/build/check_practices.py` now derives them from the documents rather
+than from a list, and `platform/curation/practices.yaml` holds each one as an `OPEN_*` adjudication
+naming this item:
+
+| where | cases | how it fails |
+|---|---|---|
+| §6.1 (latency table, per-hop citations) | F6-2, F6-5, F6-8 | the sentence's own words rest the FALSE on the withheld dimension — "p50 inside the band but p99 622 ms above it", "p50 234 ms, p99 662 ms above the band", "the measured interval is disjoint from and above it" |
+| §4.2 (Hop #5 note) | F6-8 | a bare FALSE, no dimension named, deferring to §6.1 |
+| Appendix D (change-log rows) | F6-2, F6-5, F6-8 | a bare FALSE; one row asserts it across a run of five cases, three of which carry no restriction on the verdict itself |
+
+None of the seven is fixable in a build: the document is a shipped artifact whose sha256 the site
+payload pins, and amending it is a v1.5 editorial pass under this study's amendment rules. What is in
+place instead is that the site renders all seven as **unsettled findings rather than results**, and the
+gate's ceiling on open adjudications is **7 and ratchets down only** — so this half of (b) is closed
+when that ceiling reaches 0, and it is a build failure to add an eighth. `results/PRACTICE-EVIDENCE-MAP.md`
+records the derivation.
+
+The general lesson is about closing conditions, not about F6: this condition was written by listing the
+surfaces its author had in mind, and the surface that mattered most was not one of them
+(`feedback_surfaces_a_doc_names`). Item 32 was open, the restriction was published, and the deliverable
+was still wrong — because no check's scope included it.
 
 ---
 

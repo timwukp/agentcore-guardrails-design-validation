@@ -1,0 +1,295 @@
+# What the two design documents cannot yield about their own 45 best practices.
+# AUTHORED, and deliberately small — everything a document can be asked, this file does not answer.
+#
+# WHAT THIS FILE IS **NOT** FOR
+#
+# No practice sentence. Not one, in either language. `platform/build/practices_source.py` reads all 45
+# out of `agentcore_guardrails_best_practices_v1.4.md` and `…zh-TW.md`, and the payload records the
+# sha256 of both. A practice retyped here would be a second copy that drifts silently: the page would
+# keep showing the old wording after the document was amended, and nothing would fail. The same goes
+# for the 7 design principles, the 9 anti-patterns, the 28 checklist items, the phase names, the hop
+# numbers, and — the one that matters most — the case citations. The document cites 324 case
+# references over 87 distinct cases and does it identically in both editions; that is the evidence
+# hook, and it is PARSED, so "we tested this" is a claim the document makes about itself and this
+# platform checks, not a claim the platform makes on the document's behalf.
+#
+# WHAT IS AUTHORED HERE, AND WHY IT HAS TO BE
+#
+# One thing only: the **adjudication of a citation this platform's own rules will not let stand
+# unexamined**. `platform/build/check_practices.py` compares every asserted `(case, verdict)` pair in
+# the document against `results/phase1/<case>.json` and against the restrictions published in
+# `results/CITATION-POLICY.md`. Three kinds of disagreement come out of that comparison, and none of
+# them can be settled by a program:
+#
+#   * the document asserts a verdict the register does not carry (F7-1 ×3),
+#   * the document cites a case the policy says may never be cited (F5-3b ×1),
+#   * the document asserts TRUE or FALSE for a case whose restriction is PARTIAL — legal on one
+#     dimension, forbidden on another, and only a reader of the sentence can tell which one it rests
+#     on (F6-2, F6-5, F6-8 — 7 sites).
+#
+# So each is written down, once, with the reason and with a fragment of the sentence it is about. Two
+# properties make that ledger worth more than a suppression list:
+#
+#   1. **It is counted both ways.** An adjudicated site that no longer occurs fails the build, so an
+#      entry cannot outlive the sentence it excuses. An occurrence with no entry fails the build, so a
+#      new disagreement cannot arrive quietly. There is no third state.
+#   2. **Every entry quotes the sentence, and the gate re-reads the quotation.** `span_must_contain`
+#      is checked against the published span in both editions. An exemption cannot survive the
+#      rewriting of the sentence it was granted for — which is the failure mode a `(case, verdict)`
+#      key alone has, because the key stays true while the reason stops being.
+#
+# Entries are keyed by `where` — a section id, or `ch:N` / `app:X` — never by line number. The Chinese
+# edition is 348 lines shorter than the English one, and a line number goes stale the moment a
+# sentence is inserted above it while still looking precise.
+#
+# DISPOSITIONS
+#
+#   LEGAL_PER_METRIC          the case's own sealed oracle adjudicates per unit, and the document
+#                             cites one unit. The scoped claim is more precise than the file-level
+#                             verdict, and the record carries the field that shows it.
+#   LEGAL_WITHDRAWN_IN_PLACE  the citation exists in order to state the restriction, and withdraws
+#                             itself in the same sentence. A gate that could not tell disclosure from
+#                             citation would forbid the document from explaining why a case is unusable.
+#   OPEN_RESTS_ON_RESTRICTED_DIMENSION
+#                             a real defect: the sentence's own words show the verdict resting on the
+#                             dimension the policy withholds.
+#   OPEN_QUALIFICATION_ABSENT a real defect of the weaker kind: the verdict is asserted with no
+#                             dimension named, so a reader cannot tell that it is scope-bound.
+#
+# An `OPEN_*` entry is not an exemption. It is a published finding: it must name the register item it
+# belongs to and what it is blocked on, the payload carries it, and the page shows it. A defect that a
+# build knows about and a reader does not is the thing this project's editorial rule exists to prevent.
+#
+# WHAT THIS FILE MUST NEVER CONTAIN
+#
+# A verdict. A practice sentence. A count. A rate, a score, or a grade. And no `phase`/`hop` override:
+# §4.3, §5.2 and §5.3 carry no hop because they are not checkpoints — observability, continuous
+# evaluation and the optimization loop run alongside the six hops rather than in them — and inventing
+# a hop number for them here would put a number in the topology diagram that the document never wrote.
+#
+# The practice → `controls.yaml` control join is deliberately absent. It is a second authored judgment
+# per practice, the page does not need it (a practice's status derives from the citations the document
+# itself makes), and adding 45 of them in the same change as the derivation would put the two on the
+# same footing. It belongs to whichever round needs it.
+
+schema: grx-practices/1
+
+adjudicated_on: 2026-08-23
+adjudicated_against:
+  register: results/phase1/*.json via platform/build/check_controls.py read_verdicts()
+  policy: results/CITATION-POLICY.md machine block (authoritative_for_tooling)
+  documents: agentcore_guardrails_best_practices_v1.4.md and .zh-TW.md, hashed into the payload
+
+citation_adjudications:
+
+  # ---------------------------------------------------------------- F7-1: per-metric, and legal
+  #
+  # F7-1's verdict on disk is FALSE. Its sealed `oracle_text` reads "Per metric: TRUE if datapoints
+  # appear for our dimensions after traffic that should produce them; FALSE if absent", and its
+  # `verdict_rule` makes the file-level verdict a conjunction: "TRUE iff every EXERCISED documented
+  # metric has datapoints". 10 of 15 documented metrics published; the FALSE is carried by the three
+  # in `absent_though_exercised` — ConfidenceScore, ConfidenceThreshold, TemporalLatency. Each site
+  # below names a metric whose own record says it published, so the scoped TRUE is a reading the
+  # sealed oracle licenses, not a disagreement with it. `verdict_reading` in the same file says as
+  # much: "FALSE for the 13 of 15 documented metrics whose publishing condition this project's
+  # traffic actually creates."
+
+  - case: F7-1
+    asserted: "TRUE"
+    where: "6.2"
+    disposition: LEGAL_PER_METRIC
+    unit: GuardrailLatency
+    evidence: 'results/phase1/F7-1.json per_metric[metric=GuardrailLatency].published = true'
+    why: >
+      The metric table row for GuardrailLatency states "Published" and cites F7-1 for that one metric.
+      The record's per-metric entry says published, so the row is a correct reading of the case at the
+      grain the oracle scores it. The case-level FALSE is not about this metric.
+    span_must_contain:
+      en: "TRUE for this metric"
+      zh: "此指標為 TRUE"
+
+  - case: F7-1
+    asserted: "TRUE"
+    where: "7.1"
+    disposition: LEGAL_PER_METRIC
+    unit: LogOnlyDecisionFlips and LogOnlyMatches
+    evidence: >
+      results/phase1/F7-1.json per_metric[metric=LogOnlyDecisionFlips].published = true and
+      per_metric[metric=LogOnlyMatches].published = true (project window: 42 datapoints, sum 4708)
+    why: >
+      The principle warns against gating promotion on LogOnlyDecisionFlips alone, because a sustained
+      zero is produced both by agreement and by never evaluating. The citation is that both metrics do
+      publish — which is what makes the zero meaningful as a reading rather than as instrument absence,
+      and it is the two metrics' own per-metric records that say so.
+    span_must_contain:
+      en: "TRUE for these two metrics"
+      zh: "這兩個指標為 TRUE"
+
+  - case: F7-1
+    asserted: "TRUE"
+    where: "7.1"
+    disposition: LEGAL_PER_METRIC
+    unit: LogOnlyMatches
+    evidence: 'results/phase1/F7-1.json per_metric[metric=LogOnlyMatches].published = true'
+    why: >
+      The v1.3 amendment note explains why a `LogOnlyMatches > 0` gate was added to the diagram. The
+      gate is only implementable if the metric publishes, and the citation is exactly that fact.
+    span_must_contain:
+      en: "TRUE for `LogOnlyMatches`"
+      zh: "`LogOnlyMatches` 為 TRUE"
+
+  # ---------------------------------------------------------------- F5-3b: cited in order to withdraw it
+  #
+  # CITATION-POLICY gives F5-3b `NEVER_CITE`, `citable_as: []`, `not_citable_as: [confirmation, a TRUE
+  # in any count]`. This site is inside the paragraph headed "Deliberately left unchanged (evidence
+  # inconclusive, absent, or untestable)" and does neither of the forbidden things: it states the TRUE,
+  # states which guard failed, and withdraws the standing in the same sentence. Making this fail would
+  # leave the document unable to say why a case cannot be used — the opposite of what the policy is for.
+
+  - case: F5-3b
+    asserted: "TRUE"
+    where: "app:D"
+    disposition: LEGAL_WITHDRAWN_IN_PLACE
+    evidence: results/CITATION-POLICY.md restriction NEVER_CITE; results/CENSUS-NOT-MEASURED.md
+    why: >
+      The sentence withdraws the verdict it reports, in both editions, with the reason: the
+      every_boundary_transition_was_observed_to_settle guard failed on two IAM transitions that never
+      settled inside their ~307 s budgets. The gate re-reads the withdrawal, so this entry expires if
+      the sentence ever states the TRUE without it.
+    span_must_contain:
+      en: "carries NO publishable standing"
+      zh: "不具可發布地位"
+
+  # ---------------------------------------------------------------- F6: seven sites, all OPEN
+  #
+  # These are findings, not exemptions. FUTURE-WORK item 32 opened because two sealed oracle kinds
+  # adjudicate a threshold with no decisiveness requirement; CITATION-POLICY closed the first half of
+  # it by publishing the restriction. What item 32's "Closes when (b)" names is **the paper's**
+  # Chapter 10 table and Figure 3. It does not name the design document, and the design document
+  # asserts the withheld comparison in seven places across two editions — fourteen citation sites
+  # carrying the defect the item was opened for, in the primary deliverable, in a surface the item's
+  # own closing condition never enumerated. Item 32 as written could be closed with all fourteen live.
+  #
+  # None of the seven can be fixed here. The document is a shipped artifact whose hash the payload
+  # pins, and an amendment to it follows the amendment rules — a v1.5 editorial pass, not a build.
+  # What this round can do is refuse to render any of them as a settled result, and say so on the page.
+
+  - case: F6-2
+    asserted: "FALSE"
+    where: "6.1"
+    disposition: OPEN_RESTS_ON_RESTRICTED_DIMENSION
+    register_item: 32
+    restriction: PARTIAL
+    withheld: FALSE on the p99 tail
+    blocked_on: a v1.5 amendment to the latency table's per-hop citations
+    evidence: results/FINDING-F6-DAY2-DECISIVENESS.md; results/CITATION-POLICY.md restriction PARTIAL
+    why: >
+      The sentence's own words place the p50 inside the band and rest the FALSE on the p99 — the one
+      comparison the policy withholds, because the day-2 p99 CI [317, 752] straddles the 500 ms
+      threshold and is 435 ms wide against a 400 ms band. The case flipped FALSE to TRUE on
+      replication, so the assertion is not merely unlicensed: a second day does not support it.
+    span_must_contain:
+      en: "p50 inside the band but p99 622 ms above it"
+      zh: "p50 落在區間內,但 p99 622 ms 超出"
+
+  - case: F6-5
+    asserted: "FALSE"
+    where: "6.1"
+    disposition: OPEN_RESTS_ON_RESTRICTED_DIMENSION
+    register_item: 32
+    restriction: PARTIAL
+    withheld: FALSE on the p99 tail
+    blocked_on: a v1.5 amendment to the latency table's per-hop citations
+    evidence: results/FINDING-F6-DAY2-DECISIVENESS.md; results/CITATION-POLICY.md restriction PARTIAL
+    why: >
+      Same shape as F6-2 at Hop #6: the quoted p50 of 234 ms is inside the 100–500 ms band, so the
+      FALSE is carried entirely by the p99. The day-2 p99 CI [347, 722] straddles 500 ms and the case
+      scored TRUE on p99 = 466 ms.
+    span_must_contain:
+      en: "p50 234 ms, p99 662 ms above the band"
+      zh: "p50 234 ms,p99 662 ms 超出區間"
+
+  - case: F6-8
+    asserted: "FALSE"
+    where: "6.1"
+    disposition: OPEN_RESTS_ON_RESTRICTED_DIMENSION
+    register_item: 32
+    restriction: PARTIAL
+    withheld: FALSE on slope in [165,750]
+    blocked_on: a v1.5 amendment to the per-additional-tool-call note
+    evidence: results/FINDING-F6-DAY2-DECISIVENESS.md; results/CITATION-POLICY.md restriction PARTIAL
+    why: >
+      "The measured interval is disjoint from and above it" is precisely the slope-in-range comparison
+      the policy withholds. It was true of day 1's CI [838.7, 862.7] and is not true of day 2's
+      [736.4, 757.5], which overlaps the documented range by 13.6 ms. What survives both days is the
+      one thing the policy does license: the growth is large relative to the documented range.
+    span_must_contain:
+      en: "the measured interval is disjoint from and above it"
+      zh: "實測區間與它不相交且高於它"
+
+  - case: F6-8
+    asserted: "FALSE"
+    where: "4.2"
+    disposition: OPEN_QUALIFICATION_ABSENT
+    register_item: 32
+    restriction: PARTIAL
+    withheld: FALSE on slope in [165,750]
+    blocked_on: a v1.5 amendment; it inherits whatever §6.1 is corrected to say
+    evidence: results/CITATION-POLICY.md restriction PARTIAL
+    why: >
+      A bare FALSE that points the reader at §6.1 for the detail. It names no dimension, so on its own
+      it reads as a settled refutation, and the section it defers to is the one that needs correcting.
+    span_must_contain:
+      en: "n=600 usable of 1600, us-east-1, 2026-08-10; see §6.1"
+      zh: "1600 次中 600 次可用, us-east-1, 2026-08-10;見 §6.1"
+
+  - case: F6-2
+    asserted: "FALSE"
+    where: "app:D"
+    disposition: OPEN_QUALIFICATION_ABSENT
+    register_item: 32
+    restriction: PARTIAL
+    withheld: FALSE on the p99 tail
+    blocked_on: a v1.5 amendment to the Appendix D change-log row
+    evidence: results/CITATION-POLICY.md restriction PARTIAL
+    why: >
+      The change-log row asserts one FALSE across a run of five cases. Three of the five carry no
+      restriction on the verdict itself — REPLICATION_POSITION_BOUND licenses "the verdict" and
+      withholds only the replication framing — while F6-2 and F6-5 do, and the row gives a reader
+      nothing to distinguish them by.
+    span_must_contain:
+      en: "F6-1, F6-2, F6-3, F6-4, F6-5, all FALSE"
+      zh: "F6-1、F6-2、F6-3、F6-4、F6-5,全部 FALSE"
+
+  - case: F6-5
+    asserted: "FALSE"
+    where: "app:D"
+    disposition: OPEN_QUALIFICATION_ABSENT
+    register_item: 32
+    restriction: PARTIAL
+    withheld: FALSE on the p99 tail
+    blocked_on: a v1.5 amendment to the Appendix D change-log row
+    evidence: results/CITATION-POLICY.md restriction PARTIAL
+    why: >
+      The second of the two restricted cases inside the same five-case run. It is a separate entry
+      because it is a separate claim about a separate case, and collapsing the two into one would
+      make the ledger's count smaller than the number of things wrong.
+    span_must_contain:
+      en: "F6-1, F6-2, F6-3, F6-4, F6-5, all FALSE"
+      zh: "F6-1、F6-2、F6-3、F6-4、F6-5,全部 FALSE"
+
+  - case: F6-8
+    asserted: "FALSE"
+    where: "app:D"
+    disposition: OPEN_QUALIFICATION_ABSENT
+    register_item: 32
+    restriction: PARTIAL
+    withheld: FALSE on slope in [165,750]
+    blocked_on: a v1.5 amendment to the Appendix D change-log row
+    evidence: results/CITATION-POLICY.md restriction PARTIAL
+    why: >
+      A bare FALSE with its usable-n stated and no dimension named. The n is the honest part; the
+      missing part is that the comparison it refutes is the one the policy withholds.
+    span_must_contain:
+      en: "F6-8, FALSE, n=600 usable, 2026-08-10"
+      zh: "F6-8, FALSE, 600 次可用, 2026-08-10"
