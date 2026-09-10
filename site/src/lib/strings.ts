@@ -54,6 +54,7 @@ export const STRINGS = {
   "nav.findings": ["Findings", "發現"],
   "nav.figures": ["Figures", "圖表"],
   "nav.architecture": ["Design diagrams", "設計圖"],
+  "nav.design": ["The recommended design", "建議的設計"],
   "nav.method": ["How a verdict is made", "判定是怎麼做出來的"],
   "nav.claims": ["Claim triage", "主張分類"],
   "nav.citations": ["Citation policy", "引用政策"],
@@ -1269,10 +1270,13 @@ export const STRINGS = {
 
   // ------------------------------------------------------------------ design diagrams
   //
-  // The authored topology file's own sentences — a box's `detail`, `why_this_status`, `status_label`,
-  // `why_not_measured`, `why_these_cases`, a diagram's `label`/`subtitle`/`why_this_diagram`, a case's
-  // `title`, and the coverage justifications — are NOT in here. They are the material this page reports
-  // on, so they are quoted in English in both languages. What is in here is the frame around them.
+  // The authored topology file's own sentences — a box's `detail`, `why_not_measured`,
+  // `why_these_cases`, a diagram's `label`/`subtitle`/`why_this_diagram`, a case's `title`, and the
+  // coverage justifications — are NOT in here. They are the material this page reports on, so they are
+  // quoted in English in both languages. What is in here is the frame around them.
+  //
+  // `status_label` and `why_this_status` are not in here either, and are not quoted material: they are
+  // the build's own prose, `{en, zh}` in the payload, and they render through `<A>`.
 
   "arc.loading": ["the design diagrams", "設計圖"],
   "arc.lede": [
@@ -1291,6 +1295,7 @@ export const STRINGS = {
   "arc.kv.machine": ["Runs on", "執行於"],
   "arc.kv.count": ["The number on the box", "方塊上的數字"],
   "arc.kv.count.value": ["{n} — derived as {from}", "{n} —— 由 {from} 推導而來"],
+  "arc.kv.section": ["Recommended in", "建議事項出處"],
   "arc.neverExamined": [
     "This study never examined this component.",
     "本研究從來沒有檢驗過這個元件。",
@@ -1333,6 +1338,96 @@ export const STRINGS = {
       "而一個這個檔案算不出來的指標會讓建置失敗，而不是讓它渲染成空白。",
   ],
   "arc.mappedBy": ["Topology mapped by {who} on {when}.", "拓樸由 {who} 在 {when} 對應完成。"],
+
+  // ------------------------------------------------------------------ the recommended design
+  //
+  // What is NOT in here, and must never be: a practice sentence, a checkpoint heading, a principle, an
+  // anti-pattern, a checklist item, or the span a ruling quotes. Every one of those arrives as `{en, zh}`
+  // read out of the two editions of the design document — the Chinese half is the Chinese DOCUMENT's own
+  // wording. Retyping any of them here would make this page assert the design instead of reporting it,
+  // and would keep showing the old sentence after the document was amended, with nothing to notice.
+  //
+  // The phase tokens (BEFORE / DURING / AFTER) are also not in here. They are payload vocabulary and
+  // render as identifiers, like `not_established` in the diagram legend: a gloss table keyed by token
+  // would be a name list, and the phase added after it was written would render as nothing at all
+  // (`feedback_scope_as_namelist`).
+
+  "des.loading": ["the recommended design", "建議的設計"],
+  "des.lede": [
+    "{n} numbered best practices across {sections} checkpoints, read out of {doc} at build time — not retyped here. Under each one are the cases from this study that tested it, and the colour beside it is the verdict those cases produced. That is the whole claim of this page: the design is not asserted, it was measured, and where it did not hold the sentence stays and turns amber.",
+    "{sections} 個檢查點、共 {n} 條編號的最佳實踐，都是在建置時從 {doc} 讀出來的 —— 不是在這裡重打一次。" +
+      "每一條底下是本研究實測過它的案例，旁邊的顏色就是那些案例產生的判定。這一頁的全部主張就是這件事：" +
+      "這個設計不是被宣稱的，而是被量測過的；而在它沒有成立的地方，那句話會留在原處並轉為琥珀色。",
+  ],
+  "des.prov": [
+    "Both editions are hashed into this payload as inputs. Amend either document and this page changes on the next build and the hash moves with it; no practice sentence, phase, hop or case id is written anywhere in this repository.",
+    "兩個語言版本的文件都以輸入的身分被雜湊進這份資料裡。只要修訂任一份文件，下一次建置就會改變這一頁，" +
+      "雜湊值也會跟著移動；本儲存庫任何地方都沒有寫下實務句子、階段、跳點或案例編號。",
+  ],
+  "des.h.coverage": ["What this study can and cannot say about the design", "本研究對這個設計能說什麼、不能說什麼"],
+  "des.cov.basis": [
+    "{practice} practice(s) rest on a case their own sentence cites, {section} on cases cited elsewhere in the same checkpoint, and {none} on nothing at all.",
+    "有 {practice} 條實務的依據是它自己句子所引用的案例，{section} 條依據的是同一個檢查點其他地方引用的案例，" +
+      "還有 {none} 條完全沒有任何依據。",
+  ],
+  "des.cov.cases": [
+    "{cited} of {registered} registered case(s) are cited by the document; {uncited} were measured and it says nothing about them.",
+    "已登錄的 {registered} 個案例裡，有 {cited} 個被文件引用；另外 {uncited} 個雖然量測過，文件對它們完全沒有提及。",
+  ],
+  "des.h.practices": ["The design, checkpoint by checkpoint", "設計本身，逐個檢查點"],
+  "des.phase.head": [
+    "{phase} — {sections} checkpoint(s), {practices} practice(s)",
+    "{phase} —— {sections} 個檢查點，{practices} 條實務",
+  ],
+  "des.hop": ["checkpoint hop {hop}", "檢查點跳點 {hop}"],
+  "des.basis": ["Coloured by:", "上色依據："],
+  "des.docSays": ["the document cites it as", "文件引用它時說它是"],
+  "des.docSaysNothing": ["cited with no verdict named", "被引用，但沒有指名判定"],
+  "des.registerSays": ["the register says", "登記簿說"],
+  "des.noEvidence": [
+    "Neither this sentence nor its checkpoint cites a case, so this study has nothing to say about it. It is in the design on the strength of the documentation and of reasoning, and it is listed here rather than dropped: a practice quietly absent from this page would read as one nobody recommended.",
+    "這句話本身和它所屬的檢查點都沒有引用任何案例，所以本研究對它無話可說。它之所以在設計裡，靠的是官方文件" +
+      "與推論；它被列在這裡而不是被拿掉，是因為一條悄悄從這一頁消失的實務，會被讀成「沒有人建議過它」。",
+  ],
+  "des.h.principles": ["The principles behind the practices", "這些實務背後的原則"],
+  "des.h.antipatterns": ["What the design says not to do", "設計明說不要做的事"],
+  "des.ap.problem": ["What goes wrong:", "會出什麼問題："],
+  "des.ap.rec": ["Instead:", "改為："],
+  "des.h.checklist": ["The implementation checklist", "實作檢核表"],
+  "des.checklist.raw": [
+    "the item with its evidence bracket, as the document writes it",
+    "這一項連同它的證據方括號，照文件原樣"
+  ],
+  "des.h.census": ["How the citations were counted", "引用是怎麼數的"],
+  "des.census.body": [
+    "{assertions} citation(s) of {distinct} distinct case(s), and both editions carry the identical multiset — asserted by the extractor over the two files, not compared by eye. {inline} citation(s) sit inside a practice sentence; {carrying} practice(s) carry one. Those last two are two counts of two different things and are derived separately, because a single number would have to pick one and would then be quoted as the other.",
+    "共 {assertions} 次引用，涵蓋 {distinct} 個不同案例，而兩個語言版本帶的是完全相同的多重集 —— " +
+      "這是由抽取器對兩份檔案斷言出來的，不是用眼睛比對的。其中 {inline} 次引用落在實務句子裡面；" +
+      "有 {carrying} 條實務帶著引用。最後這兩個是對兩件不同事物的兩次計數，各自分別推導：" +
+      "如果只給一個數字，它就必須選一邊，然後被當成另一邊引用。",
+  ],
+  "des.h.rulings": ["Where the document and the register disagree", "文件與登記簿意見不一致的地方"],
+  "des.rulings.body": [
+    "{needing} citation(s) in the document assert something {policy} does not licence as written. {legal} were ruled admissible at a finer grain than the case-level verdict — a metric, a dimension — and {open} are published as findings against the document, under a ceiling of {ceiling}. The ruling on each, in the adjudicator's own words, is in {map}; below are the citations themselves, quoted from the edition you are reading.",
+    "文件裡有 {needing} 次引用，斷言了 {policy} 並不照原樣授權的事情。其中 {legal} 次在比案例層級判定更細的" +
+      "粒度上被裁定為可接受 —— 某個指標、某個面向 —— 另外 {open} 次則作為對文件本身的發現公開，上限為 {ceiling}。" +
+      "每一次的裁決理由（用裁決者自己的話）在 {map} 裡；底下是這些引用本身，引自你正在讀的這個版本。",
+  ],
+  "des.rulings.adjudicated": [
+    "Adjudicated on {when} against {file}, hashed as {sha}.",
+    "於 {when} 依據 {file} 裁決完成，其雜湊為 {sha}。",
+  ],
+  "des.th.where": ["Section", "章節"],
+  "des.th.quoted": ["What the document says", "文件怎麼寫的"],
+  "des.th.disposition": ["Ruling", "裁決"],
+  "des.th.item": ["Register item", "登記項目"],
+  "des.ruling.blocked": ["blocked on a document amendment", "卡在文件修訂上"],
+  "des.h.uncited": ["Measured, and the document says nothing about it", "已量測，而文件對它完全沒有提及"],
+  "des.uncited.body": [
+    "{n} published case(s) the design document never cites. They are listed for the same reason the unplaced cases are listed on the diagram page: a result nobody's guidance refers to is the kind of result that quietly stops existing.",
+    "有 {n} 個已發佈的案例，是設計文件從未引用過的。列出它們的理由，和圖表頁列出未被放置的案例是同一個：" +
+      "一個沒有任何指引提到的結果，正是那種會悄悄不再存在的結果。",
+  ],
 
   // ------------------------------------------------------------------ deficiency register
   "reg.item": ["item {n}", "第 {n} 項"],

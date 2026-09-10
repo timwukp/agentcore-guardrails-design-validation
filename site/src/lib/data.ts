@@ -83,6 +83,7 @@ export const loadControls = () => getJson<import("./types").ControlsDoc>("contro
 export const loadAudit = () => getJson<import("./types").AuditPage>("audit.json");
 export const loadArchitecture = () =>
   getJson<import("./types").Architecture>("architecture.json");
+export const loadPractices = () => getJson<import("./types").Practices>("practices.json");
 export const loadClaims = () => getJson<import("./types").Claims>("claims.json");
 export const loadCitationPolicy = () =>
   getJson<import("./types").CitationPolicy>("citation_policy.json");
