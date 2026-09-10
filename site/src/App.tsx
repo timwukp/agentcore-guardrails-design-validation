@@ -16,6 +16,7 @@ import Pipeline from "./views/Pipeline";
 import Audit from "./views/Audit";
 import Report from "./views/Report";
 import Architecture from "./views/Architecture";
+import Design from "./views/Design";
 
 /** The name in the heading is the REPOSITORY name, not a product name.
  *
@@ -36,6 +37,7 @@ const NAV: [Key, string, Key][] = [
   ["nav.group.results", "/", "nav.census"],
   ["nav.group.results", "/findings", "nav.findings"],
   ["nav.group.results", "/figures", "nav.figures"],
+  ["nav.group.method", "/design", "nav.design"],
   ["nav.group.method", "/architecture", "nav.architecture"],
   ["nav.group.method", "/method", "nav.method"],
   ["nav.group.method", "/claims", "nav.claims"],
@@ -103,6 +105,7 @@ export default function App() {
           <Route path="/citations" element={<Citations />} />
           <Route path="/claims" element={<Claims />} />
           <Route path="/method" element={<Method />} />
+          <Route path="/design" element={<Design />} />
           <Route path="/architecture" element={<Architecture />} />
           <Route path="/provenance" element={<Provenance />} />
           <Route path="/pipeline" element={<Pipeline />} />

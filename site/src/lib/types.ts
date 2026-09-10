@@ -715,7 +715,11 @@ export interface ArchBox {
   /** What the colour means, in the reader's language. Authored by `build_site_data.ARCH_STATUS_LABEL`,
    *  not quoted from the topology file — see the note on `Authored`. */
   status_label: Authored;
-  why_this_status: string;
+  /** The sentence deriving the colour from the case ids, composed by `build_site_data.box_status()` —
+   *  which is also what colours the 9 checkpoints and 45 practices on `/design`. Bilingual rather than
+   *  `Authored | string` because a single function writes every instance of it: there is no authored
+   *  file that could supply a bare one. */
+  why_this_status: Authored;
   verdict_mix: Record<string, number>;
   restrictions: string[];
   count_from: string | null;
@@ -782,4 +786,175 @@ export interface Architecture {
   mapped_by: string;
   mapped_on: string;
   note: string;
+}
+
+// ---------------------------------------------------------------------------------------------
+// practices.json — the design itself: 45 numbered best practices out of the v1.4 document, each
+// joined to the cases that tested the checkpoint it belongs to.
+//
+// EVERY PROSE FIELD BELOW IS EITHER `Authored` OR THE DOCUMENT'S OWN SENTENCE, AND THE DIFFERENCE
+// IS THE WHOLE POINT OF THE FILE
+//
+// `prose`, `heading`, `principle`, `anti_pattern`, `quoted` and the checklist items are `{en, zh}`
+// because they are read out of the two editions of the design document — the Chinese half is the
+// Chinese document's own wording, not a translation this repository wrote. `why_this_status` and the
+// `why` fields are `{en, zh}` because this platform composed them. Nothing here is `Authored | string`:
+// a bare string reaching this payload is a producer that forgot, and the shape says so.
+
+export interface PracticeCase {
+  case: string;
+  family: string;
+  title: string;
+  verdict: Verdict | string | null;
+  restrictions: string[];
+}
+
+/** Which cases coloured a practice. `practice` = the sentence's own citations; `section` = the
+ *  checkpoint's, because the sentence cites none of its own; `none` = neither cites anything. The
+ *  distinction is published rather than flattened: a practice inheriting its checkpoint's evidence is
+ *  a weaker claim than one carrying its own, and a single colour would hide which it was. */
+export type PracticeBasis = "practice" | "section" | "none";
+
+export interface Practice {
+  key: string;
+  section: string;
+  n: number;
+  phase: string;
+  hop: string;
+  prose: Authored;
+  line: { en: number; zh: number };
+  cases: PracticeCase[];
+  n_cases: number;
+  /** What the DOCUMENT claims each of its own citations decided, parsed out of the citation bracket —
+   *  next to `cases[].verdict`, which is what the sealed register says. Two sources, kept apart on
+   *  purpose: `check_practices.py` fails the build where they disagree without a ruling, and the page
+   *  shows both so a reader can see the agreement rather than take the gate's word for it. `asserted`
+   *  is null where the bracket cites a case without naming a verdict. */
+  asserted: { case: string; asserted: string | null }[];
+  status: ArchStatus | string;
+  why_this_status: Authored;
+  status_basis: PracticeBasis | string;
+  n_cases_in_basis: number;
+}
+
+export interface PracticeSection {
+  id: string;
+  chapter: string;
+  phase: string;
+  hop: string;
+  heading: Authored;
+  n_practices: number;
+  keys: string[];
+  cases: PracticeCase[];
+  n_cases: number;
+  status: ArchStatus | string;
+  why_this_status: Authored;
+}
+
+export interface Principle {
+  n: number;
+  principle: Authored;
+  rationale: Authored;
+  cites: string[];
+}
+
+export interface AntiPattern {
+  n: number;
+  anti_pattern: Authored;
+  problem: Authored;
+  recommendation: Authored;
+  cites: string[];
+}
+
+/** `prose` is the item with its citation brackets removed; `raw` keeps them. Both are published because
+ *  the brackets carry the n, the region and the date, and a checklist item stripped of them reads as an
+ *  instruction with no evidence behind it. */
+export interface ChecklistItem {
+  prose: Authored;
+  raw: Authored;
+  cites: string[];
+}
+
+export interface ChecklistGroup {
+  label: Authored;
+  items: ChecklistItem[];
+}
+
+/** One citation the document makes that `results/CITATION-POLICY.md` does not licence as written.
+ *  `kind: "legal"` was ruled admissible at a finer grain than the case-level verdict; `kind: "open"` is
+ *  a published finding against the document. The `why` and `reason` are the adjudicator's English
+ *  judgement and live in `results/PRACTICE-EVIDENCE-MAP.md`; the page renders the identifiers, the
+ *  document's own quoted span in the reader's language, and the count. */
+export interface PracticeRuling {
+  case: string;
+  asserted: string;
+  where: string;
+  line: { en: number; zh: number };
+  disposition: string;
+  kind: "legal" | "open" | string;
+  rule: string;
+  on_disk: string | null;
+  restrictions: string[];
+  unit: string | null;
+  register_item: number | null;
+  restriction: string | null;
+  withheld: string | null;
+  blocked_on: string | null;
+  quoted: Authored;
+}
+
+export interface Practices {
+  schema: string;
+  documents: {
+    en: { path: string; sha256: string };
+    zh: { path: string; sha256: string };
+    why: Authored;
+  };
+  marker: Authored;
+  marker_frequency: { en: Record<string, number>; zh: Record<string, number> };
+  phases: string[];
+  sections: PracticeSection[];
+  practices: Practice[];
+  principles: Principle[];
+  anti_patterns: AntiPattern[];
+  checklist: ChecklistGroup[];
+  n_practices: number;
+  n_checklist_items: number;
+  citation_census: {
+    cases: string[];
+    n_assertions: number;
+    n_citations: number;
+    n_distinct: number;
+    n_inline_practice_citations: number;
+    n_inside_a_practice: number;
+    n_path_references: number;
+    n_practices_carrying_one: number;
+    path_references: string[];
+    both_editions: string;
+    why_two_numbers: Authored;
+  };
+  coverage: {
+    n_practices: number;
+    by_status_basis: Record<string, number>;
+    n_registered: number;
+    n_cited: number;
+    n_uncited: number;
+    uncited_cases: PracticeCase[];
+    why: Authored;
+  };
+  adjudications: {
+    open: PracticeRuling[];
+    legal: PracticeRuling[];
+    n_open: number;
+    n_legal: number;
+    n_assertions_needing_a_ruling: number;
+    ceiling: number;
+    adjudicated_on: string;
+    adjudicated_against: Record<string, string>;
+    curation: { path: string; sha256: string };
+    why: Authored;
+  };
+  status_labels: Record<string, Authored>;
+  status_bases: Record<string, Authored>;
+  non_colouring_restrictions: string[];
 }

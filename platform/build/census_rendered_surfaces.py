@@ -114,7 +114,7 @@ WORD_SEPARATOR = re.compile(r"\s")
 
 # Floors. Each is a collapse detector: the walk is worthless if it covered a handful of routes or found
 # a handful of strings, and both failures look exactly like a small backlog.
-MIN_ROUTES = 12
+MIN_ROUTES = 13
 MIN_PAYLOAD_STRINGS = 200
 MIN_RENDERED_CHARS_PER_ROUTE = 400
 
@@ -136,8 +136,42 @@ LOCALES = ("en", "zh-TW")
 # case pages share one component, so the property under measurement (which of that component's prose is
 # translated) is the same on all of them, while three chosen for their VERDICT exercise the three
 # different branches of the caveat block — which is the part of that page that differs by case.
+#
+# "Mirroring" was, until 2026-09-10, a claim only this comment made: two hand-maintained lists of the
+# same routes, and nothing that noticed when they disagreed. A route added to the app and not here
+# would fall out of the census silently — the ceiling cannot catch it, because a page the walk never
+# visits contributes zero strings, and zero is exactly what a fully-translated page contributes too.
+# So `check_route_tables_agree()` below derives the app's side from `App.tsx` itself and refuses to
+# walk anything until the two sets are equal (`feedback_derive_both_sides_of_a_gate`).
 STATIC_ROUTES = ("/", "/findings", "/figures", "/register", "/citations", "/claims", "/method",
-                 "/architecture", "/provenance", "/pipeline", "/audit", "/report")
+                 "/design", "/architecture", "/provenance", "/pipeline", "/audit", "/report")
+
+# `<Route path="...">` literals in the app's route table. Parametrised routes (`/case/:id`) are sampled
+# separately and the catch-all `*` is the 404 view, so both are excluded from the equality; everything
+# else the app serves, this census must walk.
+APP_ROUTE_RE = re.compile(r'<Route\s+path="(/[^":]*)"')
+
+
+def check_route_tables_agree() -> None:
+    """Fail before the walk if `STATIC_ROUTES` and `site/src/App.tsx` name different route sets.
+
+    Derived from the app source rather than written down twice: the census walking 12 of 13 routes
+    reports a smaller backlog than the site has, and that failure renders as SUCCESS. The regex is a
+    claim about how routes are declared (`feedback_discovery_pattern_is_a_claim`), so its own yield is
+    floored: an App.tsx this pattern cannot read at all is a reason to stop, not a clean diff.
+    """
+    app_tsx = REPO / "site" / "src" / "App.tsx"
+    found = set(APP_ROUTE_RE.findall(app_tsx.read_text(encoding="utf-8")))
+    if len(found) < 3:
+        cannot_run(f"{len(found)} static route(s) parsed from {app_tsx}; the route declaration shape "
+                   f"has changed and this censusʼs equality check can no longer read the appʼs side")
+    if found != set(STATIC_ROUTES):
+        only_app = sorted(found - set(STATIC_ROUTES))
+        only_here = sorted(set(STATIC_ROUTES) - found)
+        cannot_run(f"route tables disagree: App.tsx serves {only_app or 'nothing extra'} that this "
+                   f"census does not walk, and this census names {only_here or 'nothing extra'} that "
+                   f"App.tsx does not serve. A route the walk misses contributes zero strings, which "
+                   f"is indistinguishable from a translated page, so the walk refuses to start.")
 
 # The DOM walk. Kept as one expression so it runs in a single round trip per route, and so what it
 # collects is readable in one place rather than assembled across several evaluate() calls.
@@ -421,6 +455,7 @@ def main(argv: list[str] | None = None) -> int:
     if not out.parent.is_dir() and out.parent.exists():
         cannot_run(f"--out {out}: its parent {out.parent} exists and is not a directory")
 
+    check_route_tables_agree()
     check_server(args.base)
     payload = args.payload.expanduser()
     strings = payload_strings(payload)

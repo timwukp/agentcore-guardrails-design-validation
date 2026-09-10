@@ -1373,40 +1373,61 @@ ARCH_STATUS_LABEL = {
 }
 
 
-def box_status(annotated: list[dict]) -> tuple[str, str]:
+def box_status(annotated: list[dict]) -> tuple[str, dict[str, str]]:
     """The status of a box, as a function of its cases' verdicts and citation restrictions only.
 
     Shared with `check_architecture.py` by import, so the gate and the builder cannot drift. Returns
     the status and the sentence explaining it, because a colour with no stated derivation is a colour
     a reader has to take on trust.
+
+    The sentence is `authored()` rather than a bare string, and this is the reason: it is the single
+    most-rendered piece of prose this build composes — 50 architecture boxes, 9 checkpoint sections
+    and 45 practices resolve their colour through this function. A bare English sentence here puts one
+    untranslated paragraph beside every coloured box on every page that draws one, and the paragraph
+    is precisely the one a reader needs in order to distrust the colour. So the case ids interpolate
+    into two templates rather than one; the ids themselves are identifiers and read the same in both.
     """
     if not annotated:
-        return "not_measured", ("No case in the register is about this component, so nothing is "
-                                "claimed. An uncoloured box would read as 'nothing to worry about'; "
-                                "what it means is that this study did not look.")
+        return "not_measured", authored(
+            "No case in the register is about this component, so nothing is claimed. An uncoloured "
+            "box would read as 'nothing to worry about'; what it means is that this study did not "
+            "look.",
+            "登錄冊中沒有任何案例是關於此元件的，因此本平台對它未提出任何主張。不上色的方框會被讀成"
+            "「沒什麼要擔心的」；它真正的意思是本研究沒有檢驗過。")
     colouring = [c for c in annotated
                  if c["verdict"] and not (set(c["restrictions"]) & ARCH_NON_COLOURING)]
     false_ = [c["case"] for c in colouring if c["verdict"] == "FALSE"]
     true_ = [c["case"] for c in colouring if c["verdict"] == "TRUE"]
     inconclusive = [c["case"] for c in colouring if c["verdict"] == "INCONCLUSIVE"]
     if false_:
-        return "contested", (f"{len(false_)} citable FALSE verdict(s) — {', '.join(false_)} — so the "
-                             f"documented behaviour was not observed somewhere on this component. A "
-                             f"FALSE outranks the {len(true_)} TRUE verdict(s) here on purpose: a "
-                             f"component with a finding is a component with a finding.")
+        return "contested", authored(
+            f"{len(false_)} citable FALSE verdict(s) — {', '.join(false_)} — so the documented "
+            f"behaviour was not observed somewhere on this component. A FALSE outranks the "
+            f"{len(true_)} TRUE verdict(s) here on purpose: a component with a finding is a "
+            f"component with a finding.",
+            f"{len(false_)} 項可引用的 FALSE 判定——{', '.join(false_)}——因此文件所述的行為在此元件的"
+            f"某處並未被觀察到。FALSE 在此刻意排序高於 {len(true_)} 項 TRUE 判定：有發現的元件就是"
+            f"有發現的元件。")
     if true_:
-        return "validated_in_part", (f"{len(true_)} citable TRUE verdict(s) — {', '.join(true_)} — and "
-                                     f"no FALSE. 'In part' is not modesty: a box carries many claims "
-                                     f"and a TRUE on one of them is not validation of the component.")
+        return "validated_in_part", authored(
+            f"{len(true_)} citable TRUE verdict(s) — {', '.join(true_)} — and no FALSE. 'In part' is "
+            f"not modesty: a box carries many claims and a TRUE on one of them is not validation of "
+            f"the component.",
+            f"{len(true_)} 項可引用的 TRUE 判定——{', '.join(true_)}——且沒有 FALSE。「部分」不是客套："
+            f"一個方框承載許多主張，其中一項為 TRUE 並不等於整個元件都通過驗證。")
     if inconclusive:
-        return "not_established", (f"Only INCONCLUSIVE verdicts ({', '.join(inconclusive)}). An "
-                                   f"INCONCLUSIVE verdict is not evidence against a claim and it "
-                                   f"licenses no amendment, so it may never colour a box as "
-                                   f"validated.")
-    return "context_only", ("Every case here either carries no verdict or carries a citation "
-                            "restriction that makes it something other than a verdict about this "
-                            "component. It is listed so the reader can see what was looked at, and "
-                            "it colours nothing.")
+        return "not_established", authored(
+            f"Only INCONCLUSIVE verdicts ({', '.join(inconclusive)}). An INCONCLUSIVE verdict is not "
+            f"evidence against a claim and it licenses no amendment, so it may never colour a box as "
+            f"validated.",
+            f"只有 INCONCLUSIVE 判定（{', '.join(inconclusive)}）。INCONCLUSIVE 判定既不是反對主張的"
+            f"證據，也不授權任何修訂，因此它永遠不能把方框標成已驗證。")
+    return "context_only", authored(
+        "Every case here either carries no verdict or carries a citation restriction that makes it "
+        "something other than a verdict about this component. It is listed so the reader can see "
+        "what was looked at, and it colours nothing.",
+        "此處的每個案例，或者沒有判定，或者帶有引用限制、使它成為別的東西而不是關於此元件的判定。"
+        "列出它是為了讓讀者看見本研究檢驗過什麼，它不為任何方框上色。")
 
 
 def architecture_metrics(cases: dict, published: dict, restricted: dict, archive: dict,
@@ -1911,9 +1932,12 @@ def derive_practices(inputs: dict[str, str], cases: dict, published: dict,
         "documents": {
             "en": {"path": rel_en, "sha256": inputs[rel_en]},
             "zh": {"path": rel_zh, "sha256": inputs[rel_zh]},
-            "why": "The design is parsed out of these two files at build time. No practice sentence, "
-                   "phase, hop or case id is written anywhere in this repository, so an amendment to "
-                   "the document changes this page and moves these hashes.",
+            "why": authored(
+                "The design is parsed out of these two files at build time. No practice sentence, "
+                "phase, hop or case id is written anywhere in this repository, so an amendment to "
+                "the document changes this page and moves these hashes.",
+                "此設計是在建置時從這兩份文件解析出來的。本儲存庫任何地方都沒有寫下實務句子、階段、"
+                "跳點或案例編號，因此修訂文件就會改變本頁面，也會讓這兩個雜湊值改變。"),
         },
         "marker": design["marker"], "marker_frequency": design["marker_frequency"],
         "phases": design["phases"],
@@ -1929,18 +1953,24 @@ def derive_practices(inputs: dict[str, str], cases: dict, published: dict,
             "n_assertions": design["n_assertions"],
             "n_inside_a_practice": sum(len(p["cites"]) for p in design["practices"]),
             "n_practices_carrying_one": basis_count["practice"],
-            "why_two_numbers": "The citations inside practice sentences and the practices carrying one "
-                               "are two different counts of two different things, derived separately.",
+            "why_two_numbers": authored(
+                "The citations inside practice sentences and the practices carrying one are two "
+                "different counts of two different things, derived separately.",
+                "實務句子內的引用數，與帶有引用的實務數，是對兩件不同事物的兩種計數，分別各自推導。"),
         },
         "coverage": {
             "n_practices": design["n_practices"],
             "by_status_basis": basis_count,
             "n_registered": len(cases), "n_cited": len(cited), "n_uncited": len(uncited),
             "uncited_cases": uncited,
-            "why": "Every practice is in exactly one basis bucket and every registered case is either "
-                   "cited by the document or on the uncited list, both checked at build time. This "
-                   "page states denominators; it computes no rate, because a share of 45 sentences "
-                   "would travel further than the reason it is not 45.",
+            "why": authored(
+                "Every practice is in exactly one basis bucket and every registered case is either "
+                "cited by the document or on the uncited list, both checked at build time. This "
+                "page states denominators; it computes no rate, because a share of 45 sentences "
+                "would travel further than the reason it is not 45.",
+                "每一條實務都恰好落在一個依據分類中，而每一個已登錄的案例，或者被文件引用、或者出現在"
+                "未被引用清單上，兩者都在建置時檢查。本頁面只陳述分母，不計算任何比率：45 句中的某個"
+                "比例會傳得比「它為什麼不是 45」這個理由更遠。"),
         },
         "adjudications": {
             "open": [ruling(m) for m in result["adjudications"] if m["kind"] == "open"],
@@ -1952,10 +1982,14 @@ def derive_practices(inputs: dict[str, str], cases: dict, published: dict,
             "adjudicated_on": _plain(result["adjudicated_on"], "practices.yaml:adjudicated_on"),
             "adjudicated_against": result["adjudicated_against"],
             "curation": {"path": rel_curation, "sha256": inputs[rel_curation]},
-            "why": "An OPEN entry is a published finding, not an exemption: the document asserts a "
-                   "verdict on a dimension results/CITATION-POLICY.md withholds. It names the register "
-                   "item it belongs to and what it is blocked on, and this page renders it as "
-                   "unsettled rather than as a result.",
+            "why": authored(
+                "An OPEN entry is a published finding, not an exemption: the document asserts a "
+                "verdict on a dimension results/CITATION-POLICY.md withholds. It names the register "
+                "item it belongs to and what it is blocked on, and this page renders it as "
+                "unsettled rather than as a result.",
+                "OPEN 條目是一項公開的發現，不是豁免：文件在 results/CITATION-POLICY.md 保留判斷的"
+                "面向上斷言了一個判定。它會指名自己所屬的登錄項目，以及它被什麼卡住，而本頁面把它"
+                "呈現為未決，而不是呈現為一項結果。"),
         },
         "status_labels": PRACTICE_STATUS_LABEL,
         "status_bases": PRACTICE_STATUS_BASIS,

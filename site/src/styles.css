@@ -1198,3 +1198,186 @@ details.raw > div {
   color: var(--warn);
   border-style: dashed;
 }
+
+/* ---------------------------------------------------------------- the design page
+ *
+ * `/design` renders the recommended practices with the evidence beside them, and its cards carry the
+ * same five-status vocabulary as the diagram boxes. Colour therefore arrives the same way: through the
+ * `--st` custom property the `.st-*` rules declare, never restated here — and `color: var(--fg)` is
+ * re-asserted on the card for the same reason `.archbox` re-asserts it, because `.st-*` sets `color`
+ * on the element and a card whose every sentence turned amber would be unreadable. The status is in
+ * the left frame; the prose stays prose. */
+
+.descard {
+  color: var(--fg);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-left: 3px var(--st-style, solid) var(--st, var(--border-strong));
+  border-radius: 4px;
+  padding: 11px 13px;
+  margin: 0 0 10px;
+}
+
+.deshead {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.deskey {
+  font-size: 12px;
+  color: var(--fg-dim);
+}
+
+.desstatus {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.desstatus .means {
+  color: var(--fg-dim);
+  font-size: 12px;
+}
+
+/* The document's own sentence — the one thing on the card this repository did not write. It gets the
+ * page's body colour and size while everything the build composed around it is dimmer and smaller, so
+ * the quotation reads as the subject and the apparatus reads as apparatus. */
+.desprose {
+  color: var(--fg);
+  margin: 0 0 8px;
+  max-width: 86ch;
+}
+
+.deswhy {
+  color: var(--fg-dim);
+  font-size: 13px;
+  margin: 0 0 6px;
+  max-width: 96ch;
+}
+
+.descases {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  font-size: 13px;
+}
+
+.descases li {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 3px 0;
+}
+
+.desasserted {
+  color: var(--fg-dim);
+  font-size: 12px;
+}
+
+.destitle {
+  color: var(--fg-dim);
+}
+
+.desphase {
+  margin: 0 0 26px;
+}
+
+.desphase h4 {
+  margin: 0 0 10px;
+  font-size: 14.5px;
+}
+
+/* A checkpoint section is an anchor target: the closed-loop diagram's panel links to `#s-<id>`, so the
+ * heading must not land under nothing when the jump arrives with the page already scrolled. */
+.dessec {
+  scroll-margin-top: 16px;
+  margin: 0 0 18px;
+}
+
+.dessec h5 {
+  margin: 0 0 6px;
+  font-size: 13.5px;
+}
+
+.deshop {
+  color: var(--fg-faint);
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+
+.desprinciples,
+.desantipatterns {
+  margin: 0 0 8px;
+  padding-left: 22px;
+}
+
+.desprinciples li,
+.desantipatterns li {
+  margin: 0 0 12px;
+  max-width: 90ch;
+}
+
+.desprinciples li > p,
+.desantipatterns li > p {
+  color: var(--fg-dim);
+  font-size: 13px;
+  margin: 3px 0 0;
+}
+
+.descites {
+  font-size: 12px;
+  margin: 3px 0 0;
+}
+
+.deschecklist {
+  margin: 0 0 14px;
+}
+
+.deschecklist h5 {
+  margin: 0 0 6px;
+  font-size: 13.5px;
+}
+
+.deschecklist ul {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 13px;
+}
+
+.deschecklist li {
+  margin: 0 0 7px;
+  max-width: 96ch;
+}
+
+.deschecklist details {
+  margin-top: 2px;
+  color: var(--fg-dim);
+  font-size: 12.5px;
+}
+
+.deschecklist summary {
+  cursor: pointer;
+  color: var(--accent);
+}
+
+/* The quoted span in a ruling row keeps the document's wording; the row beneath it carries the two
+ * claims side by side. Nothing here is coloured by disposition — a ruling is a judgement about a
+ * citation, not a verdict about a case, and reusing the verdict palette would blur exactly the line
+ * the table exists to draw. */
+.desrulings .desquote {
+  display: block;
+  margin-bottom: 3px;
+}
+
+.desrulings .desasserted {
+  display: block;
+}
+
+.desblocked {
+  color: var(--warn);
+  font-size: 12px;
+}

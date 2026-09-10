@@ -401,16 +401,27 @@ CENSUS_DIR = REPO / "platform" / "census"
 # of the property (`feedback_container_mark_is_one_occurrence`): the moment a second producer dwarfs the
 # first, the first can be deleted underneath the total.
 #
-# Measured 2026-08-23: practices 175, architecture 43, audit 6, denominators 5, method 1. Each floor sits
-# below its measurement so translating or adding one more surface never fails the gate — except
-# `method.json`, whose single value admits no margin, and where 1 is therefore the floor that deletion
-# still crosses. A file the builder gives authored prose to and that is absent here fails too, so a new
-# producer cannot inherit another file's margin (`feedback_scope_as_namelist`).
+# Measured 2026-08-25: practices 233, architecture 157, audit 6, denominators 5, method 1. The two
+# large producers sit AT their measurement — the slack a lower number leaves is exactly where the next
+# deletion hides — while `audit.json` and `denominators.json` keep one value of margin: at their size a
+# deletion of the feature is a fall to zero, not a fall of one, and the margin spares the gate a bump
+# for every added boundary half. A file the builder gives authored prose to and that is absent here
+# fails too, so a new producer cannot inherit another file's margin (`feedback_scope_as_namelist`).
 MIN_AUTHORED_PROSE_OBJECTS = {
-    "practices.json": 120,
-    # 107, measured 2026-08-23, and the arithmetic is worth writing down because the number is a sum over
+    # 233 = the 175 measured 2026-08-23 (the two documents' own bilingual prose plus the derived
+    # labels), plus the 2026-08-25 conversion of the build's own explanatory prose to `authored()`:
+    #       45   practice `why_this_status`, composed per practice by `box_status()`
+    #        9   section `why_this_status`, same composer
+    #        4   the standalone whys — documents, citation_census.why_two_numbers, coverage,
+    #            adjudications — each a hand-written pair in `derive_practices()`
+    # The floor was 120 against that 175; the 55-value slack was the pre-conversion policy and is the
+    # kind of margin a deletion lives in, so it moves to the measurement like architecture's did.
+    "practices.json": 233,
+    # 157, measured 2026-08-25, and the arithmetic is worth writing down because the number is a sum over
     # four producers and a floor that only one of them can satisfy is not a floor:
     #   38 + 12  box status labels, one per box on the three diagrams
+    #   38 + 12  box `why_this_status`, one per box, composed by `box_status()` since 2026-08-25 —
+    #            the same conversion that added the 54 practice/section values above
     #        3   the closed-loop diagram's own label, subtitle and justification
     #        9   its three authored boxes' label / detail / why_not_measured
     #       13   its edge labels
@@ -418,7 +429,7 @@ MIN_AUTHORED_PROSE_OBJECTS = {
     #        5   the payload's top-level status vocabulary
     # It was 30 against a measured 43 while only the two English diagrams existed; slack between a floor
     # and its measurement is where a deletion hides, so it moves to the measurement.
-    "architecture.json": 107,
+    "architecture.json": 157,
     "audit.json": 5,
     "denominators.json": 4,
     "method.json": 1,
