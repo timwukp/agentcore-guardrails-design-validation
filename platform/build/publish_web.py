@@ -204,6 +204,10 @@ class Publish:
     # is a fact about the release, and a release that silently omits a gate reads as one that passed it.
     skipped: list[dict] = field(default_factory=list)
     figure_check_rc: int | None = None
+    # Second producer of the same contract, and it is NOT defaulted to 0 for the same reason: the
+    # double-render check is expensive (it re-synthesizes both narrations), so a publish may honestly
+    # not have run it — and then the payload must say "not verified", which only a None can mean.
+    render_rc: int | None = None
     uploaded: list[str] = field(default_factory=list)
 
 
@@ -330,12 +334,15 @@ def build_payload(pub: Publish) -> None:
     pub.figure_check_rc = figures.rc
     pub.steps.append(figures)
 
-    pub.steps.append(run(Step(
-        "build payload",
-        [str(VENV_ORACLE), "platform/build/build_site_data.py",
-         "--out", str(pub.payload), "--clean", "--stamp", pub.stamp,
-         "--figure-check-rc", str(pub.figure_check_rc)],
-    )))
+    build_argv = [str(VENV_ORACLE), "platform/build/build_site_data.py",
+                  "--out", str(pub.payload), "--clean", "--stamp", pub.stamp,
+                  "--figure-check-rc", str(pub.figure_check_rc)]
+    # Forwarded only when the operator measured it. Passing `--render-rc None` would make the builder
+    # reject the value as a non-int; passing nothing lets its own default (None = "not run") stand,
+    # which is the only honest reading of an absent measurement.
+    if pub.render_rc is not None:
+        build_argv += ["--render-rc", str(pub.render_rc)]
+    pub.steps.append(run(Step("build payload", build_argv)))
 
     # The SPA's own logic tests, before the bundle it would ship. Two of the functions they cover carry
     # properties nothing else in this pipeline can see: the intake refuses to compose a shell command
@@ -476,6 +483,7 @@ def upload(pub: Publish, bucket: str, distribution: str) -> None:
         "release_prefix": f"/v/{pub.stamp}/",
         "manifest_sha256": sha256_file(manifest) if manifest.is_file() else None,
         "figure_check_rc": pub.figure_check_rc,
+        "render_rc": pub.render_rc,
         "gates": [{"name": s.name, "rc": s.rc, "note": s.note} for s in pub.steps],
         "gates_skipped": pub.skipped,
         "published_by": "platform/build/publish_web.py",
@@ -569,6 +577,20 @@ def main(argv: list[str] | None = None) -> int:
                         help="required to upload; without it this is a dry run")
     parser.add_argument("--bucket", default=None, help="override the site bucket from stack outputs")
     parser.add_argument("--distribution", default=None, help="override the distribution id")
+    # The one measured rc this script does NOT produce itself. The figure check is cheap enough to run
+    # every publish (line 329); the media check is a full DOUBLE render — it re-synthesizes both
+    # narrations through Polly and re-encodes both tracks, minutes of wall clock and real spend — so
+    # re-running it here would either burn that on every publish or, worse, tempt a cached "0". The
+    # operator runs `video/render.py --verify`, reads its rc, and passes it in.
+    #
+    # Omitting it is a legal, honest publish: the payload then records `render_check: null`, the page
+    # renders "not verified", and `check_site_invariants.arm_media` refuses any media that is PRESENT
+    # without a 0 — so an unverified render cannot ship silently, it fails the gate. What is not legal
+    # is inventing a 0, which is why there is no default value here at all.
+    parser.add_argument("--render-rc", type=int, default=None, metavar="RC",
+                        help="rc of the `video/render.py --verify` double render you ran for this "
+                             "payload. NEVER pass 0 for 'not run' — omit it instead, and the payload "
+                             "will say the render was not verified.")
     args = parser.parse_args(argv)
 
     if args.dry_run and args.confirm:
@@ -577,9 +599,13 @@ def main(argv: list[str] | None = None) -> int:
 
     require_files(required_gates())
     pub = Publish(stamp=args.stamp or utc_stamp(), payload=args.payload.expanduser())
+    pub.render_rc = args.render_rc
     print(f"GRX Live publish — stamp {pub.stamp}")
     print(f"  payload  {pub.payload}")
     print(f"  upload   {'YES' if upload_wanted else 'no (dry run)'}")
+    render_note = ("--verify rc " + str(pub.render_rc) if pub.render_rc is not None
+                   else "not verified this publish (no --render-rc)")
+    print(f"  render   {render_note}")
 
     gate_sources(pub)
     build_payload(pub)

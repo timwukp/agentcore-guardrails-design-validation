@@ -1,0 +1,144 @@
+# The overview explainer's narration — ONE bilingual source for three artifacts.
+#
+# Each scene's `en` and `zh` text is (1) what Amazon Polly synthesizes, (2) what the WebVTT caption
+# file carries, and (3) the only prose the video speaks. One source is the point: a caption file
+# written separately from the synthesis input is two readers of one script, and the way that fails
+# is silently — the audio says one number and the subtitle another, and no gate reads a soundtrack.
+#
+# `{placeholders}` are resolved from the PAYLOAD at render time (`video/render.py:resolve()`), never
+# typed here — the same rule as `no_hardcoded_totals`: a count typed into this file keeps being
+# spoken after the register moves, and a video travels further than any page. The test that holds
+# this is `video/tests/test_scenes.py`, which renders from a sentinel payload and asserts the
+# sentinel values surface — a hardcoded number cannot pass it.
+#
+# The Chinese text is Traditional — the platform's own language — and is fed to Polly VERBATIM,
+# despite Zhiyu being a cmn-CN (Mainland Mandarin) voice, because Polly ships no zh-TW voice at all.
+# Feeding a Simplified conversion to the voice would break the one-source property above: the
+# captions would no longer be the synthesis input. The voice's provenance is disclosed on the page,
+# in `media.json`, and spoken aloud in the closing scene.
+#
+# Narration tone: it describes what the platform DOES and never paraphrases a practice, a verdict
+# sentence, or sealed oracle text — paraphrase is a second wording whose only provenance is the
+# wording (`results/CITATION-POLICY.md`'s rule, applied to a soundtrack).
+
+video: overview
+scenes:
+  - id: title
+    en: >-
+      This is the recommended end-to-end design for Amazon Bedrock AgentCore guardrails —
+      presented differently. Every practice in it was measured on a validation platform before it
+      was written down as a recommendation. This narration is synthesized speech, generated with
+      Amazon Polly.
+    zh: >-
+      這是 Amazon Bedrock AgentCore guardrails 的端到端建議設計——但以不一樣的方式呈現:
+      裡面的每一條實踐,在被寫成建議之前,都先在一個驗證平台上實測過。
+      本旁白為合成語音,由 Amazon Polly 生成。
+
+  - id: claim
+    en: >-
+      Best-practice documents usually arrive as assertions — slides with nothing behind them. This
+      one arrives with a register: {n_registered} pre-registered test cases, {n_published} of them
+      carrying a published verdict, each with its evidence, its sealed oracle, and its restrictions
+      on what it may be cited for.
+    zh: >-
+      最佳實踐文件通常以斷言的形式出現——投影片,背後什麼都沒有。這一份不同:它帶著一本登錄冊。
+      {n_registered} 個預先登錄的測試案例,其中 {n_published} 個已發佈判定,
+      每一個都帶著證據、密封的 oracle,以及引用上的限制。
+
+  - id: verdicts
+    en: >-
+      Verdicts use four values. TRUE — the documented behaviour was observed: {v_true} cases.
+      FALSE — it was not: {v_false} cases, and a FALSE is a finding, the most valuable output this
+      study has, never a failure. INCONCLUSIVE — {v_inconclusive} cases — is a result, not a
+      missing one. And {v_recorded} recorded observations. There is no pass rate anywhere on the
+      platform: one percentage over these four would erase exactly the distinctions that matter.
+    zh: >-
+      判定使用四個值。TRUE——觀察到了文件所述的行為:{v_true} 例。
+      FALSE——沒有觀察到:{v_false} 例;FALSE 是「發現」,是本研究最有價值的產出,不是失敗。
+      INCONCLUSIVE——{v_inconclusive} 例——是一種結果,不是缺失的結果。另有 {v_recorded} 例純紀錄。
+      整個平台沒有任何通過率:一個百分比會抹掉這四者之間真正重要的區別。
+
+  - id: loop
+    en: >-
+      The design itself is a closed loop, from section two point one of the document: six numbered
+      hops, each with a checkpoint the document prescribes. The picture you are watching is not an
+      illustration — it is drawn from the same derived geometry the site publishes, whose layout a
+      build gate proves crossing-free, because an architecture diagram is the artifact most likely
+      to be quoted with no text beside it.
+    zh: >-
+      設計本身是一個閉環,出自文件第 2.1 節:六個編號跳點,每一跳都有文件規定的檢查點。
+      你看到的這張圖不是示意圖——它由網站發佈的同一份推導幾何繪出,
+      版面經建置閘證明零交叉,因為架構圖正是最常被單獨引用、旁邊沒有任何文字的那種產物。
+
+  - id: colours
+    en: >-
+      Five statuses, one ordering rule, and the rule is the point: one citable FALSE outranks any
+      number of TRUEs, so a component with four confirmations and one finding shows contested. On
+      this loop, {cl_contested} of {cl_boxes} boxes are contested, {cl_vip} validated in part, and
+      {cl_nm} never measured — drawn loudly, because an uncoloured box reads as nothing to worry
+      about, when what it means is that this study never looked.
+    zh: >-
+      五種狀態,一條排序規則,而規則本身就是重點:一個可引用的 FALSE 壓過任何數量的 TRUE——
+      有四個確認、一個發現的元件,顯示的是 contested。在這個閉環上,{cl_boxes} 個方框中
+      {cl_contested} 個 contested,{cl_vip} 個部分驗證,{cl_nm} 個從未量測——
+      後者刻意畫得醒目,因為不上色的方框會被讀成「沒什麼好擔心」,而它真正的意思是本研究沒有看過。
+
+  - id: before
+    en: >-
+      Phase one — BEFORE a request reaches a model: {before_sections} checkpoints,
+      {before_practices} numbered practices. This video will not paraphrase them, because
+      paraphrase is how a design drifts from its evidence. On the site, each card carries the
+      document's own sentence, its measured status, and the cases behind it.
+    zh: >-
+      第一階段——請求觸及模型之前:{before_sections} 個檢查點、{before_practices} 條編號實踐。
+      本影片不改寫它們,因為改寫正是設計偏離證據的方式。
+      在網站上,每張卡片都帶著文件自己的句子、實測的狀態,以及背後的案例。
+
+  - id: during
+    en: >-
+      Phase two — DURING execution: {during_sections} checkpoints, {during_practices} practices,
+      covering the hops where a request is inspected, evaluated against policy, and executed. The
+      statuses you saw on the loop carry through to every practice beneath them. Nothing is
+      rounded away.
+    zh: >-
+      第二階段——執行期間:{during_sections} 個檢查點、{during_practices} 條實踐,
+      涵蓋請求被檢查、被 policy 評估、被執行的那幾跳。
+      你在閉環上看到的狀態,原樣傳遞到底下的每一條實踐。沒有任何數字被四捨五入。
+
+  - id: after
+    en: >-
+      Phase three — AFTER: {after_sections} checkpoints, {after_practices} practices, covering
+      observability, incident response, and the amendment path that closes the loop. A design that
+      cannot learn from what its guardrails observed is an open loop wearing a closed loop's
+      diagram.
+    zh: >-
+      第三階段——事後:{after_sections} 個檢查點、{after_practices} 條實踐,
+      涵蓋可觀測性、事件回應,以及讓閉環真正閉合的修訂路徑。
+      一個不能從 guardrails 觀測結果中學習的設計,只是畫著閉環圖的開環。
+
+  - id: honesty
+    en: >-
+      What is deliberately not claimed. {n_uncited} measured cases are cited by no practice — they
+      are published as their own list: measured, and the document says nothing about it. A practice
+      resting on no evidence says so on its face. And {adj_open} citation rulings remain open, each
+      shown with the document's own quoted span. The gaps are published with the same care as the
+      confirmations.
+    zh: >-
+      刻意不主張的部分。有 {n_uncited} 個已量測案例沒有被任何實踐引用——
+      它們以獨立清單發佈:測過了,而文件對此隻字未提。沒有證據支撐的實踐,在卡片上直說。
+      還有 {adj_open} 條引用裁決仍然懸而未決,每一條都附上文件自己的原句。
+      缺口和確認,用同樣的規格發佈。
+
+  - id: verify
+    en: >-
+      Verify it yourself. The design page renders {n_citations} citations over {n_distinct}
+      distinct cases — every count derived at build time, every source hashed. Nothing on that page
+      was typed by hand: if the document changes, the page changes, and the hash records it. This
+      narration was synthesized with Amazon Polly — Ruth for English, and Zhiyu, a Mainland
+      Mandarin voice, for Chinese, because Polly ships no Taiwanese Mandarin voice at all.
+    zh: >-
+      請自行驗證。設計頁渲染 {n_citations} 條引用、跨 {n_distinct} 個不同案例——
+      每個數字都在建置時推導,每個來源都有雜湊。那一頁沒有任何內容是手打的:
+      文件改了,頁面就跟著改,而雜湊會記錄這件事。
+      本旁白由 Amazon Polly 合成——英文為 Ruth;中文為 Zhiyu,一個大陸普通話語音,
+      因為 Polly 完全沒有台灣華語的聲音。

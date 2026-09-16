@@ -75,9 +75,19 @@ def payload(tmp_path_factory) -> Path:
     directory somebody left behind; and as a subprocess rather than an import, so nothing this test
     holds in memory can stand in for what the builder actually wrote to disk.
     """
-    out = tmp_path_factory.mktemp("gate-payload") / "payload"
+    base = tmp_path_factory.mktemp("gate-payload")
+    out = base / "payload"
+    # `--media-dir` at an empty directory, deliberately. The renderer writes into a gitignored
+    # `video/out/media`, so the default would make this fixture — and therefore every arm in this
+    # file — depend on whether the developer happened to have rendered the explainer: with a render
+    # present and no `--render-rc`, the media arm correctly fails, and the whole suite reds for a
+    # reason that has nothing to do with the property under test. The media arm's own tests build
+    # their media state explicitly instead, below.
+    empty_media = base / "no-media"
+    empty_media.mkdir()
     proc = subprocess.run([sys.executable, str(BUILDER), "--out", str(out),
-                           "--stamp", "20260101T000000Z", "--figure-check-rc", "0"],
+                           "--stamp", "20260101T000000Z", "--figure-check-rc", "0",
+                           "--media-dir", str(empty_media)],
                           capture_output=True, text=True, cwd=REPO)
     assert proc.returncode == 0, proc.stderr[-3000:]
     return out
@@ -1240,3 +1250,170 @@ def test_an_icon_link_pointing_at_nothing_fails_the_publish(payload, tmp_path):
     assert icon.is_file(), "the built dist carries no favicon, so this mutant would prove nothing"
     icon.unlink()
     expect_css_killed(payload, dist, "and no such file is in")
+
+
+# --------------------------------------------------------------------------- media_is_real_and_disclosed
+#
+# The arm the rest of this file has no equivalent for: the explainer's bytes are the one artifact a
+# reviewer cannot diff and a reader cannot skim, and they arrive from a gitignored directory. So the
+# arm is held to a stricter rule than the figures — a drifted figure ships behind honest wording, a
+# video whose two renders disagreed does not ship at all.
+#
+# The media state is FABRICATED here rather than rendered. A real render costs minutes of ffmpeg and
+# real Polly spend, and none of the properties under test are about the pixels: they are about a
+# payload's claims agreeing with its bytes. The stub mp4 carries a genuine `ftyp` box because that is
+# exactly what the arm reads.
+
+MEDIA_ARM = "media_is_real_and_disclosed"
+STUB_MP4 = b"\x00\x00\x00\x18ftypisom\x00\x00\x02\x00isomiso2" + b"\x00" * 64
+STUB_VTT = b"WEBVTT\n\n00:00:00.000 --> 00:00:01.000\nstub\n"
+
+
+def _with_media(payload: Path, tmp_path: Path, tag: str, edit=None) -> Path:
+    """A copy of `payload` carrying a complete, self-consistent, VERIFIED media state.
+
+    `edit(media, files)` may then break exactly one thing: `media` is the media.json dict, `files` a
+    `{name: bytes}` mapping written into `media/` afterwards. Hashes and MANIFEST entries are computed
+    AFTER the edit, so a mutant cannot be killed merely for a stale hash it never meant to change —
+    each test kills for its own reason or not at all.
+    """
+    dest = copy_of(payload, tmp_path, tag)
+    media = json.loads((dest / "media.json").read_text(encoding="utf-8"))
+    names = sorted(media["missing"])
+    assert names, "the base payload was built with media present; these tests fabricate their own"
+    files = {n: (STUB_MP4 if n.endswith(".mp4") else STUB_VTT) for n in names}
+    media["present"] = [{"file": n, "source": f"video/out/media/{n}"} for n in names]
+    media["missing"] = []
+    media["render_check"] = 0
+    media["verified_identical_renders"] = True
+    media["tracks"] = [{"language": lang, "voice": "Ruth", "engine": "generative",
+                        "voice_language": "en-US", "synthesized": True, "duration_s": 212.3,
+                        "n_scenes": 10,
+                        "files": {n: {} for n in names if f".{lang}." in n}}
+                       for lang in ("en", "zh")]
+    if edit is not None:
+        edit(media, files)
+
+    (dest / "media").mkdir(exist_ok=True)
+    manifest = json.loads((dest / "MANIFEST.json").read_text(encoding="utf-8"))
+    for name, data in files.items():
+        (dest / "media" / name).write_bytes(data)
+        manifest["outputs_sha256"][f"media/{name}"] = hashlib.sha256(data).hexdigest()
+    for entry in media["present"]:
+        if "bytes" not in entry or "sha256" not in entry:
+            data = files.get(entry["file"], b"")
+            entry.setdefault("bytes", len(data))
+            entry.setdefault("sha256", hashlib.sha256(data).hexdigest())
+    text = json.dumps(media, indent=2, sort_keys=True)
+    (dest / "media.json").write_text(text, encoding="utf-8")
+    manifest["outputs_sha256"]["media.json"] = hashlib.sha256(text.encode()).hexdigest()
+    # `manifest_liveness` cross-checks the declared count against the table, and it is right to: a
+    # payload that gained four files without gaining four entries is exactly the drift it watches for.
+    # The fabrication has to be internally honest, or its failures belong to that arm and not to this
+    # one — which is the difference between a mutation test and a coincidence.
+    manifest["n_outputs"] = len(manifest["outputs_sha256"]) + 1  # +1: the manifest excludes itself
+    (dest / "MANIFEST.json").write_text(json.dumps(manifest, indent=2, sort_keys=True),
+                                        encoding="utf-8")
+    return dest
+
+
+def test_no_mutant_control_for_the_media_arm(payload, tmp_path):
+    """The control this whole group depends on: a fabricated media state that is COMPLETE, hashed and
+    verified passes the gate. Without it, every kill below could be the fabrication itself failing."""
+    proc = run_gate(_with_media(payload, tmp_path, "media-ok"))
+    assert proc.returncode == 0, (proc.stdout + proc.stderr)[-3000:]
+    assert "4 media file(s) verified byte for byte" in proc.stdout, \
+        "the arm reported no verified files, so the kills below would prove nothing"
+
+
+def test_a_video_that_is_not_a_video_fails_the_publish(payload, tmp_path):
+    """An error page, an HTML redirect or a truncated download saved under an `.mp4` name. The player
+    shows its poster and reports nothing; no JSON assertion can see it, because every count, hash and
+    duration in the payload can be perfectly consistent with bytes that will never decode."""
+    def edit(media, files):
+        files["overview.en.mp4"] = b"<!doctype html><title>403</title>" + b"\x00" * 64
+    expect_killed(_with_media(payload, tmp_path, "media-nonvideo", edit), MEDIA_ARM,
+                  "carries no MP4 `ftyp` box")
+
+
+def test_a_caption_track_that_is_not_webvtt_fails_the_publish(payload, tmp_path):
+    """A caption file missing its magic line is dropped by the browser in silence — the video plays,
+    the captions never appear, and the reader who needs them has no error to report."""
+    def edit(media, files):
+        files["overview.zh.vtt"] = b"00:00:00.000 --> 00:00:01.000\nno magic line\n"
+    expect_killed(_with_media(payload, tmp_path, "media-novtt", edit), MEDIA_ARM,
+                  "does not start with WEBVTT")
+
+
+def test_media_bytes_that_do_not_match_the_recorded_hash_fail_the_publish(payload, tmp_path):
+    """The stale-artifact shape: a manifest from one render sitting beside a file from another. The
+    hash is the only thing that can tell them apart, so the hash is re-taken from the bytes on disk."""
+    def edit(media, files):
+        for entry in media["present"]:
+            if entry["file"] == "overview.en.vtt":
+                entry["sha256"] = "0" * 64
+                entry["bytes"] = len(files[entry["file"]])
+    expect_killed(_with_media(payload, tmp_path, "media-badhash", edit), MEDIA_ARM,
+                  "does not match its recorded sha256")
+
+
+def test_a_media_file_outside_both_lists_is_not_accounted_for(payload, tmp_path):
+    """Both sides of the membership are derived — the payload's present∪missing against the scripts
+    under `video/script/`. A language quietly dropped from a render leaves a SHORTER list, and shorter
+    lists read as tidy rather than incomplete (`feedback_scope_as_namelist`)."""
+    def edit(media, files):
+        media["present"] = [e for e in media["present"] if e["file"] != "overview.zh.mp4"]
+        files.pop("overview.zh.mp4")
+    expect_killed(_with_media(payload, tmp_path, "media-short", edit), MEDIA_ARM,
+                  "a file outside both lists is bytes nobody owes an explanation for")
+
+
+def test_media_present_with_an_unrun_render_check_fails_the_publish(payload, tmp_path):
+    """The state `--render-rc` exists to keep reachable AND unpublishable: real files, no double
+    render. It is the figures' rule made stricter, and this is the mutant that shows the difference —
+    `null` here is honest, and honest is still not enough to ship the bytes."""
+    def edit(media, files):
+        media["render_check"] = None
+    expect_killed(_with_media(payload, tmp_path, "media-norc", edit), MEDIA_ARM,
+                  "only a 0 from")
+
+
+def test_media_present_with_renders_that_disagreed_fails_the_publish(payload, tmp_path):
+    """rc 0 passed in beside a manifest that never attested identical renders — the two-reader
+    disagreement (`feedback_two_readers_one_format`). Both must say verified, or neither counts."""
+    def edit(media, files):
+        media["verified_identical_renders"] = False
+    expect_killed(_with_media(payload, tmp_path, "media-unverified", edit), MEDIA_ARM,
+                  "does not attest verified_identical_renders")
+
+
+def test_a_track_claiming_it_is_not_synthesized_fails_the_publish(payload, tmp_path):
+    """The editorial rule, enforced against the payload rather than trusted to the prose: this
+    narration IS Polly, and a track that says otherwise is the platform breaking its own rule in the
+    one artifact whose provenance a listener cannot check by reading."""
+    def edit(media, files):
+        media["tracks"][0]["synthesized"] = False
+    expect_killed(_with_media(payload, tmp_path, "media-notsynth", edit), MEDIA_ARM,
+                  "does not declare synthesized: true")
+
+
+def test_a_track_with_no_measured_duration_fails_the_publish(payload, tmp_path):
+    """A duration of 0 is what an empty mux and a failed synthesis both produce, and both play as a
+    video that ends immediately — which looks like a short clip, not a defect."""
+    def edit(media, files):
+        media["tracks"][1]["duration_s"] = 0
+    expect_killed(_with_media(payload, tmp_path, "media-nodur", edit), MEDIA_ARM,
+                  "has no measured duration")
+
+
+def test_media_shipping_without_the_polly_disclosure_in_the_bundle_fails(payload, tmp_path):
+    """The disclosure is prose, so nothing but a gate can hold it. Strip it from the served bundle and
+    the page plays a synthesized voice without saying so — the failure that would be invisible to
+    every check that only reads JSON."""
+    dist = _mutate_js(DIST, "no-polly", tmp_path,
+                      lambda text: text.replace("Amazon Polly", "our narrator"))
+    proc = run_gate(_with_media(payload, tmp_path, "media-ok-dist"), dist=dist)
+    assert proc.returncode == 1, (f"the gate exited {proc.returncode}, so the mutant survived"
+                                  f"\n{(proc.stdout + proc.stderr)[-2000:]}")
+    body = proc.stdout + proc.stderr
+    assert f"[{MEDIA_ARM}]" in body and "no Polly disclosure wording" in body, body[-2000:]

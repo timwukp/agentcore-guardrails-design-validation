@@ -77,6 +77,7 @@ RESULTS = ROOT / "results"
 PHASE1 = RESULTS / "phase1"
 ARCHIVE = PHASE1 / "archive"
 FIGURES = RESULTS / "figures"
+VIDEO = ROOT / "video"
 TRIAGE = ROOT / "claims" / "triage.csv"
 # Where `census_rendered_surfaces.py` leaves its measurements. One stamped file per run, kept rather
 # than overwritten: the counts only mean anything next to the payload they were taken over, so an
@@ -2155,6 +2156,83 @@ def derive_figures(inputs: dict[str, str], check_rc: int | None) -> dict:
                               "unstated limit reads as a check that passed."}
 
 
+def derive_media(inputs: dict[str, str], render_rc: int | None, media_dir: Path) -> dict:
+    """Census the rendered explainer media, mirroring `derive_figures` for the same reasons.
+
+    The EXPECTED set is derived from `video/script/*.yaml` — one script means four files,
+    `<name>.{en,zh}.{mp4,vtt}` — rather than written down here, so adding a chapter script makes its
+    absence from the render a reported gap instead of a silence (`feedback_scope_as_namelist`).
+
+    `render_rc` is the rc of `video/render.py --verify` (the DOUBLE render: synthesis included,
+    every output byte-identical or rc non-zero), passed in by whoever ran it, exactly as
+    `--figure-check-rc` is: 0 means verified reproducible, non-zero means the renders disagreed,
+    None means not run this build — which the UI must say, never imply. Each present file's bytes
+    are re-hashed HERE and checked against what RENDER.json recorded, because a manifest written by
+    one render sitting beside files from another is the stale-artifact shape
+    (`feedback_copy2_serves_the_mutant`) and a video is the artifact least likely to be re-watched
+    for staleness.
+    """
+    scripts = sorted((VIDEO / "script").glob("*.yaml"))
+    # Recorded as inputs BEFORE anything is known about the render, and unconditionally. Two reasons,
+    # one of which cost a full test run to learn: the scripts are what the expectation is derived
+    # from, so they are genuinely this file's source; and on a machine that has never rendered — no
+    # RENDER.json, every file missing — they are the ONLY source, and `emit()` rightly refuses a
+    # payload file that declares none. A media.json whose provenance appears only when media exists
+    # would make "nothing rendered" the one state with no derivation.
+    for s in scripts:
+        record_input(s, inputs)
+    expected = sorted(f"{s.stem}.{lang}.{ext}"
+                      for s in scripts
+                      for lang in ("en", "zh") for ext in ("mp4", "vtt"))
+    if not expected:
+        die(f"no scripts under {VIDEO / 'script'}; an empty expectation would make every render "
+            f"look complete")
+    manifest_path = media_dir / "RENDER.json"
+    if not manifest_path.is_file():
+        return {"present": [], "missing": expected, "tracks": [], "render_check": render_rc,
+                "note": "no render manifest at video/out/media/RENDER.json — the explainer has "
+                        "not been rendered on this machine. The page must say so; an absent video "
+                        "and a broken one are different failures."}
+    man = read_json(manifest_path, inputs)
+    present, missing = [], []
+    declared = {name: f for t in man.get("tracks", []) for name, f in t["files"].items()}
+    for name in expected:
+        p = media_dir / name
+        if not p.is_file():
+            missing.append(name)
+            continue
+        rel = record_input(p, inputs)
+        if name not in declared:
+            die(f"{name} exists but RENDER.json does not declare it — bytes with no provenance")
+        if inputs[rel] != declared[name]["sha256"]:
+            die(f"{name} changed after RENDER.json was written ({inputs[rel][:12]}… vs declared "
+                f"{declared[name]['sha256'][:12]}…); a stale manifest beside fresh bytes verifies "
+                f"nothing")
+        present.append({"file": name, "bytes": p.stat().st_size, "sha256": inputs[rel],
+                        "source": rel})
+    return {
+        "present": present, "missing": missing,
+        "tracks": man.get("tracks", []),
+        "script_sha256": man.get("script_sha256"),
+        "payload_inputs": man.get("payload_inputs"),
+        "render_platform": man.get("platform"),
+        "verified_identical_renders": man.get("verified_identical_renders"),
+        "render_check": render_rc,
+        "render_check_note": "rc of `video/render.py --verify` (the full pipeline run TWICE, "
+                             "fresh synthesis included, every output required byte-identical), "
+                             "passed in with --render-rc by whoever ran it. None means this build "
+                             "did not run it, which the UI must render as 'not verified', never "
+                             "as fresh. Reproducibility is machine-scoped: the frames rasterize "
+                             "this machine's fonts, so `render_platform` is recorded beside the "
+                             "hashes.",
+        "synthesis_note": "Narration is SYNTHESIZED speech (Amazon Polly): en = Ruth on the "
+                          "generative engine; zh = Zhiyu on the neural engine, cmn-CN Mainland "
+                          "Mandarin, because Polly ships no zh-TW voice at all. The page states "
+                          "this beside the player; claiming human narration over these tracks "
+                          "would contradict the platform's own editorial rule.",
+    }
+
+
 # --------------------------------------------------------------------------------------------
 # emit
 
@@ -2219,6 +2297,40 @@ def copy_figures(out_root: Path, figures: dict, outputs: dict[str, str],
     return len(figures["present"])
 
 
+def copy_media(out_root: Path, media: dict, outputs: dict[str, str],
+               provenance: dict[str, list[str]], inputs: dict[str, str]) -> int:
+    """Copy each rendered mp4/vtt into the payload under `media/`, the way `copy_figures` copies
+    the PNGs: verbatim bytes, re-hashed against the census taken moments ago, attributed to sources.
+
+    Not masked — an mp4 is not text, same argument as the figures — and what protects it is stated
+    in `media.json`'s notes: every number it shows or speaks came from already-masked payload files
+    (held by `video/tests/test_scenes.py`'s sentinel render), plus a human having watched it.
+
+    Provenance names the rendered file itself AND the three repo files that derive it. The rendered
+    bytes are gitignored, so a provenance of only `video/out/…` would be a path no reader of the
+    repository can fetch; the script, the scene builder and the renderer are the fetchable half of
+    the derivation, recorded as inputs so `emit`'s existence check holds for them too.
+    """
+    derivers = [record_input(p, inputs) for p in
+                (VIDEO / "render.py", VIDEO / "scenes.py",
+                 *sorted((VIDEO / "script").glob("*.yaml")))]
+    for f in media["present"]:
+        src = ROOT / f["source"]
+        rel = f"media/{f['file']}"
+        dst = (out_root / rel).resolve()
+        if out_root not in dst.parents:
+            die(f"refusing to write outside the output root: {dst}")
+        data = src.read_bytes()
+        if sha256_bytes(data) != inputs[f["source"]]:
+            die(f"{f['source']} changed between the census and the copy; the payload would carry "
+                f"media whose manifest hash is of different bytes")
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_bytes(data)
+        outputs[rel] = f["sha256"]
+        provenance[rel] = sorted([f["source"], *derivers])
+    return len(media["present"])
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -2235,6 +2347,19 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--figure-check-rc", type=int, default=None,
                     help="return code of `.venv-figs/bin/python tools/whitepaper_figures.py "
                          "--check`. Omit if it was not run; NEVER pass 0 for 'not run'.")
+    # Same contract, second producer: measured by the caller, recorded verbatim, and refused a
+    # default for the same reason — 0 for "not run" is the one wrong answer of the three.
+    ap.add_argument("--render-rc", type=int, default=None,
+                    help="return code of `video/render.py --verify` (the double render). Omit if "
+                         "it was not run; NEVER pass 0 for 'not run'.")
+    # Named so a build's media input is a stated argument rather than "whatever this machine last
+    # rendered into a gitignored directory". Without it the test suite's own result moved with the
+    # developer's `video/out/`: on a machine that had just rendered, the fixture payload suddenly
+    # carried present media with no `--render-rc`, and the media arm — correctly — failed the whole
+    # suite. A test that flips on an untracked directory is not testing the build.
+    ap.add_argument("--media-dir", type=Path, default=VIDEO / "out" / "media",
+                    help="directory holding RENDER.json and the rendered mp4/vtt "
+                         "(default video/out/media, where `video/render.py` writes them)")
     args = ap.parse_args(argv)
 
     out_root = Path(args.out)
@@ -2280,6 +2405,8 @@ def main(argv: list[str] | None = None) -> int:
         policy = derive_citation_policy(inputs)
     with scope() as s_figures:
         figures = derive_figures(inputs, args.figure_check_rc)
+    with scope() as s_media:
+        media = derive_media(inputs, args.render_rc, args.media_dir.expanduser())
     with scope() as s_families:
         families = derive_families(inputs, cases)
     with scope() as s_caveats:
@@ -2357,6 +2484,7 @@ def main(argv: list[str] | None = None) -> int:
     put("registers.json", registers, s_registers.sorted())
     put("citation_policy.json", policy, s_policy.sorted())
     put("figures.json", figures, s_figures.sorted())
+    put("media.json", media, s_media.sorted())
     put("archive.json", {"by_case": archive}, s_archive.sorted())
     # The register is a source too: this file's coverage claim is checked against it, so a reader who
     # wants to know whether the classification is complete needs the tree the check ran over.
@@ -2434,6 +2562,7 @@ def main(argv: list[str] | None = None) -> int:
             n_series += 1
 
     n_figs = copy_figures(out_root, figures, outputs, provenance, inputs)
+    n_media = copy_media(out_root, media, outputs, provenance, inputs)
 
     missing_prov = sorted(set(outputs) - set(provenance))
     if missing_prov:
@@ -2471,6 +2600,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  {len(findings)} findings, {registers['n_items']} register items, "
           f"{len(policy.get('restrictions', []))} citation restrictions, "
           f"{n_figs} figures copied, missing {figures['missing'] or 'none'}")
+    print(f"  {n_media} media file(s) copied, missing {media['missing'] or 'none'}, "
+          f"render check rc {media['render_check']}")
     print(f"  {n_series} case(s) needed a series split at >= {SERIES_BYTES} bytes")
     for d in architecture["diagrams"]:
         print(f"  diagram {d['id']}: {d['n_boxes']} boxes, {d['n_edges']} edges, "

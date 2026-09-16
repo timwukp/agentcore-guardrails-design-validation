@@ -1381,3 +1381,20 @@ details.raw > div {
   color: var(--warn);
   font-size: 12px;
 }
+
+/* The explainer player. Sized to the column, never full-bleed: the video repeats the page's own
+ * numbers, so it reads as a section of the argument rather than a hero banner. The disclosure under
+ * it is body prose, not small print — see `des.video.synth` for why it must not be minimized. */
+.desvideo video {
+  display: block;
+  width: 100%;
+  max-width: 960px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-inset);
+}
+
+.desvideo .desdisclose {
+  max-width: 960px;
+  margin-top: 8px;
+}

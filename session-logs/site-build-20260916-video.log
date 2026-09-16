@@ -1,0 +1,18 @@
+
+> grx-live@0.2.0 build
+> npm run typecheck && vite build
+
+
+> grx-live@0.2.0 typecheck
+> tsc -p tsconfig.json && tsc -p tsconfig.test.json
+
+vite v8.2.1 building client environment for production...
+transforming...
+✓ 47 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   1.99 kB │ gzip:   1.14 kB
+dist/assets/index-CRXcW8XF.css   16.02 kB │ gzip:   3.90 kB
+dist/assets/index-DemSrLVX.js   445.20 kB │ gzip: 136.20 kB
+
+✓ built in 1.20s

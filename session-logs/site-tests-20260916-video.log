@@ -1,0 +1,29 @@
+✔ an empty form leaves the templates exactly as published (7.070042ms)
+✔ a git URL and a date are substituted at every occurrence (13.192375ms)
+✔ a local path with a tilde is accepted (0.913208ms)
+✔ an empty date DROPS the flag rather than substituting a clock reading (0.256291ms)
+✔ a shell metacharacter refuses to compose and the template is left alone (0.892333ms)
+✔ a value that would be read as an option refuses too (4.628333ms)
+✔ a space is refused by its own sentence, not quoted into the character one (0.444959ms)
+✔ a date that is not an ISO day refuses rather than being pasted in (0.695ms)
+✔ a report with the right schema decodes (2.356208ms)
+✔ an inventory.json is refused by name rather than rendered as an empty report (0.539083ms)
+✔ a schema-less object, a JSON array, a JSON scalar and broken JSON are each refused (0.395125ms)
+✔ the right schema with no arrays is still refused (0.216708ms)
+✔ badge classes are derived as the gate expects (5.724125ms)
+✔ the dictionary is not empty and every entry is a pair of two non-blank strings (5.577583ms)
+✔ every Chinese value contains Han characters, or is a named exception (2.728625ms)
+✔ no Chinese value is a copy of its English (0.768333ms)
+✔ every exception is really an exception (0.579542ms)
+✔ both languages of a key take exactly the same placeholders (4.832208ms)
+✔ no brace in any value is anything other than a placeholder (2.358125ms)
+✔ no value contains a case id (3.022167ms)
+✔ the pass rate is denied in both languages and asserted in neither (4.118333ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 646.253459

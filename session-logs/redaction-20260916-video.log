@@ -1,0 +1,91 @@
+redaction gate: 1080 file(s) under grx-validation/
+  extensions: ALL — inclusion is not keyed on the filename; a file that will not decode as UTF-8 is read as latin-1, not skipped
+  OOXML ['.docx', '.pptx', '.xlsx'] — 2 package(s) unzipped: agentcore_guardrails_best_practices_v1.4.pptx, agentcore_guardrails_best_practices_v1.4.zh-TW.pptx
+  skipped dirs ['.git', '.pytest_cache', '.staging', '.state', '.wheel_cache', '__pycache__', 'evidence', 'node_modules'] + any dir starting with ['.venv']
+  66,586,050 bytes read, 10968 reviewed exception(s) waived
+
+PASSED — no unredacted cloud identifiers in 1080 scanned files.
+
+-----------------------------------------------------------------------
+WHEN THIS RAN
+  Last of three runs of this gate today, and the only one whose scan set
+  covers every byte in the push: 1080 files / 66,586,050 bytes. The two
+  earlier runs read 1047 and 1078 files and were superseded by later
+  writes — a clean scan expires on the next edit. The only files written
+  after this run are this log and its .rc, whose content is output the
+  gate had already read. rc captured from $? directly, never via a pipe.
+
+ARE THE MEDIA BYTES ACTUALLY IN THE SCAN SET?  Derived from the gate's
+own files() walker, not inferred from the total:
+total files the gate reads: 1078
+video/ files in the scan set: 66
+  .json    1
+  .md      1
+  .mp3     20
+  .mp4     2
+  .png     36
+  .py      3
+  .vtt     2
+  .yaml    1
+byte artifacts, named not assumed:
+    video/out/audio/222c15f1aba14393903af0d3c0d58d6225bea18d7eef269b47635d5a2e4a2786.mp3 132092 B
+    video/out/audio/223b710b919a09362041ec849cb2b8a99efb6721e657ce815a051fb2921606eb.mp3 110636 B
+    video/out/audio/2451c245847bab8748805d60b39c7151c62f6f5e639e9e958bfc796ec41b8a22.mp3 150668 B
+    video/out/audio/2a9703663b8659f03c0de8ad13fc6c1857e09275449dd858be2f9651f1c9b2ba.mp3 138140 B
+    video/out/audio/34c063f242f8b23ebf0c084bc197b22f190aa7381f3ad7c2c01df5639bdd3bdd.mp3 96092 B
+    video/out/audio/3820618e383ec783503972a06e3999c5c51723ba88c570b165d95d38d91d6123.mp3 99404 B
+    video/out/audio/3bc205267223c0d645e1695b44373fc2bc02c9fcf06567fa48368d46447ac19e.mp3 107180 B
+    video/out/audio/4ce166ab07d03dc390b8fff79bc4ce3f3c5ff69db6c62bc9d7a94e16f52b9f77.mp3 98972 B
+    video/out/audio/6ef72c78fceb03b949197ae422111da9256a040cc2775f32614d0a73d0b87ece.mp3 173852 B
+    video/out/audio/896db67f810d7aadbcdb4f58c227da6ac4a527461a844f421017c506dbe2c1f7.mp3 95372 B
+    video/out/audio/8a686f23a1555b15c44c8ca177ad31728b1eeb5cc94f24d7f1726073e78009f4.mp3 159164 B
+    video/out/audio/8e38208de29e6402d45ba9e607eb33d0d437b7d3970f9988ae46de895435f8a5.mp3 129788 B
+    video/out/audio/ae562653231412edb4bfe7bdf0e14e6779175b3328b7714e2b327dd3380de952.mp3 106028 B
+    video/out/audio/c25200171aa6937807180d4409b5756495259600de01fdd1d4fe505b9398168d.mp3 157580 B
+    video/out/audio/c36e2ef330d3170bf9afa1915ea74ea1eff8a41a71bdcbda0308412df0b72345.mp3 168524 B
+    video/out/audio/c8809af9b5e75e94a0bd067387b601d69dd58bf796eead47e99f79aa56df8a87.mp3 90620 B
+    video/out/audio/e22827441f6d21490653dda04a4b3fd9268bfa3a2fbf1a8322879803cae3b67e.mp3 95804 B
+    video/out/audio/e9422ef6c3a19d26d70c28ef7a1195096305bdf446c3b69b3563fca13172d915.mp3 103292 B
+    video/out/audio/eefa3d8012d51a7cf02772af6f45449b746eaef78d8583a15f42e0bd36f032b6.mp3 144476 B
+    video/out/audio/fb076185cfc206cef9485058410e1541448147993eee90c8ab8324dfd074bdee.mp3 150812 B
+    video/out/frames/en/after-00.png 74746 B
+    video/out/frames/en/before-00.png 88780 B
+    video/out/frames/en/claim-00.png 55160 B
+    video/out/frames/en/colours-00.png 121399 B
+    video/out/frames/en/during-00.png 79451 B
+    video/out/frames/en/honesty-00.png 51678 B
+    video/out/frames/en/loop-00.png 32260 B
+    video/out/frames/en/loop-01.png 40876 B
+    video/out/frames/en/loop-02.png 54572 B
+    video/out/frames/en/loop-03.png 61413 B
+    video/out/frames/en/loop-04.png 79059 B
+    video/out/frames/en/loop-05.png 81493 B
+    video/out/frames/en/loop-06.png 90551 B
+    video/out/frames/en/loop-07.png 99923 B
+    video/out/frames/en/loop-08.png 105163 B
+    video/out/frames/en/title-00.png 56324 B
+    video/out/frames/en/verdicts-00.png 65511 B
+    video/out/frames/en/verify-00.png 55428 B
+    video/out/frames/zh/after-00.png 74708 B
+    video/out/frames/zh/before-00.png 98051 B
+    video/out/frames/zh/claim-00.png 56436 B
+    video/out/frames/zh/colours-00.png 120334 B
+    video/out/frames/zh/during-00.png 82760 B
+    video/out/frames/zh/honesty-00.png 47307 B
+    video/out/frames/zh/loop-00.png 30119 B
+    video/out/frames/zh/loop-01.png 38812 B
+    video/out/frames/zh/loop-02.png 53696 B
+    video/out/frames/zh/loop-03.png 60759 B
+    video/out/frames/zh/loop-04.png 77730 B
+    video/out/frames/zh/loop-05.png 80889 B
+    video/out/frames/zh/loop-06.png 89491 B
+    video/out/frames/zh/loop-07.png 98093 B
+    video/out/frames/zh/loop-08.png 101947 B
+    video/out/frames/zh/title-00.png 60600 B
+    video/out/frames/zh/verdicts-00.png 62854 B
+    video/out/frames/zh/verify-00.png 56620 B
+    video/out/media/RENDER.json 1974 B
+    video/out/media/overview.en.mp4 4693875 B
+    video/out/media/overview.en.vtt 3705 B
+    video/out/media/overview.zh.mp4 3857242 B
+    video/out/media/overview.zh.vtt 3400 B
