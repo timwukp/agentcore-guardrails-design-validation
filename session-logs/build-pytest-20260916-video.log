@@ -1,0 +1,127 @@
+........................................................................ [  4%]
+........................................................................ [  9%]
+........................................................................ [ 14%]
+........................................................................ [ 19%]
+........................................................................ [ 24%]
+........................................................................ [ 29%]
+............sssssss..................................................... [ 33%]
+........................................................................ [ 38%]
+........................................................................ [ 43%]
+........................................................................ [ 48%]
+........................................................................ [ 53%]
+........................................................................ [ 58%]
+........................................................................ [ 62%]
+........................................................................ [ 67%]
+........................................................................ [ 72%]
+.....................s...........................s...................... [ 77%]
+........................................................................ [ 82%]
+............................................................F........... [ 87%]
+........................................................................ [ 91%]
+........................................................................ [ 96%]
+..........s......................................                        [100%]
+=================================== FAILURES ===================================
+_____ test_a_write_in_a_results_module_is_masked_or_placed_outside_results _____
+
+    def test_a_write_in_a_results_module_is_masked_or_placed_outside_results():
+        """The runtime-target backstop, over the whole repo."""
+        unnamed = []
+        for path in _py_files():
+            rel = str(path.relative_to(ROOT))
+            for recv, line, masked in _unplaceable_writes(path):
+                if masked or (rel, recv) in NOT_A_RESULTS_TARGET or (rel, recv) in WAIVED:
+                    continue
+                unnamed.append(f"{rel}:{line}  {recv}.write_text(...)")
+>       assert not unnamed, (
+            "a module that writes into results/ has a write whose target this scan cannot place, "
+            "and it neither masks nor is named in NOT_A_RESULTS_TARGET:\n  " + "\n  ".join(unnamed))
+E       AssertionError: a module that writes into results/ has a write whose target this scan cannot place, and it neither masks nor is named in NOT_A_RESULTS_TARGET:
+E           platform/audit/report.py:573  path.write_text(...)
+E           platform/build/census_rendered_surfaces.py:651  out.write_text(...)
+E       assert not ['platform/audit/report.py:573  path.write_text(...)', 'platform/build/census_rendered_surfaces.py:651  out.write_text(...)']
+
+lib/tests/test_results_writes_are_masked.py:367: AssertionError
+=============================== warnings summary ===============================
+lib/tests/test_account_id_choke_point.py: 1 warning
+lib/tests/test_cedar_resource_scope.py: 2 warnings
+lib/tests/test_definition_union_member.py: 3 warnings
+lib/tests/test_oracle.py: 1 warning
+lib/tests/test_probe_guardrail.py: 1 warning
+lib/tests/test_property_not_called.py: 1 warning
+lib/tests/test_rate_limits.py: 5 warnings
+lib/tests/test_results_writes_are_masked.py: 5 warnings
+lib/tests/test_scan_scope.py: 1 warning
+  <unknown>:40: SyntaxWarning: invalid escape sequence '\s'
+
+lib/tests/test_cedar_resource_scope.py: 2 warnings
+lib/tests/test_definition_union_member.py: 3 warnings
+lib/tests/test_oracle.py: 1 warning
+lib/tests/test_rate_limits.py: 5 warnings
+  <unknown>:109: SyntaxWarning: invalid escape sequence '\d'
+
+lib/tests/test_cedar_resource_scope.py: 2 warnings
+lib/tests/test_definition_union_member.py: 3 warnings
+lib/tests/test_oracle.py: 1 warning
+lib/tests/test_rate_limits.py: 5 warnings
+  <unknown>:110: SyntaxWarning: invalid escape sequence '\.'
+
+lib/tests/test_cedar_resource_scope.py: 2 warnings
+lib/tests/test_definition_union_member.py: 3 warnings
+lib/tests/test_oracle.py: 1 warning
+lib/tests/test_rate_limits.py: 5 warnings
+  <unknown>:107: SyntaxWarning: invalid escape sequence '\d'
+
+lib/tests/test_cedar_resource_scope.py: 2 warnings
+lib/tests/test_definition_union_member.py: 3 warnings
+lib/tests/test_oracle.py: 1 warning
+lib/tests/test_rate_limits.py: 5 warnings
+  <unknown>:108: SyntaxWarning: invalid escape sequence '\.'
+
+lib/tests/test_module_name_collisions.py::test_no_by_path_loader_registers_a_name_that_lib_owns
+lib/tests/test_module_name_collisions.py::test_every_loader_call_is_either_resolvable_or_listed_as_unresolvable
+lib/tests/test_module_name_collisions.py::test_every_loader_call_is_either_resolvable_or_listed_as_unresolvable
+lib/tests/test_module_name_collisions.py::test_every_loader_call_is_either_resolvable_or_listed_as_unresolvable
+lib/tests/test_module_name_collisions.py::test_a_shared_loader_name_always_points_at_the_same_source
+lib/tests/test_module_name_collisions.py::test_the_check_redaction_loader_no_longer_squats_the_redact_name
+  /Users/tmwu/Downloads/grx-validation/platform/build/csp_preview.py:40: SyntaxWarning: invalid escape sequence '\s'
+    if (!s || HAN.test(s) || s.split(/\s+/).length < 4) continue;   // 4+ words = prose, not a token
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED lib/tests/test_results_writes_are_masked.py::test_a_write_in_a_results_module_is_masked_or_placed_outside_results
+1 failed, 1478 passed, 10 skipped, 70 warnings in 1636.16s (0:27:16)
+
+-----------------------------------------------------------------------
+COMMAND
+  PYTHONPATH=platform/build .venv-oracle/bin/python -m pytest \
+      platform/build/tests tools lib video/tests -q
+
+EXIT CODE
+  1.  Not captured from $? on the sweep itself (the wrapper command ended in a
+  `tail`, and the harness annotated that wrapper's 0 — the exact failure mode
+  this repo has hit before), so it is DERIVED: pytest exits 1 when any test
+  fails, and the summary line above reports 1 failed. The single failing file
+  was then re-run on its own with the code read directly:
+
+      PYTHONPATH=platform/build .venv-oracle/bin/python -m pytest \
+          lib/tests/test_results_writes_are_masked.py -q   ->  rc 1
+      1 failed, 24 passed in 80.92s
+
+THE FAILURE IS PRE-EXISTING ON main, AND IS NOT SILENTLY FIXED
+  test_a_write_in_a_results_module_is_masked_or_placed_outside_results flags:
+      platform/audit/report.py:573                path.write_text(...)
+      platform/build/census_rendered_surfaces.py:651  out.write_text(...)
+  Neither file is in this changeset. `tools/repo_diff.py` compares every local
+  file's blob sha against remote main and lists 35 added + 12 modified paths;
+  both of the flagged files are in neither list, i.e. byte-identical to
+  35279b34bf08. So the red is inherited, not introduced, and it is reported
+  here rather than patched inside a video PR.
+
+  SCOPE CORRECTION, because a test that was never collected is not a test that
+  passed. The other three reds carried on main —  test_cited_paths_exist,
+  test_hash_citations, test_repo_copy_exclusions — live under claims/tests/,
+  which is NOT one of the four paths this sweep was given. Their state is
+  recorded separately in claims-tests-20260916-video.{log,rc}; nothing about
+  them may be read out of the 1478 passes above. Measured there: all three
+  still fail (rc 1, 3 failed / 29 passed), so all four inherited reds are red.
+  One of the three names a file step 4 modifies, and was checked against main's
+  blob rather than assumed inherited — see that log.

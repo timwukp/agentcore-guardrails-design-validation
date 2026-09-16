@@ -1,0 +1,70 @@
+mux determinism diagnosis — 2026-09-16, macOS-26.6.2-arm64, ffmpeg 8.1.2
+========================================================================
+
+WHY THIS RAN
+`video/render.py --verify` (render twice, require identical sha256) failed on its first real run:
+
+  FATAL: the two renders disagree on [('en', 'overview.en.mp4'), ('zh', 'overview.zh.mp4')];
+  a pipeline whose output drifts cannot be hash-verified and must not be published
+
+Both .vtt files matched. Only the containers differed (en 4694078 B vs 4684314 B; zh by 176 B).
+
+STEP 1 — WHICH STREAM DRIFTED?  `ffmpeg -i <f> -map 0:v -c copy -f md5 -` (and 0:a)
+
+  render  lang  video stream MD5                      audio stream MD5
+  a       en    d5387c8e85438743765397a19454428a      957b10c18c909a3db99d3db92d8f4768
+  b       en    d5387c8e85438743765397a19454428a      957b10c18c909a3db99d3db92d8f4768
+  a       zh    4370c6c3c961fe611da58b349098030c      842c85b29e85b96ab8df22be4a23404e
+  b       zh    4370c6c3c961fe611da58b349098030c      842c85b29e85b96ab8df22be4a23404e
+
+Every elementary stream identical in both renders, both languages. No media content drifted.
+
+STEP 2 — WHICH ATOMS DIFFERED?  (atom walk, en track, sizes in bytes)
+
+  atom                     render a     render b
+  moov                     115916       106152      DIFF
+    trak (video)            91342        84222      DIFF
+      stsd                    177          177
+      stts                     24           24        timing identical
+      stss                    132          132        keyframes identical
+      stsc                   6412         1948      DIFF   sample-to-chunk
+      stsz                  26944        26944        sample sizes identical
+      stco                   3728         1072      DIFF   chunk offsets  (929 vs 265 chunks)
+    trak (audio)            24397        21753      DIFF   (stsc/stco only, same pattern)
+  mdat                    4578122      4578122        byte-identical payload
+
+The muxer grouped the SAME samples into different chunks. Nothing about the content changed.
+
+STEP 3 — IS IT REPRODUCIBLE, AND DOES A FLAG FIX IT?  (same frames + mp3s each time)
+
+  single combined mux, run 3x:
+    5dfdabb7436d80a6644b181e2216a91c0828f92484db35cdfe312b2fd059c70d
+    8ebb1794f6d64b8a0953dea357569f4ec678507fa68664193c4f1f81a3b6b2ba
+    e2302092935d6f253c0ed36bb748fd3d3ec0d845555712e500fa5b5f0a987b7f     -> 3 distinct
+
+  same, plus -max_interleave_delta 0, run 3x:
+    855f2adcdcffb3c0d30a537df126b5c9eb848a6b46f98931f48d913d47eb7057
+    cb8d842ff0caf3422cf8c3e5b9430019adb522221b7f36cf5a3280e83d0e8601
+    70d46eff0fa9f58227b3d32eef8e80e195a8ca0eda2fef4661231ae3806bc719     -> 3 distinct
+
+STEP 4 — WHICH STAGES DO REPRODUCE?
+
+  video-only encode (-an), run 2x:  d2fc527c2e61dbfa193b3de86eb138d0943902397cf1e9e9240d9ad76cab7b51 x2
+                                    (a 3rd run was cut off by a harness timeout, not a mismatch)
+  audio-only encode (-vn), run 3x:  c4357dfe4520a5f5137a5145a4dc124bfba29c1c45e733b4a09a39e32b77b275 x3
+  -c copy remux of both, run 3x:    d7ca1e5867fe276db7e1774b7f7f4710313f75f0d7615ce81bf99dc4b93e5e18 x3
+
+FIX
+`render_language()` now runs three ffmpeg calls: video-only, audio-only, then a copy-only remux.
+With both inputs complete on disk there is no encoder timing left for the interleaver to depend on.
+
+INDEPENDENT CONFIRMATION
+The pipeline's own en track, rendered later from a DIFFERENT working directory with different
+absolute paths in the concat lists, hashes to d7ca1e5867fe… — the same file as the hand-run remux
+above.
+
+WHAT WAS ACTUALLY WRONG BEFORE THIS
+Not ffmpeg, and not the bitexact flags. The pre-build smoke test that licensed "ffmpeg is
+byte-identical" muxed a SINGLE stream, so it never exercised the two-input interleaver — a claim two
+streams wide taken from a measurement one stream wide. The whole-pipeline double render is what
+caught it; re-testing each link individually never would have.

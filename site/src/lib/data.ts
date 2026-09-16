@@ -114,5 +114,10 @@ export function loadSeries(caseId: string) {
   return getJson<{ case: string; series: Record<string, unknown> }>(`series/${caseId}.json`);
 }
 
+export const loadMedia = () => getJson<import("./types").Media>("media.json");
+
 /** Figure PNGs are copied into the payload beside the JSON by `publish_web.py`. */
 export const figureUrl = (file: string) => `${PREFIX}/figures/${file}`;
+
+/** Rendered explainer mp4/vtt, copied by `build_site_data.copy_media()` the way the figures are. */
+export const mediaUrl = (file: string) => `${PREFIX}/media/${file}`;

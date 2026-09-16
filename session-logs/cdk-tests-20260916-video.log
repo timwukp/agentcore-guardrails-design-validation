@@ -1,0 +1,34 @@
+
+> grx-live-infra@1.0.0 test
+> tsx --test test/*.test.ts
+
+Bundling asset GrxLive/EdgeAuth/Code/Stage...
+
+  ...a0d00aabf21e1d37cf4632524c848b5070c6bdd7d6dc29-building/index.js  972.7kb
+
+⚡ Done in 3583ms
+/Users/tmwu/Downloads/grx-validation/platform/build/csp_preview.py:40: SyntaxWarning: "\s" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\s"? A raw string is also an option.
+  if (!s || HAN.test(s) || s.split(/\s+/).length < 4) continue;   // 4+ words = prose, not a token
+✔ no_mutant_control: the stack synthesises and is not empty (4191.2375ms)
+✔ the distribution has exactly ONE cache behaviour, so no path can bypass the auth function (125.141042ms)
+✔ the default behaviour runs the edge function on viewer-request (0.499542ms)
+✔ no 403/404 rewrite to index.html (1.696958ms)
+✔ the edge function carries no environment variables (27.768417ms)
+✔ the edge role is assumable by edgelambda, not only by lambda (0.701209ms)
+✔ the edge role can read exactly one parameter and one secret, and nothing else (2.025708ms)
+✔ the bundled edge function fits the 1 MB viewer-request package limit (196.694917ms)
+✔ the CSP the preview server enforces is the CSP the distribution sends (3371.925875ms)
+✔ the payload bucket is private, encrypted, TLS-only and retained (2.013542ms)
+✔ the user pool is invite-only with TOTP MFA required (4.847583ms)
+✔ the app client is confidential, code-flow only, with one exact callback URL (0.469917ms)
+✔ the only account id in the template is the CDK bootstrap asset bucket's (0.333416ms)
+✔ cdk.out is written outside the repository (12.820875ms)
+✔ bin/grx-live.ts refuses a region that is not us-east-1, and accepts us-east-1 (106855.331042ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 203097.112375

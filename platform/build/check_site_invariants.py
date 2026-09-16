@@ -79,6 +79,13 @@ THE ARMS, and what each one would have caught
     and no JSON assertion sees it. A non-zero `numeric_check` does not fail the publish — shipping a
     known drift honestly is allowed — but the bundle must then contain the wording that renders it, so
     a payload cannot know it drifted while the page stays silent.
+9b. `media_is_real_and_disclosed` — each present mp4/vtt exists, matches its recorded sha256 and
+    byte count, and carries its container's own signature (`ftyp` / `WEBVTT`) — the figures rule
+    over a player instead of an image. Present∪missing is re-derived from `video/script/*.yaml`
+    (both sides of the gate). When any media ships: every track must say `synthesized: true` and
+    the served bundle must carry the Polly disclosure wording; the double-render rc must be 0 —
+    unlike a drifted figure, a video whose two renders disagreed has no honest caption, so it does
+    not ship at all. An empty payload (nothing rendered) passes with everything in `missing`.
 10. `oracles_are_sealed` — every case carries a non-empty `oracle_text` marked sealed, and the
     registry hash the census reports recomputed equals the declared one.
 11. `pipeline_states_are_styled` — every state in `pipeline.json`'s vocabulary has a rule in the built
@@ -967,6 +974,73 @@ def arm_figures(g: Gate, payload: Path, bundle_text: str) -> None:
         g.check(arm, bool(str(missing).strip()), "a missing figure is listed with an empty name")
     g.note(arm, f"{len(present)} PNG(s) verified byte for byte, numeric_check rc={rc}, "
                 f"missing={figures.get('missing')}")
+
+
+def arm_media(g: Gate, payload: Path, bundle_text: str) -> None:
+    arm = "media_is_real_and_disclosed"
+    media = load(payload, "media.json")
+    present = media.get("present", [])
+    missing = media.get("missing", [])
+
+    # Both sides of the membership derived: the payload's claim of what exists-or-is-owed, against
+    # the scripts that define what a full render produces. A payload that lost a language would
+    # otherwise just have a shorter list, and shorter lists read as tidy.
+    expected = sorted(f"{p.stem}.{lang}.{ext}"
+                      for p in (REPO / "video" / "script").glob("*.yaml")
+                      for lang in ("en", "zh") for ext in ("mp4", "vtt"))
+    g.check(arm, bool(expected), "no scripts under video/script/, so the expectation is empty and "
+                                 "any media state would verify")
+    claimed = sorted([e["file"] for e in present] + list(missing))
+    g.check(arm, claimed == expected,
+            f"media.json accounts for {claimed}, the scripts define {expected}; a file outside both "
+            f"lists is bytes nobody owes an explanation for")
+
+    for entry in present:
+        path = payload / "media" / entry["file"]
+        if not path.is_file():
+            g.fail(arm, f"{entry['file']} is listed present but absent from the payload")
+            continue
+        data = path.read_bytes()
+        if entry["file"].endswith(".mp4"):
+            g.check(arm, data[4:8] == b"ftyp",
+                    f"{entry['file']} carries no MP4 `ftyp` box; an error page saved under an .mp4 "
+                    f"name renders as a dead player and no JSON assertion notices")
+        else:
+            g.check(arm, data.startswith(b"WEBVTT"),
+                    f"{entry['file']} does not start with WEBVTT; the browser drops the whole "
+                    f"caption track silently")
+        g.check(arm, len(data) == entry.get("bytes"),
+                f"{entry['file']} is {len(data)} B, recorded as {entry.get('bytes')} B")
+        g.check(arm, hashlib.sha256(data).hexdigest() == entry.get("sha256"),
+                f"{entry['file']} does not match its recorded sha256")
+
+    if present:
+        rc = media.get("render_check")
+        # Stricter than the figures on purpose: a drifted figure ships honestly behind wording the
+        # bundle is checked for, but a video whose two renders disagreed has no honest caption a
+        # reader could weigh — the bytes themselves are the unverifiable part. It stays local.
+        g.check(arm, rc == 0,
+                f"media files are present with render_check={rc!r}; only a 0 from "
+                f"`video/render.py --verify` (double render, byte-identical) licenses shipping them")
+        g.check(arm, media.get("verified_identical_renders") is True,
+                "render manifest does not attest verified_identical_renders")
+        tracks = media.get("tracks", [])
+        g.check(arm, bool(tracks), "media files are present but no track describes them")
+        for t in tracks:
+            g.check(arm, t.get("synthesized") is True,
+                    f"track {t.get('language')} does not declare synthesized: true — the narration "
+                    f"IS synthesized, and a payload claiming otherwise is the platform breaking its "
+                    f"own editorial rule")
+            g.check(arm, bool(t.get("voice")) and bool(t.get("engine")),
+                    f"track {t.get('language')} names no voice/engine; the disclosure would have "
+                    f"nothing to disclose")
+            g.check(arm, isinstance(t.get("duration_s"), (int, float)) and t["duration_s"] > 0,
+                    f"track {t.get('language')} has no measured duration")
+        g.check(arm, "Amazon Polly" in bundle_text,
+                "media ships but the served bundle carries no Polly disclosure wording; the page "
+                "would play a synthesized voice without saying so")
+    g.note(arm, f"{len(present)} media file(s) verified byte for byte, "
+                f"missing={missing or 'none'}, render_check={media.get('render_check')!r}")
 
 
 def arm_oracles(g: Gate, payload: Path) -> None:
@@ -1972,6 +2046,7 @@ def main(argv: list[str] | None = None) -> int:
     arm_verdict_mix(g, payload, denominators)
     arm_citation_policy(g, payload, census_cases)
     arm_figures(g, payload, bundle)
+    arm_media(g, payload, bundle)
     arm_pipeline_states_are_styled(g, payload, args.dist.expanduser())
     arm_both_languages_shipped(g, bundle, args.dist.expanduser())
     arm_audit_vocabularies_are_styled(g, payload, args.dist.expanduser())

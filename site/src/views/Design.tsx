@@ -39,17 +39,80 @@
 
 import { Fragment, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { loadArchitecture, loadPractices } from "../lib/data";
+import { loadArchitecture, loadMedia, loadPractices, mediaUrl } from "../lib/data";
 import { statusClass } from "../lib/audit";
 import ArchDiagram from "../components/ArchDiagram";
 import { ErrorPanel, Loading, useAsync, VerdictBadge } from "../components/ui";
-import { A, T, useAuthored, useT, VerbatimNote } from "../lib/i18n";
+import { A, T, useAuthored, useLocale, useT, VerbatimNote } from "../lib/i18n";
 import type { Practice, PracticeCase, PracticeRuling, Practices } from "../lib/types";
 
 /** Which of the payload's diagrams belong to this page — the same `view` filter `/architecture` uses,
  *  for the same reason: a page that named its diagrams would silently gain the next one added, and
  *  `check_architecture.py` fails the build on a view no diagram declares. */
 const VIEW = "design";
+
+/** The narrated overview, when this payload carries one.
+ *
+ *  Three states, and the page says which it is in rather than letting them share a look: the video
+ *  plays; the video was never rendered into this payload (`media.json` says so — an absent video and
+ *  a broken player are DIFFERENT failures, and a dead `<video>` box reports the second when the truth
+ *  is the first); or `media.json` itself failed to load, which is a payload defect the section reports
+ *  the way every other loader on the site does.
+ *
+ *  The synthesized-speech disclosure renders whenever the player does, unconditionally. It is not a
+ *  courtesy: the Chinese track is a Mainland-Mandarin voice on a zh-TW platform because Polly ships no
+ *  zh-TW voice at all, and a reader who notices the accent before the caption has already been misled.
+ *
+ *  `render_check` is trusted only at 0 AND with the manifest's own `verified_identical_renders` flag —
+ *  the rc is measured by whoever ran the double render and recorded verbatim by the builder, so null
+ *  renders as "unverified", never as fresh (the `--figure-check-rc` rule, second producer). */
+function Explainer() {
+  const res = useAsync(loadMedia, []);
+  const { locale } = useLocale();
+  const t = useT();
+  if (res.state === "loading") return null;
+  if (res.state === "error") return <ErrorPanel error={res.error} />;
+  const m = res.data;
+  const lang = locale === "zh-TW" ? "zh" : "en";
+  const have = new Set(m.present.map((p) => p.file));
+  const mp4 = `overview.${lang}.mp4`;
+  const vtt = `overview.${lang}.vtt`;
+  const track = m.tracks.find((x) => x.language === lang);
+  const verified = m.render_check === 0 && m.verified_identical_renders === true;
+  return (
+    <section className="desvideo">
+      <h3>{t("des.video.h")}</h3>
+      {have.has(mp4) && track ? (
+        <>
+          <p className="deswhy">
+            {t("des.video.lede", { min: Math.max(1, Math.round(track.duration_s / 60)) })}
+          </p>
+          <video controls preload="metadata" src={mediaUrl(mp4)}>
+            {have.has(vtt) ? (
+              <track
+                kind="captions"
+                src={mediaUrl(vtt)}
+                srcLang={locale === "zh-TW" ? "zh-TW" : "en"}
+                label={locale === "zh-TW" ? "中文" : "English"}
+                default
+              />
+            ) : null}
+            <p>{t("des.video.noSupport")}</p>
+          </video>
+          <p className="deswhy desdisclose">
+            {t("des.video.synth")}{" "}
+            {verified ? t("des.video.verified") : t("des.video.notVerified")}{" "}
+            <span className="mono">
+              {track.voice}/{track.engine}/{track.voice_language}
+            </span>
+          </p>
+        </>
+      ) : (
+        <p className="deswhy">{t("des.video.missing")}</p>
+      )}
+    </section>
+  );
+}
 
 /** The status token beside a practice or a checkpoint, with the sentence that says what the colour
  *  means. The token stays English in both languages — it is payload vocabulary a reader greps for, like
@@ -255,6 +318,8 @@ export default function DesignView() {
         .map((d) => (
           <ArchDiagram key={d.id} d={d} arch={architecture} />
         ))}
+
+      <Explainer />
 
       <h3>{t("des.h.coverage")}</h3>
       <p>

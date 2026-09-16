@@ -194,6 +194,11 @@ test("the CSP the preview server enforces is the CSP the distribution sends", ()
   // browser rather than assumed.
   assert.ok(fromTemplate.includes("style-src 'self' 'unsafe-inline'"));
   assert.ok(!fromTemplate.includes("script-src 'self' 'unsafe-inline'"), "inline script is allowed");
+  // The explainer video and its captions. Under `default-src 'none'` a missing media directive does
+  // not degrade — it blocks, and the element shows a dead poster rather than an error a reader can
+  // act on. Asserted same-origin exactly: a wider source list here is a policy change, not a tweak.
+  assert.ok(fromTemplate.includes("media-src 'self'"), "media-src 'self' is missing — /design's <video>/<track> would be CSP-blocked");
+  assert.ok(!/media-src [^;]*(?:http|\*|data:)/.test(fromTemplate), "media-src admits a non-same-origin source");
 });
 
 // ---------------------------------------------------------------- the bucket

@@ -46,3 +46,10 @@ __pycache__/
 node_modules/
 f1_config/.wheel_cache/
 .DS_Store
+
+# Rendered explainer media: tens of MB of DERIVED bytes (mp3 synthesis cache, PNG frames, mp4/vtt).
+# The repo carries what derives them (video/render.py, video/scenes.py, video/script/); the payload
+# carries the published copies, hashed and attributed by build_site_data.copy_media() exactly as the
+# whitepaper figures are. Committing the bytes would put the one artifact nobody can review in the
+# one place everything is reviewed.
+video/out/

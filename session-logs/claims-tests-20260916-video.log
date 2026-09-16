@@ -1,0 +1,149 @@
+F.....F.....................F...                                         [100%]
+=================================== FAILURES ===================================
+______________________ test_every_cited_repo_path_exists _______________________
+
+    def test_every_cited_repo_path_exists():
+        anchors, suffixes = _anchors(), _suffixes()
+        docs = _docs()
+        dangling: list[str] = []
+        total = 0
+        citing_docs = 0
+        for doc in docs:
+            cites = _citations(doc.read_text(encoding="utf-8"), anchors, suffixes)
+            total += len(cites)
+            citing_docs += 1 if cites else 0
+            for tok in sorted(cites):
+                if tok not in ABSENT_BY_DESIGN and not (ROOT / tok).exists():
+                    dangling.append(f"  {doc.relative_to(ROOT)} cites `{tok}`")
+    
+        assert total >= MIN_CITATIONS and citing_docs >= MIN_DOCUMENTS, (
+            f"recognised only {total} citation(s) across {citing_docs} document(s), below the floor of "
+            f"{MIN_CITATIONS}/{MIN_DOCUMENTS}. The extractor has stopped matching, so this guard is "
+            f"reporting clean over prose it is not reading.")
+    
+>       assert not dangling, (
+            "these documents cite repo-relative paths that do not exist in the tree:\n"
+            + "\n".join(dangling)
+            + "\n\nA citation a reader cannot fetch is a claim with no evidence that reads exactly like "
+              "a claim with evidence. Note there are TWO directories named `session-logs/` — this "
+              "repo's and the outer ~/Downloads one — which is how this failed on 2026-08-20: the "
+              "cited file existed, in the wrong tree. Copy the artifact in, or stop citing it. If the "
+              "sentence's point is that the file does NOT exist — a specification, quoted output, or a "
+              "local-only runtime file — add it to ABSENT_BY_DESIGN with the reason.")
+E       AssertionError: these documents cite repo-relative paths that do not exist in the tree:
+E           platform/SITE-REVIEW-20260822.md cites `platform/curation/scenarios.yaml`
+E         
+E         A citation a reader cannot fetch is a claim with no evidence that reads exactly like a claim with evidence. Note there are TWO directories named `session-logs/` — this repo's and the outer ~/Downloads one — which is how this failed on 2026-08-20: the cited file existed, in the wrong tree. Copy the artifact in, or stop citing it. If the sentence's point is that the file does NOT exist — a specification, quoted output, or a local-only runtime file — add it to ABSENT_BY_DESIGN with the reason.
+E       assert not ['  platform/SITE-REVIEW-20260822.md cites `platform/curation/scenarios.yaml`']
+
+claims/tests/test_cited_paths_exist.py:201: AssertionError
+_________ test_every_elided_hash_citation_resolves_to_a_derivable_hash _________
+
+    def test_every_elided_hash_citation_resolves_to_a_derivable_hash():
+        universe = _universe()
+        cites = _citations(_docs())
+        assert len(cites) >= MIN_CITATIONS, (
+            f"found {len(cites)} elided-hash citation(s), floor {MIN_CITATIONS}")
+        bad = []
+        for path, pre, suf in cites:
+            if f"{pre}…{suf}" in SUPERSEDED_HASHES:
+                continue
+            if not _matches(universe, pre, suf):
+                bad.append(f"{path.relative_to(ROOT)}: `{pre}…{suf}`")
+>       assert not bad, (
+            "elided sha256 citation(s) match no hash this repository can derive or has recorded:\n    "
+            + "\n    ".join(bad) +
+            "\n  Either the truncation is wrong (check both ends — an off-by-one at the END is the "
+            "defect this test was written for), the artefact is gone, or the value is genuinely "
+            "superseded and belongs in SUPERSEDED_HASHES with a reason.")
+E       AssertionError: elided sha256 citation(s) match no hash this repository can derive or has recorded:
+E             DEVIATIONS.md: `ebe77ed2…13f85ddf`
+E           Either the truncation is wrong (check both ends — an off-by-one at the END is the defect this test was written for), the artefact is gone, or the value is genuinely superseded and belongs in SUPERSEDED_HASHES with a reason.
+E       assert not ['DEVIATIONS.md: `ebe77ed2…13f85ddf`']
+
+claims/tests/test_hash_citations.py:168: AssertionError
+__________ test_every_dynamic_copy_source_is_declared_and_still_there __________
+
+    def test_every_dynamic_copy_source_is_declared_and_still_there():
+        """A source reached through a variable cannot be measured, so it is declared with a reason.
+    
+        Both directions: an undeclared dynamic copy is a hit, and a declaration whose file no longer
+        holds one is stale — an exemption that exempts nothing reads as diligence.
+        """
+        found: set[str] = set()
+        undeclared: list[str] = []
+        for p in _py_files():
+            rel_p = str(p.relative_to(ROOT))
+            for line, rel in _subtree_copy_sites(p.read_text(encoding="utf-8")):
+                if rel is not None:
+                    continue
+                found.add(rel_p)
+                if rel_p not in DYNAMIC_COPY_SOURCES:
+                    undeclared.append(f"{rel_p}:{line}")
+>       assert not undeclared, (
+            "these copy a tree whose source is not a literal under ROOT, so nothing can measure it; "
+            "declare it in DYNAMIC_COPY_SOURCES with what the source is:\n  "
+            + "\n  ".join(undeclared))
+E       AssertionError: these copy a tree whose source is not a literal under ROOT, so nothing can measure it; declare it in DYNAMIC_COPY_SOURCES with what the source is:
+E           platform/build/tests/test_check_site_invariants.py:110
+E           platform/build/tests/test_check_site_invariants.py:124
+E       assert not ['platform/build/tests/test_check_site_invariants.py:110', 'platform/build/tests/test_check_site_invariants.py:124']
+
+claims/tests/test_repo_copy_exclusions.py:411: AssertionError
+=============================== warnings summary ===============================
+claims/tests/test_repo_copy_exclusions.py::test_no_whole_repo_copy_writes_its_own_exclusion_list
+claims/tests/test_repo_copy_exclusions.py::test_the_one_legitimate_whole_repo_copy_is_where_it_is_supposed_to_be
+claims/tests/test_repo_copy_exclusions.py::test_every_subtree_copy_source_is_registered_and_bounded
+claims/tests/test_repo_copy_exclusions.py::test_the_per_file_scratch_arithmetic_still_fits
+claims/tests/test_repo_copy_exclusions.py::test_nothing_copies_the_whole_evidence_tree_again
+claims/tests/test_repo_copy_exclusions.py::test_every_dynamic_copy_source_is_declared_and_still_there
+  <unknown>:40: SyntaxWarning: invalid escape sequence '\s'
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED claims/tests/test_cited_paths_exist.py::test_every_cited_repo_path_exists
+FAILED claims/tests/test_hash_citations.py::test_every_elided_hash_citation_resolves_to_a_derivable_hash
+FAILED claims/tests/test_repo_copy_exclusions.py::test_every_dynamic_copy_source_is_declared_and_still_there
+3 failed, 29 passed, 6 warnings in 130.95s (0:02:10)
+
+-----------------------------------------------------------------------
+COMMAND, and why it is these three files
+  PYTHONPATH=platform/build .venv-oracle/bin/python -m pytest \
+      claims/tests/test_cited_paths_exist.py \
+      claims/tests/test_hash_citations.py \
+      claims/tests/test_repo_copy_exclusions.py -q     ->  rc 1  ($? read directly)
+
+  These are three of the four reds this repo carries on main. The step-4 sweep
+  (build-pytest-20260916-video.log) covered platform/build/tests, tools, lib and
+  video/tests — claims/tests was NOT among its paths, so nothing about these
+  three could be read out of that sweep's 1478 passes. They are run here on
+  their own instead of being assumed green.
+
+  3 failed, 29 passed. All four inherited reds are therefore still red.
+
+ARE ANY OF THEM MINE?  Checked one at a time, not waved off as "pre-existing".
+
+  test_every_cited_repo_path_exists
+      platform/SITE-REVIEW-20260822.md cites `platform/curation/scenarios.yaml`
+    Not in this changeset (repo_diff: byte-identical to main). scenarios.yaml is
+    the user-gated "check my own service" view that was never built.
+
+  test_every_elided_hash_citation_resolves_to_a_derivable_hash
+      DEVIATIONS.md: `ebe77ed2…13f85ddf`
+    DEVIATIONS.md is not in this changeset either.
+
+  test_every_dynamic_copy_source_is_declared_and_still_there
+      platform/build/tests/test_check_site_invariants.py:110
+      platform/build/tests/test_check_site_invariants.py:124
+    This file IS modified by step 4, so the citation was verified against main
+    rather than trusted:
+
+      gh api .../contents/platform/build/tests/test_check_site_invariants.py?ref=35279b34bf08
+
+    gives the same two copytree sites at lines 100 and 114 — `copy_of()` and
+    `copy_dist()`, both untouched by this step. What step 4 changed is only
+    WHERE they sit in the file: the media-arm tests added 10 lines above them.
+    So the finding is inherited; this changeset moves its line numbers and
+    nothing else. The declaration it wants
+    (DYNAMIC_COPY_SOURCES gaining this path, with a reason) belongs to whoever
+    fixes the copy-exclusion ledger, not to a video PR.

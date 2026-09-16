@@ -1429,6 +1429,42 @@ export const STRINGS = {
       "一個沒有任何指引提到的結果，正是那種會悄悄不再存在的結果。",
   ],
 
+  // The explainer player. What must never be typed here: a count the video shows or speaks — those
+  // are resolved from the payload by `video/render.py` and the page reads `media.json`, not the
+  // soundtrack. The synthesis disclosure below is the page's own sentence and is REQUIRED prose:
+  // the narration is Polly, and Polly has no zh-TW voice, so the Chinese track is Mainland Mandarin
+  // — claiming otherwise (or staying silent and letting a reader assume 真人發聲) would be this
+  // platform contradicting its own editorial rule.
+  "des.video.h": ["The overview, narrated", "旁白總覽影片"],
+  "des.video.lede": [
+    "The same argument as this page, as {min} minutes of narrated video. Every number it shows or speaks was resolved from this payload when it was rendered; the frames draw the closed loop from the same derived geometry the diagram above uses.",
+    "與本頁相同的論證，做成約 {min} 分鐘的旁白影片。影片顯示與唸出的每個數字，都是渲染時從本 payload 解析的；" +
+      "畫面中的閉環，用的正是上方圖表的同一份推導幾何。",
+  ],
+  "des.video.synth": [
+    "The narration is synthesized speech (Amazon Polly): Ruth, a generative-engine voice, in English; Zhiyu, a neural-engine voice, in Chinese. Zhiyu is Mainland-Mandarin (cmn-CN) — Polly ships no Taiwanese-Mandarin voice at all — so the Chinese track's accent is not this platform's choice of register, it is the only Chinese voice there is.",
+    "旁白為合成語音（Amazon Polly）：英文為 Ruth（generative 引擎）；中文為 Zhiyu（neural 引擎）。" +
+      "Zhiyu 是大陸普通話（cmn-CN）——Polly 完全沒有台灣華語的聲音——所以中文音軌的口音不是本平台選的語域，" +
+      "而是唯一存在的中文語音。",
+  ],
+  "des.video.verified": [
+    "Render verified reproducible: the whole pipeline — synthesis included — ran twice and every published byte matched.",
+    "渲染已驗證可重現：整條管線（含語音合成）跑了兩次，發佈的每一個位元組都一致。",
+  ],
+  "des.video.notVerified": [
+    "This build did not run the double-render check, so treat the recording as unverified — an unrun check is not a passed one.",
+    "本次建置未執行雙重渲染檢查，此影片應視為未驗證——沒跑過的檢查不等於通過的檢查。",
+  ],
+  "des.video.missing": [
+    "The explainer has not been rendered into this payload. media.json says so; an absent video and a broken player are different failures, and this page refuses to show the second when the truth is the first.",
+    "本 payload 尚未渲染解說影片。media.json 直說了這件事；「影片不存在」和「播放器壞了」是兩種不同的失敗，" +
+      "真相是前者時，本頁拒絕呈現成後者。",
+  ],
+  "des.video.noSupport": [
+    "Your browser does not play MP4 video; the file itself is in the payload under media/.",
+    "你的瀏覽器無法播放 MP4；檔案本身在 payload 的 media/ 目錄下。",
+  ],
+
   // ------------------------------------------------------------------ deficiency register
   "reg.item": ["item {n}", "第 {n} 項"],
   "reg.loading": ["the register", "登記簿"],

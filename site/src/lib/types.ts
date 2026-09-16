@@ -958,3 +958,42 @@ export interface Practices {
   status_bases: Record<string, Authored>;
   non_colouring_restrictions: string[];
 }
+
+// ---------------------------------------------------------------- media.json
+//
+// The rendered explainer: derived by `build_site_data.derive_media()` from `video/render.py`'s own
+// manifest, mirroring `figures.json`. `render_check` is the MEASURED rc of the double render
+// (`video/render.py --verify`) or null for "not run this build" — and null must render as
+// "unverified", never as fresh; a defaulted 0 is the one wrong answer of the three. The synthesis
+// fields exist so the page can state, rather than imply, that the narration is Polly and that the
+// Chinese voice is cmn-CN — Polly ships no zh-TW voice at all.
+
+export interface MediaFileHash {
+  bytes: number;
+  sha256: string;
+}
+
+export interface MediaTrack {
+  language: string; // "en" | "zh" — the SCRIPT language, not a BCP 47 tag
+  voice: string;
+  engine: string;
+  voice_language: string; // the voice's own tag: en-US, cmn-CN
+  synthesized: boolean;
+  duration_s: number;
+  n_scenes: number;
+  files: Record<string, MediaFileHash>;
+}
+
+export interface Media {
+  present: { file: string; bytes: number; sha256: string; source: string }[];
+  missing: string[];
+  tracks: MediaTrack[];
+  script_sha256?: string;
+  payload_inputs?: Record<string, string>;
+  render_platform?: string;
+  verified_identical_renders?: boolean;
+  render_check: number | null;
+  render_check_note?: string;
+  synthesis_note?: string;
+  note?: string;
+}

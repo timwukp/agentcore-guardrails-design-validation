@@ -209,6 +209,11 @@ export class SiteStack extends Stack {
             "img-src 'self'",
             "font-src 'self'",
             "connect-src 'self'",
+            // `<video>` and its `<track>` captions both resolve under media-src, and with
+            // `default-src 'none'` and no media directive the explainer on /design is BLOCKED, not
+            // slow — the element renders a dead poster and reports a MEDIA_ERR, which a header-text
+            // test cannot see. Same-origin only: the mp4/vtt are payload objects under /data/media/.
+            "media-src 'self'",
             "base-uri 'none'",
             "form-action 'none'",
             "frame-ancestors 'none'",
