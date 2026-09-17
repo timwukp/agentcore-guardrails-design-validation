@@ -24,7 +24,15 @@ from its own headings: 30 is Tier 5, which had held four fixes with **no item nu
 outside every count in the repo, and 31 is the run-book's own gate runtime, which the run-book stated
 three different ways. Both were found by making a number checkable, not by re-reading the file — and 31
 was then found to be **wrong itself** on 2026-08-17 and rewritten from a timed run, which is recorded in
-the item rather than quietly replaced. All are placed in the tier
+the item rather than quietly replaced. **37–40** were added on 2026-09-16 while shipping the narrated
+explainer, and all four are deficiencies *of the shipping work itself*, found by running its gates and
+then asking what each one had actually compared: 37 is four reds this repo has carried long enough that
+its test suite is read as a count rather than as names, 38 is a one-machine measurement published in the
+vocabulary of an absolute one, and 39 is three media gates that turn out to share a single within-run
+assumption, and 40 is a spend record that has never been reconciled against a meter and whose stated
+method cannot see the spend measured that day. None of the four was found by review; each came from
+disbelieving a green — three greens and a zero.
+All are placed in the tier
 they belong to rather than appended, so the numbering is out of order on purpose. Nothing is renumbered
 once written, because other files cite these numbers.
 
@@ -560,6 +568,39 @@ confirmation. The risk is a future reader seeing TRUE in the register and citing
 scheduled re-measurement, so every verdict silently ages. Worth proposing a minimal recurring
 canary — a handful of the highest-value cases re-run on a schedule — so the paper can state a
 freshness interval rather than a single date.
+
+### 40. The project's own spend has never been read off a meter, and its stated method cannot see the part measured today
+
+`COST.md` publishes **ceiling $95.00 · projected $6.67 · contingency $29.00 · actual to date $0.00**,
+and all thirteen phases in `cost_model.yaml` carry `actual_usd: 0.0` — including the eight marked
+`live` that have run. So the "actual" column is not a measurement of zero; it is a field nobody has
+filled, printed beside twelve projections in the same table and the same typeface.
+
+The method the file states is deliberate and well-reasoned: *"Actuals are read by resource tag
+`Project=guardrails-doc-validation`, never by service"*, because the account carries roughly $27k/mo of
+unrelated spend and a service filter would attribute other systems' cost here. But a tag reads
+**resources**, and the spend measured on 2026-09-16 has none: Amazon Polly billed **28 476 characters
+over 120 `SynthesizeSpeech` requests** for the explainer, **$0.72–$0.77**
+(`session-logs/polly-spend-20260916-video.log`), against no taggable resource whatsoever. Under the
+file's own method that spend cannot appear in it at all — not as an omission, as a blind spot. And it
+raises the question the item exists to settle: **whether the invocation charges for `ApplyGuardrail` /
+`InvokeGuardrailChecks` carry their guardrail's tags into Cost Explorer is unmeasured here**, and those
+two APIs are most of what phases 1 and 6 projected ($0.81 + $3.55 of $6.67). If they do not, the tag
+method can see almost none of this study's real cost.
+
+Two smaller traps, both hit today and both worth writing down before the next reader repeats them.
+Cost Explorer lags roughly a day: the same query that returns two usage-type groups for August returns
+**no groups** for September, so a `$0` from it is a claim about the query and not about the account
+(`feedback_empty_query_is_not_zero`). And CloudWatch's `AWS/Polly` `RequestCharacters` has only an
+`Operation` dimension — **no engine split** — so characters are countable there but not priceable
+without deriving the engine mix separately.
+
+**Closes when** each phase's `actual_usd` is filled from a Cost Explorer read over that phase's own
+window, with the tag filter *and* a service-level cross-check recorded so the difference between them
+is visible rather than assumed, **and** `cost_model.yaml` carries a line for untaggable per-request
+spend so the explainer's Polly cost is disclosed in the file whose title is *projected vs actual*
+instead of only in a session log. Regenerating `COST.md` is `estimate_cost.py`'s job, never a hand edit;
+that rule is why this is filed rather than patched inside a publication PR.
 
 ---
 
@@ -1259,6 +1300,123 @@ defect one level up, and the same shape as the item this register opened at line
 exists only as a sentence saying it ought to exist. **This item closes when that checklist is a file**
 that names the pre-fix blob, the commit (`3f3c398b`), and the decision to be taken, so the flip cannot
 happen without someone reading it. Nothing else about item 35 is outstanding.
+
+### 37. Four gates have been failing on `main` long enough that the suite is read as a count, not as names
+
+Measured 2026-09-16, on a tree whose only changes were the explainer: `pytest platform/build/tests
+tools lib video/tests` is **1 failed, 1478 passed, 10 skipped**, and `claims/tests/` — which that
+command never collected — is **3 failed, 29 passed**. All four reds are inherited, none is new, and
+each names its own remedy in its own failure message:
+
+| red | flagged site | the ledger the test itself names |
+|:---|:---|:---|
+| `lib/tests/test_results_writes_are_masked.py::test_a_write_in_a_results_module_is_masked_or_placed_outside_results` | `platform/audit/report.py:573`, `platform/build/census_rendered_surfaces.py:651` — two `write_text` targets the scan cannot place | `NOT_A_RESULTS_TARGET` |
+| `claims/tests/test_cited_paths_exist.py::test_every_cited_repo_path_exists` | `platform/SITE-REVIEW-20260822.md` cites `platform/curation/scenarios.yaml`, the user-gated view that was never built | `ABSENT_BY_DESIGN`, "if the sentence's point is that the file does NOT exist" |
+| `claims/tests/test_hash_citations.py::test_every_elided_hash_citation_resolves_to_a_derivable_hash` | `DEVIATIONS.md: ebe77ed2…13f85ddf` resolves to no hash this repo can derive or has recorded | `SUPERSEDED_HASHES` |
+| `claims/tests/test_repo_copy_exclusions.py::test_every_dynamic_copy_source_is_declared_and_still_there` | `platform/build/tests/test_check_site_invariants.py:110` and `:124` | `DYNAMIC_COPY_SOURCES` |
+
+Each of those four ledgers exists, takes a reason, and fails in **both** directions — an undeclared
+occurrence and a declared one that has gone away. So the remedy for every red here is one entry and one
+sentence, and the reason it has not been written is that a red suite is easier to carry than to close.
+
+The duration is measurable for one of them: `claims-suite-20260820-final.log` records
+`test_every_cited_repo_path_exists` failing on the same `scenarios.yaml` citation on **2026-08-20**, so
+it has been red for at least **27 days**. For the other three the earliest record in `session-logs/` is
+2026-09-16, which bounds nothing — *no earlier log names them* is not *they were green*, and the
+distinction is the whole reason this item exists.
+
+**Why this is worse than four small defects.** A suite with a standing red is read by its counts:
+"1 failed, 1478 passed" is a shape you learn to recognise, and the next genuine failure arrives as
+`2 failed` inside a number nobody diffs. This session demonstrated the failure mode twice — once by
+writing "three of the four reds now pass" out of a sweep that had never collected the files
+(`feedback_sweep_paths_are_the_claim`), and once by reading a harness's "exit code 0" for a run that
+was `1 failed` because the wrapper ended in `tail` (`feedback_task_exit_code_annotation`). Neither
+mistake is possible against a suite that is green, because then the *name* of a red is the signal and
+no arithmetic is involved.
+
+**The prediction landed the same day it was written.** Later on 2026-09-16 the suite over
+`claims/tests lib/tests tools/tests` returned **5 failed, 1558 passed, 10 skipped** — one more red than
+the four in the table. The fifth was
+`claims/tests/test_verify_phase0_gates_every_test_directory.py`, failing because `video/tests` was
+never added to `verify_phase0.sh`: PR #54 shipped the explainer's suite, ran it directly
+(`pytest video/tests`, 8 passed), reported that in the pull request, and merged, so eight arms rode
+through a merge outside the gate that is the reason to believe them. It is the **second** time that arm
+has caught this same directory-list gap — `tools/tests` was the first, on 2026-08-15 — and the only
+thing that surfaced it this time was diffing the red set **by name** against this table, because
+`5 failed` against a remembered `4 failed` is the arithmetic this item says nobody performs. Fixed in
+the same round the item was written: `video/tests:8` is now in `TEST_SPECS` and in the combined
+invocation, with the floor set to the count on the day it merged.
+
+Two things about that measurement are worth keeping. The wrapper I ran it in **repeated the mistake the
+paragraph above names**: `pytest … | tail -6` with `echo $?` after it recorded rc **0** for a run with
+five failures, because `$?` was `tail`'s. That `.rc` has been **deleted rather than corrected** — pytest's
+own code for that run was never captured, and writing `1` into the file would state an unmeasured value —
+and `gates-20260916-step5.log` now carries a note saying why it has no verdict beside it. A file that
+says `0` is worse than a missing one, because an rc is written down precisely so a later reader trusts it
+without re-reading the log. The failure *names* are what that log is good for; the verdict lives in
+`gates-20260916-step5-rerun.log`, whose rc came straight from pytest. And the four reds in the table are
+**unchanged** — the fifth is recorded here as evidence for the item, not as a fifth entry.
+
+**Closes when** all four are either fixed or carry a dated entry in the ledger their own message names,
+**and** the suite's expected red set is zero — not documented as four, because a documented red set is
+the same tolerance one indirection further out.
+
+### 38. Every determinism claim behind the explainer was measured on one machine, and the three programs that determine the bytes are unrecorded
+
+`video/render.py --verify` renders the whole pipeline twice and requires every output byte-identical; it
+passed, and `media.json` carries `verified_identical_renders: true` beside each sha256. What that
+measured is **self-consistency on one host**: `macOS-26.6.2-arm64-arm-64bit`, one ffmpeg, one Chromium,
+one font set, the two renders minutes apart in the same process tree.
+
+The payload is honest about the OS — `render_platform` is recorded beside the hashes and
+`render_check_note` says in as many words that "reproducibility is machine-scoped: the frames rasterize
+this machine's fonts". But the three things that actually determine those bytes are written down
+**nowhere**: the ffmpeg version (8.1.2 here, and the mux behaviour that cost this session a day is a
+property of its interleaver), the Chromium revision (1208, out of the Playwright cache, and the frames
+are its rasterizer's output), and Polly's voice model, which exposes no version identifier at all. A
+reader holding `render_platform` plus a sha256 has the one input that is *least* likely to change the
+output and none of the three that are most likely to.
+
+Nothing here suggests cross-host equality is achievable — libx264 and font rasterization make it
+unlikely, and pursuing it would be the wrong fix. The defect is that a **scope-limited** measurement is
+published in the vocabulary of an absolute one ("byte-identical", `verified_identical_renders`), with
+the limit in a payload note no reader opens rather than on the page beside the player
+(`feedback_constraints_are_choices`).
+
+**Closes when** `media.json` records the ffmpeg version string, the Playwright browser revision and the
+voice/engine pair as declared inputs, **and** the scope is stated where the claim is read — either by
+naming the host on the page or by rendering on a second machine once and recording, as a measurement,
+whether the hashes matched. Either answer is publishable; the current silence is not.
+
+### 39. Nothing in this platform can detect a Polly voice-model change, because every check the media has is within one run
+
+Three gates stand behind the explainer's bytes, and they share one circularity:
+
+1. `--verify` compares render A with render B — and it deletes `video/out/audio` between them
+   (`# force a second synthesis`), so **both arms call Polly live**. If Polly's voice model changes,
+   both arms get the new voice, they agree with each other, and `--verify` exits 0.
+2. `copy_media()` hashes the bytes it copied and writes those hashes into `media.json`.
+3. `arm_media` re-reads the payload bytes and compares them with `media.json` — written by the same
+   run, from the same bytes.
+
+So each check confirms that one run agreed with itself. **No gate compares this release's media hashes
+with the previous release's**, and the only place a specific expected value is written down is a prose
+sentence in `video/README.md` noting that the English mp4 hashes to `d7ca1e58…` — which nothing
+executes. A silent change in a managed AWS voice model therefore republishes different audio, different
+video and different hashes under the same `script_sha256`, with every gate green and no diff anywhere a
+person would look. That is four checks sharing one assumption, which is one check
+(`feedback_verify_against_real_artifact`).
+
+This is not hypothetical in kind: `AWS-BEHAVIOR-CHANGES.md` exists because the service under test
+already moved underneath this study, and Polly's engines are the same class of dependency. Nor is it
+about the archive — past releases stay reachable under their own `v/<stamp>/` prefix, so the *old* bytes
+are not lost. What is missing is anything that notices they changed.
+
+**Closes when** the media hashes are pinned somewhere a gate reads — the previous release pointer is
+already published and already carries them, so the check is a comparison against it, with a *deliberate*
+re-pin when the narration is genuinely re-cut — or, if that is judged not worth building, when the page
+says plainly that the bytes are self-consistent rather than stable, so a reader is not told a stronger
+thing than was measured.
 
 ---
 

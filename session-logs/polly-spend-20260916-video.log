@@ -1,0 +1,48 @@
+Polly spend for the /design explainer — measured at the meter, 2026-09-16
+========================================================================
+
+WHY THIS RAN
+  Two published numbers for the same quantity were both wrong. First '≈ $1.8',
+  arithmetic on a remembered character count. Then '$0.121', derived from
+  'video/out/audio/ holds exactly 20 mp3s, one per scene per language, so
+  nothing was billed twice'. That derivation is INVALID: render.py --verify
+  does 'shutil.rmtree(OUT / "audio")' between the two renders (render.py:306,
+  comment '# force a second synthesis'), so the cache is deliberately destroyed
+  mid-run and its final contents are one pass's worth no matter how many
+  passes were billed. A local artifact cannot bound a spend that a remote
+  meter records.
+
+MEASURED — CloudWatch AWS/Polly RequestCharacters, Operation=SynthesizeSpeech
+  2026-09-15T15:00:00+08:00    3508 characters   14 requests
+  2026-09-16T11:00:00+08:00    9162 characters   40 requests
+  2026-09-16T13:00:00+08:00   15806 characters   66 requests
+  TOTAL 28476 characters over 120 SynthesizeSpeech requests
+
+DECOMPOSITION — the final script is 3350 en + 1231 zh = 4581 characters/pass
+  (measured by resolving every scene's text through render.resolve_text)
+  2026-09-16 11:00  40 req / 9162  = exactly 2 passes (2x20 req, 2x4581 ch)
+                                     -> verify run 1, both renders, failed at the mux compare
+  2026-09-16 13:00  66 req / 15806 = 3 passes + 6 requests / 2063 ch
+                                     -> verify run 2 (arm a complete, arm b died on a Polly
+                                        read timeout after 6 English scenes) + verify run 3 (a+b)
+  2026-09-15 15:00  14 req / 3508  = an earlier draft of the script; engine split not derivable
+  14 + 40 + 66 = 120 requests, and the three clusters match the session's history exactly.
+
+PRICE — unit rates confirmed against Cost Explorer's own August figures below:
+  generative $30/M, neural $16/M
+  known:      18,813 generative ch = $0.5644   6,155 neural ch = $0.0985
+  remainder:  3,508 ch of unknown engine = $0.0561 (all neural) .. $0.1052 (all generative)
+  => TOTAL $0.72 .. $0.77 for every Polly call this explainer has ever made.
+
+COST EXPLORER — why today reads $0 and that is a LAG, not a zero
+  2026-08-01 -> 2026-09-01  final
+    USE1-SynthesizeSpeechGenerative-Characters       11060 ch  $0.331800  ($30.00/M)
+    USE1-SynthesizeSpeechNeural-Characters            8971 ch  $0.143536  ($16.00/M)
+  2026-09-01 -> 2026-09-16  ESTIMATED
+    (no groups — the same filter returns two groups for August, so the
+     filter is right and September is simply not processed yet)
+
+STANDING RULE THIS ESTABLISHES
+  Spend is read from the meter (CloudWatch RequestCharacters now, Cost Explorer
+  after its lag), never inferred from a local artifact. And a $0 from Cost
+  Explorer is a claim about the query, not about the account.

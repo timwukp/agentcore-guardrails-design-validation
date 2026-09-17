@@ -166,10 +166,18 @@ The honesty chain from render to rendered page:
 - Reproducibility, incidentally cross-checked: the English mp4 the pipeline produced hashes to the
   same `d7ca1e58…` as the hand-run copy-remux during the diagnosis above — from a different working
   directory, with different absolute paths in the concat lists.
-- Cost, counted rather than estimated: the narration is **3,350 English characters** (Ruth,
-  generative, $30/M) and **1,231 Chinese characters** (Zhiyu, neural, $16/M) — **$0.121** to
-  synthesize the whole explainer once. `out/audio/` holds exactly **20** mp3 files, one per scene per
-  language and no more, which is the evidence that nothing was ever paid for twice: the cache key is
-  the request, so the second render of a `--verify` and every re-render since cost $0. Chinese is
-  cheaper by characters, not by rate — Mandarin says the same thing in a third of the glyphs.
-  Disclosed because undisclosed spend is the failure mode, not the amount.
+- Cost, read off the meter: **28,476 characters over 120 `SynthesizeSpeech` requests**, all of it,
+  which prices at **$0.72–$0.77** (`session-logs/polly-spend-20260916-video.log`). One pass of the
+  script is 3,350 English characters (Ruth, generative, $30/M) plus 1,231 Chinese (Zhiyu, neural,
+  $16/M) = $0.0745, and the meter's 120 requests decompose exactly into 6 full passes, 6 orphaned
+  English scenes from the arm that died on a Polly timeout, and 14 requests against an earlier draft
+  of the script. The interval is not measurement noise: 24,968 of those characters have a known
+  engine, and the 3,508 belonging to the superseded draft are bounded at both rates instead of
+  guessed. Chinese is cheaper by characters, not by rate — Mandarin says the same thing in a third of
+  the glyphs.
+- **Do not count `out/audio/` to bound this.** It holds 20 mp3 files, one per scene per language, and
+  an earlier version of this file read that as proof nothing was billed twice. `--verify` deletes the
+  directory between its two renders on purpose (`render.py`, `# force a second synthesis`), so every
+  verification bills two full passes and the surviving cache is always one pass wide however many
+  were paid for. Spend is a fact about a remote meter; a local artifact cannot bound it. Disclosed
+  because undisclosed spend is the failure mode, not the amount.
