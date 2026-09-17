@@ -1,0 +1,108 @@
+GRX Live publish — stamp 20260917T091155Z
+  payload  /Users/tmwu/Downloads/grx-site-payload
+  upload   no (dry run)
+  render   --verify rc 0
+
+=== sealed preregistration still matches its hash
+    $ /Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python verify_prereg.py
+    | Verifying PREREGISTRATION.yaml
+    |   status: SEALED, hash matches (a2136a9d3dbb…)
+    | OK — 189 assertions, every derived value recomputed from lib/stats.py
+    rc=0
+
+=== repository redaction gate
+    $ /Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python check_redaction.py
+    | redaction gate: 1098 file(s) under grx-validation/
+    |   extensions: ALL — inclusion is not keyed on the filename; a file that will not decode as UTF-8 is read as latin-1, not skipped
+    |   OOXML ['.docx', '.pptx', '.xlsx'] — 2 package(s) unzipped: agentcore_guardrails_best_practices_v1.4.pptx, agentcore_guardrails_best_practices_v1.4.zh-TW.pptx
+    |   skipped dirs ['.git', '.pytest_cache', '.staging', '.state', '.wheel_cache', '__pycache__', 'evidence', 'node_modules'] + any dir starting with ['.venv']
+    |   72,080,338 bytes read, 10968 reviewed exception(s) waived
+    | PASSED — no unredacted cloud identifiers in 1098 scanned files.
+    rc=0
+    scanned 1098 files
+
+=== venv isolation
+    $ /Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python platform/build/check_venv_isolation.py
+    | PASSED — instruments unchanged, import direction held (8 observations)
+    | /Users/tmwu/Downloads/grx-validation/platform/build/csp_preview.py:40: SyntaxWarning: invalid escape sequence '\s'
+    |   if (!s || HAN.test(s) || s.split(/\s+/).length < 4) continue;   // 4+ words = prose, not a token
+    rc=0
+
+=== figure numeric check (result is data, not a gate)
+    $ /Users/tmwu/Downloads/grx-validation/.venv-figs/bin/python tools/whitepaper_figures.py --check
+    | FRESH — every figure's numbers match MANIFEST.json
+    rc=0
+
+=== build payload
+    $ /Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python platform/build/build_site_data.py --out /Users/tmwu/Downloads/grx-site-payload --clean --stamp 20260917T091155Z --figure-check-rc 0 --render-rc 0
+    |   4 media file(s) copied, missing none, render check rc 0
+    |   2 case(s) needed a series split at >= 16384 bytes
+    |   diagram verdict_pipeline: 17 boxes, 17 edges, not_measured 16, validated_in_part 1
+    |   diagram request_path: 21 boxes, 20 edges, contested 11, not_established 4, not_measured 3, validated_in_part 3
+    |   diagram closed_loop: 12 boxes, 13 edges, contested 7, not_measured 3, validated_in_part 2
+    |   architecture coverage 92 placed + 1 unplaced = 93 registered
+    rc=0
+
+=== SPA logic tests
+    $ node --test src/lib/**/*.test.ts
+    | ℹ pass 21
+    | ℹ fail 0
+    | ℹ cancelled 0
+    | ℹ skipped 0
+    | ℹ todo 0
+    | ℹ duration_ms 317.3795
+    rc=0
+    verified: 21 SPA test(s) actually ran
+
+=== build SPA at base /v/20260917T091155Z/
+    $ npm run build -- --base=/v/20260917T091155Z/
+    | rendering chunks...
+    | computing gzip size...
+    | dist/index.html                   2.02 kB │ gzip:   1.17 kB
+    | dist/assets/index-CRXcW8XF.css   16.02 kB │ gzip:   3.90 kB
+    | dist/assets/index-A-l6cUAg.js   445.21 kB │ gzip: 136.24 kB
+    | ✓ built in 367ms
+    rc=0
+    verified: index.html and the bundle both carry /v/20260917T091155Z/
+
+=== payload redaction gate (payload + built SPA)
+    $ /Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python platform/build/gate_payload.py --payload /Users/tmwu/Downloads/grx-site-payload --upload-list /var/folders/tj/b_8cr0tx1rjbn74zdt5rqxp00000gq/T/tmpmd7ftkpr.txt --also-scan /Users/tmwu/Downloads/grx-validation/site/dist
+    |   4 hit(s) INHERITED a reviewed exception from a named source:
+    |      cases/F5-7b.json:180 [private-ip] <- results/phase1/F5-7b.json: the same run-scoped RFC1918 CIDR as the producer and finding entries a
+    |      cases/F5-7b.json:219 [private-ip] <- results/phase1/F5-7b.json: the same run-scoped RFC1918 CIDR as the producer and finding entries a
+    |      cases/F5-7b.json:379 [private-ip] <- results/phase1/F5-7b.json: the same run-scoped RFC1918 CIDR as the producer and finding entries a
+    |      findings.json:191 [private-ip] <- results/FINDING-F5-7B.md: the RFC1918 CIDR of a VPC created and destroyed inside one run, named 
+    | PASSED — no unredacted cloud identifiers in 123 payload files.
+    rc=0
+
+=== site invariants (the site cannot claim what the artifacts do not support)
+    $ /Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python platform/build/check_site_invariants.py --payload /Users/tmwu/Downloads/grx-site-payload --dist /Users/tmwu/Downloads/grx-validation/site/dist
+    | PASSED — 57 site invariants hold over /Users/tmwu/Downloads/grx-site-payload
+    rc=0
+
+=== scenario curation gate
+    skipped: the payload contains no scenarios.json (the B2B/B2C lens has not been authored yet). Recorded in current.json under `gates_skipped`.
+
+=== architecture curation gate
+    $ /Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python /Users/tmwu/Downloads/grx-validation/platform/build/check_architecture.py
+    | OK: platform/curation/architecture.yaml: 3 diagram(s), 92 case(s) placed, 1 explicitly unplaced
+    rc=0
+
+=== caveat curation gate
+    $ /Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python /Users/tmwu/Downloads/grx-validation/platform/build/check_caveats.py
+    | caveats: OK — /Users/tmwu/Downloads/grx-validation/platform/curation/caveats.yaml agrees with the published silent set, every entry names its evidence, and no a
+    rc=0
+
+=== control curation gate (+ field-path re-introspection)
+    $ /Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python /Users/tmwu/Downloads/grx-validation/platform/build/check_controls.py --verify-field-paths
+    | === control curation gate
+    |     93 registered case(s), 91 live verdict(s), 36 case(s) carrying a restriction
+    |     50 detect path(s), 45 verified against a live service model, 5 declared unverifiable with a reason
+    | OK: 19 control(s) in controls.yaml
+    rc=0
+
+GATES PASSED — nothing uploaded (--confirm not given).
+  release would be v/20260917T091155Z/ with the root index.html flipped to it
+
+re-linked /Users/tmwu/Downloads/grx-validation/site/dist/data -> /Users/tmwu/Downloads/grx-site-payload for csp_preview.py
+NOTE: site/dist now holds a STAMPED build; `npm run build` in site/ restores the relative-base one used for local preview.

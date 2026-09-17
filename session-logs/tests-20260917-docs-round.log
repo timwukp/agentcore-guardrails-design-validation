@@ -1,0 +1,194 @@
+........................................................F............... [  3%]
+........................................................................ [  7%]
+..............................F......................................... [ 10%]
+........................................................................ [ 14%]
+........................................................................ [ 17%]
+.....................................................................F.. [ 21%]
+........................................................................ [ 24%]
+........................................................................ [ 28%]
+........................................................................ [ 32%]
+........................................................................ [ 35%]
+........................................................................ [ 39%]
+........................................................................ [ 42%]
+........................................................................ [ 46%]
+........................................................................ [ 49%]
+...................................................................s.... [ 53%]
+.......................s................................................ [ 57%]
+........................................................................ [ 60%]
+..................................F..................................... [ 64%]
+........................................................................ [ 67%]
+........................................................s............... [ 71%]
+........................................................................ [ 74%]
+.........sssssss........................................................ [ 78%]
+........................................................................ [ 81%]
+........................................................................ [ 85%]
+........................................................................ [ 89%]
+........................................................................ [ 92%]
+........................................................................ [ 96%]
+........................................................................ [ 99%]
+....                                                                     [100%]
+=================================== FAILURES ===================================
+______________________ test_every_cited_repo_path_exists _______________________
+
+    def test_every_cited_repo_path_exists():
+        anchors, suffixes = _anchors(), _suffixes()
+        docs = _docs()
+        dangling: list[str] = []
+        total = 0
+        citing_docs = 0
+        for doc in docs:
+            cites = _citations(doc.read_text(encoding="utf-8"), anchors, suffixes)
+            total += len(cites)
+            citing_docs += 1 if cites else 0
+            for tok in sorted(cites):
+                if tok not in ABSENT_BY_DESIGN and not (ROOT / tok).exists():
+                    dangling.append(f"  {doc.relative_to(ROOT)} cites `{tok}`")
+    
+        assert total >= MIN_CITATIONS and citing_docs >= MIN_DOCUMENTS, (
+            f"recognised only {total} citation(s) across {citing_docs} document(s), below the floor of "
+            f"{MIN_CITATIONS}/{MIN_DOCUMENTS}. The extractor has stopped matching, so this guard is "
+            f"reporting clean over prose it is not reading.")
+    
+>       assert not dangling, (
+            "these documents cite repo-relative paths that do not exist in the tree:\n"
+            + "\n".join(dangling)
+            + "\n\nA citation a reader cannot fetch is a claim with no evidence that reads exactly like "
+              "a claim with evidence. Note there are TWO directories named `session-logs/` — this "
+              "repo's and the outer ~/Downloads one — which is how this failed on 2026-08-20: the "
+              "cited file existed, in the wrong tree. Copy the artifact in, or stop citing it. If the "
+              "sentence's point is that the file does NOT exist — a specification, quoted output, or a "
+              "local-only runtime file — add it to ABSENT_BY_DESIGN with the reason.")
+E       AssertionError: these documents cite repo-relative paths that do not exist in the tree:
+E           FUTURE-WORK.md cites `platform/curation/scenarios.yaml`
+E           platform/SITE-REVIEW-20260822.md cites `platform/curation/scenarios.yaml`
+E         
+E         A citation a reader cannot fetch is a claim with no evidence that reads exactly like a claim with evidence. Note there are TWO directories named `session-logs/` — this repo's and the outer ~/Downloads one — which is how this failed on 2026-08-20: the cited file existed, in the wrong tree. Copy the artifact in, or stop citing it. If the sentence's point is that the file does NOT exist — a specification, quoted output, or a local-only runtime file — add it to ABSENT_BY_DESIGN with the reason.
+E       assert not ['  FUTURE-WORK.md cites `platform/curation/scenarios.yaml`', '  platform/SITE-REVIEW-20260822.md cites `platform/curation/scenarios.yaml`']
+
+claims/tests/test_cited_paths_exist.py:201: AssertionError
+_________ test_every_elided_hash_citation_resolves_to_a_derivable_hash _________
+
+    def test_every_elided_hash_citation_resolves_to_a_derivable_hash():
+        universe = _universe()
+        cites = _citations(_docs())
+        assert len(cites) >= MIN_CITATIONS, (
+            f"found {len(cites)} elided-hash citation(s), floor {MIN_CITATIONS}")
+        bad = []
+        for path, pre, suf in cites:
+            if f"{pre}…{suf}" in SUPERSEDED_HASHES:
+                continue
+            if not _matches(universe, pre, suf):
+                bad.append(f"{path.relative_to(ROOT)}: `{pre}…{suf}`")
+>       assert not bad, (
+            "elided sha256 citation(s) match no hash this repository can derive or has recorded:\n    "
+            + "\n    ".join(bad) +
+            "\n  Either the truncation is wrong (check both ends — an off-by-one at the END is the "
+            "defect this test was written for), the artefact is gone, or the value is genuinely "
+            "superseded and belongs in SUPERSEDED_HASHES with a reason.")
+E       AssertionError: elided sha256 citation(s) match no hash this repository can derive or has recorded:
+E             DEVIATIONS.md: `ebe77ed2…13f85ddf`
+E           Either the truncation is wrong (check both ends — an off-by-one at the END is the defect this test was written for), the artefact is gone, or the value is genuinely superseded and belongs in SUPERSEDED_HASHES with a reason.
+E       assert not ['DEVIATIONS.md: `ebe77ed2…13f85ddf`']
+
+claims/tests/test_hash_citations.py:168: AssertionError
+__________ test_every_dynamic_copy_source_is_declared_and_still_there __________
+
+    def test_every_dynamic_copy_source_is_declared_and_still_there():
+        """A source reached through a variable cannot be measured, so it is declared with a reason.
+    
+        Both directions: an undeclared dynamic copy is a hit, and a declaration whose file no longer
+        holds one is stale — an exemption that exempts nothing reads as diligence.
+        """
+        found: set[str] = set()
+        undeclared: list[str] = []
+        for p in _py_files():
+            rel_p = str(p.relative_to(ROOT))
+            for line, rel in _subtree_copy_sites(p.read_text(encoding="utf-8")):
+                if rel is not None:
+                    continue
+                found.add(rel_p)
+                if rel_p not in DYNAMIC_COPY_SOURCES:
+                    undeclared.append(f"{rel_p}:{line}")
+>       assert not undeclared, (
+            "these copy a tree whose source is not a literal under ROOT, so nothing can measure it; "
+            "declare it in DYNAMIC_COPY_SOURCES with what the source is:\n  "
+            + "\n  ".join(undeclared))
+E       AssertionError: these copy a tree whose source is not a literal under ROOT, so nothing can measure it; declare it in DYNAMIC_COPY_SOURCES with what the source is:
+E           platform/build/tests/test_check_site_invariants.py:110
+E           platform/build/tests/test_check_site_invariants.py:124
+E       assert not ['platform/build/tests/test_check_site_invariants.py:110', 'platform/build/tests/test_check_site_invariants.py:124']
+
+claims/tests/test_repo_copy_exclusions.py:411: AssertionError
+_____ test_a_write_in_a_results_module_is_masked_or_placed_outside_results _____
+
+    def test_a_write_in_a_results_module_is_masked_or_placed_outside_results():
+        """The runtime-target backstop, over the whole repo."""
+        unnamed = []
+        for path in _py_files():
+            rel = str(path.relative_to(ROOT))
+            for recv, line, masked in _unplaceable_writes(path):
+                if masked or (rel, recv) in NOT_A_RESULTS_TARGET or (rel, recv) in WAIVED:
+                    continue
+                unnamed.append(f"{rel}:{line}  {recv}.write_text(...)")
+>       assert not unnamed, (
+            "a module that writes into results/ has a write whose target this scan cannot place, "
+            "and it neither masks nor is named in NOT_A_RESULTS_TARGET:\n  " + "\n  ".join(unnamed))
+E       AssertionError: a module that writes into results/ has a write whose target this scan cannot place, and it neither masks nor is named in NOT_A_RESULTS_TARGET:
+E           platform/audit/report.py:573  path.write_text(...)
+E           platform/build/census_rendered_surfaces.py:651  out.write_text(...)
+E       assert not ['platform/audit/report.py:573  path.write_text(...)', 'platform/build/census_rendered_surfaces.py:651  out.write_text(...)']
+
+lib/tests/test_results_writes_are_masked.py:367: AssertionError
+=============================== warnings summary ===============================
+claims/tests/test_repo_copy_exclusions.py: 6 warnings
+lib/tests/test_account_id_choke_point.py: 1 warning
+lib/tests/test_cedar_resource_scope.py: 2 warnings
+lib/tests/test_definition_union_member.py: 3 warnings
+lib/tests/test_oracle.py: 1 warning
+lib/tests/test_probe_guardrail.py: 1 warning
+lib/tests/test_property_not_called.py: 1 warning
+lib/tests/test_rate_limits.py: 5 warnings
+lib/tests/test_results_writes_are_masked.py: 5 warnings
+lib/tests/test_scan_scope.py: 1 warning
+  <unknown>:40: SyntaxWarning: invalid escape sequence '\s'
+
+lib/tests/test_cedar_resource_scope.py: 2 warnings
+lib/tests/test_definition_union_member.py: 3 warnings
+lib/tests/test_oracle.py: 1 warning
+lib/tests/test_rate_limits.py: 5 warnings
+  <unknown>:109: SyntaxWarning: invalid escape sequence '\d'
+
+lib/tests/test_cedar_resource_scope.py: 2 warnings
+lib/tests/test_definition_union_member.py: 3 warnings
+lib/tests/test_oracle.py: 1 warning
+lib/tests/test_rate_limits.py: 5 warnings
+  <unknown>:110: SyntaxWarning: invalid escape sequence '\.'
+
+lib/tests/test_cedar_resource_scope.py: 2 warnings
+lib/tests/test_definition_union_member.py: 3 warnings
+lib/tests/test_oracle.py: 1 warning
+lib/tests/test_rate_limits.py: 5 warnings
+  <unknown>:107: SyntaxWarning: invalid escape sequence '\d'
+
+lib/tests/test_cedar_resource_scope.py: 2 warnings
+lib/tests/test_definition_union_member.py: 3 warnings
+lib/tests/test_oracle.py: 1 warning
+lib/tests/test_rate_limits.py: 5 warnings
+  <unknown>:108: SyntaxWarning: invalid escape sequence '\.'
+
+lib/tests/test_module_name_collisions.py::test_no_by_path_loader_registers_a_name_that_lib_owns
+lib/tests/test_module_name_collisions.py::test_every_loader_call_is_either_resolvable_or_listed_as_unresolvable
+lib/tests/test_module_name_collisions.py::test_every_loader_call_is_either_resolvable_or_listed_as_unresolvable
+lib/tests/test_module_name_collisions.py::test_every_loader_call_is_either_resolvable_or_listed_as_unresolvable
+lib/tests/test_module_name_collisions.py::test_a_shared_loader_name_always_points_at_the_same_source
+lib/tests/test_module_name_collisions.py::test_the_check_redaction_loader_no_longer_squats_the_redact_name
+  /Users/tmwu/Downloads/grx-validation/platform/build/csp_preview.py:40: SyntaxWarning: invalid escape sequence '\s'
+    if (!s || HAN.test(s) || s.split(/\s+/).length < 4) continue;   // 4+ words = prose, not a token
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED claims/tests/test_cited_paths_exist.py::test_every_cited_repo_path_exists
+FAILED claims/tests/test_hash_citations.py::test_every_elided_hash_citation_resolves_to_a_derivable_hash
+FAILED claims/tests/test_repo_copy_exclusions.py::test_every_dynamic_copy_source_is_declared_and_still_there
+FAILED lib/tests/test_results_writes_are_masked.py::test_a_write_in_a_results_module_is_masked_or_placed_outside_results
+4 failed, 2006 passed, 10 skipped, 76 warnings in 4083.96s (1:08:03)

@@ -31,7 +31,10 @@ its test suite is read as a count rather than as names, 38 is a one-machine meas
 vocabulary of an absolute one, and 39 is three media gates that turn out to share a single within-run
 assumption, and 40 is a spend record that has never been reconciled against a meter and whose stated
 method cannot see the spend measured that day. None of the four was found by review; each came from
-disbelieving a green — three greens and a zero.
+disbelieving a green — three greens and a zero. **41** was added on 2026-09-17 the same way, from the
+publish that shipped that explainer: the release's bytes are re-downloaded and re-scanned, while every
+header a reader's browser actually obeys is asserted from the CDK source and has never been read off a
+response.
 All are placed in the tier
 they belong to rather than appended, so the numbering is out of order on purpose. Nothing is renumbered
 once written, because other files cite these numbers.
@@ -1311,7 +1314,7 @@ each names its own remedy in its own failure message:
 | red | flagged site | the ledger the test itself names |
 |:---|:---|:---|
 | `lib/tests/test_results_writes_are_masked.py::test_a_write_in_a_results_module_is_masked_or_placed_outside_results` | `platform/audit/report.py:573`, `platform/build/census_rendered_surfaces.py:651` — two `write_text` targets the scan cannot place | `NOT_A_RESULTS_TARGET` |
-| `claims/tests/test_cited_paths_exist.py::test_every_cited_repo_path_exists` | `platform/SITE-REVIEW-20260822.md` cites `platform/curation/scenarios.yaml`, the user-gated view that was never built | `ABSENT_BY_DESIGN`, "if the sentence's point is that the file does NOT exist" |
+| `claims/tests/test_cited_paths_exist.py::test_every_cited_repo_path_exists` | `platform/SITE-REVIEW-20260822.md` **and this file, in the cell to the left** cite `platform/curation/scenarios.yaml`, the user-gated view that was never built — two sites, one missing path (the second was created by writing this table on 2026-09-16, which is worth recording rather than tidying away) | `ABSENT_BY_DESIGN`, "if the sentence's point is that the file does NOT exist" |
 | `claims/tests/test_hash_citations.py::test_every_elided_hash_citation_resolves_to_a_derivable_hash` | `DEVIATIONS.md: ebe77ed2…13f85ddf` resolves to no hash this repo can derive or has recorded | `SUPERSEDED_HASHES` |
 | `claims/tests/test_repo_copy_exclusions.py::test_every_dynamic_copy_source_is_declared_and_still_there` | `platform/build/tests/test_check_site_invariants.py:110` and `:124` | `DYNAMIC_COPY_SOURCES` |
 
@@ -1356,6 +1359,23 @@ says `0` is worse than a missing one, because an rc is written down precisely so
 without re-reading the log. The failure *names* are what that log is good for; the verdict lives in
 `gates-20260916-step5-rerun.log`, whose rc came straight from pytest. And the four reds in the table are
 **unchanged** — the fifth is recorded here as evidence for the item, not as a fifth entry.
+
+**And a third instance, 2026-09-17 — this time the arm itself was the blind spot.** Listing every
+`*/tests` on disk *with its depth* found two directories that had never been in `TEST_SPECS` at all:
+`platform/build/tests` (**378** arms) and `platform/audit/tests` (**57**). That is 435 arms outside the
+gate — more than the twelfth and thirteenth directories combined — and they include every
+mutation-checked refusal of `gate_payload.py` and `build_site_data.py`, which is to say the arms this
+project's publish path rests on. The check written to make the list honest could not see them: its
+`_on_disk()` globbed `*/tests` only, with a docstring explaining that the depth matched "the project
+layout the gate encodes" — true of the families, false of `platform/`. A hand-written list is a claim
+about the tree; a discovery pattern is the same claim one indirection further in
+(`feedback_discovery_pattern_is_a_claim`). Worse, the table at the top of this item was *produced by
+running `pytest platform/build/tests …` by hand*, so those arms were being read as evidence in the same
+breath as being absent from the gate. Fixed in this round: both directories are in `TEST_SPECS` and in
+the combined invocation (435 passed in 541 s, so the gate is ~9 min longer), `_on_disk()` walks two
+depths through the shared `scan_scope.out_of_scope` predicate, and two new arms hold the depth itself —
+one comparing the bounded walk against an unbounded `rglob`, one convicting the pattern this file
+shipped with, both mutation-checked with the unmutated tree as the control.
 
 **Closes when** all four are either fixed or carry a dated entry in the ledger their own message names,
 **and** the suite's expected red set is zero — not documented as four, because a documented red set is
@@ -1418,7 +1438,48 @@ re-pin when the narration is genuinely re-cut — or, if that is judged not wort
 says plainly that the bytes are self-consistent rather than stable, so a reader is not told a stronger
 thing than was measured.
 
----
+### 41. Every header a real reader's browser obeys is asserted from source and has never been read off a response
+
+**Found** 2026-09-17, while publishing release `v/20260917T091943Z/` and probing it. The publish path is
+strong about *bytes* and silent about *headers*, and the two are checked in completely different ways.
+
+Bytes: `publish_web.verify_served()` re-downloads both halves of the release out of the origin bucket,
+asserts set equality with what was built, and re-runs the redaction patterns over the fetched bytes. That
+is a real reading of a real artifact.
+
+Headers: three of them decide what a browser does with those bytes, and **not one is ever read back from
+a response**.
+
+| header | where it is set | where it is checked |
+|---|---|---|
+| `Content-Security-Policy` | a CloudFront `ResponseHeadersPolicy` in `platform/infra/lib/site-stack.ts` | a CDK test arm against the **synthesised template**, and `csp_preview.py`, which **parses the same source file** |
+| `Cache-Control` (`max-age=31536000, immutable` on `v/<stamp>/**`, `no-cache` on the two mutable objects) | `--cache-control` flags on the `s3 sync`/`s3 cp` calls in `upload()` | nothing |
+| the Lambda@Edge auth decision | `site-stack.ts` | a hand-run `curl`, recorded in a session log, not executed by any gate |
+
+So the CSP claim has two green checks that share one source: the stack file. `walk_release.py` then walks
+the release under that policy and counts zero violations — which is worth having, and is still a
+statement about a policy re-derived from the same TypeScript, served by a local Python server. If the
+deployed `ResponseHeadersPolicy` drifted from the source — a console edit, a partial deploy, a policy
+attached to the wrong behaviour — every one of those checks stays green and the page a reader loads is
+unprotected. Four checks over one assumption is one check (`feedback_verify_against_real_artifact`), and
+the immutable-caching claim in `publish_web.py`'s own docstring has no check at all.
+
+The reason this is a *deficiency* and not a scope decision is that the last mile is genuinely
+unwalkable from here and the middle is not. Every viewer request is authorized by a Lambda@Edge Cognito
+check on a pool with `mfa: REQUIRED`, and this platform must never create an account, so no scripted
+browser can fetch the object and read its headers. Today's three unauthenticated probes all returned
+`302` to the hosted UI, which proves the gate fails closed — and simultaneously proves why the object's
+headers cannot be seen: a redirect carries the redirect's headers.
+
+**Closes when** the deployed resources are read instead of the source that describes them: the
+`ResponseHeadersPolicy`'s `ContentSecurityPolicy` value fetched with `cloudfront
+get-response-headers-policy` and compared, character for character, against the parse of `site-stack.ts`
+(no browser and no session needed — this is one boto3 call, and it is the check that would have caught a
+console edit), plus an `s3api head-object` on one immutable and one mutable object asserting the
+`CacheControl` the publisher claims to have set. That covers everything except the viewer path itself,
+which closes only as a **dated** record: a human with the second factor loading the live page once and
+pasting the response headers into a log, which expires the next time the stack is deployed and should
+therefore be labelled with the release stamp it was read against.
 
 ## Tier 5 — citation hygiene, before anything is published
 

@@ -1,0 +1,84 @@
+{
+ "base": "http://127.0.0.1:8901/v/20260917T091943Z",
+ "routes": 13,
+ "locales": [
+  "en",
+  "zh-TW"
+ ],
+ "videos_read": 2,
+ "video_detail": {
+  "en /design": [
+   {
+    "src": "overview.en.mp4",
+    "readyState": 4,
+    "duration": 212.328,
+    "videoWidth": 1920,
+    "videoHeight": 1080,
+    "error": null,
+    "preload": "metadata",
+    "trackKind": "captions",
+    "trackLang": "en",
+    "cues": 10,
+    "firstCue": "This is the recommended end-to-end design for Amazon Bedrock AgentCore guardrail"
+   }
+  ],
+  "zh-TW /design": [
+   {
+    "src": "overview.zh.mp4",
+    "readyState": 4,
+    "duration": 205.608,
+    "videoWidth": 1920,
+    "videoHeight": 1080,
+    "error": null,
+    "preload": "metadata",
+    "trackKind": "captions",
+    "trackLang": "zh-TW",
+    "cues": 10,
+    "firstCue": "這是 Amazon Bedrock AgentCore guardrails 的端到端建議設計——但以不一樣的方式呈現: 裡面的每一條實踐,在被寫成建議之前,都"
+   }
+  ]
+ },
+ "verdict_contrast": {
+  "FALSE": {
+   "colour": "#d08a3e",
+   "background": "#10141a",
+   "ratio": 6.5,
+   "font_size": "11px",
+   "font_weight": "400",
+   "sample": "FALSE"
+  },
+  "INCONCLUSIVE": {
+   "colour": "#d086ab",
+   "background": "#10141a",
+   "ratio": 6.75,
+   "font_size": "11px",
+   "font_weight": "400",
+   "sample": "INCONCLUSIVE"
+  },
+  "RECORDED": {
+   "colour": "#8a7bd0",
+   "background": "#10141a",
+   "ratio": 5.12,
+   "font_size": "11px",
+   "font_weight": "400",
+   "sample": "RECORDED"
+  },
+  "TRUE": {
+   "colour": "#2fa19b",
+   "background": "#10141a",
+   "ratio": 5.89,
+   "font_size": "11px",
+   "font_weight": "400",
+   "sample": "TRUE"
+  }
+ },
+ "polly_disclosure": {
+  "en /design": "Amazon Polly): Ruth, a generative-engine voice, in English; Zhiyu, a neural-engine voice, in Chinese. Zhiyu is Mainland-Mandarin (cmn-CN) — Polly ships ",
+  "zh-TW /design": "Amazon Polly）：英文為 Ruth（generative 引擎）；中文為 Zhiyu（neural 引擎）。Zhiyu 是大陸普通話（cmn-CN）——Polly 完全沒有台灣華語的聲音——所以中文音軌的口音不是本平台選的語域，而是唯一存在的中文語音。 渲染已驗證可重現：整條管線（含語音合成）"
+ },
+ "csp_violations": {},
+ "problems": []
+}
+
+walked 13 route(s) x 2 locale(s), read 2 video element(s), measured 4 verdict colour(s) on screen
+OK — zero CSP violations, every video decoded and captioned at the element, every verdict colour clears AA on the surface it is drawn on

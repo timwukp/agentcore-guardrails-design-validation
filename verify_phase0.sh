@@ -84,7 +84,8 @@ TEST_SPECS=("claims/tests:423" "lib/tests:882" "f5_redteam/tests:720" \
             "f2_determinism/tests:34" "f3_efficacy/tests:268" \
             "f8_regional/tests:152" "f10_billing/tests:80" "infra/tests:79" \
             "runner/tests:94" "f9_failsecure/tests:106" "f1_config/tests:170" \
-            "tools/tests:48" "video/tests:8")
+            "tools/tests:48" "video/tests:8" \
+            "platform/build/tests:378" "platform/audit/tests:57")
 
 run_tests() {
   local rc=0
@@ -226,6 +227,20 @@ run_tests() {
   # arithmetic that item says nobody performs. The floor is 8, the count on the day it merged.
   # These arms bound the one part of the payload a reader watches rather than reads, including the
   # sentinel that fails when a scene's numbers stop coming from the payload.
+  # platform/build/tests:378 and platform/audit/tests:57 are the FOURTEENTH and FIFTEENTH, and they had
+  # been outside this gate since the day each was written — 435 arms, more than the twelfth and
+  # thirteenth directories combined, and by far the longest-standing instance of this defect. Found
+  # 2026-09-17 while documenting a publish, by listing every `*/tests` on disk WITH ITS DEPTH: the arm
+  # that catches a missing directory (claims/tests/test_verify_phase0_gates_every_test_directory.py)
+  # globbed `*/tests` only, so `platform/build/tests` and `platform/audit/tests` were invisible to the
+  # check written to make this list honest, for the same reason the list itself was wrong — a scope was
+  # narrowed for a good reason and nothing bounded what it excluded (feedback_guard_scope_is_a_claim).
+  # The glob there is `*/tests` + `*/*/tests` now, with a mutation arm over the depth.
+  # What was riding outside the gate is exactly the layer the publish trusts: the mutation-checked
+  # refusals of gate_payload.py and build_site_data.py, the three states of --figure-check-rc (where
+  # defaulting an unrun check to 0 would render as verified), and the audit report's two documents.
+  # Measured on the day they were added: 435 passed in 541.03 s, so this gate is ~9 min longer than the
+  # 1 h 24 min 16 s that FUTURE-WORK.md item 31 records for its twelve-directory run of 2026-08-17.
   for spec in "${TEST_SPECS[@]}"; do
     dir="${spec%%:*}"; floor="${spec##*:}"
     if [ ! -d "$dir" ]; then
@@ -249,7 +264,8 @@ run_tests() {
                   f2_determinism/tests/ f3_efficacy/tests/ \
                   f8_regional/tests/ f10_billing/tests/ infra/tests/ \
                   runner/tests/ f9_failsecure/tests/ f1_config/tests/ \
-                  tools/tests/ video/tests/ -q || rc=$?
+                  tools/tests/ video/tests/ \
+                  platform/build/tests/ platform/audit/tests/ -q || rc=$?
   return $rc
 }
 
