@@ -2,7 +2,7 @@
 
 Read this first if the session dropped. It is the shortest path back to the live state.
 
-## ⇢ RESUME HERE (2026-09-16): **the design is published on the site; 4 of the plan's 5 steps are MERGED, step 5 is the one open PR**
+## ⇢ RESUME HERE (2026-09-17): **all 5 plan steps are MERGED and the design is LIVE — release `v/20260917T091943Z/`, probed in a browser, and the probe is now a file**
 
 Plan: `~/.claude/plans/lovely-whistling-sphinx.md` — publish the end-to-end guardrails design with every
 practice hooked to the case that tested it. One PR per step, **and the user merges each one**. Landed so
@@ -15,15 +15,46 @@ far, all verified blob-by-blob after the merge rather than assumed
 | 2 | **#52** | 2026-08-25 | the closed-loop diagram, each hop coloured by what was measured |
 | 3 | **#53** | 2026-09-10 | the `/design` page itself — practice cards, evidence chips, both languages |
 | 4 | **#54** | 2026-09-16 | the bilingual narrated explainer, the media gate, and CSP `media-src 'self'` |
-| 5 | **#55** | *open — the user merges* | README / FUTURE-WORK(40) / bundle sync, and `video/tests` brought inside `verify_phase0.sh` |
+| 5 | **#55** | 2026-09-17 | README / FUTURE-WORK(40) / bundle sync, and `video/tests` brought inside `verify_phase0.sh` |
 
-`main` was `aab3c58eebfe` after #54 merged and **0 PRs were open** at the start of step 5; #55 is at
-`9c6dde53fcfc` on `docs/step5-register-bundle-and-gate` — but read all of that from the API, never from
-this line, for the reason the next paragraph gives.
+`main` was `a50bbed43012` after #55 merged, with **0 PRs open**; the documentation of the publish below
+is the next PR, and the user merges it. Read all of that from the API, never from this line, for the
+reason the next paragraph gives.
 
-**Still to do after #55 merges:** the publish and the live probe (step 5's second half). Both are
-outward-facing, so they wait for an explicit go, and `v/20260822T150443Z/` stays live until then. Then the
-three phase-chapter videos.
+**Step 5's second half is DONE — the design is live.** `platform/build/publish_web.py --confirm` ran all
+twelve gates at rc 0 (one skipped: the scenario lens is still unauthored), uploaded
+`v/20260917T091943Z/`, flipped the root pointer last, re-downloaded both halves of the release out of the
+origin and found them set-equal to what was built, and re-ran the redaction patterns over the *fetched*
+bytes at rc 0. `current.json` records `figure_check_rc 0`, `render_rc 0` and
+`manifest_sha256 ac598f65…`. No re-render was needed, so **no additional Polly spend**: the incremental
+cost is S3 PUTs plus one invalidation, cents. Full record:
+`session-logs/2026-09-17-step5-publish-and-live-probe.md`.
+
+**The probe is now an instrument, not a `/tmp` script.** `platform/build/walk_release.py` walks the
+published bytes at the published path in Chromium, both locales, under the CSP parsed out of the stack:
+13 routes × 2 locales, **0 CSP violations**, both explainer videos read *at the element*
+(`readyState 4`, 212.328 s / 205.608 s matching `media.json` to within 0.05 s, 1920×1080, 10 caption cues
+each), and the four verdict colours re-measured from `getComputedStyle` on the surface they are drawn on
+(5.12–6.75:1, all clearing AA). Three controls prove it discriminates: strip `media-src` → rc 1 with 6
+problems; raise the threshold to 7.0:1 → rc 1 with all four ratios; point it at a stamp that does not
+exist → rc 2 `CANNOT RUN`.
+
+**What no check here can see, filed as item 41:** the live viewer path. Every request is authorized by a
+Lambda@Edge Cognito check on a pool with `mfa: REQUIRED` and this platform must never create an account,
+so the CSP, the `Cache-Control` and the auth decision are all asserted from `site-stack.ts` and have
+never been read off a response. Today's three unauthenticated probes returned `302` to the hosted UI —
+the gate fails closed, and a redirect carries the redirect's headers.
+
+**Item 37 has a third instance, and it is the largest.** Listing every `*/tests` on disk **with its
+depth** found two directories that had never been in `TEST_SPECS`: `platform/build/tests` (**378** arms)
+and `platform/audit/tests` (**57**) — 435 arms outside the gate since the day each was written, including
+every mutation-checked refusal of `gate_payload.py` and `build_site_data.py`. The arm written to catch a
+missing directory could not see them: it globbed `*/tests` and these sit one level deeper. Both are gated
+now (435 passed in 541 s, so the gate is ~9 min longer), the discovery walks two depths through
+`scan_scope.out_of_scope`, and the depth limit itself is under test with two mutation arms.
+
+**Still to do:** the three phase-chapter videos. Item 41's cheap half (read the deployed
+`ResponseHeadersPolicy` and one `head-object`, instead of the source that describes them) is unclaimed.
 
 **Live state that is not in this file:** the site is deployed behind CloudFront and serves a versioned
 payload; the release pointer names the live version, and a publish only flips that pointer, so a failed
@@ -118,7 +149,7 @@ returned SHA differs from a locally computed `git hash-object`. No change was ne
   when the measured `chain.flip.http_status` is **202**, and plotted only day 2. All fixed.
 - **New result in the paper**: F5-2's `data_plane_reconvergence` — first denial 305.8 s / 325.0 s,
   three consecutive denials 326.4 s / 345.6 s, `n_that_were_still_authorized: 0`. §11.4.
-- **`FUTURE-WORK.md` is now 40 items** (was 21, then 22, then 28, then 31, then 35, then 36). Item 28 is figure 6's missing
+- **`FUTURE-WORK.md` is now 41 items** (was 21, then 22, then 28, then 31, then 35, then 36). Item 28 is figure 6's missing
   source; item 29 is the same-run_id roll-up overwrite found on 2026-08-16; item 30 is Tier 5's citation
   anchors, which had existed unnumbered since the tier was written; item 31 is the gate's runtime, which
   this file had stated three different ways — **rewritten 2026-08-17 from a timed run, because the
@@ -263,9 +294,10 @@ deficiencies. Research and design are done; drafting has not started.
   reproduction** — ACM reserves both *Reproduced* and *Replicated* for non-authors, so **no independent
   party has re-run anything here** — and our `TRUE/FALSE/INCONCLUSIVE/RECORDED` taxonomy has **no located
   precedent** and must be defined, not cited.
-- **`FUTURE-WORK.md`** — the deficiency list, **40 items** in 5 tiers, each with derived evidence
+- **`FUTURE-WORK.md`** — the deficiency list, **41 items** in 5 tiers, each with derived evidence
   (this paragraph was first written at 22; items 23–28 were added on 2026-08-15, items 29–30 on 2026-08-16,
-  items 32–35 on 2026-08-19, items 37–40 on 2026-09-16 from the explainer's own gates).
+  items 32–35 on 2026-08-19, items 37–40 on 2026-09-16 from the explainer's own gates, item 41 on
+  2026-09-17 from publishing it).
   Only the current count is stated as a count: a historical one cannot be derived, so it cannot be
   checked, and a reader has no way to tell it apart from a stale one.
   Item numbers are stable identifiers, not positions. **Tier-1 item 1 is CLOSED** (both prevention

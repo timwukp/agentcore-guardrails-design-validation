@@ -89,6 +89,7 @@ PY=/opt/homebrew/opt/python@3.12/bin/python3.12
 $PY platform/build/build_site_data.py --clean --render-rc <rc>  # derive the payload
 $PY platform/build/check_site_invariants.py --verbose           # the invariant harness
 $PY platform/build/csp_preview.py                              # serve dist/ under the real CSP
+$PY platform/build/walk_release.py --prefix /v/<stamp>         # walk a release in Chromium, both locales
 $PY video/render.py --verify                                   # render twice, require identical bytes
 ```
 
@@ -96,3 +97,11 @@ $PY video/render.py --verify                                   # render twice, r
 by whoever ran the renderer, and a missing one means *not verified*, never 0. `--verify` re-synthesizes
 from Polly deliberately — it deletes its own audio cache between the two renders — so each run bills two
 full passes and costs real money; `video/README.md` carries the measured spend.
+
+`walk_release.py` is the browser half of a publish, and it exists as a file because the probes before it
+did not: it reads what only a DOM can answer — CSP violations counted at the page, every `<video>`'s
+`readyState`/`duration` at the element and against `media.json`, the verdict colours from
+`getComputedStyle` rather than from the stylesheet — and it states in its own docstring what it cannot
+reach. The **live** distribution is not one of the things it walks: viewer requests need a Cognito
+session on a pool with MFA required, so the released bytes are walked at their own URL behind
+`csp_preview.py` and the viewer path stays unmeasured (`FUTURE-WORK.md` item 41).

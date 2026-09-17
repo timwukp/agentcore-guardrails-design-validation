@@ -1,0 +1,287 @@
+walk_release.py — the three controls, 2026-09-17, against release v/20260917T091943Z/
+
+Written by hand around captured output. Each control's rc was written with `echo $? > <file>` on the
+line after the process, NOT read through a pipe: the first attempt at this file used
+`${PIPESTATUS[0]}`, which zsh does not have (it is `$pipestatus[1]`), and recorded `control-1 rc=` —
+an empty exit code beside a page of real failures. That earlier partial capture is replaced here.
+
+A control is a claim that the probe DISCRIMINATES. Without them, `problems: []` is indistinguishable
+from a probe that looks at nothing.
+
+====================================================================================================
+CONTROL 1 — the same release served WITHOUT `media-src 'self'`
+
+The published CSP is parsed out of platform/infra/lib/site-stack.ts. /tmp/csp_mutant_server.py
+(source below) serves the identical site/dist tree on port 8902 under that policy MINUS the
+media-src directive, i.e. the CSP this stack shipped before PR #54. Expected: the mp4 and the vtt
+both blocked, MediaError code 4 at the element, in both locales, and a non-zero rc.
+
+$ walk_release.py --base http://127.0.0.1:8902 --prefix /v/20260917T091943Z
+
+--- csp_mutant_server.py --------------------------------------------------------------------------
+"""Positive control for walk_release.py: the SAME dist, served under the SAME policy MINUS
+`media-src 'self'`. If the probe's CSP and video arms are live, the two <video> elements must fail.
+The stack is not edited — the policy is parsed from it and one directive is dropped here.
+"""
+import functools, http.server, socketserver, sys
+sys.path.insert(0, "platform/build")
+import csp_preview
+
+csp = "; ".join(d for d in csp_preview.csp_from_stack().split("; ") if not d.startswith("media-src"))
+assert "media-src" not in csp and "default-src" in csp, csp
+print("serving under:", csp, flush=True)
+socketserver.TCPServer.allow_reuse_address = True
+handler = functools.partial(csp_preview.make_handler(csp), directory="site/dist")
+with socketserver.TCPServer(("127.0.0.1", 8902), handler) as httpd:
+    httpd.serve_forever()
+
+--- ctrl1.out -------------------------------------------------------------------------------------
+{
+ "base": "http://127.0.0.1:8902/v/20260917T091943Z",
+ "routes": 13,
+ "locales": [
+  "en",
+  "zh-TW"
+ ],
+ "videos_read": 2,
+ "video_detail": {
+  "en /design": [
+   {
+    "src": "overview.en.mp4",
+    "readyState": 0,
+    "duration": NaN,
+    "videoWidth": 0,
+    "videoHeight": 0,
+    "error": 4,
+    "preload": "metadata",
+    "trackKind": "captions",
+    "trackLang": "en",
+    "cues": 0,
+    "firstCue": null
+   }
+  ],
+  "zh-TW /design": [
+   {
+    "src": "overview.zh.mp4",
+    "readyState": 0,
+    "duration": NaN,
+    "videoWidth": 0,
+    "videoHeight": 0,
+    "error": 4,
+    "preload": "metadata",
+    "trackKind": "captions",
+    "trackLang": "zh-TW",
+    "cues": 0,
+    "firstCue": null
+   }
+  ]
+ },
+ "verdict_contrast": {
+  "FALSE": {
+   "colour": "#d08a3e",
+   "background": "#10141a",
+   "ratio": 6.5,
+   "font_size": "11px",
+   "font_weight": "400",
+   "sample": "FALSE"
+  },
+  "INCONCLUSIVE": {
+   "colour": "#d086ab",
+   "background": "#10141a",
+   "ratio": 6.75,
+   "font_size": "11px",
+   "font_weight": "400",
+   "sample": "INCONCLUSIVE"
+  },
+  "RECORDED": {
+   "colour": "#8a7bd0",
+   "background": "#10141a",
+   "ratio": 5.12,
+   "font_size": "11px",
+   "font_weight": "400",
+   "sample": "RECORDED"
+  },
+  "TRUE": {
+   "colour": "#2fa19b",
+   "background": "#10141a",
+   "ratio": 5.89,
+   "font_size": "11px",
+   "font_weight": "400",
+   "sample": "TRUE"
+  }
+ },
+ "polly_disclosure": {
+  "en /design": "Amazon Polly): Ruth, a generative-engine voice, in English; Zhiyu, a neural-engine voice, in Chinese. Zhiyu is Mainland-Mandarin (cmn-CN) — Polly ships ",
+  "zh-TW /design": "Amazon Polly）：英文為 Ruth（generative 引擎）；中文為 Zhiyu（neural 引擎）。Zhiyu 是大陸普通話（cmn-CN）——Polly 完全沒有台灣華語的聲音——所以中文音軌的口音不是本平台選的語域，而是唯一存在的中文語音。 渲染已驗證可重現：整條管線（含語音合成）"
+ },
+ "csp_violations": {
+  "en /design": [
+   "media-src http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.en.mp4 @",
+   "media-src http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.en.vtt @",
+   "media-src http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.en.mp4 @"
+  ],
+  "zh-TW /design": [
+   "media-src http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.zh.mp4 @",
+   "media-src http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.zh.vtt @",
+   "media-src http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.zh.mp4 @"
+  ]
+ },
+ "problems": [
+  "en /design: CSP violation(s) ['media-src http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.en.mp4 @', 'media-src http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.en.vtt @', 'media-src http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.en.mp4 @']",
+  "en /design: console error(s) ['error: Loading media from  \\'http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.en.mp4\\' violates the following Content Security Policy directive: \"default-src \\'none\\'\". Note that \\'media-src\\' was not explicitly set, so \\'default-src\\' is used as a fallback. The action has been blocked.', 'error: Loading media from  \\'http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.en.vtt\\' violates the following Content Security Policy directive: \"default-src \\'none\\'\". Note that \\'media-src\\' was not explicitly set, so \\'default-src\\' is used as a fallback. The action has been blocked.', 'error: Loading media from  \\'http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.en.mp4\\' violates the following Content Security Policy directive: \"default-src \\'none\\'\". Note that \\'media-src\\' was not explicitly set, so \\'default-src\\' is used as a fallback. The action has been blocked.']",
+  "en /design: overview.en.mp4 MediaError code 4",
+  "zh-TW /design: CSP violation(s) ['media-src http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.zh.mp4 @', 'media-src http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.zh.vtt @', 'media-src http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.zh.mp4 @']",
+  "zh-TW /design: console error(s) ['error: Loading media from  \\'http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.zh.mp4\\' violates the following Content Security Policy directive: \"default-src \\'none\\'\". Note that \\'media-src\\' was not explicitly set, so \\'default-src\\' is used as a fallback. The action has been blocked.', 'error: Loading media from  \\'http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.zh.vtt\\' violates the following Content Security Policy directive: \"default-src \\'none\\'\". Note that \\'media-src\\' was not explicitly set, so \\'default-src\\' is used as a fallback. The action has been blocked.', 'error: Loading media from  \\'http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.zh.mp4\\' violates the following Content Security Policy directive: \"default-src \\'none\\'\". Note that \\'media-src\\' was not explicitly set, so \\'default-src\\' is used as a fallback. The action has been blocked.']",
+  "zh-TW /design: overview.zh.mp4 MediaError code 4"
+ ]
+}
+
+walked 13 route(s) x 2 locale(s), read 2 video element(s), measured 4 verdict colour(s) on screen
+PROBLEMS — 6
+ - en /design: CSP violation(s) ['media-src http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.en.mp4 @', 'media-src http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.en.vtt @', 'media-src http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.en.mp4 @']
+ - en /design: console error(s) ['error: Loading media from  \'http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.en.mp4\' violates the following Content Security Policy directive: "default-src \'none\'". Note that \'media-src\' was not explicitly set, so \'default-src\' is used as a fallback. The action has been blocked.', 'error: Loading media from  \'http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.en.vtt\' violates the following Content Security Policy directive: "default-src \'none\'". Note that \'media-src\' was not explicitly set, so \'default-src\' is used as a fallback. The action has been blocked.', 'error: Loading media from  \'http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.en.mp4\' violates the following Content Security Policy directive: "default-src \'none\'". Note that \'media-src\' was not explicitly set, so \'default-src\' is used as a fallback. The action has been blocked.']
+ - en /design: overview.en.mp4 MediaError code 4
+ - zh-TW /design: CSP violation(s) ['media-src http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.zh.mp4 @', 'media-src http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.zh.vtt @', 'media-src http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.zh.mp4 @']
+ - zh-TW /design: console error(s) ['error: Loading media from  \'http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.zh.mp4\' violates the following Content Security Policy directive: "default-src \'none\'". Note that \'media-src\' was not explicitly set, so \'default-src\' is used as a fallback. The action has been blocked.', 'error: Loading media from  \'http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.zh.vtt\' violates the following Content Security Policy directive: "default-src \'none\'". Note that \'media-src\' was not explicitly set, so \'default-src\' is used as a fallback. The action has been blocked.', 'error: Loading media from  \'http://127.0.0.1:8902/v/20260917T091943Z/data/media/overview.zh.mp4\' violates the following Content Security Policy directive: "default-src \'none\'". Note that \'media-src\' was not explicitly set, so \'default-src\' is used as a fallback. The action has been blocked.']
+ - zh-TW /design: overview.zh.mp4 MediaError code 4
+
+--- ctrl1.rc --------------------------------------------------------------------------------------
+1
+
+====================================================================================================
+CONTROL 2 — the contrast threshold raised to 7.0:1 (WCAG AAA)
+
+The four verdict colours measured on screen are 5.12–6.75:1, which clears AA (4.5:1) and not AAA.
+Driving the same walk with inv.AA_CONTRAST monkey-patched to 7.0 must convict all four. This is
+the arm that proves the ratios are read from the page rather than reported from a constant.
+
+$ /tmp/ctrl2.py  (imports walk_release, patches check_site_invariants.AA_CONTRAST = 7.0)
+
+--- ctrl2.py --------------------------------------------------------------------------------------
+"""Control 2: the SAME clean release, with the contrast floor raised from 4.5 to 7.0.
+Every measured ratio is under 7, so a live comparison must report all four. If the arm reported
+nothing, the ratios would not be reaching any comparison at all.
+"""
+import sys
+sys.path.insert(0, "platform/build")
+import check_site_invariants as inv
+import walk_release
+inv.AA_CONTRAST = 7.0
+raise SystemExit(walk_release.main(["--prefix", "/v/20260917T091943Z"]))
+
+--- ctrl2.out -------------------------------------------------------------------------------------
+{
+ "base": "http://127.0.0.1:8901/v/20260917T091943Z",
+ "routes": 13,
+ "locales": [
+  "en",
+  "zh-TW"
+ ],
+ "videos_read": 2,
+ "video_detail": {
+  "en /design": [
+   {
+    "src": "overview.en.mp4",
+    "readyState": 4,
+    "duration": 212.328,
+    "videoWidth": 1920,
+    "videoHeight": 1080,
+    "error": null,
+    "preload": "metadata",
+    "trackKind": "captions",
+    "trackLang": "en",
+    "cues": 10,
+    "firstCue": "This is the recommended end-to-end design for Amazon Bedrock AgentCore guardrail"
+   }
+  ],
+  "zh-TW /design": [
+   {
+    "src": "overview.zh.mp4",
+    "readyState": 4,
+    "duration": 205.608,
+    "videoWidth": 1920,
+    "videoHeight": 1080,
+    "error": null,
+    "preload": "metadata",
+    "trackKind": "captions",
+    "trackLang": "zh-TW",
+    "cues": 10,
+    "firstCue": "這是 Amazon Bedrock AgentCore guardrails 的端到端建議設計——但以不一樣的方式呈現: 裡面的每一條實踐,在被寫成建議之前,都"
+   }
+  ]
+ },
+ "verdict_contrast": {
+  "FALSE": {
+   "colour": "#d08a3e",
+   "background": "#10141a",
+   "ratio": 6.5,
+   "font_size": "11px",
+   "font_weight": "400",
+   "sample": "FALSE"
+  },
+  "INCONCLUSIVE": {
+   "colour": "#d086ab",
+   "background": "#10141a",
+   "ratio": 6.75,
+   "font_size": "11px",
+   "font_weight": "400",
+   "sample": "INCONCLUSIVE"
+  },
+  "RECORDED": {
+   "colour": "#8a7bd0",
+   "background": "#10141a",
+   "ratio": 5.12,
+   "font_size": "11px",
+   "font_weight": "400",
+   "sample": "RECORDED"
+  },
+  "TRUE": {
+   "colour": "#2fa19b",
+   "background": "#10141a",
+   "ratio": 5.89,
+   "font_size": "11px",
+   "font_weight": "400",
+   "sample": "TRUE"
+  }
+ },
+ "polly_disclosure": {
+  "en /design": "Amazon Polly): Ruth, a generative-engine voice, in English; Zhiyu, a neural-engine voice, in Chinese. Zhiyu is Mainland-Mandarin (cmn-CN) — Polly ships ",
+  "zh-TW /design": "Amazon Polly）：英文為 Ruth（generative 引擎）；中文為 Zhiyu（neural 引擎）。Zhiyu 是大陸普通話（cmn-CN）——Polly 完全沒有台灣華語的聲音——所以中文音軌的口音不是本平台選的語域，而是唯一存在的中文語音。 渲染已驗證可重現：整條管線（含語音合成）"
+ },
+ "csp_violations": {},
+ "problems": [
+  "FALSE renders #d08a3e on #10141a = 6.50:1, under WCAG 2.1 SC 1.4.3's 7.0:1 for normal text",
+  "INCONCLUSIVE renders #d086ab on #10141a = 6.75:1, under WCAG 2.1 SC 1.4.3's 7.0:1 for normal text",
+  "RECORDED renders #8a7bd0 on #10141a = 5.12:1, under WCAG 2.1 SC 1.4.3's 7.0:1 for normal text",
+  "TRUE renders #2fa19b on #10141a = 5.89:1, under WCAG 2.1 SC 1.4.3's 7.0:1 for normal text"
+ ]
+}
+
+walked 13 route(s) x 2 locale(s), read 2 video element(s), measured 4 verdict colour(s) on screen
+PROBLEMS — 4
+ - FALSE renders #d08a3e on #10141a = 6.50:1, under WCAG 2.1 SC 1.4.3's 7.0:1 for normal text
+ - INCONCLUSIVE renders #d086ab on #10141a = 6.75:1, under WCAG 2.1 SC 1.4.3's 7.0:1 for normal text
+ - RECORDED renders #8a7bd0 on #10141a = 5.12:1, under WCAG 2.1 SC 1.4.3's 7.0:1 for normal text
+ - TRUE renders #2fa19b on #10141a = 5.89:1, under WCAG 2.1 SC 1.4.3's 7.0:1 for normal text
+
+--- ctrl2.rc --------------------------------------------------------------------------------------
+1
+
+====================================================================================================
+CONTROL 3 — a release stamp that does not exist
+
+A probe pointed at nothing must refuse to run rather than report zero problems over zero pages.
+Expected rc 2 (CANNOT RUN), which is distinct from rc 1 (walked, and found something wrong).
+
+$ walk_release.py --prefix /v/19990101T000000Z
+
+--- ctrl3.out -------------------------------------------------------------------------------------
+CANNOT RUN: cannot reach http://127.0.0.1:8901/v/19990101T000000Z/index.html (HTTPError). Start the preview first:
+    python3 platform/build/csp_preview.py --port 8901
+
+--- ctrl3.rc --------------------------------------------------------------------------------------
+2
+
+====================================================================================================
+SUMMARY — rc 1 / rc 1 / rc 2 against rc 0 for the real release (session-logs/walk-release-20260917.log).
+Three distinct failure modes, three distinct reports, and one of them is a refusal rather than a verdict.

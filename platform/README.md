@@ -59,6 +59,29 @@ there would be a window in which a fresh `index.html` requested assets that had 
 **The last check reads the bucket, not the local tree.** Gating what was built and trusting the upload
 would leave the difference unexamined. Step 11 fetches what S3 serves and re-gates it.
 
+And one check the publisher deliberately does not run: **`build/walk_release.py`**, the browser half.
+Every gate above reads bytes; a released page is also a *rendering*, and three things about it are
+invisible to any of them — whether the document raised a CSP violation, whether each `<video>` actually
+decoded (a `<video>` that decodes nothing shows its poster and reports no error), and what colour a
+verdict badge came out on screen rather than in the stylesheet. So it is run by hand after a publish,
+against the release's own path:
+
+```bash
+PY=/opt/homebrew/opt/python@3.12/bin/python3.12
+$PY platform/build/csp_preview.py --port 8901 &
+$PY platform/build/walk_release.py --prefix /v/<stamp>
+```
+
+It imports the route table from `census_rendered_surfaces.py` and the contrast arithmetic from
+`check_site_invariants.py` rather than restating either, calls `check_route_tables_agree()` itself, and
+carries three collapse floors (13 routes, 2 videos, 4 verdict colours) because a walk that found nothing
+otherwise reports as a clean run of nothing. It refuses to start against a server that answers without a
+`Content-Security-Policy` header, since zero violations under no policy would read as a pass.
+
+What it cannot reach is on the record in its docstring and in `FUTURE-WORK.md` item 41: the **live**
+distribution requires a Cognito session on a pool with `mfa: REQUIRED`, so what is walked is the
+release's own bytes under the CSP parsed from the stack, not the network in front of them.
+
 ## The four virtual environments
 
 They are not a packaging convenience. Two of them **are measurement instruments**: several F1 and F8
@@ -161,13 +184,22 @@ Current derivation: 11 families, 7 schedulable, 1 network-position sensitive.
 ## Tests
 
 ```bash
-.venv-oracle/bin/python -m pytest platform/build/tests -q     # 50 tests, ~30 s
+.venv-oracle/bin/python -m pytest platform/build/tests platform/audit/tests -q
+# 435 collected (378 + 57), 541 s measured 2026-09-17
 ```
 
-Two files, and they deliberately do not repeat the gates. `check_site_invariants.py` and
+**Both directories are behind `verify_phase0.sh` as of 2026-09-17, and neither was before it.** They had
+been outside the repo's own test gate since the day each was written — 435 arms, run by hand, reported
+green in pull requests, and never listed in `TEST_SPECS`. The arm that exists to catch exactly that
+(`claims/tests/test_verify_phase0_gates_every_test_directory.py`) could not see them either: it globbed
+`*/tests`, and these sit one level deeper. Both sides are derived at two depths now, with the depth limit
+itself under test. Recorded in `FUTURE-WORK.md` item 37, which is where the two earlier instances of the
+same gap are.
+
+They deliberately do not repeat the gates. `check_site_invariants.py` and
 `gate_payload.py` already assert properties of a finished payload on every publish; restating those
 assertions in a test would be a second copy of one policy with no second derivation behind it. What
-the tests cover is what only a test can reach:
+the tests cover is what only a test can reach — the two files carrying most of that reasoning:
 
 | File | What only a test can reach |
 |---|---|
@@ -191,7 +223,8 @@ which `F5-7b.json` is still foreign to `F5-7`.
 ### The SPA has no unit tests, and that is a stated gap
 
 `site/` is verified three ways, none of which is a unit test: `tsc -b --noEmit`, the two gates that read
-its built bytes (steps 7 and 8 above), and a Chromium walk-through. The walk is not a formality — it is
+its built bytes (steps 7 and 8 above), and a Chromium walk-through — `build/walk_release.py` for a
+release, `build/census_rendered_surfaces.py` for the translation census. The walk is not a formality — it is
 what found that the case page's heavy-series state survived a route change, so navigating from a case
 with five split series to a case with one made the second case's row read `MISSING` and hid its load
 button. `tsc` was clean, both gates were green, and no API assertion looks at two routes in sequence.
