@@ -80,11 +80,11 @@ gate() {
 # The list lives at file scope so that the gate's label can count it (`${#TEST_SPECS[@]}`)
 # rather than restate it. The per-floor rationale — one entry per bump, deliberately kept as
 # a record — is inside run_tests, immediately above the loop that reads this.
-TEST_SPECS=("claims/tests:423" "lib/tests:882" "f5_redteam/tests:720" \
+TEST_SPECS=("claims/tests:471" "lib/tests:992" "f5_redteam/tests:789" \
             "f2_determinism/tests:34" "f3_efficacy/tests:268" \
             "f8_regional/tests:152" "f10_billing/tests:80" "infra/tests:79" \
-            "runner/tests:94" "f9_failsecure/tests:106" "f1_config/tests:170" \
-            "tools/tests:48" "video/tests:8" \
+            "runner/tests:94" "f9_failsecure/tests:106" "f1_config/tests:175" \
+            "tools/tests:122" "video/tests:8" \
             "platform/build/tests:378" "platform/audit/tests:57")
 
 run_tests() {
@@ -241,6 +241,25 @@ run_tests() {
   # defaulting an unrun check to 0 would render as verified), and the audit report's two documents.
   # Measured on the day they were added: 435 passed in 541.03 s, so this gate is ~9 min longer than the
   # 1 h 24 min 16 s that FUTURE-WORK.md item 31 records for its twelve-directory run of 2026-08-17.
+  #
+  # SECOND RE-BASELINE, 2026-09-17. Adding lib/tests/test_argparse_help_strings.py meant raising one
+  # floor, and the honest way to raise one is to measure all fifteen. Five had drifted below their
+  # directory's yield again, 306 arms of slack in total, 298 of it older than this change:
+  #
+  #     claims/tests      423 -> 471   f5_redteam/tests  720 -> 789   f1_config/tests  170 -> 175
+  #     lib/tests         882 -> 992   tools/tests        48 -> 122
+  #
+  # tools/tests is the one to read twice: its floor was 48, the count on the day the directory was
+  # added, against 122 collected — so `test_sync_handover_bundle.py` (32 arms over the only tool that
+  # DELETES outside the repo) plus two more files could have been removed whole and this gate would
+  # have printed a pass. That is the same defect as the 2026-08-14 paragraph above, in the same list,
+  # for the third time, and its cause is written there: the floors are bumped one file at a time,
+  # which is the right discipline and is also exactly why they fall behind. The other ten sit at
+  # their measured yield.
+  #
+  # The floor comparison is `-ge`, so a floor set to today's exact count still lets a new arm land
+  # without editing this file; what it stops is a file disappearing. Any of these five could have
+  # been a rounding-error gap and instead they add up to more than the whole twelfth directory.
   for spec in "${TEST_SPECS[@]}"; do
     dir="${spec%%:*}"; floor="${spec##*:}"
     if [ ! -d "$dir" ]; then
