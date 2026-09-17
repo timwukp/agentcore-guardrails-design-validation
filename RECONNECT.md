@@ -15,15 +15,27 @@ far, all verified blob-by-blob after the merge rather than assumed
 | 2 | **#52** | 2026-08-25 | the closed-loop diagram, each hop coloured by what was measured |
 | 3 | **#53** | 2026-09-10 | the `/design` page itself — practice cards, evidence chips, both languages |
 | 4 | **#54** | 2026-09-16 | the bilingual narrated explainer, the media gate, and CSP `media-src 'self'` |
-| 5 | *this one* | — | README / FUTURE-WORK / bundle sync, then a publish and a live probe |
+| 5 | **#55** | *open — the user merges* | README / FUTURE-WORK(40) / bundle sync, and `video/tests` brought inside `verify_phase0.sh` |
 
-`main` was `aab3c58eebfe` after #54 merged and **0 PRs were open** at the start of step 5 — but read
-both from the API, never from this line, for the reason the next paragraph gives.
+`main` was `aab3c58eebfe` after #54 merged and **0 PRs were open** at the start of step 5; #55 is at
+`9c6dde53fcfc` on `docs/step5-register-bundle-and-gate` — but read all of that from the API, never from
+this line, for the reason the next paragraph gives.
+
+**Still to do after #55 merges:** the publish and the live probe (step 5's second half). Both are
+outward-facing, so they wait for an explicit go, and `v/20260822T150443Z/` stays live until then. Then the
+three phase-chapter videos.
 
 **Live state that is not in this file:** the site is deployed behind CloudFront and serves a versioned
 payload; the release pointer names the live version, and a publish only flips that pointer, so a failed
 gate must leave the previous version live. `--render-rc` / `--figure-check-rc` have **no default
 anywhere** — they are exit codes someone measured, and a missing one means *not verified*, never 0.
+
+**Item 37 came true the day it was written.** The step-5 gate run returned **5 failed** against a register
+that documents **4**, and the fifth was `video/tests` — 8 arms added by #54, run directly, reported green,
+merged, and never added to `verify_phase0.sh`. It surfaced only because the red set was diffed by NAME.
+Fixed in #55 (`"video/tests:8"`, the thirteenth gated directory). The wrapper that found it also recorded
+**rc 0** for that five-failure run because it ended in `| tail`, so that `.rc` was deleted rather than
+corrected — pytest's code for the run was never captured, and a file that says 0 is worse than none.
 
 **What step 5 found by re-reading its own greens**, all four filed rather than fixed in a publication
 PR: four gates have been red on `main` long enough that the suite is read as a count instead of by name
