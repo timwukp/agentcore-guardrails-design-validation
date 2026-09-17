@@ -2,7 +2,58 @@
 
 Read this first if the session dropped. It is the shortest path back to the live state.
 
-## ⇢ RESUME HERE (2026-08-16): **whitepaper v1 is DRAFTED with 7 of 8 figures; PRs #32 and #33 are MERGED; nothing is open**
+## ⇢ RESUME HERE (2026-09-16): **the design is published on the site; 4 of the plan's 5 steps are MERGED, step 5 is the one open PR**
+
+Plan: `~/.claude/plans/lovely-whistling-sphinx.md` — publish the end-to-end guardrails design with every
+practice hooked to the case that tested it. One PR per step, **and the user merges each one**. Landed so
+far, all verified blob-by-blob after the merge rather than assumed
+(`feedback_merged_pr_is_not_landed`):
+
+| step | PR | merged | what it added |
+|--:|:--|:--|:---|
+| 1 | **#50** | 2026-08-25 | the v1.4 design derived from the two documents, and `check_practices.py` gating every citation it makes |
+| 2 | **#52** | 2026-08-25 | the closed-loop diagram, each hop coloured by what was measured |
+| 3 | **#53** | 2026-09-10 | the `/design` page itself — practice cards, evidence chips, both languages |
+| 4 | **#54** | 2026-09-16 | the bilingual narrated explainer, the media gate, and CSP `media-src 'self'` |
+| 5 | **#55** | *open — the user merges* | README / FUTURE-WORK(40) / bundle sync, and `video/tests` brought inside `verify_phase0.sh` |
+
+`main` was `aab3c58eebfe` after #54 merged and **0 PRs were open** at the start of step 5; #55 is at
+`9c6dde53fcfc` on `docs/step5-register-bundle-and-gate` — but read all of that from the API, never from
+this line, for the reason the next paragraph gives.
+
+**Still to do after #55 merges:** the publish and the live probe (step 5's second half). Both are
+outward-facing, so they wait for an explicit go, and `v/20260822T150443Z/` stays live until then. Then the
+three phase-chapter videos.
+
+**Live state that is not in this file:** the site is deployed behind CloudFront and serves a versioned
+payload; the release pointer names the live version, and a publish only flips that pointer, so a failed
+gate must leave the previous version live. `--render-rc` / `--figure-check-rc` have **no default
+anywhere** — they are exit codes someone measured, and a missing one means *not verified*, never 0.
+
+**Item 37 came true the day it was written.** The step-5 gate run returned **5 failed** against a register
+that documents **4**, and the fifth was `video/tests` — 8 arms added by #54, run directly, reported green,
+merged, and never added to `verify_phase0.sh`. It surfaced only because the red set was diffed by NAME.
+Fixed in #55 (`"video/tests:8"`, the thirteenth gated directory). The wrapper that found it also recorded
+**rc 0** for that five-failure run because it ended in `| tail`, so that `.rc` was deleted rather than
+corrected — pytest's code for the run was never captured, and a file that says 0 is worse than none.
+
+**What step 5 found by re-reading its own greens**, all four filed rather than fixed in a publication
+PR: four gates have been red on `main` long enough that the suite is read as a count instead of by name
+(item 37); every determinism claim behind the explainer was measured on one machine, whose ffmpeg,
+Chromium and voice model are recorded nowhere (item 38); the three media gates share one within-run
+assumption, so **nothing here can detect a Polly voice-model change** (item 39); and this project's own
+spend has never been read off a meter, while the method `COST.md` states cannot see the spend that was
+measured on 2026-09-16 (item 40).
+
+**The Polly cost was published wrong twice** before it was measured — "≈$1.8" from a remembered
+character count, then "$0.121, counted rather than estimated" from an audio cache that `--verify`
+deliberately deletes between its two renders. The meter says **28,476 characters over 120 requests,
+$0.72–$0.77** (`session-logs/polly-spend-20260916-video.log`). PR #54's merged body still carries the
+$0.121; the repo does not.
+
+## ⇢ PREVIOUS BANNER (2026-08-16) — kept for its reasoning; superseded above by the publication work
+
+**Then:** whitepaper v1 is DRAFTED with 7 of 8 figures; PRs #32 and #33 are MERGED; nothing is open
 
 Session: `fd230f67-029c-480f-a070-54c1670fc4e4` —
 `claude --resume fd230f67-029c-480f-a070-54c1670fc4e4` from `/Users/tmwu/Downloads`.
@@ -67,7 +118,7 @@ returned SHA differs from a locally computed `git hash-object`. No change was ne
   when the measured `chain.flip.http_status` is **202**, and plotted only day 2. All fixed.
 - **New result in the paper**: F5-2's `data_plane_reconvergence` — first denial 305.8 s / 325.0 s,
   three consecutive denials 326.4 s / 345.6 s, `n_that_were_still_authorized: 0`. §11.4.
-- **`FUTURE-WORK.md` is now 36 items** (was 21, then 22, then 28, then 31, then 35). Item 28 is figure 6's missing
+- **`FUTURE-WORK.md` is now 40 items** (was 21, then 22, then 28, then 31, then 35, then 36). Item 28 is figure 6's missing
   source; item 29 is the same-run_id roll-up overwrite found on 2026-08-16; item 30 is Tier 5's citation
   anchors, which had existed unnumbered since the tier was written; item 31 is the gate's runtime, which
   this file had stated three different ways — **rewritten 2026-08-17 from a timed run, because the
@@ -212,9 +263,9 @@ deficiencies. Research and design are done; drafting has not started.
   reproduction** — ACM reserves both *Reproduced* and *Replicated* for non-authors, so **no independent
   party has re-run anything here** — and our `TRUE/FALSE/INCONCLUSIVE/RECORDED` taxonomy has **no located
   precedent** and must be defined, not cited.
-- **`FUTURE-WORK.md`** — the deficiency list, **36 items** in 5 tiers, each with derived evidence
+- **`FUTURE-WORK.md`** — the deficiency list, **40 items** in 5 tiers, each with derived evidence
   (this paragraph was first written at 22; items 23–28 were added on 2026-08-15, items 29–30 on 2026-08-16,
-  items 32–35 on 2026-08-19).
+  items 32–35 on 2026-08-19, items 37–40 on 2026-09-16 from the explainer's own gates).
   Only the current count is stated as a count: a historical one cannot be derived, so it cannot be
   checked, and a reader has no way to tell it apart from a stale one.
   Item numbers are stable identifiers, not positions. **Tier-1 item 1 is CLOSED** (both prevention
@@ -787,8 +838,8 @@ and the work is not continuing, run `infra/99_teardown.py --run` and confirm zer
 
 ## Money spent so far
 
-Still **under $2**, and the largest single line is now the runner rather than the experiments.
-Derived, not remembered:
+Still **under $2** — and as of 2026-09-16 the largest single line is **Amazon Polly**, not the runner
+and not the experiments. Derived, not remembered:
 
 | item | how it is priced | to date |
 |:---|:---|---:|
@@ -796,6 +847,19 @@ Derived, not remembered:
 | billable `tools/call` requests + span ingestion across F1–F7 | per request, all well under Cost Explorer's resolution | <$0.50 |
 | EC2 runner `t3.small`, us-east-1 | $0.0208/h; provisioned 2026-08-11, ≤19 h wall-clock since | ≤$0.40 |
 | runner root volume, 40 GB gp3 | $0.08/GB-month ⇒ $0.11/day | ≤$0.20 |
+| Amazon Polly, the `/design` explainer's narration | **28,476 characters over 120 `SynthesizeSpeech` requests**, read off CloudWatch `AWS/Polly` `RequestCharacters`; priced at $30/M generative + $16/M neural | **$0.72–$0.77** |
+| S3 PUT + CloudFront transfer for the published payload | a few hundred MB of one-off PUTs and egress | cents, not separately measured |
+
+Two things about the Polly row, because it is the one number here that was published wrong twice. It is
+read from the **meter**, not from the audio cache — `render.py --verify` deletes `video/out/audio`
+between its two renders on purpose, so each verification bills two full passes and the cache's contents
+bound nothing (`feedback_meter_not_artifact`). And it is an interval rather than a figure because
+CloudWatch's `AWS/Polly` metric has no engine dimension: 24,968 of those characters decompose into
+known en/zh passes and the remaining 3,508, from a superseded draft of the script, are bounded at both
+engines' rates. Cost Explorer will settle it exactly once its ~1-day lag clears —
+`session-logs/polly-spend-20260916-video.log` holds the measurement and its decomposition. **None of
+this appears in `COST.md`**, whose actuals are read by resource tag and whose method therefore cannot
+see a per-request API with no resource to tag: FUTURE-WORK item 40.
 
 The `t3.small` figure is a **ceiling**: EC2's `LaunchTime` resets on stop/start (the volume was grown
 from 20 GiB to 40 GB after DEV-P4-31), so uptime cannot be read off the current launch time and the

@@ -1,0 +1,14 @@
+repo    /Users/tmwu/Downloads/grx-validation: 42,872 files in scope for the bundle
+bundle  /Users/tmwu/Downloads/AgentCore-guardrails-closed-loop-practices
+  add    : 1
+    session-logs/bundle-sync-20260916-apply.rc
+  replace: 0
+  delete : 0
+
+MANIFEST.sha256: 42,882 entries; bundle holds 42,883 files, 252 MB (sum of file sizes; du reports more)
+
+⚠️  This bundle contains unredacted account ids, ARNs and bucket names under validation/evidence/ and validation/runner/.state/. Do not upload or attach it as-is.
+
+README numbers that no longer hold (fix the prose by hand, then re-run):
+  README.md:25 states 'sha256 of all 42,881 files' but the derived manifest is 42,882
+  README.md:253 states '**42,882 files, 252 MB**' but the derived inventory is 42,883, 252

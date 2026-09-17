@@ -120,16 +120,35 @@ coincidence.
 | `gate_payload.py` | rc 0, 123 payload files |
 | `check_venv_isolation.py` | rc 0, 8 observations |
 
-Cost: **$0.121** of Polly, all of it — 3 350 English characters on the generative engine at $30/M
-plus 1 231 Chinese characters on neural at $16/M. Counted, not estimated: `video/out/audio/` holds
-exactly **20** mp3 files, one per scene per language, so no request was ever billed twice. The cache
-key is the request, which is why the second render of a `--verify`, the failed Polly-timeout arm and
-every re-render since all cost nothing. No new AWS resources. Well under the repo's $95 ceiling.
+Cost: **28 476 characters over 120 `SynthesizeSpeech` requests**, every Polly call this explainer has
+ever made, which prices at **$0.72–$0.77**. Read off the meter — CloudWatch `AWS/Polly`
+`RequestCharacters`, `Operation=SynthesizeSpeech` — and logged with its decomposition in
+`polly-spend-20260916-video.log`. No new AWS resources. Well under the repo's $95 ceiling.
 
-A correction on the record: an earlier draft of this log and of `video/README.md` said "≈ $1.8" and
-"~6,300 characters per pass". Both were arithmetic on a remembered character count, off by roughly
-15×, and neither was derived until the numbers above were computed from the script and the cache. An
-estimate written in the voice of a measurement is the defect, not the size of the error.
+The decomposition is what makes it a measurement rather than a total. One pass of the final script is
+3 350 English characters (generative, $30/M) + 1 231 Chinese (neural, $16/M) = $0.0745, and the
+meter's three clusters resolve exactly into this session's history: 40 requests / 9 162 characters =
+two passes (verify run 1, both arms, which then failed at the mux compare); 66 requests / 15 806 =
+three passes plus six orphaned English scenes (verify run 2's arm b, killed by the Polly read
+timeout, then verify run 3's two arms); 14 requests / 3 508 against an earlier draft of the script.
+24 968 characters therefore have a known engine ($0.663) and only the superseded draft's 3 508 do
+not, so it is bounded at both rates ($0.056 all-neural … $0.105 all-generative) instead of guessed.
+Cost Explorer will settle it exactly once its ~1-day lag clears; today the same query returns no
+groups for September and two for August, which is how the query was shown to be right rather than the
+spend zero.
+
+**Two corrections on the record, because the second was worse reasoning than the first.** An earlier
+draft said "≈ $1.8" from a remembered character count. That was replaced by "**$0.121**, counted not
+estimated" — justified by "`video/out/audio/` holds exactly 20 mp3 files, so no request was ever
+billed twice". The justification is false and the number is 6× low. `render.py --verify` runs
+`shutil.rmtree(OUT / "audio")` between its two renders, commented `# force a second synthesis`: the
+cache is destroyed on purpose mid-run, so its final contents are one pass wide no matter how many
+passes were billed. The first error was arithmetic on a bad input; the second was a *derivation* from
+a local artifact for a quantity only a remote meter holds — and it shipped inside the phrase "counted
+rather than estimated", in the body of PR #54, which is merged and still carries it. A correction
+inherits no credibility from the error it replaces; this one is priced against the meter's own
+per-engine rates ($30/M and $16/M, both confirmed against Cost Explorer's August figures) rather than
+against anything in this tree.
 
 ## Deviations from the plan, on the record
 

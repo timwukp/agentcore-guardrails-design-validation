@@ -84,7 +84,7 @@ TEST_SPECS=("claims/tests:423" "lib/tests:882" "f5_redteam/tests:720" \
             "f2_determinism/tests:34" "f3_efficacy/tests:268" \
             "f8_regional/tests:152" "f10_billing/tests:80" "infra/tests:79" \
             "runner/tests:94" "f9_failsecure/tests:106" "f1_config/tests:170" \
-            "tools/tests:48")
+            "tools/tests:48" "video/tests:8")
 
 run_tests() {
   local rc=0
@@ -216,6 +216,16 @@ run_tests() {
   # during the window before the archive step), and `drop_snapshot` deletes that snapshot with
   # shutil.rmtree. A directory that silently stopped collecting would take the whole
   # snapshot-safety argument with it.
+  # video/tests:8 is the THIRTEENTH, and it arrived the same way the twelfth did, which is the part
+  # worth recording. PR #54 added the narrated explainer with its own suite, the suite was run
+  # directly (`pytest video/tests`, 8 passed) and reported green in the pull request, and nothing
+  # added it here — so its arms rode outside the gate through a merge. Found 2026-09-16 by
+  # claims/tests/test_verify_phase0_gates_every_test_directory.py again, and found only because the
+  # suite's red count was diffed by NAME: four inherited reds are documented in FUTURE-WORK.md
+  # item 37, this was the fifth, and "5 failed" against a remembered "4 failed" is exactly the
+  # arithmetic that item says nobody performs. The floor is 8, the count on the day it merged.
+  # These arms bound the one part of the payload a reader watches rather than reads, including the
+  # sentinel that fails when a scene's numbers stop coming from the payload.
   for spec in "${TEST_SPECS[@]}"; do
     dir="${spec%%:*}"; floor="${spec##*:}"
     if [ ! -d "$dir" ]; then
@@ -239,7 +249,7 @@ run_tests() {
                   f2_determinism/tests/ f3_efficacy/tests/ \
                   f8_regional/tests/ f10_billing/tests/ infra/tests/ \
                   runner/tests/ f9_failsecure/tests/ f1_config/tests/ \
-                  tools/tests/ -q || rc=$?
+                  tools/tests/ video/tests/ -q || rc=$?
   return $rc
 }
 

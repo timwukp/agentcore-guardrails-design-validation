@@ -29,6 +29,13 @@ broken venv), regenerated caches, `runner/.state/incoming/` (pull staging alread
 `results/`), `runner/.state/*.tar.gz` (snapshots of this very tree), and Office lock files. This
 script only makes that paragraph executable.
 
+One exclusion IS new policy, and is called out here rather than left to be discovered: this script's
+own run logs, `session-logs/bundle-sync-*`. They were being copied, and because the `.rc` is written
+after the scan, every `--apply` mirrored the previous run's verdict and left its own behind — measured
+as 42,881 → 42,882 → 42,883 files over three consecutive runs, each one failing `check_claims` on a
+README that had just been corrected to the number the run before it derived. A tool whose output lands
+in the tree it copies has no fixed point. The bundle README's *left out* paragraph gets this line too.
+
 It deliberately does **not** import `out_of_scope` from `lib/tests/scan_scope.py`, even though the
 two overlap on caches. That predicate answers *"is this file this repo's own source?"* and therefore
 excludes `evidence/` and `runner/.state/`; this one answers *"does this file belong in a local
@@ -80,9 +87,23 @@ MANIFEST = "MANIFEST.sha256"
 # Directory-name PREFIXES, so the next virtualenv is covered before it is created. This is the
 # lesson of `lib/tests/scan_scope.py`: a scope spelled as a set of names cannot notice a new name.
 EXCLUDED_DIR_PREFIXES: tuple[str, ...] = (".venv",)
-EXCLUDED_DIR_NAMES: frozenset[str] = frozenset({
-    ".git", "__pycache__", ".pytest_cache", "node_modules", ".wheel_cache",
-})
+EXCLUDED_DIR_NAMES: frozenset[str] = frozenset({".git", "node_modules"})
+# Tool caches are matched by SHAPE, never by name, for exactly the reason the prefix above exists.
+# Measured 2026-09-16: this set used to list `__pycache__`, `.pytest_cache` and `.wheel_cache`, and a
+# dry run put six `.ruff_cache/` files in the bundle's ADD list — a fourth tool's cache that no name in
+# a three-name set could notice, while the docstring above promised "regenerated caches" were left out.
+# So the promise is now the predicate: `__pycache__`, or a dot-directory whose name ends in `cache`.
+CACHE_DIR_RE = re.compile(r"^(__pycache__|\.[\w.-]*cache)$")
+
+# THIS SCRIPT'S OWN OUTPUT, which is why the mirror could not converge. Measured 2026-09-16: three
+# consecutive `--apply` runs reported 42,881 → 42,882 → 42,883 files, gaining exactly one every time,
+# and `check_claims` therefore failed on a README that had just been corrected. The cause is that the
+# run is logged to `session-logs/bundle-sync-*.log` / `.rc` inside the tree being copied: the scan
+# happens before the exit code is written, so each run mirrors the previous run's verdict and leaves
+# its own for the next one. A tool cannot include its own output in what it copies and also reach a
+# fixed point (`feedback_self_scanning_guard`). The logs stay in the repo as evidence; they are simply
+# not part of a hand-over snapshot, being telemetry about the copy rather than content.
+OWN_OUTPUT_GLOBS: tuple[str, ...] = ("session-logs/bundle-sync-*",)
 EXCLUDED_FILE_GLOBS: tuple[str, ...] = ("*.pyc", ".DS_Store", "~$*")
 
 RUNNER_STATE = Path("runner/.state")
@@ -118,12 +139,17 @@ def exclusion_reason(rel: Path) -> str | None:
     """Why `rel` (repo-relative file path) is not part of the bundle, or None if it belongs."""
     for part in rel.parts[:-1]:
         if part in EXCLUDED_DIR_NAMES:
-            return f"cache directory {part}/"
+            return f"excluded directory {part}/"
+        if CACHE_DIR_RE.match(part):
+            return f"regenerated cache {part}/"
         if any(part.startswith(p) for p in EXCLUDED_DIR_PREFIXES):
             return f"virtualenv {part}/ (absolute shebangs; a copied venv is broken)"
     for pattern in EXCLUDED_FILE_GLOBS:
         if fnmatch(rel.name, pattern):
             return f"transient file matching {pattern}"
+    for pattern in OWN_OUTPUT_GLOBS:
+        if fnmatch(rel.as_posix(), pattern):
+            return f"this script's own run log ({pattern}) — copying it prevents convergence"
     if rel.is_relative_to(RUNNER_STAGING):
         return "runner/.staging/ (not the sanctioned pull path; see .gitignore)"
     if rel.is_relative_to(RUNNER_STATE):

@@ -91,6 +91,7 @@ def test_these_belong_in_the_bundle(mod, rel):
     "lib/__pycache__/redact.cpython-312.pyc",
     ".pytest_cache/CACHEDIR.TAG",
     "f1_config/.wheel_cache/botocore-1.40.0.whl",
+    ".ruff_cache/0.8.6/12666854624992619223",
     "runner/.staging/20260813T000000Z/out/x.json",
     "runner/.state/incoming/20260812T130844Z/out/x.json",
     "runner/.state/evidence.tar.gz",
@@ -113,6 +114,56 @@ def test_the_evidence_tree_is_included_here_and_excluded_there(mod):
     rel = Path("evidence/r20260810T130945Z/f1/F1-26/summary.json")
     assert out_of_scope(rel) is True, "scan_scope must keep evidence out of a SOURCE scan"
     assert mod.exclusion_reason(rel) is None, "the bundle must keep evidence IN"
+
+
+def test_the_next_tool_cache_is_covered_before_that_tool_is_installed(mod):
+    """The cache scope is a SHAPE, and the name set may not carry a cache name.
+
+    Written after a dry run on 2026-09-16 put six `.ruff_cache/` files in the bundle's add list. The
+    set then held `__pycache__`, `.pytest_cache` and `.wheel_cache` — three names, and ruff's was the
+    fourth, so the bundle would have gained a lint cache while the module docstring said regenerated
+    caches were left out. Same defect as an enumerated virtualenv list, one directory family over.
+
+    Both directions, so neither half can rot: every cache shape is excluded, and the name set is
+    asserted to hold none of them — otherwise a future edit could "fix" a fifth cache by appending its
+    name and quietly restore the enumeration this replaced.
+    """
+    for name in ("__pycache__", ".pytest_cache", ".wheel_cache", ".ruff_cache", ".mypy_cache",
+                 ".cache", ".a-tool-nobody-has-installed-yet_cache"):
+        rel = Path("f1_config") / name / "some" / "artefact.bin"
+        assert mod.exclusion_reason(rel) is not None, rel
+    assert not [n for n in mod.EXCLUDED_DIR_NAMES if "cache" in n.lower()], (
+        f"a cache name is back in EXCLUDED_DIR_NAMES ({sorted(mod.EXCLUDED_DIR_NAMES)}) — the set is "
+        f"for directories that are not caches; CACHE_DIR_RE is where a cache belongs")
+    assert mod.exclusion_reason(Path("results/cache-behaviour-notes.md")) is None, (
+        "the shape must match a cache DIRECTORY, not any path containing the word")
+
+
+def test_the_mirror_does_not_copy_this_script_s_own_run_log(mod):
+    """Non-convergence, measured: 42,881 → 42,882 → 42,883 files over three consecutive `--apply` runs.
+
+    The runs were logged to `session-logs/bundle-sync-<stamp>.log` with the exit code echoed into a
+    sibling `.rc` afterwards, both inside the tree being mirrored. The scan happens before the `.rc`
+    exists, so run N copied run N-1's verdict and left its own for run N+1: the file count rose by
+    exactly one every time and `check_claims` failed on a README that had just been corrected to the
+    number the previous run derived. Excluding the script's own output is what gives the mirror a fixed
+    point (`feedback_self_scanning_guard`).
+
+    The second half is the one that matters. `session-logs/` is 90-odd records of how this platform was
+    built and is the bundle's narrative; excluding the whole directory to fix a four-file loop would
+    trade a wrong count for a missing archive, so an ordinary session log must still be included.
+    """
+    for rel in ("session-logs/bundle-sync-20260916-dryrun.log",
+                "session-logs/bundle-sync-20260916-apply.log",
+                "session-logs/bundle-sync-20260916-apply.rc",
+                "session-logs/bundle-sync-a-stamp-that-does-not-exist-yet.log"):
+        assert mod.exclusion_reason(Path(rel)) is not None, rel
+    for rel in ("session-logs/2026-09-16-video-pipeline-and-media-gate.md",
+                "session-logs/polly-spend-20260916-video.log",
+                "session-logs/2026-08-17-bundle-sync-and-drift.md"):
+        assert mod.exclusion_reason(Path(rel)) is None, (
+            f"{rel} is repo evidence, not this script's telemetry — the pattern is anchored at the "
+            f"start of the file name for that reason")
 
 
 def test_a_new_virtualenv_is_covered_before_it_is_created(mod):
