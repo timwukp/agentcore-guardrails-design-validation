@@ -1,0 +1,22 @@
+shasum -c MANIFEST.sha256 over the hand-over bundle, after PR #58 merged
+run  : 2026-09-18, cwd ~/Downloads/AgentCore-guardrails-closed-loop-practices
+
+Two runs, because the round took two shapes of the README. Both are recorded; the second is the one
+the README's own sentence claims.
+
+  run A  (after the post-#58 --apply, before the "No pull request is open" rewording)
+    OK lines : 42909
+    not-OK   : 0
+    rc       : 0
+
+  run B  (after the rewording + the two count fixes; FINAL)
+    OK lines : 42911
+    not-OK   : 0
+    rc       : 0
+
+Run B is what README.md now states: 0 mismatches over all 42,911 manifest entries, 42,912 files.
+
+The 2026-09-18 PRE-merge run (session-logs/bundle-shasum-20260918.log) had exactly one expected
+FAILED on ./README.md, because that manifest predated the hand-fix of the four stale numbers
+check_claims() had just reported. That is resolved: every --apply since rewrote the manifest over
+the fixed README, and both runs above are clean.
