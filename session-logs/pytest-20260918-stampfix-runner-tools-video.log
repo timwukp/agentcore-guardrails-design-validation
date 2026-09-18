@@ -1,0 +1,53 @@
+...........F.................sssss...................................... [ 25%]
+........................................................................ [ 51%]
+................sssssss................................................. [ 77%]
+.............................................................            [100%]
+=================================== FAILURES ===================================
+____ test_the_real_staging_tree_holds_nothing_the_live_tree_disagrees_with _____
+
+    def test_the_real_staging_tree_holds_nothing_the_live_tree_disagrees_with():
+        """Read-only over the actual pull, so a future re-merge cannot quietly find a conflict.
+    
+        `classify` does not write, so this arm is safe against the real archive. It is also the arm
+        that would notice if a staged record and its published counterpart ever diverged — which is
+        the situation the tool refuses to resolve on its own.
+        """
+        mod = _subject()
+        staged = mod.STAGING_ROOT / STAMP
+        if not staged.is_dir():
+            pytest.skip(f"{staged} is not on this machine")
+    
+        to_copy, identical, conflicts, refused = mod.classify(staged)
+>       assert conflicts == [], f"staged records disagree with the published ones: {conflicts[:5]}"
+E       AssertionError: staged records disagree with the published ones: [PosixPath('evidence/r20260810T130945Z/f6_latency/F6-1_3_4_9/analysis.json'), PosixPath('evidence/r20260810T130945Z/f6_latency/F6-1_3_4_9/environment.json'), PosixPath('evidence/r20260810T130945Z/f6_latency/F6-1_3_4_9/summary.json'), PosixPath('evidence/r20260810T130945Z/f6_latency/F6-2_5/analysis.json'), PosixPath('evidence/r20260810T130945Z/f6_latency/F6-2_5/environment.json')]
+E       assert [PosixPath('e...ummary.json')] == []
+E         
+E         Left contains 6 more items, first extra item: PosixPath('evidence/r20260810T130945Z/f6_latency/F6-1_3_4_9/analysis.json')
+E         Use -v to get more diff
+
+runner/tests/test_merge_evidence.py:231: AssertionError
+=============================== warnings summary ===============================
+runner/tests/test_runner_policy.py::test_the_tagged_create_scan_finds_a_non_trivial_number_of_sites
+runner/tests/test_runner_policy.py::test_a_newly_tagged_create_cannot_be_added_without_review
+  <unknown>:40: SyntaxWarning: invalid escape sequence '\s'
+
+runner/tests/test_runner_policy.py::test_the_tagged_create_scan_finds_a_non_trivial_number_of_sites
+runner/tests/test_runner_policy.py::test_a_newly_tagged_create_cannot_be_added_without_review
+  <unknown>:107: SyntaxWarning: invalid escape sequence '\d'
+
+runner/tests/test_runner_policy.py::test_the_tagged_create_scan_finds_a_non_trivial_number_of_sites
+runner/tests/test_runner_policy.py::test_a_newly_tagged_create_cannot_be_added_without_review
+  <unknown>:108: SyntaxWarning: invalid escape sequence '\.'
+
+runner/tests/test_runner_policy.py::test_the_tagged_create_scan_finds_a_non_trivial_number_of_sites
+runner/tests/test_runner_policy.py::test_a_newly_tagged_create_cannot_be_added_without_review
+  <unknown>:109: SyntaxWarning: invalid escape sequence '\d'
+
+runner/tests/test_runner_policy.py::test_the_tagged_create_scan_finds_a_non_trivial_number_of_sites
+runner/tests/test_runner_policy.py::test_a_newly_tagged_create_cannot_be_added_without_review
+  <unknown>:110: SyntaxWarning: invalid escape sequence '\.'
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED runner/tests/test_merge_evidence.py::test_the_real_staging_tree_holds_nothing_the_live_tree_disagrees_with
+1 failed, 264 passed, 12 skipped, 10 warnings in 876.27s (0:14:36)

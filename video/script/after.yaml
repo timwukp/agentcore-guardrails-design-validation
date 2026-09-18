@@ -1,0 +1,100 @@
+# Chapter three of the explainer set — the AFTER phase, narrated.
+#
+# The rules are `overview.yaml`'s and the chapter rules are `before.yaml`'s. What differs here is the
+# phase, and one thing worth naming: this is the phase the study has the least evidence about. The
+# narration says the count and lets the count say that, rather than asserting a comparison between
+# phases — a spoken "fewest of the three" would be a claim that expires the day a case is added to
+# this phase, with nothing able to convict it (`feedback_perishable_claim_cannot_be_checked`).
+
+video: after
+scenes:
+  - id: title
+    en: >-
+      Phase three of the recommended design: AFTER. {after_sections} checkpoints,
+      {after_practices} numbered practices, and {after_cases} test cases cited beneath them. This is
+      the phase that decides whether the design is a loop at all: what is evaluated after a response
+      is produced, what is watched once it is served, and what happens to the guardrails as a result.
+      This narration is synthesized speech, generated with Amazon Polly.
+    zh: >-
+      建議設計的第三階段:AFTER——事後。{after_sections} 個檢查點、
+      {after_practices} 條編號實踐,底下引用了 {after_cases} 個測試案例。
+      這一階段決定了這個設計到底算不算一個閉環:回應產生之後評估什麼、
+      送出之後觀測什麼,以及 guardrails 因此被怎麼改。
+      本旁白為合成語音,由 Amazon Polly 生成。
+
+  - id: where
+    en: >-
+      This is where the phase sits in the closed loop — and it is the part that closes it. The last
+      hop feeds back into the first, which is the difference between a closed loop and a pipeline
+      drawn in a circle. The boxes in focus are this chapter's, and each one is labelled with the kind
+      of thing the document prescribes it as.
+    zh: >-
+      這是本階段在閉環中的位置——而它就是把環閉上的那一段。
+      最後一跳回饋到第一跳,這正是「閉環」與「畫成圓形的流水線」之間的差別。
+      聚焦的方框屬於本章,每一個都標著文件把它規定成哪一類東西。
+
+  - id: checkpoints
+    en: >-
+      The checkpoints, in the document's own headings, with the practice count each one carries. This
+      phase is where a design most often stops being honest: an architecture that cannot change in
+      response to what its guardrails observed is an open loop wearing a closed loop's diagram, and
+      the practices here are the ones that would have to hold for it not to be.
+    zh: >-
+      檢查點,用的是文件自己的標題,右側是各自帶著的實踐數。
+      這一階段是設計最常不再誠實的地方:
+      一個無法因應 guardrails 觀測結果而改變的架構,只是畫著閉環圖的開環;
+      而這裡的實踐,就是「它不是開環」所必須成立的那些。
+
+  - id: status
+    en: >-
+      And here is the reason behind each colour, quoted from the build that derived it. Read them
+      with this phase's case count in mind: a colour derived from a small number of cases is still
+      derived, and it is still not the same claim as one standing on many. The build states which
+      cases each colour rests on, by identifier, every time.
+    zh: >-
+      接著是每一個顏色背後的理由,原文引用自推導它的那次建置。
+      請帶著本階段的案例數量來讀它們:
+      由少數案例推導出的顏色仍然是推導出來的,但它和站在許多案例上的那種主張並不相同。
+      建置每一次都會逐一列出:這個顏色靠的是哪些案例編號。
+
+  - id: evidence
+    en: >-
+      The evidence under the phase, counted over the distinct cases these checkpoints cite.
+      TRUE, {after_true}. FALSE, {after_false}. INCONCLUSIVE, {after_inconclusive}. Recorded
+      observations, {after_recorded}. {after_unpublished} cited with no published verdict, and
+      {after_restricted} carrying a restriction that colours nothing. The count is published per
+      phase, on the page, so where this study looked least is something a reader can see rather than
+      something we argue.
+    zh: >-
+      本階段底下的證據,是以這些檢查點引用的「不重複」案例來計數的。
+      TRUE,{after_true} 例。FALSE,{after_false} 例。INCONCLUSIVE,{after_inconclusive} 例。
+      純紀錄,{after_recorded} 例。{after_unpublished} 個被引用卻沒有已發佈的判定,
+      {after_restricted} 個帶著不為任何實踐上色的限制。
+      這個數字按階段分別發佈在頁面上,所以本研究看得最少的地方,是讀者自己能看見的,
+      不是我們論證出來的。
+
+  - id: basis
+    en: >-
+      How much of this phase rests on a citation of its own: {after_own} of the practices here carry
+      their own cases, and {after_inherited} inherit the evidence of the checkpoint they sit under.
+      The vocabulary also has a word for a practice this study never tested at all — not measured —
+      and the page draws it loudly rather than cleanly, because an untested recommendation shown in
+      the same neutral grey as a confirmed one is the failure this platform exists to avoid.
+    zh: >-
+      本階段有多少是靠自己的引用站著:{after_own} 條實踐帶著自己的案例,
+      另外 {after_inherited} 條繼承其所屬檢查點的證據。
+      這套詞彙也為「本研究從未測試過」的實踐留了一個詞——not measured——
+      而頁面刻意把它畫得醒目、不畫得乾淨:
+      把未測過的建議畫成和已確認者同一種中性灰,正是本平台存在要避免的那種失敗。
+
+  - id: verify
+    en: >-
+      All of it is on the design page, at the anchor for this phase's first checkpoint: the
+      document's own sentence, the measured status, the derived reason, and every case one click
+      away. This narration was synthesized with Amazon Polly — Ruth for English, and Zhiyu, a
+      Mainland Mandarin voice, for Chinese, because Polly ships no Taiwanese Mandarin voice at all.
+    zh: >-
+      以上全部都在設計頁上,位置是本階段第一個檢查點的錨點:
+      文件自己的句子、實測的狀態、推導出的理由,以及每一個案例——都只差一次點擊。
+      本旁白由 Amazon Polly 合成——英文為 Ruth;中文為 Zhiyu,一個大陸普通話語音,
+      因為 Polly 完全沒有台灣華語的聲音。

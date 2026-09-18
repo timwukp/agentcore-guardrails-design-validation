@@ -145,8 +145,12 @@ export interface AuthoredCaveat {
 
 export interface RegisterItem {
   n: number;
-  tier: string;
-  title: string;
+  /** `Authored`, from `platform/curation/register_zh.yaml`. Typed as `Authored | string` because a
+   *  fixture may still carry the bare string this field was until 2026-09-18; the builder refuses to
+   *  emit one, so through the payload the object is the only shape that arrives. */
+  tier: Authored | string;
+  title: Authored | string;
+  /** Still English, still bare — long-form prose, filed rather than half-translated. */
   body_md: string;
 }
 
@@ -974,6 +978,7 @@ export interface MediaFileHash {
 }
 
 export interface MediaTrack {
+  video?: string; // which script this track renders: overview | before | during | after
   language: string; // "en" | "zh" — the SCRIPT language, not a BCP 47 tag
   voice: string;
   engine: string;
@@ -987,8 +992,14 @@ export interface MediaTrack {
 export interface Media {
   present: { file: string; bytes: number; sha256: string; source: string }[];
   missing: string[];
+  // Every video the scripts define, and the subset one render pass actually produced. The page reads
+  // `videos` to decide where a player belongs; both are optional because a payload built before the
+  // chapters existed has neither, and is read as carrying the overview alone.
+  videos?: string[];
+  rendered_videos?: string[];
   tracks: MediaTrack[];
-  script_sha256?: string;
+  // Keyed by video since the render manifest covers all four; a bare string is an older manifest.
+  script_sha256?: Record<string, string> | string;
   payload_inputs?: Record<string, string>;
   render_platform?: string;
   verified_identical_renders?: boolean;

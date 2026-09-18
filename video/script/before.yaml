@@ -1,0 +1,104 @@
+# Chapter one of the explainer set — the BEFORE phase, narrated.
+#
+# Same rules as `overview.yaml`, and they are not repeated here in full: one bilingual source feeds
+# the synthesis AND the captions; `{placeholders}` are resolved from the payload at render time and
+# never typed; the Chinese is Traditional and is fed to Polly verbatim, on a cmn-CN voice, because
+# Polly ships no zh-TW voice at all.
+#
+# WHAT A CHAPTER MAY SAY THAT THE PAGE DOES NOT
+#
+# Nothing about a practice. The chapters name the phase, describe what a checkpoint IS, and read out
+# counts the payload derived; the practice sentences and the per-checkpoint reasons appear as frames
+# quoting the payload, never as narration. A spoken paraphrase would be a second wording of a
+# document this repository does not write, with no provenance but the wording — the rule
+# `results/CITATION-POLICY.md` sets for prose, applied to a soundtrack.
+#
+# The one authored thing here is topical: which KIND of checkpoint this phase holds. That is a
+# statement about the document's own structure, it carries no count and no verdict, and the frames
+# beside it show the actual headings from `practices.json` — so if the document reorganises, the
+# picture moves and this sentence is the thing a reviewer catches, not the number a reader trusts.
+
+video: before
+scenes:
+  - id: title
+    en: >-
+      Phase one of the recommended design: BEFORE a request reaches a model. {before_sections}
+      checkpoints, {before_practices} numbered practices, and {before_cases} test cases cited
+      beneath them. This is the phase where a request is authorized and inspected before anything
+      is spent on inference. This narration is synthesized speech, generated with Amazon Polly.
+    zh: >-
+      建議設計的第一階段:BEFORE——請求觸及模型之前。{before_sections} 個檢查點、
+      {before_practices} 條編號實踐,底下引用了 {before_cases} 個測試案例。
+      這一階段做的是:在任何推論成本發生之前,先授權並檢查請求。
+      本旁白為合成語音,由 Amazon Polly 生成。
+
+  - id: where
+    en: >-
+      This is where the phase sits in the closed loop. The faded boxes belong to the other two
+      phases, and the loop is drawn whole on purpose — from the same derived geometry the site
+      publishes, whose layout a build gate proves crossing-free. A phase shown by itself stops being
+      part of a loop, which is the one property this design is named for.
+    zh: >-
+      這是本階段在閉環中的位置。淡出的方框屬於另外兩個階段,而閉環刻意整張畫出——
+      用的是網站發佈的同一份推導幾何,其版面由建置閘證明零交叉。
+      單獨呈現的一個階段就不再是閉環的一部分,而閉環正是這個設計命名的由來。
+
+  - id: checkpoints
+    en: >-
+      The checkpoints themselves, in the document's own headings, with the number of practices each
+      one carries. The colour beside each is the status this platform measured — the same value the
+      design page shows, derived by the same build. It is not a judgement written for this video.
+    zh: >-
+      檢查點本身,用的是文件自己的標題,右側是各自帶著的實踐數。
+      每一列旁邊的顏色是本平台實測出的狀態——與設計頁顯示的是同一個值、由同一次建置推導。
+      它不是為這支影片寫下的評斷。
+
+  - id: status
+    en: >-
+      And here is the reason behind each colour, quoted from the build that derived it. The ordering
+      rule is that one citable FALSE outranks any number of TRUE verdicts, so a checkpoint with
+      several confirmations and one finding reads contested. Every sentence on this screen was
+      derived, not rewritten for this chapter.
+    zh: >-
+      接著是每一個顏色背後的理由,原文引用自推導它的那次建置。
+      排序規則是:一個可引用的 FALSE 壓過任何數量的 TRUE 判定,
+      因此一個有數項確認、一項發現的檢查點,顯示的是 contested。
+      這個畫面上的每一句話都是推導出來的,不是為這一章重寫的。
+
+  - id: evidence
+    en: >-
+      The evidence under the phase, counted over the distinct cases these checkpoints cite.
+      TRUE, {before_true}. FALSE, {before_false} — findings, the most valuable output this study
+      has. INCONCLUSIVE, {before_inconclusive}. Recorded observations, {before_recorded}.
+      {before_unpublished} are cited with no published verdict at all, and {before_restricted} carry
+      a restriction that colours nothing: examined, and still licensing no claim.
+    zh: >-
+      本階段底下的證據,是以這些檢查點引用的「不重複」案例來計數的。
+      TRUE,{before_true} 例。FALSE,{before_false} 例——這是發現,是本研究最有價值的產出。
+      INCONCLUSIVE,{before_inconclusive} 例。純紀錄,{before_recorded} 例。
+      其中 {before_unpublished} 個被引用卻完全沒有已發佈的判定,
+      另有 {before_restricted} 個帶著不為任何實踐上色的限制:檢驗過了,仍然不授權任何主張。
+
+  - id: basis
+    en: >-
+      How much of this phase rests on a citation of its own: {before_own} of the practices here
+      carry their own cases, and {before_inherited} inherit the evidence of the checkpoint they sit
+      under. Those are different strengths of claim, and the page keeps them apart on every card —
+      an inherited colour says this component has a finding, not that this sentence was tested.
+    zh: >-
+      本階段有多少是靠自己的引用站著:{before_own} 條實踐帶著自己的案例,
+      另外 {before_inherited} 條繼承其所屬檢查點的證據。
+      這是兩種強度不同的主張,頁面在每一張卡片上都把它們分開——
+      繼承來的顏色說的是「這個元件有發現」,不是「這一句話被測過」。
+
+  - id: verify
+    en: >-
+      All of it is on the design page, at the anchor for this phase's first checkpoint: the
+      document's own sentence, the measured status, the derived reason, and every case one click
+      away. This narration was synthesized with Amazon Polly — Ruth for English, and Zhiyu, a
+      Mainland Mandarin voice, for Chinese, because Polly ships no Taiwanese Mandarin voice at all.
+    zh: >-
+      以上全部都在設計頁上,位置是本階段第一個檢查點的錨點:
+      文件自己的句子、實測的狀態、推導出的理由,以及每一個案例——都只差一次點擊。
+      本旁白由 Amazon Polly 合成——英文為 Ruth;中文為 Zhiyu,一個大陸普通話語音,
+      因為 Polly 完全沒有台灣華語的聲音。

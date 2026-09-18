@@ -1441,6 +1441,17 @@ export const STRINGS = {
     "與本頁相同的論證，做成約 {min} 分鐘的旁白影片。影片顯示與唸出的每個數字，都是渲染時從本 payload 解析的；" +
       "畫面中的閉環，用的正是上方圖表的同一份推導幾何。",
   ],
+  // The three phase chapters, one at each phase head. The heading interpolates the phase token
+  // (BEFORE / DURING / AFTER) rather than naming the three phases in three key pairs: the token is
+  // payload vocabulary a reader greps for, and three hand-written headings would be three places for
+  // the fourth phase — should the document ever grow one — to be missing from.
+  "des.video.chapter.h": ["{phase}, narrated", "{phase} 階段的旁白影片"],
+  "des.video.chapter.lede": [
+    "This phase as {min} minutes of narrated video: where it sits in the closed loop, its checkpoints with the status this platform measured, the evidence under them counted over distinct cases, and how much of it rests on a citation of its own. Every number was resolved from this payload at render time; nothing in the narration paraphrases a practice.",
+    "本階段做成約 {min} 分鐘的旁白影片：它在閉環中的位置、各檢查點與本平台實測的狀態、" +
+      "以不重複案例計數的底層證據，以及其中有多少是靠自己的引用站著。影片中的每個數字都是渲染時從本 payload 解析的；" +
+      "旁白不對任何一條實踐做改寫轉述。",
+  ],
   "des.video.synth": [
     "The narration is synthesized speech (Amazon Polly): Ruth, a generative-engine voice, in English; Zhiyu, a neural-engine voice, in Chinese. Zhiyu is Mainland-Mandarin (cmn-CN) — Polly ships no Taiwanese-Mandarin voice at all — so the Chinese track's accent is not this platform's choice of register, it is the only Chinese voice there is.",
     "旁白為合成語音（Amazon Polly）：英文為 Ruth（generative 引擎）；中文為 Zhiyu（neural 引擎）。" +

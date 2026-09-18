@@ -1,0 +1,92 @@
+# The deficiency register in Chinese — the half `FUTURE-WORK.md` cannot yield.
+#
+# WHY THIS FILE EXISTS
+#
+# `registers.json` is derived from `FUTURE-WORK.md`, which is written in English, and its item titles
+# and tier headings render on `/register` in BOTH locales. So a zh-TW reader has been reading 46
+# sentences of this platform's own voice in a language they did not choose, under a banner that says
+# the English on this site is quoted evidence — which these are not. They are ours.
+#
+# `build_site_data.authored(en, zh)` already exists for exactly this and its comment names the
+# measurement: "the census at platform/census/ measures how many rendered authored strings are still
+# bare strings; that count is the backlog, and it is the one this shape is here to drive to zero."
+# The register was the largest single producer left in it.
+#
+# WHY IT IS A CURATION FILE AND NOT A SECOND COLUMN IN `FUTURE-WORK.md`
+#
+# Same reason as `architecture.yaml` and `practices.yaml`: the document is parsed, and a document that
+# has to carry its own translation in a shape the parser understands is a document whose format is now
+# a schema. `FUTURE-WORK.md` stays prose. This file carries only what the prose cannot yield, keyed by
+# the number the document itself assigns.
+#
+# WHY EVERY ITEM IS MANDATORY, STARTING NOW
+#
+# `derive_registers()` DIES if any item number or tier heading here has no translation. That is
+# deliberate and it is the only moment it is free: a field is mandatory for nothing once a writer
+# exists who did not fill it in (feedback_mandatory_field_timing). All 41 items are translated in the
+# commit that adds this file, so the next future-work item cannot land untranslated — which is exactly
+# how the last five got in, and how the ceiling came to be exceeded rather than lowered.
+#
+# WHAT A TRANSLATION HERE MAY NOT DO
+#
+# It may not soften. Several of these titles are this project convicting itself, and a translation
+# that reads as a caveat where the English reads as a defect is a second register. Terms with a
+# meaning inside this repository — the case ids, `run_id`, TRUE/FALSE/INCONCLUSIVE, tier numbers — stay
+# as they are, because they are identifiers, not words.
+
+tiers:
+  "Tier 1 — the paper is wrong or self-contradictory until these are fixed":
+    "第 1 級 —— 在這些修好之前,論文是錯的,或者自相矛盾"
+  "Tier 2 — structural gaps that make the paper unreviewable as science":
+    "第 2 級 —— 使這篇論文無法以科學標準受審的結構性缺口"
+  "Tier 3 — measurement debt":
+    "第 3 級 —— 量測債"
+  "Tier 4 — engineering debt that weakens the evidence chain":
+    "第 4 級 —— 削弱證據鏈的工程債"
+  "Tier 5 — citation hygiene, before anything is published":
+    "第 5 級 —— 發表任何東西之前的引用衛生"
+
+items:
+  1: "文件在只量到偵測的地方誇稱了防護 —— 而且自相矛盾"
+  2: "十二項修正建立在單一日曆日的資料上"
+  3: "F5-8 的第二日重跑有一個尚未診斷出原因的儀器故障"
+  4: "沒有一個明確命名的「效度威脅」章節"
+  5: "覆蓋率有主張,各項同時成立卻未被建立,而論文並沒有說出這件事"
+  6: "文件的主張裡有 10.4% 在原理上從來就無法量測"
+  7: "兩個章節的證據薄弱,而目前的呈現方式看不出這一點"
+  8: "完全沒有對外部框架的交叉對照"
+  9: "圖表與統計慣例沒有列出出處"
+  10: "F10-1 未經量測,而這個決定屬於使用者"
+  11: "F9-1 依它自己封存的判準無法測試"
+  12: "F5-3b 的判定為 TRUE,而且不可發表"
+  13: "F3-11 被日曆時間硬性擋住"
+  14: "供應商行為漂移已被承認,卻沒有為它建立任何量測"
+  15: "F5-8 沒有測試檔"
+  16: "`runner/sync.py pull` 的臭蟲 —— 連這個前提本身都未經驗證"
+  17: "過時的測試數量下限,刻意不動"
+  18: "F2-3 與 F2-4 沒有任何一筆證據記錄帶著它們自己的 case_id"
+  19: "我們稱它為再現(reproduction),而公認的術語稱它為重複性(repeatability)"
+  20: "這套判定分類是我們自己建的,找不到任何既有的前例"
+  21: "一個 GitHub commit 已經不足以滿足長期可取用的要求"
+  22: "重跑閘門並沒有去看那十二個仍欠一次重跑的案例"
+  23: "產生器可以把一個暫時性的 AWS 錯誤記成一次觀測,而已發表的判定中就有一個這樣做了"
+  24: "兩個已發表判定的呼叫紀錄只存在於 S3,受一條 90 天到期規則管制,會在 2026 年 11 月把它們刪掉"
+  25: "兩個已發表的 run id 無法從它們自己的名字判定日期"
+  26: "一個檢查點把 F10-3 被操弄過的那一臂標記成未被操弄"
+  27: "§3.4 對 Standard 層級的更正,引用了一次其實在講別件事的拒絕 —— 而證據其實支持文件寫下的那個上限"
+  28: "圖 6 畫不出來:OWASP Agentic 的 17 個威脅標題裡有 12 個沒有依據"
+  29: "第二次寫進同一個 run_id 會覆蓋掉第一天的各案例彙總,而唯一倖存的那一份只活在一個被 gitignore 的暫存目錄裡"
+  30: "這份研究自己的引用錨點至少錯過四次"
+  31: "作業手冊為自己的閘門寫下三個不同的執行時間,而它對外宣稱的那一個是從最慢的一段外推出來的"
+  32: "兩種封存判準在沒有決定性要求的情況下裁決同一個閾值,而三個判定因它翻面"
+  33: "第二日驅動程式的 `--run-id` 沒有被採用,於是它的觀測證明讀到一個空目錄,然後回報「未觀測到」"
+  34: "那道防止把失敗的探測算成觀測的防護,因三個彼此獨立的原因,漏掉了某次執行全部八個失敗的呼叫"
+  35: "遮蔽閘門連續五天讀過每一個已發表的位元組,卻看不見其中二十個檔案裡的帳號 ID,因為兩道防護都把這個識別碼錨在 `\\b` 上"
+  36: "文中引用的那個省略過的雜湊,現在已證明是一個真實存在的雜湊,卻仍未證明它是正確的那一個"
+  37: "閘門在 `main` 上紅了夠久,久到整套測試被當成一個數字在讀,而不是一組名字"
+  38: "解說影片背後的每一項決定性主張都只在一台機器上量過,而決定那些位元組的三個程式沒有被記錄下來"
+  39: "這個平台沒有任何東西能偵測到 Polly 語音模型的變更,因為媒體擁有的每一道檢查都在同一次執行之內"
+  40: "本專案自己的花費從來沒有從計量表上讀出來過,而它載明的方法看不到今天量到的那一部分"
+  41: "真實讀者的瀏覽器所遵守的每一個標頭,都是從原始碼斷言出來的,從來沒有從一個回應裡讀出來過"
+  42: "那個為翻譯上限把關的普查,在同一份未變動的原始樹上先紅後綠,而它的訊息指出的兩個原因都不成立"
+  43: "翻譯普查是拿原始 payload 文字去比對渲染後的文字,於是網站以 Markdown 渲染的每一個欄位對它來說都看不見——包括這份紀錄自己的正文"

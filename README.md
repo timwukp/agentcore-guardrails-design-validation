@@ -20,9 +20,9 @@ the data exists.
 | `DEVIATIONS.md`, `EXCLUSION_REGISTER.md` | Anything that departed from the pre-registration, dated and reasoned. |
 | `RECONNECT.md` | Live state; read first when resuming work. |
 | `check_redaction.py` | Release gate: no cloud identifiers in anything distributed. |
-| `platform/` | Everything that turns the record into something readable. `build/` derives the site payload and gates it (`build_site_data.py`, `check_site_invariants.py`, `publish_web.py`); `curation/` holds only the facts no script can derive — control vocabulary, citation policy, diagram topology — and never a verdict or a number; `audit/`, `census/`, `infra/` (CDK). |
+| `platform/` | Everything that turns the record into something readable. `build/` derives the site payload and gates it (`build_site_data.py`, `check_site_invariants.py`, `publish_web.py`); `curation/` holds only the facts no script can derive — control vocabulary, citation policy, diagram topology, and the Chinese half of the prose the English documents cannot yield (`register_zh.yaml`) — and never a verdict or a number; `audit/`, `census/`, `infra/` (CDK). |
 | `site/` | The published bilingual reader (`en` / `zh-TW`). Contains no measured number anywhere in its source: every count, verdict and interval it shows is read from the payload at runtime, so a stale figure is a build failure rather than a typo. |
-| `video/` | The narrated explainer embedded on `/design`. Amazon Polly → Chromium → three ffmpeg calls, rendered twice and required to be byte-identical. See `video/README.md`. |
+| `video/` | The four narrated explainers embedded on `/design` — an overview plus one chapter per phase (before / during / after), each bilingual. Amazon Polly → Chromium → three ffmpeg calls, rendered twice and required to be byte-identical, with the spoken numbers re-derived from the payload being gated so a video narrated against an older register cannot ship. See `video/README.md`. |
 | `tools/` | Off-platform instruments: `deckgen/` (the bilingual document reader the practice extractor is built on), `whitepaper_figures.py`, `api_push_incremental.py` / `api_push_pr.py` (this repo is pushed through the GitHub Git Data API), `repo_diff.py`, `sync_handover_bundle.py`, `day2_replicate.py`. |
 | `WHITEPAPER.md`, `WHITEPAPER-DESIGN.md` | The long-form write-up of what was measured, and the design rationale for how it is presented. |
 | `agentcore_guardrails_best_practices_v1.4[.zh-TW].md` | The design document as it now stands, in both languages. The site's `/design` page reads its 45 numbered practices, its 28-entry checklist and its inline case citations **out of these files** — no practice prose is authored in this repo, so if the document changes the page changes and the recorded hash says so. Note the pre-registration was sealed against **v1.2**: the register measures v1.2's claims, and v1.4 is what the design page publishes. |
@@ -32,7 +32,7 @@ the data exists.
 
 The reader gets two things: the **evidence** (a page per case, each carrying its verdict, its interval
 and its raw parameters) and the **design** (`/design` — the 45 practices, grouped by the six normative
-hops, with a topology diagram and a narrated explainer). The only reason to publish the design here
+hops, with a topology diagram and four narrated explainers). The only reason to publish the design here
 rather than anywhere else is the sentence *these practices were measured on this platform, and you can
 check* — so that sentence is a program, not a claim:
 
@@ -57,6 +57,17 @@ check* — so that sentence is a program, not a claim:
 
 Parity is a gate, not an intention: the two editions must carry the same practice ids and the same
 citation multiset, so a Chinese reader is never shown fewer links than an English one.
+
+**The same rule now binds the deficiency register.** `FUTURE-WORK.md` is English prose, and its 43 item
+titles and 5 tier headings render on `/register` in *both* locales — so until 2026-09-18 a zh-TW reader
+read this project's own self-conviction in a language they had not chosen, on a page whose banner says
+the English on it is quoted evidence. It is not quoted; it is ours. The Chinese lives in
+`platform/curation/register_zh.yaml`, keyed by the number the document itself assigns, and
+`derive_registers()` **dies** if any item or heading is missing from it or translates one the document no
+longer has. That refusal is the point rather than a courtesy: five items landed English-only on
+2026-09-17 and pushed the untranslated-surface count *above* its ceiling instead of down, and a field
+that is optional is a field that ships empty. The ceiling in `check_site_invariants.py` only ever falls —
+299 → **259** with this change.
 
 ## What is deliberately not here
 

@@ -51,7 +51,15 @@ import type { Practice, PracticeCase, PracticeRuling, Practices } from "../lib/t
  *  `check_architecture.py` fails the build on a view no diagram declares. */
 const VIEW = "design";
 
-/** The narrated overview, when this payload carries one.
+/** One narrated video, when this payload carries it: the overview under the diagram, and one chapter
+ *  at the head of each phase.
+ *
+ *  WHICH VIDEOS EXIST IS THE PAYLOAD'S ANSWER, NOT THIS FILE'S. `media.json` publishes `videos`,
+ *  derived by the builder from `video/script/*.yaml`, and a phase renders a player only if a video of
+ *  its own name is in that list. A component that decided for itself that three chapters exist would
+ *  show three "not rendered" panels on a payload built before they did, which is a page inventing an
+ *  absence (`feedback_scope_as_namelist`); and a payload gaining a fifth script gets its section here
+ *  by being asked for, not by this list being edited.
  *
  *  Three states, and the page says which it is in rather than letting them share a look: the video
  *  plays; the video was never rendered into this payload (`media.json` says so — an absent video and
@@ -66,26 +74,39 @@ const VIEW = "design";
  *  `render_check` is trusted only at 0 AND with the manifest's own `verified_identical_renders` flag —
  *  the rc is measured by whoever ran the double render and recorded verbatim by the builder, so null
  *  renders as "unverified", never as fresh (the `--figure-check-rc` rule, second producer). */
-function Explainer() {
+function Explainer({ video = "overview", phase }: { video?: string; phase?: string }) {
   const res = useAsync(loadMedia, []);
   const { locale } = useLocale();
   const t = useT();
   if (res.state === "loading") return null;
   if (res.state === "error") return <ErrorPanel error={res.error} />;
   const m = res.data;
+  // An older payload predates the per-video list; it carried the overview and nothing else, so that
+  // is what it is read as, rather than being treated as a payload owing three chapters it never knew
+  // about. `videos` is emitted unconditionally by the current builder.
+  const videos = m.videos ?? ["overview"];
+  if (!videos.includes(video)) return null;
   const lang = locale === "zh-TW" ? "zh" : "en";
   const have = new Set(m.present.map((p) => p.file));
-  const mp4 = `overview.${lang}.mp4`;
-  const vtt = `overview.${lang}.vtt`;
-  const track = m.tracks.find((x) => x.language === lang);
+  const mp4 = `${video}.${lang}.mp4`;
+  const vtt = `${video}.${lang}.vtt`;
+  // Matched on BOTH keys. Seven scene ids are shared by all four videos, so a track found by language
+  // alone would caption this player with another video's duration and still look right.
+  const track = m.tracks.find((x) => x.language === lang && (x.video ?? "overview") === video);
   const verified = m.render_check === 0 && m.verified_identical_renders === true;
+  const heading = phase
+    ? t("des.video.chapter.h", { phase })
+    : t("des.video.h");
   return (
     <section className="desvideo">
-      <h3>{t("des.video.h")}</h3>
+      {phase ? <h5>{heading}</h5> : <h3>{heading}</h3>}
       {have.has(mp4) && track ? (
         <>
           <p className="deswhy">
-            {t("des.video.lede", { min: Math.max(1, Math.round(track.duration_s / 60)) })}
+            {t(phase ? "des.video.chapter.lede" : "des.video.lede", {
+              min: Math.max(1, Math.round(track.duration_s / 60)),
+              phase: phase ?? "",
+            })}
           </p>
           <video controls preload="metadata" src={mediaUrl(mp4)}>
             {have.has(vtt) ? (
@@ -361,6 +382,11 @@ export default function DesignView() {
                 }}
               />
             </h4>
+            {/* The chapter for this phase, at its head — the position plan §4 asks for, so a reader
+                arriving at a phase anchor meets the narration for THAT phase and not a four-video
+                gallery. `video` is the phase token lowercased, which is the name its script carries;
+                `Explainer` renders nothing when the payload's own video list has no such name. */}
+            <Explainer video={phase.toLowerCase()} phase={phase} />
             {sections.map((s) => {
               const heading = authored(s.heading);
               const why = authored(s.why_this_status);

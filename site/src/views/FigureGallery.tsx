@@ -18,7 +18,7 @@
 
 import { Link } from "react-router-dom";
 import { figureUrl, loadFigures, loadRegisters } from "../lib/data";
-import { useT, VerbatimNote } from "../lib/i18n";
+import { A, useT, VerbatimNote } from "../lib/i18n";
 import { ErrorPanel, Loading, RawJson, useAsync } from "../components/ui";
 
 function FreshnessBadge({ rc }: { rc: number | null }) {
@@ -79,7 +79,10 @@ export default function FigureGallery() {
                 (it) =>
                   it.body_md.includes(key) ||
                   it.body_md.includes(key.replace(/^fig-0?/, "figure ")) ||
-                  it.title.includes(key),
+                  // The ENGLISH title: `fig-06` is an identifier and stays English in both, but the
+                  // title is now `Authored`, and searching a translated sentence for it would make
+                  // which items a figure links to depend on the reader's locale.
+                  (typeof it.title === "string" ? it.title : it.title.en).includes(key),
               )
             : [];
         return (
@@ -107,7 +110,7 @@ export default function FigureGallery() {
                       <span key={it.n}>
                         {n ? ", " : ""}
                         <Link to="/register">
-                          {t("reg.item", { n: it.n })} — <span lang="en">{it.title}</span>
+                          {t("reg.item", { n: it.n })} — <A v={it.title} />
                         </Link>
                       </span>
                     ))}

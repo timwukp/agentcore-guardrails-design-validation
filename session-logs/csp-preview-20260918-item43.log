@@ -1,0 +1,14 @@
+/Users/tmwu/Downloads/grx-validation/platform/build/csp_preview.py:40: SyntaxWarning: invalid escape sequence '\s'
+  if (!s || HAN.test(s) || s.split(/\s+/).length < 4) continue;   // 4+ words = prose, not a token
+Traceback (most recent call last):
+  File "/Users/tmwu/Downloads/grx-validation/platform/build/csp_preview.py", line 160, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/Users/tmwu/Downloads/grx-validation/platform/build/csp_preview.py", line 149, in main
+    with socketserver.TCPServer(("127.0.0.1", args.port), handler) as httpd:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 457, in __init__
+    self.server_bind()
+  File "/opt/homebrew/Cellar/python@3.12/3.12.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py", line 478, in server_bind
+    self.socket.bind(self.server_address)
+OSError: [Errno 48] Address already in use

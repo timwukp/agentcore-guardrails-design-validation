@@ -34,7 +34,15 @@ method cannot see the spend measured that day. None of the four was found by rev
 disbelieving a green — three greens and a zero. **41** was added on 2026-09-17 the same way, from the
 publish that shipped that explainer: the release's bytes are re-downloaded and re-scanned, while every
 header a reader's browser actually obeys is asserted from the CDK source and has never been read off a
-response.
+response. **42** was added on 2026-09-18 from the same habit applied to a *red*: the browser census failed
+once and passed once on an unchanged tree, and the interesting part was not the flake but that its message
+named two causes which were both false, in a gate that is the only ledger the translation ceiling can
+count against. **43** was added on 2026-09-18 as a by-product of asking what adding an item costs: the
+answer is *nothing*, because the census matches raw payload text against rendered text and every `body_md`
+this site renders as Markdown fails that test — 115,067 characters of this file's own prose, dropped as
+"reaches no reader" while reaching every reader. The first explanation written for it (a collapsed
+`<details>`) was **wrong**, and is recorded in the item alongside the evidence that killed it, because a
+correction inherits no credibility from the error it replaces.
 All are placed in the tier
 they belong to rather than appended, so the numbering is out of order on purpose. Nothing is renumbered
 once written, because other files cite these numbers.
@@ -819,11 +827,40 @@ housekeeping idea — **so that cleanup, executed as stated, destroys the only c
 case's day-1 aggregates.** Nobody would have noticed: the live tree looks complete, and the gate reads
 call records.
 
-**Closes when.** (a) The eight conflicts are resolved by hand — the honest resolution is to keep both
+**The prediction landed, in a second family — re-measured 2026-09-18.** `classify()` over the same
+staging tree now reports **17** conflicts, not 8. The nine new ones are `f6_latency/F6-1_3_4_9/`,
+`F6-2_5/` and `F6-6_7_8/`, each with the same three roll-up files, and the mechanism is identical:
+the f6 day-2 work re-ran the producer into `r20260810T130945Z` again, on **2026-08-19**, and the
+per-case aggregates were rewritten while the sequence-numbered call records simply accumulated.
+The staged copies are the 2026-08-11 originals, and they differ substantively, not cosmetically:
+`environment.json` is stamped `2026-08-11T17:56:34Z` against the live `2026-08-19T03:53:57Z` and
+records `macOS-26.6-arm64` against the live `macOS-26.6.1-arm64` — a machine that was patched between
+the two runs; `summary.json` for `F6-1_3_4_9` holds **8** calls against the live **2012**;
+`analysis.json`'s `cedar_only.authz_ms.ci_p50` reads `55 [54, 56] (n=1000)` against the live
+`59 [58, 60] (n=1000)`, and its `blocked_ms.ci_p50` `817.9 [810.4, 826.7] (n=455)` against
+`758 [749.9, 767.1] (n=457)`. Both are real measurements of different days on a differently patched
+OS, and **which one a published F6 figure should rest on is exactly the question issue #37 is waiting
+on**, so nothing here picks a winner. What this item records is that remedy (b) was not done, and the
+defect therefore recurred in the family where the interval *is* the finding.
+
+**A second red half of the same arm, never recorded until now: `refused` is 300.**
+`test_the_real_staging_tree_holds_nothing_the_live_tree_disagrees_with` also asserts
+`refused == []`, and it has never been true for this tree. The staged pull carries a whole
+`results/` alongside `evidence/` — 182 `results/checkpoints/`, 77 `results/phase1/`, 19
+`results/quarantine/` and 22 top-level findings — and `classify()` refuses everything outside
+`evidence/` by design. Those files landed on **2026-08-13 02:25** and none has changed since
+2026-08-14, so this half has been red for **36 days** and is not a conflict at all: it is two programs
+disagreeing about what a pull *is*. `runner/sync.py pull` stages both trees; `merge_evidence.py` merges
+one. Whichever is right, the arm's message ("the pull staged something outside `evidence/`") reads as an
+accusation against the puller for doing what it was written to do.
+
+**Closes when.** (a) The conflicts are resolved by hand — the honest resolution is to keep both
 under day-distinguished names rather than to pick a winner, since both are real observations of
 different days; (b) the producer stops writing a per-case aggregate to a path a re-run reuses (stamp
-it with the day, as the call records effectively are); and (c) the `incoming/` cleanup carries a guard
-that refuses to delete a tree `merge_evidence.py` reports conflicts for. Until (c) exists, **do not
+it with the day, as the call records effectively are); (c) the `incoming/` cleanup carries a guard
+that refuses to delete a tree `merge_evidence.py` reports conflicts for; and (d) the puller and the
+merger state one scope between them, so `refused` means *something unexpected was staged* rather than
+*the puller staged `results/` again*. Until (c) exists, **do not
 delete `runner/.state/incoming/20260812T130844Z/`**.
 
 ---
@@ -1304,7 +1341,7 @@ exists only as a sentence saying it ought to exist. **This item closes when that
 that names the pre-fix blob, the commit (`3f3c398b`), and the decision to be taken, so the flip cannot
 happen without someone reading it. Nothing else about item 35 is outstanding.
 
-### 37. Four gates have been failing on `main` long enough that the suite is read as a count, not as names
+### 37. Gates have been failing on `main` long enough that the suite is read as a count, not as names
 
 Measured 2026-09-16, on a tree whose only changes were the explainer: `pytest platform/build/tests
 tools lib video/tests` is **1 failed, 1478 passed, 10 skipped**, and `claims/tests/` — which that
@@ -1377,9 +1414,51 @@ depths through the shared `scan_scope.out_of_scope` predicate, and two new arms 
 one comparing the bounded walk against an unbounded `rglob`, one convicting the pattern this file
 shipped with, both mutation-checked with the unmutated tree as the control.
 
-**Closes when** all four are either fixed or carry a dated entry in the ledger their own message names,
-**and** the suite's expected red set is zero — not documented as four, because a documented red set is
-the same tolerance one indirection further out.
+**And a fourth instance, 2026-09-18 — the first end-to-end run of the whole script since the explainer
+landed.** `./verify_phase0.sh` (with `PYTHON=` pointed at the oracle venv, because its default `python3`
+is the 3.14 homebrew build that has no pytest and makes the script exit 2 before any gate runs) reported
+**12 of 14 gates** and a suite of **6 failed, 3856 passed, 16 skipped in 1:15:18**. Diffed **by name**
+against the table above, all four are present and two are not in it:
+
+- `claims/tests/test_future_work_register.py::test_every_prose_count_matches_a_derived_count` — **mine,
+  from this round.** Five prose sites now state the register's size where `EXPECTED_PROSE_SITES` said
+  four; the new one is `README.md`'s paragraph on why the item titles are translated. Every claimed
+  count *derived* correctly — what failed is the arm that notices an **unchecked** claim, which is the
+  half of it that earns its keep. Constant raised to 5 with the date and the sentence named.
+- `runner/tests/test_merge_evidence.py::test_the_real_staging_tree_holds_nothing_the_live_tree_disagrees_with`
+  — **not new, not mine, and not closed here.** It is item 29's arm, and it is red in *two* independent
+  halves: `conflicts` has grown from the **8** item 29 measured on 2026-08-16 to **17** (the f6 day-2
+  re-run repeated F3-10's overwrite, exactly as item 29 predicted it would), and `refused` is **300**
+  — a half item 29 never recorded, red since the pull was staged on 2026-08-13. Both are written up
+  there, with dates and deltas, because neither can be resolved by editing a test.
+
+The 14th gate is worth its own paragraph, because it is the same duration argument as `scenarios.yaml`
+with a cause attached. **`every .py compiles` has been rc 1 since 2026-08-20**: the walk was
+`find . -name '*.py' -not -path './.venv*/*' -not -path '*/__pycache__/*'`, which sweeps
+`platform/infra/node_modules`, and `aws-cdk`'s `init-templates/sample-app/python/app.template.py` is not
+valid Python by design — it holds `%name.PythonModule%` placeholders for `cdk init` to substitute. So the
+gate whose name is *no broken tree can reach the suites* was failing on a file no suite imports, on the
+day `npm install` ran, and it stayed that way for **~29 days** because nothing in that window ran the
+whole script end to end — every gate was run by hand, individually, which is how a wrapper's own red goes
+unread. Fixed by bounding the walk and **printing both sides of the exclusion** (`285 .py files (ours);
+27 vendored under node_modules, not read`), because an exclusion nobody can see is how a gate quietly
+stops covering the thing it is named after (`feedback_guard_scope_is_a_claim`).
+
+The heading of this item no longer says "four". It said four for two days and was wrong twice in that
+window; a count in a title is the same tolerance this item exists to name.
+
+**Re-measured after both fixes, later the same day, and the red set is the four in the table and nothing
+else** — which is the only way to know the two above were the whole of the difference rather than the two
+that happened to be noticed. `platform/build/tests` **406/406** green; `claims/tests` red on exactly the
+three this item names (`3 failed, 877 passed in 41:20`); `runner/tests` + `tools/tests` + `video/tests` red
+on exactly the fourth (`1 failed, 264 passed, 12 skipped in 14:36`). The directories were re-collected and
+re-read by name, not inferred from a total: the earlier "6 failed" and this "3 + 1" are two different
+denominators, and a total that fell by two would have been equally consistent with two new reds cancelling
+two old ones.
+
+**Closes when** every red is either fixed or carries a dated entry in the ledger its own message names,
+**and** the suite's expected red set is zero — not documented as four, or six, because a documented red
+set is the same tolerance one indirection further out.
 
 ### 38. Every determinism claim behind the explainer was measured on one machine, and the three programs that determine the bytes are unrecorded
 
@@ -1480,6 +1559,145 @@ console edit), plus an `s3api head-object` on one immutable and one mutable obje
 which closes only as a **dated** record: a human with the second factor loading the live page once and
 pasting the response headers into a log, which expires the next time the stack is deployed and should
 therefore be labelled with the release stamp it was read against.
+
+### 42. The census that holds the translation ceiling to account failed and then passed on the same tree, and its message names two causes that were both false
+
+**Found** 2026-09-18, running `platform/build/census_rendered_surfaces.py` twice in succession over an
+unchanged tree, an unchanged payload and the same `csp_preview.py` process:
+
+| attempt | rc | what it said |
+|---|---|---|
+| first | **2** | `FATAL: /design in zh-TW never rendered 400 characters of main content within 15 s (TimeoutError). Either the route is broken or the payload file it reads is missing` |
+| second | **0** | `census: 17 route(s) x 2 locale(s) walked … 259 <- BACKLOG` |
+
+Between the two, the same route was loaded once by hand under the same locale and the same init script,
+and `main` measured **44,707** characters with an empty console — 111× the floor it was said to have
+missed. Neither cause the message names was true: the route was not broken and no payload file was
+missing.
+
+Why this is a deficiency and not a slow afternoon. The census **is the ledger** that
+`check_site_invariants.py`'s untranslated-surface ceiling counts against — the arm cannot run without
+one (`cannot_run`), and the ceiling may only fall. So the census is a publish gate whose red is
+indistinguishable from its flake, and the remedy a flake trains into a maintainer is *run it again*,
+which is the same keystroke that would have disposed of a real regression.
+`platform/census/rendered-surfaces-20260918T073359Z.json` is the ledger that second attempt wrote, and
+nothing in it records that it was a second attempt. It was superseded within the hour by a re-run that
+this very item forced — adding item 42 changes the register the census walks — and that one passed on its
+first attempt; both files sit in `platform/census/`, and the newest by name is the one the ceiling counts
+against. Two ledgers of substantially one tree, one from *k*=2 and one from *k*=1, and the only place *k*
+appears is a session log a human chose to write.
+
+**That "newest by name" turned out to be a second defect, found later the same day and fixed rather than
+filed.** Both of the ledgers above were originally named `…T151900Z.json` and `…T155900Z.json` — *local*
+time on a UTC+8 machine, labelled `Z`. Their true write instants, read from their own mtimes, were
+**07:33:59Z** and **07:48:25Z**, so each name sat eight hours in the future and out-sorted every correctly
+stamped ledger for the rest of the day. `build_site_data.py:696` selects with
+`sorted(CENSUS_DIR.glob("rendered-surfaces-*.json"))[-1]`, so a later census of a *changed* tree
+(`…T095804Z`) was written, counted, and then silently discarded in favour of the stale 42-item file — while
+every log line and the gate's own pass message **named the stale file**, which is why nothing noticed. The
+file name was a mandatory field of the measurement with no producer and no validator: whoever ran the
+command typed it (`feedback_mandatory_field_timing`). Both files are now renamed to their true UTC instants
+(mtimes preserved, so the derivation stays re-runnable), and `census_rendered_surfaces.check_out_stamp()`
+refuses four things before the four-minute walk starts: a name outside
+`rendered-surfaces-<YYYYMMDD>T<HHMMSS>Z.json`, digits that are not a real UTC instant, a stamp more than
+120 s ahead of the clock (reported as *how far* ahead, so a timezone is recognisable as one), and a stamp
+not strictly newer than the newest conforming ledger already present — because a walk whose output nothing
+will select is four minutes spent on a number that cannot be read. `platform/build/tests/test_census_stamp.py`
+holds it in 11 arms, all with the clock injected and the no-mutant control first; the last arm re-validates
+**every** ledger in the tree against the ones older than it, so a hand-added file is included rather than
+trusted.
+
+Two residues, on the record because they are the measurement and not the story. First, the day's *third*
+ledger is also hand-typed: `rendered-surfaces-20260918T064500Z.json` was written at **06:29:13Z** by its own
+mtime, so its name is **15.8 minutes ahead** of the file, and why is not recorded anywhere. It was not
+renamed, and the distinction is the one that matters — the eight-hour pair corrupted the *selection order*
+and had to go, while a rounded quarter-hour still sorts correctly between its neighbours. Three of the
+day's four names were typed rather than derived; one of the three did damage. Second, none of this is
+pinned by a test, because **mtime is not a durable field**: these files reach `main` as git blobs, and a
+clone stamps them with the time it checked out. That is also the reason `check_out_stamp()` compares the
+name against the clock **at the moment of writing** rather than against the file's mtime afterwards — the
+only instant at which the truth is still available is the one the guard runs in.
+
+The mechanism is not mysterious, which is what makes the fixed 15 s a guess rather than a measurement.
+`/design` is now the heaviest route on the site: eight `<video>` elements over 26.39 MB of mp4, plus the
+whole practice map, served by a single-threaded local HTTP server, and the walk navigates with
+`wait_until="load"` — an event that waits on subresources. The floor was set when that route had one
+video and no chapter. A timeout with no stated n, no stated load and no recorded distribution is exactly
+the interval this repo has already been burned by (`feedback_narrow_interval_is_not_stability`).
+
+**Closes when** the arrival condition stops being a wall clock over a character count and the run
+records what it actually cost: a per-route elapsed time written into the census document (so a floor can
+be set from a distribution with its n and its load, instead of from a number somebody once found
+sufficient), a retry that is **counted and published** rather than performed by a human re-running the
+command, and — because the census measures text and not playback — `preload="none"` on the video
+elements for the census pass, so the walk stops waiting for bytes no assertion in it will ever read.
+Until then, the honest reading of any census run is "passed, on attempt *k*", and *k* is not recorded.
+The stamp half of this item is **closed**: the name is validated against an injected clock and against the
+directory it lands in. What remains open there is that the census still takes its instant from a name a
+human passes on the command line rather than stamping `--out` itself from `datetime.now(timezone.utc)`,
+which is the fix that removes the field instead of guarding it — a refusal is a smaller thing than a
+producer, and the reason this one is a refusal today is that four scripts and every 2026-09-18 log line
+already cite these names.
+
+### 43. The translation census matches raw payload text against rendered text, so every field the site renders as Markdown is invisible to it — including this register's own bodies
+
+**Found** 2026-09-18, by asking what adding an item to this register costs the untranslated-surface
+ceiling. The answer is **nothing**, and the reason it is nothing is the defect.
+
+The evidence is a grep. Both of the day's ledgers, searched for a sentence out of item 37's body
+(`a red suite is easier to carry than to close`), return **0** — and searched for `registers.json`,
+`rendered-surfaces-20260918T074825Z.json` returns **0 occurrences of the producer at all**, while the
+06:45 ledger carries that same item's *title* as `registers.json/items[35]/title`. Titles are seen.
+Bodies have never been in a ledger.
+
+**It is not the disclosure**, which was the first hypothesis and is wrong: `COLLECT_JS` opens every
+`<details>` before it walks (`document.querySelectorAll('details').forEach(d => …d.open = true…)`),
+publishes `disclosures_opened` per route, and records `behind_disclosure` per node — and the title that
+*is* counted sits inside the same collapsed element as the body that is not.
+
+The cause is the match. `payload_strings()` keys the universe by the **raw** payload string
+(whitespace-normalised), and `main()` keeps a row only `if s in walked[(r, "en")]["text"]`. A `body_md`
+is Markdown: `**bold**`, backticks, pipe tables, list markers. `/register` renders it through
+`<Body src={i.body_md}/>` → `Markdown` (`site/src/lib/md.tsx:267`), which emits React elements, so the
+reader's text is the body **with every marker removed** and the raw string is not a substring of it. The
+row is dropped at `continue` — *exists in the payload, reaches no reader* — which is exactly the wrong
+verdict: it reaches every reader, in a shape the matcher cannot recognise. The confirming case is on the
+other side: the single largest string the backlog *does* carry is `audit.json/markdown` at 37,483
+characters, and `/report` renders it as **text on purpose** ("Rendered as text rather than as formatted
+Markdown on purpose … the same bytes, not a prettier version of them", `site/src/lib/strings.ts:655`).
+The census can see Markdown exactly when the page refuses to render it.
+
+**What is missing from the ledger**, measured against the payload built at `20260918T074920Z` (42 items,
+before this item was written), by the classification each string would have received:
+
+| producer | strings | characters | would classify as |
+|:---|---:|---:|:---|
+| `registers.json/items[]/body_md` | 42 | **115,067** | AUTHORED — this platform's own prose, owed a translation |
+| `registers.json/side_registers[]` | 2 | **10,890** | AUTHORED — `DEVIATIONS.md`, `EXCLUSION_REGISTER.md` |
+| `findings.json/findings[]/body_md` | 19 | **376,017** | ARTIFACT — `results/FINDING-*.md`, must stay English |
+
+So **125,957 characters** of authored English are absent from a backlog whose ceiling is **259 strings**
+and whose largest member is 37,483 characters, and a further **376,017** characters of quoted artifact
+prose are absent from the *disclosure* count — the "993 quoted sentences that do carry `lang="en"`"
+figure is silent about the largest quoted text on the site. `CaseDetail.tsx:719` renders record fields
+through the same component, per case, which is a fourth site and is not counted here.
+
+Why this is worse than an uncounted surface. The ceiling's name is a claim about surfaces; its
+denominator turns out to be *strings a substring test happens to find*, which is a property of the
+renderer and not of the reader. And it flatters precisely the work done this morning: 42 titles were
+translated, the number fell 304 → 259, and the total that number is a fraction of was never derived
+(`feedback_share_needs_the_window`). The instrument was measuring the half it could see and reporting it
+as the whole.
+
+**Closes when** the census stops asking whether a raw payload string appears verbatim in the DOM and
+instead resolves each payload string through the same renderer the page uses (or matches per rendered
+block, with the unmatched payload strings *published* rather than dropped at a `continue`), **and** the
+run reports how many payload strings it dropped for want of a match — the number this defect hid, which
+was 0 by construction because a dropped row leaves no trace. Then the ceiling is re-read **once** against
+the honest denominator. It will be far above 259, and it has to land as a one-time correction with its
+cause beside it, not as a ratchet learning to rise: the rule is that the ceiling only ever falls, and
+that rule survives a corrected denominator but not a quiet one. Translating 126 KB of this project's own
+self-conviction is *not* what this item asks for; knowing how much of it a reader meets is.
 
 ## Tier 5 — citation hygiene, before anything is published
 

@@ -80,12 +80,12 @@ gate() {
 # The list lives at file scope so that the gate's label can count it (`${#TEST_SPECS[@]}`)
 # rather than restate it. The per-floor rationale — one entry per bump, deliberately kept as
 # a record — is inside run_tests, immediately above the loop that reads this.
-TEST_SPECS=("claims/tests:471" "lib/tests:992" "f5_redteam/tests:789" \
+TEST_SPECS=("claims/tests:474" "lib/tests:992" "f5_redteam/tests:789" \
             "f2_determinism/tests:34" "f3_efficacy/tests:268" \
             "f8_regional/tests:152" "f10_billing/tests:80" "infra/tests:79" \
             "runner/tests:94" "f9_failsecure/tests:106" "f1_config/tests:175" \
-            "tools/tests:122" "video/tests:8" \
-            "platform/build/tests:378" "platform/audit/tests:57")
+            "tools/tests:130" "video/tests:53" \
+            "platform/build/tests:406" "platform/audit/tests:57")
 
 run_tests() {
   local rc=0
@@ -257,6 +257,38 @@ run_tests() {
   # which is the right discipline and is also exactly why they fall behind. The other ten sit at
   # their measured yield.
   #
+  # THIRD RE-BASELINE, 2026-09-18, for the phase-chapter videos. All fifteen were re-collected, because
+  # raising two floors while trusting thirteen is how the list fell behind three times already:
+  #
+  #     video/tests   8 -> 53    platform/build/tests 378 -> 388
+  #     claims/tests 471 -> 474  tools/tests          122 -> 130
+  #
+  # This change accounts for the first two only. The other two had moved since the re-baseline of the
+  # day before — 11 arms between them — and both sat INSIDE the drift arm's allowance, so neither was a
+  # finding: they are raised because they were measured, not because anything convicted them. Which is
+  # the argument for re-collecting all fifteen anyway. Yesterday's measurement is a fact about
+  # yesterday, and eleven arms is what one day of unfloored work looks like.
+  # The video/tests number is the one to read twice: its floor had stood at 8 — the count on the day
+  # PR #54 merged — while the directory collects 53 after the chapter suite was rewritten, so 45 arms of
+  # slack sat under it, including every arm that holds a chapter to its own phase's numbers. The gate
+  # would have printed a pass with `test_scenes.py` cut back to its original eight.
+  #
+  # platform/build/tests 388 -> 395, later the same day, for the bilingual deficiency register: six arms
+  # over `derive_registers()`'s refusals (an untranslated title, an orphan title, an untranslated tier, an
+  # orphan tier, a duplicate item number, and the no-mutant control) plus the stale-video arm the media
+  # group never had — a payload whose numbers moved after the render. Raised because it was measured, not
+  # because anything convicted it; the `-ge` comparison had already let the six land.
+  #
+  # platform/build/tests 395 -> 406, same day again, for test_census_stamp.py: 11 arms over the census
+  # ledger's file NAME. That name is the only timestamp the measurement has — build_site_data.py selects
+  # the ledger with `sorted(glob("rendered-surfaces-*.json"))[-1]`, newest BY NAME — and until today it
+  # had no producer and no validator: whoever ran the command typed it. Two of the day's ledgers were
+  # written with LOCAL time labelled `Z` on a UTC+8 machine, so they out-sorted every correct stamp for
+  # the next eight hours; a re-measured census was silently discarded while this script printed a pass
+  # NAMING the stale file. `check_out_stamp()` is the refusal, and this is a FILE, so the floor moves.
+  # Every arm injects its clock, because an arm about "eight hours in the future" written against
+  # `datetime.now()` would pass or fail by the timezone of whoever runs it — the defect under test.
+  #
   # The floor comparison is `-ge`, so a floor set to today's exact count still lets a new arm land
   # without editing this file; what it stops is a file disappearing. Any of these five could have
   # been a rounding-error gap and instead they add up to more than the whole twelfth directory.
@@ -300,9 +332,21 @@ run_tests() {
 # So the tree must compile before anything claims to have tested it, and the file list must
 # be non-empty (feedback_zero_file_scan_is_error): a compile gate that found no files would
 # pass loudest of all.
+#
+# 2026-09-18: the walk also has to say what it does NOT read. `platform/infra/node_modules` was
+# installed on 2026-08-20 and carries 27 vendored .py files, one of which — aws-cdk's
+# `init-templates/sample-app/python/app.template.py` — is not valid Python by design: it holds
+# `%name.PythonModule%` placeholders that `cdk init` substitutes. So this gate has been RED on the
+# tree for ~29 days and nobody read it, because the script had not been run end to end in that
+# window. The fix is the exclusion, not a `|| true`: the gate's claim is "no broken tree can reach
+# the suites", and no suite imports a CDK init template. The exclusion is bounded and PRINTED
+# (`ours` and `vendored` both), because an exclusion nobody can see is how a gate quietly stops
+# covering the thing it is named after.
 compile_all() {
-  local n
-  n=$(find . -name '*.py' -not -path './.venv*/*' -not -path '*/__pycache__/*' | wc -l | tr -d ' ')
+  local n v
+  n=$(find . -name '*.py' -not -path './.venv*/*' -not -path '*/__pycache__/*' \
+        -not -path '*/node_modules/*' | wc -l | tr -d ' ')
+  v=$(find . -name '*.py' -path '*/node_modules/*' | wc -l | tr -d ' ')
   # 100, which is EXACTLY the tree (77 when first written; +test_module_name_collisions.py,
   # +test_observation_n.py, +conftest.py, +test_policy_liveness.py, +test_write_guard.py,
   # +test_write_guard_mutation.py, +3 others; then 85 -> 100 when Phase 2 landed the 12
@@ -322,8 +366,9 @@ compile_all() {
     echo "       nothing reports clean, so an empty or truncated file list is an error." >&2
     return 2
   fi
-  printf '  %s .py files\n' "$n"
-  find . -name '*.py' -not -path './.venv*/*' -not -path '*/__pycache__/*' -print0 \
+  printf '  %s .py files (ours); %s vendored under node_modules, not read\n' "$n" "$v"
+  find . -name '*.py' -not -path './.venv*/*' -not -path '*/__pycache__/*' \
+       -not -path '*/node_modules/*' -print0 \
     | xargs -0 "$PY" -m py_compile
 }
 

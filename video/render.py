@@ -1,7 +1,12 @@
 """Render the explainer videos: script + payload in, mp4/vtt/RENDER.json out.
 
-    /opt/homebrew/opt/python@3.12/bin/python3.12 video/render.py            # both languages
-    /opt/homebrew/opt/python@3.12/bin/python3.12 video/render.py --verify   # render TWICE, demand identical bytes
+    /opt/homebrew/opt/python@3.12/bin/python3.12 video/render.py                    # all four, both languages
+    /opt/homebrew/opt/python@3.12/bin/python3.12 video/render.py --verify           # render TWICE, demand identical bytes
+    /opt/homebrew/opt/python@3.12/bin/python3.12 video/render.py --video before     # one chapter, for iterating
+
+Four videos: the `overview`, and one chapter per phase (`before`, `during`, `after`). The set is
+`script/*.yaml`, never a list — see `all_videos()`. A full run renders them against ONE payload
+snapshot, so the numbers they speak cannot disagree with each other.
 
 THE PIPELINE, AND WHAT EACH STEP MEASURES RATHER THAN ASSUMES
 
@@ -40,9 +45,14 @@ The mp4s are tens of megabytes of derived bytes. The repo carries what derives t
 provenance the copy declares. Committing the mp4s would put the one artifact nobody can review in
 the one place everything is reviewed.
 
-Cost, disclosed: ~6,300 narration characters × 2 synth runs under --verify ≈ $0.40 generative +
-$0.20 neural per full verify. Rounding error against the repo ceiling; recorded here because
-undisclosed spend is the failure mode, not the amount.
+Cost, disclosed: narration is billed per character per synthesis, and `--verify` synthesizes
+everything twice. Counted from the four scripts with the payload's own values substituted in
+(2026-09-18): one render pass is 10,576 English characters on the generative engine and 3,856 Chinese
+on neural, so a `--verify` bills 21,152 generative and 7,712 neural — the two engines are priced
+differently, which is why the two are counted separately rather than added. The MEASURED meter figure
+is in `video/README.md`; the count here is of what is sent, and the meter is the only thing that says
+what was charged (`feedback_meter_not_artifact` — a cache made an earlier reading of this pipeline
+look six times cheaper than the bill).
 """
 
 from __future__ import annotations
@@ -134,6 +144,21 @@ def load_script(video: str) -> tuple[dict, str]:
     return doc, sha256_file(p)
 
 
+def all_videos() -> list[str]:
+    """Every video there is, DERIVED from `script/*.yaml` rather than listed here.
+
+    `build_site_data.derive_media()` and `check_site_invariants.arm_media` already derive the expected
+    media set from the same glob. A list written in this file would be a third declaration of the same
+    membership, and the way it fails is the quiet one: a new chapter script renders nothing, the gate
+    reports its four files missing, and the renderer — the only component that could have produced
+    them — reports success.
+    """
+    names = sorted(p.stem for p in (HERE / "script").glob("*.yaml"))
+    if not names:
+        die(f"no scripts under {HERE / 'script'}; there is nothing to render")
+    return names
+
+
 def resolve_text(template: str, values: dict[str, int]) -> str:
     """Fill `{placeholders}`, then refuse any that survived — a `{n_typo}` spoken aloud as a brace
     literal is a defect the soundtrack cannot flag."""
@@ -188,14 +213,17 @@ def render_language(video: str, lang: str, payload: dict, script: dict,
     """One language's full render into `work`; returns the manifest entry for its two files."""
     from playwright.sync_api import sync_playwright
 
-    built = scenes_mod.scenes(payload, lang)
+    built = scenes_mod.scenes(payload, lang, video)
     by_id = {sid: steps for sid, steps in built}
     script_ids = [s["id"] for s in script["scenes"]]
     if script_ids != [sid for sid, _ in built]:
         die(f"scene ids disagree: script {script_ids} vs scenes.py {[s for s, _ in built]} — "
             f"narration and frames would silently pair up wrong")
 
-    frames_dir = work / "frames" / lang
+    # Namespaced by VIDEO as well as language: the chapters reuse scene ids (`title`, `verify`) on
+    # purpose, so a per-language directory would have four videos writing `title-00.png` over each
+    # other and the concat list would point at whichever render finished last.
+    frames_dir = work / "frames" / video / lang
     frames_dir.mkdir(parents=True, exist_ok=True)
     audio_cache = OUT / "audio"
 
@@ -229,8 +257,8 @@ def render_language(video: str, lang: str, payload: dict, script: dict,
         vtt += [f"{vtt_stamp(t)} --> {vtt_stamp(t + dur)}", text, ""]
         t += dur
     flist.append(f"file '{rows[-1][3][-1]}'")
-    (work / f"frames-{lang}.txt").write_text("\n".join(flist) + "\n", encoding="utf-8")
-    (work / f"audio-{lang}.txt").write_text("\n".join(alist) + "\n", encoding="utf-8")
+    (work / f"frames-{video}-{lang}.txt").write_text("\n".join(flist) + "\n", encoding="utf-8")
+    (work / f"audio-{video}-{lang}.txt").write_text("\n".join(alist) + "\n", encoding="utf-8")
 
     media = work / "media"
     media.mkdir(parents=True, exist_ok=True)
@@ -257,15 +285,15 @@ def render_language(video: str, lang: str, payload: dict, script: dict,
     # This corrects the earlier note in this file's docstring, which claimed ffmpeg was byte-identical
     # under these flags. The smoke test behind that claim muxed a single stream and so never exercised
     # the interleaver — the flags were never the whole story, and the gap was in what was measured.
-    v_only = work / f"video-{lang}.mp4"
-    a_only = work / f"audio-{lang}.m4a"
+    v_only = work / f"video-{video}-{lang}.mp4"
+    a_only = work / f"audio-{video}-{lang}.m4a"
     run(["ffmpeg", "-y", "-v", "error",
-         "-f", "concat", "-safe", "0", "-i", str(work / f"frames-{lang}.txt"), "-an",
+         "-f", "concat", "-safe", "0", "-i", str(work / f"frames-{video}-{lang}.txt"), "-an",
          "-c:v", "libx264", "-preset", "medium", "-crf", "23", "-r", "30",
          "-pix_fmt", "yuv420p", "-movflags", "+faststart",
          "-map_metadata", "-1", "-fflags", "+bitexact", "-flags:v", "+bitexact", str(v_only)])
     run(["ffmpeg", "-y", "-v", "error",
-         "-f", "concat", "-safe", "0", "-i", str(work / f"audio-{lang}.txt"), "-vn",
+         "-f", "concat", "-safe", "0", "-i", str(work / f"audio-{video}-{lang}.txt"), "-vn",
          "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart",
          "-map_metadata", "-1", "-fflags", "+bitexact", "-flags:a", "+bitexact", str(a_only)])
     run(["ffmpeg", "-y", "-v", "error", "-i", str(v_only), "-i", str(a_only),
@@ -274,6 +302,7 @@ def render_language(video: str, lang: str, payload: dict, script: dict,
 
     v = VOICE[lang]
     return {
+        "video": video,
         "language": lang, "voice": v["voice"], "engine": v["engine"],
         "voice_language": v["language"], "synthesized": True,
         "duration_s": round(duration_s(mp4), 3), "n_scenes": len(rows),
@@ -282,34 +311,59 @@ def render_language(video: str, lang: str, payload: dict, script: dict,
     }
 
 
-def render_all(video: str, payload_dir: Path, work: Path) -> dict:
+def render_all(videos: list[str], payload_dir: Path, work: Path) -> dict:
+    """Every requested video against ONE payload snapshot, into one manifest.
+
+    One snapshot is the point of rendering them together. Four videos rendered on four days would
+    each be internally consistent and collectively lie: the overview would speak one case count and
+    a chapter another, both truthfully as of their own render, with nothing in the payload able to
+    tell them apart. `payload_inputs` is therefore hashed once, here, and covers every track below
+    it.
+    """
     payload, input_hashes = load_payload(payload_dir)
-    script, script_sha = load_script(video)
     values = scenes_mod.resolve(payload)
-    tracks = [render_language(video, lang, payload, script, values, work)
-              for lang in ("en", "zh")]
-    return {"video": video, "script_sha256": script_sha, "payload_inputs": input_hashes,
+    tracks, script_shas = [], {}
+    for video in videos:
+        script, script_shas[video] = load_script(video)
+        print(f"  {video}: {len(script['scenes'])} scene(s)", flush=True)
+        tracks += [render_language(video, lang, payload, script, values, work)
+                   for lang in ("en", "zh")]
+    return {"videos": videos, "script_sha256": script_shas, "payload_inputs": input_hashes,
             "resolved_values": values, "platform": platform.platform(), "tracks": tracks}
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--video", default="overview")
+    ap.add_argument("--video", default="all",
+                    help="a script stem (overview, before, during, after) or `all` — the default, "
+                         "because the payload snapshot is per-RUN and a partial render leaves the "
+                         "manifest describing one video while the payload expects four")
     ap.add_argument("--payload", type=Path, default=DEFAULT_PAYLOAD)
     ap.add_argument("--verify", action="store_true",
                     help="render twice into separate trees (fresh synthesis included) and require "
                          "every output byte-identical before publishing the result")
     args = ap.parse_args(argv)
+    videos = all_videos() if args.video == "all" else [args.video]
+    unknown = [v for v in videos if not (HERE / "script" / f"{v}.yaml").is_file()]
+    if unknown:
+        die(f"no script for {unknown}; known videos: {all_videos()}")
 
     if args.verify:
-        m1 = render_all(args.video, args.payload, OUT / "verify-a")
+        m1 = render_all(videos, args.payload, OUT / "verify-a")
         shutil.rmtree(OUT / "audio", ignore_errors=True)  # force a second synthesis
-        m2 = render_all(args.video, args.payload, OUT / "verify-b")
-        mismatched = [
-            (t1["language"], name)
-            for t1, t2 in zip(m1["tracks"], m2["tracks"])
-            for name in t1["files"]
-            if t1["files"][name]["sha256"] != t2["files"][name]["sha256"]]
+        m2 = render_all(videos, args.payload, OUT / "verify-b")
+        # Compared by (video, language, file name), not by list position: zip over two track lists
+        # would pair up silently if a render ever emitted them in a different order, and the failure
+        # it produces — "the two renders disagree" — would be a lie about the very property being
+        # measured.
+        a = {(t["video"], t["language"], name): f["sha256"]
+             for t in m1["tracks"] for name, f in t["files"].items()}
+        b = {(t["video"], t["language"], name): f["sha256"]
+             for t in m2["tracks"] for name, f in t["files"].items()}
+        if set(a) != set(b):
+            die(f"the two renders produced different file sets: only in A {sorted(set(a) - set(b))}, "
+                f"only in B {sorted(set(b) - set(a))}")
+        mismatched = [k for k in sorted(a) if a[k] != b[k]]
         if mismatched:
             die(f"the two renders disagree on {mismatched}; a pipeline whose output drifts "
                 f"cannot be hash-verified and must not be published")
@@ -322,15 +376,18 @@ def main(argv: list[str] | None = None) -> int:
         m2["verified_identical_renders"] = True
         manifest = m2
     else:
-        manifest = render_all(args.video, args.payload, OUT)
+        manifest = render_all(videos, args.payload, OUT)
         manifest["verified_identical_renders"] = False
 
     out = OUT / "media" / "RENDER.json"
     out.write_text(json.dumps(manifest, indent=1, sort_keys=True) + "\n", encoding="utf-8")
     total = sum(t["duration_s"] for t in manifest["tracks"])
-    print(f"rendered {manifest['video']}: {len(manifest['tracks'])} track(s), "
-          f"{total:.0f}s total, verified={manifest['verified_identical_renders']}\n"
-          f"manifest -> {out}")
+    print(f"rendered {', '.join(manifest['videos'])}: {len(manifest['tracks'])} track(s), "
+          f"{total:.0f}s total, verified={manifest['verified_identical_renders']}")
+    for t in manifest["tracks"]:
+        print(f"  {t['video']:9} {t['language']}  {t['duration_s']:7.1f}s  "
+              f"{t['n_scenes']:2} scenes  {t['voice']}/{t['engine']}")
+    print(f"manifest -> {out}")
     return 0
 
 

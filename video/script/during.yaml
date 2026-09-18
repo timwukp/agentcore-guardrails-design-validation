@@ -1,0 +1,92 @@
+# Chapter two of the explainer set — the DURING phase, narrated.
+#
+# The rules are `overview.yaml`'s and the chapter rules are `before.yaml`'s; both are stated there
+# rather than restated here, because three copies of an editorial rule is three things to keep in
+# agreement. What differs in this chapter is only the phase it is about.
+
+video: during
+scenes:
+  - id: title
+    en: >-
+      Phase two of the recommended design: DURING execution. {during_sections} checkpoints,
+      {during_practices} numbered practices, and {during_cases} test cases cited beneath them. This
+      is the phase where an agent is already running — authorizing its own tool calls, filtering what
+      it sends and receives, and being watched while it does. This narration is synthesized speech,
+      generated with Amazon Polly.
+    zh: >-
+      建議設計的第二階段:DURING——執行期間。{during_sections} 個檢查點、
+      {during_practices} 條編號實踐,底下引用了 {during_cases} 個測試案例。
+      這一階段的 agent 已經在跑了:它要為自己的工具呼叫取得授權、過濾送出與收回的內容,
+      並且在過程中被觀測。本旁白為合成語音,由 Amazon Polly 生成。
+
+  - id: where
+    en: >-
+      This is where the phase sits in the closed loop. The boxes in focus are the ones whose
+      checkpoints this chapter is about; one of them is drawn to the side, because the document
+      prescribes it as a property of the runtime rather than as a gate a request passes through. The
+      distinction is in the diagram, not in a caption underneath it.
+    zh: >-
+      這是本階段在閉環中的位置。聚焦的方框就是本章所談的那些檢查點;
+      其中一個畫在旁邊,因為文件把它規定為 runtime 的一項性質,而不是請求必須通過的一道閘。
+      這個區別畫在圖裡,不是寫在圖下的說明。
+
+  - id: checkpoints
+    en: >-
+      The checkpoints, in the document's own headings, with the practice count each one carries. Not
+      every colour in this phase is the same: one of these reads validated in part, which means the
+      guidance held for at least one of the claims tested here and nothing was found against it.
+      That is a weaker statement than a confirmation, and the vocabulary keeps the two apart.
+    zh: >-
+      檢查點,用的是文件自己的標題,右側是各自帶著的實踐數。
+      本階段的顏色並不一致:其中一個是 validated in part,
+      意思是在此處測到的主張裡,至少有一項成立,而且沒有發現任何相反的證據。
+      這比「確認」是更弱的陳述,而這套詞彙刻意把兩者分開。
+
+  - id: status
+    en: >-
+      And here is the reason behind each colour, quoted from the build that derived it. The ordering
+      rule does not change between phases: one citable FALSE outranks any number of TRUE verdicts.
+      What changes is what the cases underneath were able to establish, and the sentence on screen is
+      the build's account of exactly that.
+    zh: >-
+      接著是每一個顏色背後的理由,原文引用自推導它的那次建置。
+      排序規則不會因階段而改變:一個可引用的 FALSE 壓過任何數量的 TRUE 判定。
+      改變的是底下的案例究竟能確立什麼,而畫面上的那句話,就是建置對這件事的說明。
+
+  - id: evidence
+    en: >-
+      The evidence under the phase, counted over the distinct cases these checkpoints cite.
+      TRUE, {during_true}. FALSE, {during_false}. INCONCLUSIVE, {during_inconclusive}. Recorded
+      observations, {during_recorded}. {during_unpublished} are cited with no published verdict, and
+      {during_restricted} carry a restriction that colours nothing. A case counted here once may be
+      cited by two checkpoints; the total is of cases, not of citations.
+    zh: >-
+      本階段底下的證據,是以這些檢查點引用的「不重複」案例來計數的。
+      TRUE,{during_true} 例。FALSE,{during_false} 例。INCONCLUSIVE,{during_inconclusive} 例。
+      純紀錄,{during_recorded} 例。其中 {during_unpublished} 個被引用卻沒有已發佈的判定,
+      另有 {during_restricted} 個帶著不為任何實踐上色的限制。
+      在此只算一次的案例,可能被兩個檢查點各自引用;這個總數算的是案例,不是引用次數。
+
+  - id: basis
+    en: >-
+      How much of this phase rests on a citation of its own: {during_own} of the practices here carry
+      their own cases, and {during_inherited} inherit the evidence of the checkpoint they sit under.
+      The page says which of the two every card is, on the card — because a colour inherited from a
+      component is not a measurement of the sentence wearing it.
+    zh: >-
+      本階段有多少是靠自己的引用站著:{during_own} 條實踐帶著自己的案例,
+      另外 {during_inherited} 條繼承其所屬檢查點的證據。
+      頁面在每一張卡片上直說它是哪一種——因為從元件繼承來的顏色,
+      並不是對「披著這個顏色的那句話」所做的量測。
+
+  - id: verify
+    en: >-
+      All of it is on the design page, at the anchor for this phase's first checkpoint: the
+      document's own sentence, the measured status, the derived reason, and every case one click
+      away. This narration was synthesized with Amazon Polly — Ruth for English, and Zhiyu, a
+      Mainland Mandarin voice, for Chinese, because Polly ships no Taiwanese Mandarin voice at all.
+    zh: >-
+      以上全部都在設計頁上,位置是本階段第一個檢查點的錨點:
+      文件自己的句子、實測的狀態、推導出的理由,以及每一個案例——都只差一次點擊。
+      本旁白由 Amazon Polly 合成——英文為 Ruth;中文為 Zhiyu,一個大陸普通話語音,
+      因為 Polly 完全沒有台灣華語的聲音。
