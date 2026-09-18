@@ -1,0 +1,10 @@
+=== shasum -c MANIFEST.sha256, bundle root ===
+OK lines : 42905
+not-OK   : ./README.md: FAILED
+rc       : 1
+note     : the one mismatch is EXPECTED and is not a validation/ file. The manifest was written by
+           the --apply of this date; check_claims then reported four stale numbers in README.md,
+           which were hand-fixed afterwards — so the manifest holds the pre-fix README's digest.
+           It resolves on the next --apply, which happens after the pull request adding the commit-
+           line check merges, so that the mirror, the manifest and the README's "current as of"
+           sentence are all true at the same moment.

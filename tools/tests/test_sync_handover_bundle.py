@@ -310,10 +310,21 @@ def _readme(bundle: Path, text: str) -> None:
     (bundle / "README.md").write_text(text, encoding="utf-8")
 
 
+def _sites(mod, monkeypatch, **counts: int) -> None:
+    """Expect these site counts and ZERO of every other site this module knows about.
+
+    Derived from the real `EXPECTED_CLAIM_SITES` rather than restated as a literal dict, so adding a
+    fifth checked site does not make six unrelated arms raise `KeyError` — and so an arm about the
+    deficiency sites keeps saying nothing about the others instead of accidentally asserting them.
+    """
+    monkeypatch.setattr(mod, "EXPECTED_CLAIM_SITES",
+                        dict.fromkeys(mod.EXPECTED_CLAIM_SITES, 0) | counts)
+
+
 def test_claims_pass_when_every_number_agrees(mod, tmp_path, monkeypatch):
     bundle = _bundle(tmp_path)
     monkeypatch.setattr(mod, "register_size", lambda: 31)
-    monkeypatch.setattr(mod, "EXPECTED_CLAIM_SITES", {"deficiencies": 2, "inventory": 1, "manifest": 1})
+    _sites(mod, monkeypatch, deficiencies=2, inventory=1, manifest=1)
     _readme(bundle, "sha256 of all 32,808 files\n31 named deficiencies\n**31** deficiencies\n"
                     "**32,809 files, 199 MB**\n")
     assert mod.check_claims(bundle, file_count=32_809, megabytes=199, manifest_entries=32_808) == []
@@ -322,7 +333,7 @@ def test_claims_pass_when_every_number_agrees(mod, tmp_path, monkeypatch):
 def test_a_stale_deficiency_count_is_reported_with_the_derived_value(mod, tmp_path, monkeypatch):
     bundle = _bundle(tmp_path)
     monkeypatch.setattr(mod, "register_size", lambda: 31)
-    monkeypatch.setattr(mod, "EXPECTED_CLAIM_SITES", {"deficiencies": 1, "inventory": 0, "manifest": 0})
+    _sites(mod, monkeypatch, deficiencies=1)
     _readme(bundle, "21 named deficiencies\n")
     failures = mod.check_claims(bundle, file_count=1, megabytes=1, manifest_entries=1)
     assert len(failures) == 1 and "31" in failures[0] and "README.md:1" in failures[0]
@@ -332,7 +343,7 @@ def test_a_site_that_stops_matching_is_a_failure_not_a_pass(mod, tmp_path, monke
     """The exact-count assertion. A rewording that escapes the regex must fail loudly."""
     bundle = _bundle(tmp_path)
     monkeypatch.setattr(mod, "register_size", lambda: 31)
-    monkeypatch.setattr(mod, "EXPECTED_CLAIM_SITES", {"deficiencies": 2, "inventory": 0, "manifest": 0})
+    _sites(mod, monkeypatch, deficiencies=2)
     _readme(bundle, "31 named deficiencies\nthirty-one shortcomings\n")
     failures = mod.check_claims(bundle, file_count=1, megabytes=1, manifest_entries=1)
     assert any("expected exactly 2" in f for f in failures)
@@ -348,7 +359,7 @@ def test_an_unrelated_size_figure_is_not_read_as_the_bundle_size(mod, tmp_path, 
     """
     bundle = _bundle(tmp_path)
     monkeypatch.setattr(mod, "register_size", lambda: 31)
-    monkeypatch.setattr(mod, "EXPECTED_CLAIM_SITES", {"deficiencies": 0, "inventory": 1, "manifest": 0})
+    _sites(mod, monkeypatch, inventory=1)
     _readme(bundle, "`validation/evidence/` (150 MB) — the raw archive\n"
                     "`.venv-*/` (284 MB) | absolute shebangs\n"
                     "**32,809 files, 199 MB**\n")
@@ -363,7 +374,7 @@ def test_the_file_count_and_the_manifest_count_are_checked_separately(mod, tmp_p
     """
     bundle = _bundle(tmp_path)
     monkeypatch.setattr(mod, "register_size", lambda: 31)
-    monkeypatch.setattr(mod, "EXPECTED_CLAIM_SITES", {"deficiencies": 0, "inventory": 1, "manifest": 1})
+    _sites(mod, monkeypatch, inventory=1, manifest=1)
     _readme(bundle, "sha256 of all 32,809 files\n**32,809 files, 199 MB**\n")
     failures = mod.check_claims(bundle, file_count=32_809, megabytes=199, manifest_entries=32_808)
     assert len(failures) == 1 and "manifest" in failures[0]
@@ -372,10 +383,85 @@ def test_the_file_count_and_the_manifest_count_are_checked_separately(mod, tmp_p
 def test_the_inventory_checks_both_of_its_numbers(mod, tmp_path, monkeypatch):
     bundle = _bundle(tmp_path)
     monkeypatch.setattr(mod, "register_size", lambda: 31)
-    monkeypatch.setattr(mod, "EXPECTED_CLAIM_SITES", {"deficiencies": 0, "inventory": 1, "manifest": 0})
+    _sites(mod, monkeypatch, inventory=1)
     _readme(bundle, "**32,809 files, 250 MB**\n")
     failures = mod.check_claims(bundle, file_count=32_809, megabytes=199, manifest_entries=1)
     assert len(failures) == 1, "the right file count must not excuse the wrong size"
+
+
+# --- the commit sentence: the one site whose value comes from outside this repo ----------------------
+#
+# Added 2026-09-18, after that sentence was found naming `a4d836dd91f3` / 776 blobs — 23 merges and a
+# month old — in a README whose three *checked* numbers were all correct. The check therefore has to
+# refuse to run rather than pass when the values are absent, which is the property the first two arms
+# hold; the rest are the discrimination this check would be worthless without.
+
+COMMIT_LINE = "current as of commit **`6cd5600842e2`** (1,044 blobs, verified blob-by-blob)"
+
+
+def _commit_only(mod, monkeypatch) -> None:
+    monkeypatch.setattr(mod, "register_size", lambda: 41)
+    monkeypatch.setattr(mod, "EXPECTED_CLAIM_SITES",
+                        {"deficiencies": 0, "inventory": 0, "manifest": 0, "commit": 1})
+
+
+def test_the_commit_sentence_agrees_when_both_values_are_supplied(mod, tmp_path, monkeypatch):
+    bundle = _bundle(tmp_path)
+    _commit_only(mod, monkeypatch)
+    _readme(bundle, COMMIT_LINE + "\n")
+    assert mod.check_claims(bundle, file_count=1, megabytes=1, manifest_entries=1,
+                            main_sha="6cd5600842e2", main_blobs=1044) == []
+
+
+def test_omitting_the_values_leaves_the_run_non_clean_instead_of_skipping_the_site(mod, tmp_path,
+                                                                                  monkeypatch):
+    """A gate that could not run must not report clean — the `--figure-check-rc` rule, one tool over.
+
+    The site is still COUNTED when unchecked, so this cannot be quietened by rewording the sentence
+    either: that path fails on the exact-site-count assertion instead.
+    """
+    bundle = _bundle(tmp_path)
+    _commit_only(mod, monkeypatch)
+    _readme(bundle, COMMIT_LINE + "\n")
+    failures = mod.check_claims(bundle, file_count=1, megabytes=1, manifest_entries=1)
+    assert len(failures) == 1 and "NOTHING CHECKED IT" in failures[0]
+
+    _readme(bundle, "current as of some commit or other\n")
+    reworded = mod.check_claims(bundle, file_count=1, megabytes=1, manifest_entries=1)
+    assert any("expected exactly 1" in f for f in reworded)
+
+
+@pytest.mark.parametrize("stated_sha, stated_blobs, clean", [
+    ("6cd5600842e2", "1,044", True),     # the state this landed in
+    ("6cd5600842e2", "1044", True),      # a thousands separator is not a disagreement
+    ("6cd5600", "1,044", True),          # an abbreviation is the same commit
+    ("a4d836dd91f3", "1,044", False),    # the real stale sha this arm was written for
+    ("6cd5600842e2", "776", False),      # the real stale blob count, with the right sha
+])
+def test_the_commit_check_discriminates_on_both_of_its_numbers(mod, tmp_path, monkeypatch,
+                                                              stated_sha, stated_blobs, clean):
+    """Two numbers, two claims: a right sha must not excuse a wrong blob count, or the reverse.
+
+    `a4d836dd91f3` with 776 blobs is exactly what the README said while the tree held 1,044 — and the
+    sha alone would have been enough to catch it, which is why the *pair* is parametrized rather than
+    trusted to move together.
+    """
+    bundle = _bundle(tmp_path)
+    _commit_only(mod, monkeypatch)
+    _readme(bundle, f"current as of commit **`{stated_sha}`** ({stated_blobs} blobs, whatever)\n")
+    failures = mod.check_claims(bundle, file_count=1, megabytes=1, manifest_entries=1,
+                               main_sha="6cd5600842e2", main_blobs=1044)
+    assert (failures == []) is clean, failures
+
+
+def test_supplying_one_value_without_the_other_is_refused_at_the_command_line(mod, tmp_path):
+    """Half a claim is not a smaller claim; `main()` must refuse rather than check the sha alone."""
+    bundle = _bundle(tmp_path)
+    for argv in ([str(bundle), "--apply", "--main-sha", "6cd5600842e2"],
+                 [str(bundle), "--apply", "--main-blobs", "1044"]):
+        with pytest.raises(SystemExit) as caught:
+            mod.main(argv)
+        assert "one claim in two numbers" in str(caught.value)
 
 
 def test_register_size_is_derived_from_the_real_register(mod):
