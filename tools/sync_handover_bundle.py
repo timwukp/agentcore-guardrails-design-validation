@@ -367,8 +367,15 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("bundle", help="path to the hand-over bundle root")
     ap.add_argument("--apply", action="store_true", help="copy, prune and rewrite the manifest")
+    # The doubled `%%` is load-bearing. argparse expands every help string with `help % params`, so a
+    # single percent makes `5% of` parse as the conversion `% o` and dies with `%o format: an integer
+    # is required, not dict`. On 3.12 only `--help` died — which is why this shipped and survived a
+    # 32-arm test file, four syncs and two PRs: nothing here had ever asked for help. Python 3.14
+    # validates help strings inside `add_argument`, so on 2026-09-17, when `python3` on this machine
+    # became 3.14.7, EVERY invocation of this tool died at import time, including the `--apply` the
+    # bundle re-sync needs. `lib/tests/test_argparse_help_strings.py` now derives this repo-wide.
     ap.add_argument("--allow-prune", action="store_true",
-                    help=f"permit deleting more than {PRUNE_FRACTION:.0%} of the mirror")
+                    help=f"permit deleting more than {PRUNE_FRACTION * 100:.0f}%% of the mirror")
     args = ap.parse_args(argv)
 
     bundle = resolve_bundle(args.bundle)
