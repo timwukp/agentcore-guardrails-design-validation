@@ -2,7 +2,12 @@
 """Refresh the hand-over bundle's copy of this repo, and check the counts its README states.
 
     python3 tools/sync_handover_bundle.py <bundle-dir>            # dry run: report the drift
-    python3 tools/sync_handover_bundle.py <bundle-dir> --apply     # copy, prune, rewrite the manifest
+    python3 tools/sync_handover_bundle.py <bundle-dir> --apply \
+            --main-sha <sha> --main-blobs <n>                     # copy, prune, rewrite the manifest
+
+`--main-sha` / `--main-blobs` are the commit the mirror is current as of, read off
+`tools/repo_diff.py`. They are the one claim in that README this script cannot derive locally, and
+omitting them leaves it unchecked and the run non-clean rather than silently unverified (`COMMIT_RE`).
 
 WHY THIS EXISTS
 ---------------
@@ -117,7 +122,7 @@ PRUNE_FRACTION = 0.05
 # the regexes are phrasing-shaped, so a reworded sentence stops being recognised, the site count
 # DROPS, and this fails — which forces a look instead of silently checking less than it used to.
 # Same reasoning as `EXPECTED_PROSE_SITES` in claims/tests/test_future_work_register.py.
-EXPECTED_CLAIM_SITES = {"deficiencies": 2, "inventory": 1, "manifest": 1}
+EXPECTED_CLAIM_SITES = {"deficiencies": 2, "inventory": 1, "manifest": 1, "commit": 1}
 
 # Each pattern's groups line up positionally with the derived values in `check_claims`.
 DEFICIENCY_RE = re.compile(r"\*{0,2}(\d{1,3})\*{0,2}\s+(?:named\s+)?deficiencies")
@@ -128,6 +133,19 @@ DEFICIENCY_RE = re.compile(r"\*{0,2}(\d{1,3})\*{0,2}\s+(?:named\s+)?deficiencies
 # quantity nobody claimed (`feedback_label_must_match_computation`).
 INVENTORY_RE = re.compile(r"\*\*([\d,]+) files, ([\d,]+) MB\*\*")
 MANIFEST_RE = re.compile(r"sha256 of all ([\d,]+) files")
+# The one claim in that README this script cannot derive by reading the repo: which commit the mirrored
+# tree is current as of, and how many blobs `main` carries. That fact lives on GitHub, and this tool is
+# deliberately offline — it copies 42,000 local files and DELETES, so making a destructive local
+# operation depend on the network would let it fail for a reason that has nothing to do with the copy.
+# So the two values are SUPPLIED from `tools/repo_diff.py`'s measurement and are NOT DEFAULTED: an
+# unsupplied pair leaves the site unchecked and the run non-clean, which is the same refusal
+# `--figure-check-rc` makes in the publisher (a gate that could not run must not report clean).
+#
+# The cost of not checking it, measured 2026-09-18: this sentence read `a4d836dd91f3` / 776 blobs — a
+# commit 23 merges and one month old — while every number the script *did* check in the same file was
+# correct and had been corrected twice in between. A README where three sentences are verified and the
+# fourth is not is read as a verified README (`feedback_prose_is_not_verified`).
+COMMIT_RE = re.compile(r"current as of commit \*\*`([0-9a-f]{7,40})`\*\* \(([\d,]+) blobs")
 ITEM_RE = re.compile(r"^### (\d+)\. ", re.M)
 
 
@@ -304,7 +322,25 @@ def register_size() -> int:
     return len(items)
 
 
-def check_claims(bundle: Path, file_count: int, megabytes: int, manifest_entries: int) -> list[str]:
+def _agrees(stated: str, want: int | str) -> bool:
+    """Does the README's `stated` text mean the same thing as the derived `want`?
+
+    Numbers compare as numbers, so thousands separators are not a difference. A commit sha compares by
+    PREFIX in either direction: the README states twelve hex characters and `git`/the API will hand over
+    seven or forty, and an abbreviation is the same commit, not a mismatch to report.
+    """
+    if isinstance(want, str):
+        a, b = stated.lower(), want.lower()
+        return a.startswith(b) or b.startswith(a)
+    return int(stated.replace(",", "")) == want
+
+
+def _shown(value: int | str) -> str:
+    return f"{value:,}" if isinstance(value, int) else str(value)
+
+
+def check_claims(bundle: Path, file_count: int, megabytes: int, manifest_entries: int,
+                 main_sha: str | None = None, main_blobs: int | None = None) -> list[str]:
     """Compare each derivable number in the bundle README to the derived value. Report, never rewrite.
 
     `file_count` and `manifest_entries` differ by exactly one — the manifest does not list itself —
@@ -312,24 +348,37 @@ def check_claims(bundle: Path, file_count: int, megabytes: int, manifest_entries
     separately rather than one being inferred from the other: two numbers, two claims
     (`feedback_two_numbers_two_claims`).
 
+    `main_sha` / `main_blobs` are the one pair this module cannot derive (see `COMMIT_RE`). Both must be
+    supplied or neither is used, and NOT supplying them is a failure rather than a skip — the site is
+    still counted, so a reworded commit sentence fails the same way any other reworded site does.
+
     Returns the failure lines; an empty list means every recognised site agreed.
     """
     text = (bundle / "README.md").read_text(encoding="utf-8")
-    expected = {
+    expected: dict[str, tuple[re.Pattern[str], tuple[int | str, ...] | None]] = {
         "deficiencies": (DEFICIENCY_RE, (register_size(),)),
         "inventory": (INVENTORY_RE, (file_count, megabytes)),
         "manifest": (MANIFEST_RE, (manifest_entries,)),
+        "commit": (COMMIT_RE,
+                   (main_sha, main_blobs) if main_sha and main_blobs is not None else None),
     }
     failures, found = [], {k: 0 for k in expected}
     for lineno, line in enumerate(text.splitlines(), 1):
         for label, (pattern, derived) in expected.items():
             for match in pattern.finditer(line):
                 found[label] += 1
+                if derived is None:
+                    failures.append(
+                        f"  README.md:{lineno} states {match.group(0).strip()!r} and NOTHING CHECKED "
+                        f"IT — pass --main-sha and --main-blobs (read them off tools/repo_diff.py). "
+                        f"An unchecked sentence in a file whose other numbers are checked is read as "
+                        f"checked; this one was a month stale that way.")
+                    continue
                 for stated, want in zip(match.groups(), derived):
-                    if int(stated.replace(",", "")) != want:
+                    if not _agrees(stated, want):
                         failures.append(
                             f"  README.md:{lineno} states {match.group(0).strip()!r} "
-                            f"but the derived {label} is {', '.join(f'{d:,}' for d in derived)}")
+                            f"but the derived {label} is {', '.join(_shown(d) for d in derived)}")
                         break
     for label, count in found.items():
         if count != EXPECTED_CLAIM_SITES[label]:
@@ -376,7 +425,14 @@ def main(argv: list[str] | None = None) -> int:
     # bundle re-sync needs. `lib/tests/test_argparse_help_strings.py` now derives this repo-wide.
     ap.add_argument("--allow-prune", action="store_true",
                     help=f"permit deleting more than {PRUNE_FRACTION * 100:.0f}%% of the mirror")
+    # Deliberately not defaulted, and deliberately not fetched: see COMMIT_RE.
+    ap.add_argument("--main-sha", help="sha of `main` the mirror is current as of (tools/repo_diff.py)")
+    ap.add_argument("--main-blobs", type=int, help="blob count on `main` (tools/repo_diff.py)")
     args = ap.parse_args(argv)
+    if (args.main_sha is None) != (args.main_blobs is None):
+        raise SystemExit("--main-sha and --main-blobs are one claim in two numbers: pass both or "
+                         "neither. Neither leaves the README's commit sentence unchecked and the run "
+                         "non-clean, which is the honest state, not a skip.")
 
     bundle = resolve_bundle(args.bundle)
     source = repo_files()
@@ -406,7 +462,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"\n{MANIFEST}: {len(lines):,} entries; bundle holds {total:,} files, {size_mb:,} MB "
           f"(sum of file sizes; du reports more)")
 
-    failures = check_claims(bundle, total, size_mb, len(lines))
+    failures = check_claims(bundle, total, size_mb, len(lines),
+                            main_sha=args.main_sha, main_blobs=args.main_blobs)
     print("\n⚠️  This bundle contains unredacted account ids, ARNs and bucket names under "
           "validation/evidence/ and validation/runner/.state/. Do not upload or attach it as-is.")
     if failures:
