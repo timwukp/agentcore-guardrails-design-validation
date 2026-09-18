@@ -440,6 +440,16 @@ MIN_AUTHORED_PROSE_OBJECTS = {
     "audit.json": 5,
     "denominators.json": 4,
     "method.json": 1,
+    # 86, measured 2026-09-18, and again a sum over two producers rather than one number:
+    #   43   item titles — one per numbered item in `FUTURE-WORK.md`
+    #   43   the tier heading rendered beside each item (5 distinct headings, resolved per item)
+    # There is deliberately no slack: `derive_registers()` dies if any item or heading is untranslated,
+    # so the only way this count can fall is an item being REMOVED from the register — which is a
+    # deliberate act that should have to move this line, not something the floor absorbs.
+    # It moved 84 -> 86 within the same day, on item 43, which is the intended cost of adding an item:
+    # the line rises with the register because the translation is mandatory, and a floor that a new item
+    # can satisfy without moving is a floor measuring nothing.
+    "registers.json": 86,
 }
 
 # The ceiling on rendered authored payload paths that still hold a bare English string. A CEILING rather
@@ -459,7 +469,16 @@ MIN_AUTHORED_PROSE_OBJECTS = {
 #                    census never saw them as text and they were never in the backlog to leave. They
 #                    were also, for that reason, five translations no reader could read. The legend now
 #                    renders them as visible text.
-MAX_UNTRANSLATED_RENDERED = 299
+#   259  2026-09-18  the deficiency register's 42 item titles and 5 tier headings, translated in
+#                    `platform/curation/register_zh.yaml` and emitted as `authored()` pairs. This one is
+#                    on the record for a second reason: the census run of 2026-09-18 measured **304**,
+#                    ABOVE the 299 ceiling, and the ceiling had not moved. Nothing was broken by the
+#                    videos — five future-work items landed on 2026-09-17 and the census was not re-run,
+#                    so the arm counted against a stale ledger and passed. A ledger that is only re-read
+#                    when somebody remembers is a measurement with no liveness, and the fix is not a
+#                    higher ceiling (which this block forbids in as many words) but a producer that
+#                    cannot emit an untranslated item: `derive_registers()` now DIES on one.
+MAX_UNTRANSLATED_RENDERED = 259
 
 # Floors for the architecture view, per diagram rather than over the payload. `MIN_BOXES_PER_DIAGRAM` is
 # below the smallest diagram the file currently carries (12) with room for a legitimate simplification,
@@ -985,8 +1004,8 @@ def arm_media(g: Gate, payload: Path, bundle_text: str) -> None:
     # Both sides of the membership derived: the payload's claim of what exists-or-is-owed, against
     # the scripts that define what a full render produces. A payload that lost a language would
     # otherwise just have a shorter list, and shorter lists read as tidy.
-    expected = sorted(f"{p.stem}.{lang}.{ext}"
-                      for p in (REPO / "video" / "script").glob("*.yaml")
+    stems = sorted(p.stem for p in (REPO / "video" / "script").glob("*.yaml"))
+    expected = sorted(f"{stem}.{lang}.{ext}" for stem in stems
                       for lang in ("en", "zh") for ext in ("mp4", "vtt"))
     g.check(arm, bool(expected), "no scripts under video/script/, so the expectation is empty and "
                                  "any media state would verify")
@@ -994,6 +1013,19 @@ def arm_media(g: Gate, payload: Path, bundle_text: str) -> None:
     g.check(arm, claimed == expected,
             f"media.json accounts for {claimed}, the scripts define {expected}; a file outside both "
             f"lists is bytes nobody owes an explanation for")
+    g.check(arm, media.get("videos") == stems,
+            f"media.json's video list {media.get('videos')} is not the scripts {stems}")
+
+    # Per video, all four files or none. A chapter shipping its mp4 without its vtt is a player with
+    # no captions and no error — and it would pass every check above, because "some present, some
+    # missing" is exactly the state the page is designed to describe honestly for a video that was
+    # never rendered at all. Whole-video granularity is what makes those two states distinguishable.
+    have = {e["file"] for e in present}
+    for stem in stems:
+        mine = {f for f in expected if f.startswith(f"{stem}.")} & have
+        g.check(arm, len(mine) in (0, 4),
+                f"{stem} ships {len(mine)} of its 4 files ({sorted(mine)}); a video present in one "
+                f"language or without its captions is broken, not absent")
 
     for entry in present:
         path = payload / "media" / entry["file"]
@@ -1015,6 +1047,28 @@ def arm_media(g: Gate, payload: Path, bundle_text: str) -> None:
                 f"{entry['file']} does not match its recorded sha256")
 
     if present:
+        # THE NUMBERS SPOKEN ARE THE NUMBERS PUBLISHED. `resolve()` is re-run here against the payload
+        # being gated and compared with what the render recorded — the videos are the one surface that
+        # keeps its numbers after the build moves on, and until this arm existed nothing convicted a
+        # chapter rendered from last week's register. It cannot be done with the recorded file hashes:
+        # `census.json` carries the build stamp, so those differ on every build even when no number
+        # moved, and a check that is always red gets waived (`feedback_measure_on_a_green_tree`).
+        recorded = media.get("resolved_values")
+        g.check(arm, isinstance(recorded, dict) and bool(recorded),
+                "media ships without the render's resolved values; nothing ties the spoken numbers "
+                "to this payload")
+        if isinstance(recorded, dict) and recorded:
+            sys.path.insert(0, str(REPO / "video"))
+            import scenes as scenes_mod  # noqa: PLC0415 - one arm's dependency, not the harness's
+
+            live = scenes_mod.resolve({name.split(".")[0]: load(payload, name) for name in
+                                      ("census.json", "denominators.json", "practices.json",
+                                       "architecture.json")})
+            moved = sorted(k for k in set(recorded) | set(live) if recorded.get(k) != live.get(k))
+            g.check(arm, not moved,
+                    f"the videos were rendered against different numbers than this payload "
+                    f"publishes: {[(k, recorded.get(k), live.get(k)) for k in moved[:6]]}. Re-render; "
+                    f"a video keeps saying its number long after the page stops showing it")
         rc = media.get("render_check")
         # Stricter than the figures on purpose: a drifted figure ships honestly behind wording the
         # bundle is checked for, but a video whose two renders disagreed has no honest caption a
@@ -1026,16 +1080,25 @@ def arm_media(g: Gate, payload: Path, bundle_text: str) -> None:
                 "render manifest does not attest verified_identical_renders")
         tracks = media.get("tracks", [])
         g.check(arm, bool(tracks), "media files are present but no track describes them")
+        # One track per (video, language) that actually shipped, derived from the FILES rather than
+        # from the track list describing itself. Four videos share seven scene ids between them, so a
+        # track labelled with the wrong video would carry the wrong durations and the wrong voice for
+        # bytes that still hash correctly.
+        shipped = sorted({(f.split(".")[0], f.split(".")[1]) for f in have})
+        labelled = sorted((t.get("video"), t.get("language")) for t in tracks)
+        g.check(arm, labelled == shipped,
+                f"tracks describe {labelled} but the payload ships {shipped}")
         for t in tracks:
+            who = f"{t.get('video')}/{t.get('language')}"
             g.check(arm, t.get("synthesized") is True,
-                    f"track {t.get('language')} does not declare synthesized: true — the narration "
+                    f"track {who} does not declare synthesized: true — the narration "
                     f"IS synthesized, and a payload claiming otherwise is the platform breaking its "
                     f"own editorial rule")
             g.check(arm, bool(t.get("voice")) and bool(t.get("engine")),
-                    f"track {t.get('language')} names no voice/engine; the disclosure would have "
+                    f"track {who} names no voice/engine; the disclosure would have "
                     f"nothing to disclose")
             g.check(arm, isinstance(t.get("duration_s"), (int, float)) and t["duration_s"] > 0,
-                    f"track {t.get('language')} has no measured duration")
+                    f"track {who} has no measured duration")
         g.check(arm, "Amazon Polly" in bundle_text,
                 "media ships but the served bundle carries no Polly disclosure wording; the page "
                 "would play a synthesized voice without saying so")

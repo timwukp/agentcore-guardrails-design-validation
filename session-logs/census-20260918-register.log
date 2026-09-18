@@ -1,0 +1,17 @@
+census: 17 route(s) x 2 locale(s) walked
+   6745 payload string(s) of >= 24 chars
+   2135 render somewhere
+    933 of those have no word separator at all (digest, ARN, path: not prose in any language)
+    807 of those are quoted artifact (must stay English)
+    395 of those are this platform's own prose
+    259 <- BACKLOG: authored prose a zh-TW reader reads in English
+      6 ambiguous (quoted, but also in a curation file)
+    120 payload producer(s) the backlog traces to; the largest five by characters:
+          37483 chars     1 string(s)  audit.json/markdown
+          21236 chars   157 string(s)  audit.json/report/controls[]
+          10092 chars    28 string(s)  claims.json/rows[]/text
+           8839 chars    58 string(s)  controls.json/controls[]/findings[]
+           7123 chars    58 string(s)  audit.json/report/recommendations[]
+      0 quoted SENTENCE(s) rendered on the zh-TW page WITHOUT lang="en", of 993 matched
+    606 identifier node(s) likewise unmarked (published for the split; not a defect)
+written to platform/census/rendered-surfaces-20260918T155900Z.json

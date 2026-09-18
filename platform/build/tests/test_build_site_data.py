@@ -42,6 +42,7 @@ import pytest
 REPO = Path(__file__).resolve().parents[3]
 BUILD = REPO / "platform" / "build"
 FAMILIES_YAML = REPO / "platform" / "curation" / "families.yaml"
+REGISTER_ZH_YAML = REPO / "platform" / "curation" / "register_zh.yaml"
 
 
 # The name this test registers in `sys.modules`, spelled as a module-level constant rather than
@@ -266,6 +267,129 @@ def _blank_value(text: str, key: str) -> str:
                 changed = False
             out.append(line)
     return "\n".join(out) + "\n"
+
+
+# --------------------------------------------------------------------------- the register_zh gate
+#
+# `derive_registers` publishes the deficiency register's 41 titles and 5 tier headings in both
+# languages, and it DIES rather than ship one of them untranslated. Five refusals, each a state in
+# which the builder would otherwise emit a payload every downstream gate accepts:
+#
+#   * an untranslated title — the exact way five items landed English-only on 2026-09-17 and pushed
+#     the untranslated-surface count ABOVE its ceiling instead of down;
+#   * a translation for a number the document does not use, and a tier heading it no longer uses —
+#     both meaning the register was renumbered or reworded, so every OTHER translation may now be
+#     attached to the wrong item, which no count would notice;
+#   * a duplicate item number, where PyYAML's last-wins would put one item's Chinese under another's.
+#
+# The refusals leave no artifact, so only a test can reach them, and the authored file is never
+# written to: an interrupted run that had edited it would leave the register half-translated.
+
+def register_zh_text() -> str:
+    return REGISTER_ZH_YAML.read_text(encoding="utf-8")
+
+
+def run_registers(monkeypatch, text: str):
+    """Call derive_registers with `text` standing in for the authored translation file."""
+    original = bsd.read_text
+
+    def fake(path, inputs):
+        if Path(path).name == "register_zh.yaml":
+            inputs["platform/curation/register_zh.yaml"] = bsd.sha256_bytes(text.encode())
+            bsd.note_read("platform/curation/register_zh.yaml")
+            return text
+        return original(path, inputs)
+
+    monkeypatch.setattr(bsd, "read_text", fake)
+    with bsd.scope():
+        return bsd.derive_registers({})
+
+
+def _blank_item(text: str, n: int) -> str:
+    out, hit = [], False
+    for line in text.splitlines():
+        if re.match(rf"^  {n}: ", line):
+            line, hit = f'  {n}: ""', True
+        out.append(line)
+    assert hit, f"no line for register item {n}"
+    return "\n".join(out) + "\n"
+
+
+def _blank_tier(text: str, key_fragment: str) -> str:
+    """Blank the Chinese under the one tier heading whose key line contains `key_fragment`."""
+    lines = text.splitlines()
+    i = next(i for i, ln in enumerate(lines)
+             if key_fragment in ln and ln.rstrip().endswith(":"))
+    assert lines[i + 1].startswith("    "), f"{key_fragment!r} is not followed by its value"
+    lines[i + 1] = '    ""'
+    return "\n".join(lines) + "\n"
+
+
+def test_no_mutant_control_the_authored_register_translation_passes(monkeypatch):
+    """First, so a red result below is attributable to the mutation and not to the harness."""
+    out = run_registers(monkeypatch, register_zh_text())
+    assert out["n_items"] == len(out["items"]) >= bsd.MIN_REGISTER_ITEMS
+    for it in out["items"]:
+        for field in ("title", "tier"):
+            v = it[field]
+            assert isinstance(v, dict) and set(v) == {"en", "zh"}, f"item {it['n']} {field}: {v!r}"
+            assert v["en"].strip() and v["zh"].strip(), f"item {it['n']} {field} has a blank half"
+            assert v["en"] != v["zh"], f"item {it['n']} {field} is the same text twice"
+    # `body_md` stays a bare English string on purpose; the census counts it in the backlog rather
+    # than the build pretending it is translated.
+    assert all(isinstance(it["body_md"], str) for it in out["items"])
+
+
+@pytest.mark.parametrize(
+    ("name", "mutate", "expect"),
+    [
+        (
+            "an item ships with no Chinese title",
+            lambda t: _blank_item(t, 41),
+            "carries no Chinese title for register item(s) [41]",
+        ),
+        (
+            "a translation for an item the document does not number",
+            lambda t: t.rstrip("\n") + '\n  999: "一個不存在的項目"\n',
+            "which FUTURE-WORK.md does not number",
+        ),
+        (
+            "a tier heading ships with no Chinese",
+            lambda t: _blank_tier(t, "Tier 3"),
+            "carries no Chinese for tier heading(s)",
+        ),
+        (
+            "a translation for a tier heading the document no longer uses",
+            lambda t: t.replace(
+                "tiers:\n",
+                'tiers:\n  "Tier 6 — a heading nobody writes":\n    "第 6 級"\n', 1),
+            "no longer uses",
+        ),
+    ],
+)
+def test_register_translation_gate_refuses(monkeypatch, name, mutate, expect):
+    text = mutate(register_zh_text())
+    assert text != register_zh_text(), f"the mutation for {name!r} did not change the file"
+    with pytest.raises(bsd.BuildError) as err:
+        run_registers(monkeypatch, text)
+    assert expect in str(err.value), f"{name}: refused for the wrong reason: {err.value}"
+
+
+def test_a_duplicate_item_number_is_refused_rather_than_silently_last_wins(monkeypatch):
+    """PyYAML keeps the last of two identical keys, so a second `37:` would put item 37's Chinese
+    under a sentence it does not translate — and every count in this build would still agree, because
+    the number of translations would be unchanged. The loader refuses instead of the value.
+    """
+    text = register_zh_text().replace('  37: "', '  37: "一個看不見的覆蓋"\n  37: "', 1)
+    assert text != register_zh_text(), "the duplicate-key mutation did not change the file"
+    with pytest.raises(bsd.BuildError) as err:
+        run_registers(monkeypatch, text)
+    # No quotes around the 37: the register's keys are integers, and the loader spells the key it
+    # caught rather than a repr of it. Asserting the quoted form would pass on a message about a
+    # different file's string key.
+    assert "defines the key 37 twice" in str(err.value), (
+        f"refused, but not as a duplicate key: {err.value}"
+    )
 
 
 # --------------------------------------------------------------------------- the output-root guards

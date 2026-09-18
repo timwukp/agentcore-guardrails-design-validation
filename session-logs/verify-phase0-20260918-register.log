@@ -1,0 +1,537 @@
+
+[1m=== every .py compiles (no broken tree can reach the suites) ===[0m
+  312 .py files
+./platform/infra/node_modules/aws-cdk-lib/custom-resource-handlers/dist/aws-eks-v2/kubectl-handler/helm/__init__.py:107: SyntaxWarning: invalid escape sequence '\d'
+  private_ecr_pattern = 'oci://(?P<registry>\d+\.dkr\.ecr\.(?P<region>[a-z0-9\-]+)\.(?P<domain>[a-z0-9\.-]+))*'
+./platform/infra/node_modules/aws-cdk-lib/custom-resource-handlers/dist/aws-eks-v2/kubectl-handler/helm/__init__.py:108: SyntaxWarning: invalid escape sequence '\.'
+  public_ecr_pattern = 'oci://(?P<registry>public\.ecr\.aws)*'
+./platform/infra/node_modules/aws-cdk-lib/custom-resource-handlers/dist/aws-eks/kubectl-handler/helm/__init__.py:109: SyntaxWarning: invalid escape sequence '\d'
+  private_ecr_pattern = 'oci://(?P<registry>\d+\.dkr\.ecr\.(?P<region>[a-z0-9\-]+)\.(?P<domain>[a-z0-9\.-]+))*'
+./platform/infra/node_modules/aws-cdk-lib/custom-resource-handlers/dist/aws-eks/kubectl-handler/helm/__init__.py:110: SyntaxWarning: invalid escape sequence '\.'
+  public_ecr_pattern = 'oci://(?P<registry>public\.ecr\.aws)*'
+  File "./platform/infra/node_modules/aws-cdk/lib/init-templates/sample-app/python/app.template.py", line 5
+    from %name.PythonModule%.%name.PythonModule%_stack import %name.PascalCased%Stack
+         ^
+SyntaxError: invalid syntax
+[31mFAIL (rc=1)[0m  every .py compiles (no broken tree can reach the suites)
+
+[1m=== triage reproduces from the rules ===[0m
+--check: triage.csv matches the rules (546 rows)
+[32mPASS[0m  triage reproduces from the rules
+
+[1m=== coverage gate (15 checks over 546 claims) ===[0m
+COVERAGE GATE — 546 claims from triage.csv
+
+  pass  CHK-01 class is valid
+  pass  CHK-02 tested claim names a case
+  pass  CHK-03 cited case exists
+  pass  CHK-04 untested claim gives a reason
+  pass  CHK-05 excluded claim names a remedy
+  pass  CHK-06 case states a falsifying oracle
+  pass  CHK-07 claim class agrees with case class
+  pass  CHK-08 no orphan cases
+  pass  CHK-09 merge-group integrity
+  pass  CHK-10 claim ids unique
+  pass  CHK-11 classification is traceable
+  pass  CHK-12 sha1 matches claims_raw
+  pass  CHK-13 split parents replaced
+  pass  CHK-14 doc_line inside the document
+  pass  CHK-15 no starved family
+
+  385/546 claims (70.5%) have a test case; 151 definitional/normative, 10 excluded with a written reason
+  90 cases cited, 3 platform prerequisites, 25 merge groups
+
+GATE PASSED — every claim carries a class, and either a test case with a falsifying oracle or a written reason it has none.
+[32mPASS[0m  coverage gate (15 checks over 546 claims)
+
+[1m=== coverage gate self-test (14 mutations + control arm) ===[0m
+SELF-TEST — proving each check is load-bearing
+
+  control arm: all 15 checks pass on unmutated input
+
+  KILLED   CHK-01  invalid class letter
+           -> C-aws-bedrock-agentcore-before-during-afte-thead-001: class 'Z' is not one of ['C', 'D', 'E', 'N', '
+  KILLED   CHK-02  tested claim with no case
+           -> C-s1-prose-001: class S but no test case
+  KILLED   CHK-03  case id not in the registry
+           -> C-s2-1-mermaid-002: cites unknown case 'F99-nonexistent'
+  KILLED   CHK-04  untested claim with no reason
+           -> C-s3-1-numitem-001: class N with no exclusion reason
+  KILLED   CHK-04  reason too short to be a reason
+           -> C-aws-bedrock-agentcore-before-during-afte-thead-001: exclusion reason is 12 chars (min 80) — too sh
+  KILLED   CHK-04  untested claim citing a case
+           -> C-s3-1-numitem-001: class N must not cite cases, has 'F1-3'
+  KILLED   CHK-05  X claim with no remedy or proxy
+           -> C-s3-1-bullet-014-a: class X but the reason names no remedy or proxy — say what would make it testab
+  KILLED   CHK-07  claim class disagrees with case class
+           -> C-s1-prose-001: class O but no cited case has that class (cases: F6-1=S, F6-2=S, F6-4=S, F6-5=S)
+  KILLED   CHK-10  duplicate claim id
+           -> duplicate claim_id 'C-aws-bedrock-agentcore-before-during-afte-thead-001'
+  KILLED   CHK-11  claim reached the fallthrough
+           -> C-aws-bedrock-agentcore-before-during-afte-thead-001: reached the fallthrough — unclassified
+  KILLED   CHK-12  sha1 no longer matches claims_raw
+           -> C-aws-bedrock-agentcore-before-during-afte-thead-001: sha1 93d6c93d9a76 != claims_raw.csv 717d77f3ec
+  KILLED   CHK-14  doc_line past the end of the document
+           -> C-aws-bedrock-agentcore-before-during-afte-thead-001: doc_line 999999 is outside agentcore_guardrail
+  KILLED   CHK-09  two canonical sites in one merge group
+           -> merge group M-tier-language-ineffective: 6 canonical sites (expected exactly 1)
+  KILLED   CHK-13  split parent resurrected alongside its parts
+           -> C-s9-mermaid-011: split parent still present alongside its parts
+
+  14/14 mutations caught
+[32mPASS[0m  coverage gate self-test (14 mutations + control arm)
+
+[1m=== exclusion register matches the triage ===[0m
+--check: EXCLUSION_REGISTER.md matches triage.csv
+[32mPASS[0m  exclusion register matches the triage
+
+[1m=== pre-registration verifies against lib/stats.py ===[0m
+Verifying PREREGISTRATION.yaml
+  status: SEALED, hash matches (a2136a9d3dbb…)
+
+OK — 189 assertions, every derived value recomputed from lib/stats.py
+[32mPASS[0m  pre-registration verifies against lib/stats.py
+
+[1m=== oracle bindings trace to the sealed oracle text ===[0m
+cases: 93   bindings: 93   kinds in use: 21/21
+   46  EXISTENCE
+   10  ZERO_EVENTS
+    6  BAND_CONTAINS
+    4  BOUNDARY
+    3  DISJOINT_INTERVALS
+    3  LOWER_ABOVE
+    3  PAIRED_IMPROVEMENT
+    2  DISTINCT_AT_LEAST
+    2  ENUM_EXACT
+    2  RECORDED
+    2  UPPER_BELOW
+    1  ASYMMETRIC_FPR
+    1  CI_OVERLAPS
+    1  INDISTINGUISHABLE
+    1  LAG_FLOOR
+    1  NONNEG_RESIDUAL
+    1  NOT_TESTABLE
+    1  QUANTIZATION
+    1  ROC_LATTICE
+    1  SHIFT_EXCLUDES_ZERO
+    1  STRATUM_PURITY
+
+every binding is traceable to its sealed oracle text
+[32mPASS[0m  oracle bindings trace to the sealed oracle text
+
+[1m=== corpora (sizes sealed, build reproducible, κ ≥ gate) ===[0m
+OK — 213 assertions over 1917 items in 49 files
+  manifest sha256 matches disk, build reproduces byte for byte
+  kappa = 0.9593 >= 0.8 over 300 rated items
+  generated under the live seal a2136a9d3dbb…
+[32mPASS[0m  corpora (sizes sealed, build reproducible, κ ≥ gate)
+
+[1m=== deviation corpora (unsealed by design, build reproducible, promotion refused) ===[0m
+OK — 42 assertions over 306 items in 5 files
+  manifest sha256 matches disk, build reproduces byte for byte
+  sealed=false, no power claim for F3-5, F3-6, F3-7 (DEVIATIONS.md/DEV-P1-4)
+  generated under the live seal a2136a9d3dbb…
+[32mPASS[0m  deviation corpora (unsealed by design, build reproducible, promotion refused)
+
+[1m=== amendment readiness (>= 2 calendar days before any doc change) ===[0m
+OK — 107 assertions over 19 findings
+  FINDING-F1-1.md                  RESOLVED               offline (no evidence runs)
+  FINDING-F1-15.md                 AMENDMENT_DEFERRED     1 day(s) ['2026-08-14']
+  FINDING-F1-3.md                  READY_TO_AMEND         2 day(s) ['2026-08-10', '2026-08-11']
+  FINDING-F1-GRAMMAR-PERMISSIVENESS.md READY_TO_AMEND         2 day(s) ['2026-08-13', '2026-08-14']
+  FINDING-F3-10.md                 READY_TO_AMEND         2 day(s) ['2026-08-12', '2026-08-13']
+  FINDING-F5-1-REVOCATION.md       READY_TO_AMEND         2 day(s) ['2026-08-11', '2026-08-12']
+  FINDING-F5-2.md                  READY_TO_AMEND         2 day(s) ['2026-08-12', '2026-08-13']
+  FINDING-F5-4A.md                 READY_TO_AMEND         2 day(s) ['2026-08-11', '2026-08-12']
+  FINDING-F5-7A.md                 READY_TO_AMEND         2 day(s) ['2026-08-09', '2026-08-10']
+  FINDING-F5-7B.md                 AMENDMENT_DEFERRED     1 day(s) ['2026-08-14']
+  FINDING-F6-DAY2-DECISIVENESS.md  AMENDMENT_DEFERRED     2 day(s) ['2026-08-11', '2026-08-19']
+  FINDING-F9-2.md                  CONFIRMS_DOCUMENT      2 day(s) ['2026-08-11', '2026-08-12']
+  FINDING-P0-PII-CORPUS.md         INTERNAL               offline (no evidence runs)
+  FINDING-P0-PREREG.md             INTERNAL               offline (no evidence runs)
+  FINDING-P0-PRICING.md            INTERNAL               offline (no evidence runs)
+  FINDING-P0-STATS.md              INTERNAL               offline (no evidence runs)
+  FINDING-P0-TRIAGE.md             INTERNAL               offline (no evidence runs)
+  FINDING-P1-CEDAR-RESOURCE-SCOPE.md RESOLVED               2 day(s) ['2026-08-13', '2026-08-14']
+  FINDING-P1-REDACTION-ENCODING.md INTERNAL               offline (no evidence runs)
+  the sealed rule (>= 2 calendar days) binds every finding whose status is in ['AMENDED', 'READY_TO_AMEND']
+[32mPASS[0m  amendment readiness (>= 2 calendar days before any doc change)
+
+[1m=== v1.3 amendment register (sites derived from the triage, not listed by hand) ===[0m
+wrote V13_CANDIDATES.md: 18 candidates, 76 distinct sites
+  V13-01  breaks-the-reader   9 site(s) (+10 related)    AWAITING_EXPERIMENT
+  V13-02  breaks-the-reader   4 site(s)                  MEASURED_READY
+  V13-10  breaks-the-reader   3 site(s)                  MEASURED_READY
+  V13-03  misinforms          6 site(s) (+1 related)     MEASURED_READY
+  V13-04  misinforms          3 site(s)                  AWAITING_EXPERIMENT
+  V13-05  misinforms         11 site(s)                  BLOCKED_ON_REPLICATION
+  V13-06  misinforms         18 site(s) (+13 related)    AWAITING_EXPERIMENT
+  V13-11  misinforms          3 site(s)                  MEASURED_READY
+  V13-12  misinforms          3 site(s)                  MEASURED_READY
+  V13-13  misinforms          1 site(s)                  MEASURED_READY
+  V13-14  misinforms          1 site(s)                  MEASURED_READY
+  V13-15  misinforms          2 site(s)                  MEASURED_READY
+  V13-17  misinforms          2 site(s)                  BLOCKED_ON_REPLICATION
+  V13-07  underinforms        4 site(s)                  AWAITING_EXPERIMENT
+  V13-08  underinforms        4 site(s) (+6 related)     PARTIALLY_DISCHARGED
+  V13-09  underinforms        4 site(s) (+2 related)     AWAITING_EXPERIMENT
+  V13-16  underinforms        3 site(s)                  MEASURED_READY
+  V13-18  underinforms        1 site(s)                  AWAITING_EXPERIMENT
+[32mPASS[0m  v1.3 amendment register (sites derived from the triage, not listed by hand)
+
+[1m=== cost projection within the sealed ceiling ===[0m
+projection $6.67 · contingency $29.00 · worst case $35.67 · ceiling $95.00
+  phase 1   $   0.81  2d  amends S3.2,S7.1
+  phase 2   $   0.01  1d  confirm-only
+  phase 3   $   0.06  2d  amends S3.1,S4.1,S7.1,S7.2,S8
+  phase 4   $   1.17  2d  amends S7.1,S6.4
+  phase 5   $   0.05  2d  amends S3.3
+  phase 5c  $   0.01  1d  confirm-only
+  phase 6   $   3.55  2d  amends S6.1,S6.3,S6.4,S9,AppendixB
+  phase 6b  $   0.05  1d  confirm-only
+  phase 7   $   0.03  2d  amends S5.3,S8
+  phase 8   $   0.94  3d  amends S3.2,S7.1
+  phase 99  $   0.00  1d  confirm-only
+
+AUTHORISED
+[32mPASS[0m  cost projection within the sealed ceiling
+
+[1m=== test suite (all 15 test directories) ===[0m
+  claims/tests       474 tests collected (floor 474)
+  lib/tests          992 tests collected (floor 992)
+  f5_redteam/tests   789 tests collected (floor 789)
+  f2_determinism/tests 34 tests collected (floor 34)
+  f3_efficacy/tests  268 tests collected (floor 268)
+  f8_regional/tests  152 tests collected (floor 152)
+  f10_billing/tests  80 tests collected (floor 80)
+  infra/tests        79 tests collected (floor 79)
+  runner/tests       94 tests collected (floor 94)
+  f9_failsecure/tests 106 tests collected (floor 106)
+  f1_config/tests    175 tests collected (floor 175)
+  tools/tests        130 tests collected (floor 130)
+  video/tests        53 tests collected (floor 53)
+  platform/build/tests 395 tests collected (floor 395)
+  platform/audit/tests 57 tests collected (floor 57)
+........................................................F............... [  1%]
+........................................................................ [  3%]
+......................F.......F......................................... [  5%]
+........................................................................ [  7%]
+........................................................................ [  9%]
+.....................................................................F.. [ 11%]
+........................................................................ [ 12%]
+........................................................................ [ 14%]
+........................................................................ [ 16%]
+........................................................................ [ 18%]
+........................................................................ [ 20%]
+........................................................................ [ 22%]
+........................................................................ [ 24%]
+........................................................................ [ 25%]
+........................................................................ [ 27%]
+......s...........................s..................................... [ 29%]
+........................................................................ [ 31%]
+.............................................F.......................... [ 33%]
+........................................................................ [ 35%]
+...................................................................s.... [ 37%]
+........................................................................ [ 38%]
+........................................................................ [ 40%]
+........................................................................ [ 42%]
+........................................................................ [ 44%]
+........................................................................ [ 46%]
+........................................................................ [ 48%]
+........................................................................ [ 50%]
+........................................................................ [ 51%]
+........................................................................ [ 53%]
+........................................................................ [ 55%]
+........................................................................ [ 57%]
+........................................................................ [ 59%]
+........................................................................ [ 61%]
+........................................................................ [ 63%]
+........................................................................ [ 64%]
+........................................................................ [ 66%]
+........................................................................ [ 68%]
+........................................................................ [ 70%]
+........................................................................ [ 72%]
+.........................................................s.............F [ 74%]
+.................sssss.................................................. [ 76%]
+........................................................................ [ 77%]
+........................................................................ [ 79%]
+........................................................................ [ 81%]
+........................................................................ [ 83%]
+.....................................................................sss [ 85%]
+ssss.................................................................... [ 87%]
+........................................................................ [ 89%]
+........................................................................ [ 90%]
+........................................................................ [ 92%]
+........................................................................ [ 94%]
+........................................................................ [ 96%]
+........................................................................ [ 98%]
+..............................................................           [100%]
+=================================== FAILURES ===================================
+______________________ test_every_cited_repo_path_exists _______________________
+
+    def test_every_cited_repo_path_exists():
+        anchors, suffixes = _anchors(), _suffixes()
+        docs = _docs()
+        dangling: list[str] = []
+        total = 0
+        citing_docs = 0
+        for doc in docs:
+            cites = _citations(doc.read_text(encoding="utf-8"), anchors, suffixes)
+            total += len(cites)
+            citing_docs += 1 if cites else 0
+            for tok in sorted(cites):
+                if tok not in ABSENT_BY_DESIGN and not (ROOT / tok).exists():
+                    dangling.append(f"  {doc.relative_to(ROOT)} cites `{tok}`")
+    
+        assert total >= MIN_CITATIONS and citing_docs >= MIN_DOCUMENTS, (
+            f"recognised only {total} citation(s) across {citing_docs} document(s), below the floor of "
+            f"{MIN_CITATIONS}/{MIN_DOCUMENTS}. The extractor has stopped matching, so this guard is "
+            f"reporting clean over prose it is not reading.")
+    
+>       assert not dangling, (
+            "these documents cite repo-relative paths that do not exist in the tree:\n"
+            + "\n".join(dangling)
+            + "\n\nA citation a reader cannot fetch is a claim with no evidence that reads exactly like "
+              "a claim with evidence. Note there are TWO directories named `session-logs/` — this "
+              "repo's and the outer ~/Downloads one — which is how this failed on 2026-08-20: the "
+              "cited file existed, in the wrong tree. Copy the artifact in, or stop citing it. If the "
+              "sentence's point is that the file does NOT exist — a specification, quoted output, or a "
+              "local-only runtime file — add it to ABSENT_BY_DESIGN with the reason.")
+E       AssertionError: these documents cite repo-relative paths that do not exist in the tree:
+E           FUTURE-WORK.md cites `platform/curation/scenarios.yaml`
+E           platform/SITE-REVIEW-20260822.md cites `platform/curation/scenarios.yaml`
+E         
+E         A citation a reader cannot fetch is a claim with no evidence that reads exactly like a claim with evidence. Note there are TWO directories named `session-logs/` — this repo's and the outer ~/Downloads one — which is how this failed on 2026-08-20: the cited file existed, in the wrong tree. Copy the artifact in, or stop citing it. If the sentence's point is that the file does NOT exist — a specification, quoted output, or a local-only runtime file — add it to ABSENT_BY_DESIGN with the reason.
+E       assert not ['  FUTURE-WORK.md cites `platform/curation/scenarios.yaml`', '  platform/SITE-REVIEW-20260822.md cites `platform/curation/scenarios.yaml`']
+
+claims/tests/test_cited_paths_exist.py:201: AssertionError
+________________ test_every_prose_count_matches_a_derived_count ________________
+
+    def test_every_prose_count_matches_a_derived_count():
+        total = len(_items())
+        tiers = _tiers()
+        tier_sizes = {len(v) for v in tiers.values()}
+        sites, bad = [], []
+        for path, sentence in _claim_sites():
+            for m in COUNT_RE.finditer(sentence):
+                claimed = int(m.group(1))
+                where = f"{path.relative_to(ROOT)}: …{' '.join(sentence.split())[:110]}…"
+                sites.append(where)
+                # A sentence naming a tier may legitimately state that tier's size instead.
+                allowed = {total} | (tier_sizes if re.search(r"\btier\b", sentence, re.I) else set())
+                if claimed not in allowed:
+                    bad.append(f"{where}\n      claims {claimed}, derived {sorted(allowed)}")
+        assert not bad, (
+            "prose states a register count that no derivation supports:\n    " + "\n    ".join(bad))
+>       assert len(sites) == EXPECTED_PROSE_SITES, (
+            f"found {len(sites)} prose site(s) stating a register count, expected "
+            f"{EXPECTED_PROSE_SITES}:\n    " + "\n    ".join(sites) +
+            "\n  A DROP means a sentence was reworded past these regexes, so it is no longer checked; a "
+            "RISE means a new unchecked claim. Either way, read it and update EXPECTED_PROSE_SITES.")
+E       AssertionError: found 5 prose site(s) stating a register count, expected 4:
+E             README.md: …**The same rule now binds the deficiency register.** `FUTURE-WORK.md` is English prose, and its 42 item titles…
+E             RECONNECT.md: …- **`FUTURE-WORK.md` is now 42 items** (was 21, then 22, then 28, then 31, then 35, then 36, then 41).…
+E             RECONNECT.md: …- **`FUTURE-WORK.md`** — the deficiency list, **42 items** in 5 tiers, each with derived evidence (this paragr…
+E             WHITEPAPER.md: …The full 42-item deficiency register, tiered by severity, is `FUTURE-WORK.md`.…
+E             WHITEPAPER.md: …Its Tier 1 — "the paper is wrong or self-contradictory until these are fixed" — currently holds 6 items (1, 2,…
+E           A DROP means a sentence was reworded past these regexes, so it is no longer checked; a RISE means a new unchecked claim. Either way, read it and update EXPECTED_PROSE_SITES.
+E       assert 5 == 4
+E        +  where 5 = len(['README.md: …**The same rule now binds the deficiency register.** `FUTURE-WORK.md` is English prose, and its 42 item ....md: …Its Tier 1 — "the paper is wrong or self-contradictory until these are fixed" — currently holds 6 items (1, 2,…'])
+
+claims/tests/test_future_work_register.py:210: AssertionError
+_________ test_every_elided_hash_citation_resolves_to_a_derivable_hash _________
+
+    def test_every_elided_hash_citation_resolves_to_a_derivable_hash():
+        universe = _universe()
+        cites = _citations(_docs())
+        assert len(cites) >= MIN_CITATIONS, (
+            f"found {len(cites)} elided-hash citation(s), floor {MIN_CITATIONS}")
+        bad = []
+        for path, pre, suf in cites:
+            if f"{pre}…{suf}" in SUPERSEDED_HASHES:
+                continue
+            if not _matches(universe, pre, suf):
+                bad.append(f"{path.relative_to(ROOT)}: `{pre}…{suf}`")
+>       assert not bad, (
+            "elided sha256 citation(s) match no hash this repository can derive or has recorded:\n    "
+            + "\n    ".join(bad) +
+            "\n  Either the truncation is wrong (check both ends — an off-by-one at the END is the "
+            "defect this test was written for), the artefact is gone, or the value is genuinely "
+            "superseded and belongs in SUPERSEDED_HASHES with a reason.")
+E       AssertionError: elided sha256 citation(s) match no hash this repository can derive or has recorded:
+E             DEVIATIONS.md: `ebe77ed2…13f85ddf`
+E           Either the truncation is wrong (check both ends — an off-by-one at the END is the defect this test was written for), the artefact is gone, or the value is genuinely superseded and belongs in SUPERSEDED_HASHES with a reason.
+E       assert not ['DEVIATIONS.md: `ebe77ed2…13f85ddf`']
+
+claims/tests/test_hash_citations.py:168: AssertionError
+__________ test_every_dynamic_copy_source_is_declared_and_still_there __________
+
+    def test_every_dynamic_copy_source_is_declared_and_still_there():
+        """A source reached through a variable cannot be measured, so it is declared with a reason.
+    
+        Both directions: an undeclared dynamic copy is a hit, and a declaration whose file no longer
+        holds one is stale — an exemption that exempts nothing reads as diligence.
+        """
+        found: set[str] = set()
+        undeclared: list[str] = []
+        for p in _py_files():
+            rel_p = str(p.relative_to(ROOT))
+            for line, rel in _subtree_copy_sites(p.read_text(encoding="utf-8")):
+                if rel is not None:
+                    continue
+                found.add(rel_p)
+                if rel_p not in DYNAMIC_COPY_SOURCES:
+                    undeclared.append(f"{rel_p}:{line}")
+>       assert not undeclared, (
+            "these copy a tree whose source is not a literal under ROOT, so nothing can measure it; "
+            "declare it in DYNAMIC_COPY_SOURCES with what the source is:\n  "
+            + "\n  ".join(undeclared))
+E       AssertionError: these copy a tree whose source is not a literal under ROOT, so nothing can measure it; declare it in DYNAMIC_COPY_SOURCES with what the source is:
+E           platform/build/tests/test_check_site_invariants.py:110
+E           platform/build/tests/test_check_site_invariants.py:124
+E       assert not ['platform/build/tests/test_check_site_invariants.py:110', 'platform/build/tests/test_check_site_invariants.py:124']
+
+claims/tests/test_repo_copy_exclusions.py:411: AssertionError
+_____ test_a_write_in_a_results_module_is_masked_or_placed_outside_results _____
+
+    def test_a_write_in_a_results_module_is_masked_or_placed_outside_results():
+        """The runtime-target backstop, over the whole repo."""
+        unnamed = []
+        for path in _py_files():
+            rel = str(path.relative_to(ROOT))
+            for recv, line, masked in _unplaceable_writes(path):
+                if masked or (rel, recv) in NOT_A_RESULTS_TARGET or (rel, recv) in WAIVED:
+                    continue
+                unnamed.append(f"{rel}:{line}  {recv}.write_text(...)")
+>       assert not unnamed, (
+            "a module that writes into results/ has a write whose target this scan cannot place, "
+            "and it neither masks nor is named in NOT_A_RESULTS_TARGET:\n  " + "\n  ".join(unnamed))
+E       AssertionError: a module that writes into results/ has a write whose target this scan cannot place, and it neither masks nor is named in NOT_A_RESULTS_TARGET:
+E           platform/audit/report.py:573  path.write_text(...)
+E           platform/build/census_rendered_surfaces.py:651  out.write_text(...)
+E       assert not ['platform/audit/report.py:573  path.write_text(...)', 'platform/build/census_rendered_surfaces.py:651  out.write_text(...)']
+
+lib/tests/test_results_writes_are_masked.py:367: AssertionError
+____ test_the_real_staging_tree_holds_nothing_the_live_tree_disagrees_with _____
+
+    def test_the_real_staging_tree_holds_nothing_the_live_tree_disagrees_with():
+        """Read-only over the actual pull, so a future re-merge cannot quietly find a conflict.
+    
+        `classify` does not write, so this arm is safe against the real archive. It is also the arm
+        that would notice if a staged record and its published counterpart ever diverged — which is
+        the situation the tool refuses to resolve on its own.
+        """
+        mod = _subject()
+        staged = mod.STAGING_ROOT / STAMP
+        if not staged.is_dir():
+            pytest.skip(f"{staged} is not on this machine")
+    
+        to_copy, identical, conflicts, refused = mod.classify(staged)
+>       assert conflicts == [], f"staged records disagree with the published ones: {conflicts[:5]}"
+E       AssertionError: staged records disagree with the published ones: [PosixPath('evidence/r20260810T130945Z/f6_latency/F6-1_3_4_9/analysis.json'), PosixPath('evidence/r20260810T130945Z/f6_latency/F6-1_3_4_9/environment.json'), PosixPath('evidence/r20260810T130945Z/f6_latency/F6-1_3_4_9/summary.json'), PosixPath('evidence/r20260810T130945Z/f6_latency/F6-2_5/analysis.json'), PosixPath('evidence/r20260810T130945Z/f6_latency/F6-2_5/environment.json')]
+E       assert [PosixPath('e...ummary.json')] == []
+E         
+E         Left contains 6 more items, first extra item: PosixPath('evidence/r20260810T130945Z/f6_latency/F6-1_3_4_9/analysis.json')
+E         Use -v to get more diff
+
+runner/tests/test_merge_evidence.py:231: AssertionError
+=============================== warnings summary ===============================
+claims/tests/test_repo_copy_exclusions.py: 6 warnings
+lib/tests/test_account_id_choke_point.py: 1 warning
+lib/tests/test_cedar_resource_scope.py: 2 warnings
+lib/tests/test_definition_union_member.py: 3 warnings
+lib/tests/test_oracle.py: 1 warning
+lib/tests/test_probe_guardrail.py: 1 warning
+lib/tests/test_property_not_called.py: 1 warning
+lib/tests/test_rate_limits.py: 5 warnings
+lib/tests/test_results_writes_are_masked.py: 5 warnings
+lib/tests/test_scan_scope.py: 1 warning
+runner/tests/test_runner_policy.py: 2 warnings
+  <unknown>:40: SyntaxWarning: invalid escape sequence '\s'
+
+lib/tests/test_argparse_help_strings.py::test_every_help_string_survives_the_expansion_argparse_performs
+lib/tests/test_argparse_help_strings.py::test_no_help_string_is_assembled_out_of_reach_of_this_check
+  platform/build/csp_preview.py:40: SyntaxWarning: invalid escape sequence '\s'
+    if (!s || HAN.test(s) || s.split(/\s+/).length < 4) continue;   // 4+ words = prose, not a token
+
+lib/tests/test_cedar_resource_scope.py: 2 warnings
+lib/tests/test_definition_union_member.py: 3 warnings
+lib/tests/test_oracle.py: 1 warning
+lib/tests/test_rate_limits.py: 5 warnings
+runner/tests/test_runner_policy.py: 2 warnings
+  <unknown>:109: SyntaxWarning: invalid escape sequence '\d'
+
+lib/tests/test_cedar_resource_scope.py: 2 warnings
+lib/tests/test_definition_union_member.py: 3 warnings
+lib/tests/test_oracle.py: 1 warning
+lib/tests/test_rate_limits.py: 5 warnings
+runner/tests/test_runner_policy.py: 2 warnings
+  <unknown>:110: SyntaxWarning: invalid escape sequence '\.'
+
+lib/tests/test_cedar_resource_scope.py: 2 warnings
+lib/tests/test_definition_union_member.py: 3 warnings
+lib/tests/test_oracle.py: 1 warning
+lib/tests/test_rate_limits.py: 5 warnings
+runner/tests/test_runner_policy.py: 2 warnings
+  <unknown>:107: SyntaxWarning: invalid escape sequence '\d'
+
+lib/tests/test_cedar_resource_scope.py: 2 warnings
+lib/tests/test_definition_union_member.py: 3 warnings
+lib/tests/test_oracle.py: 1 warning
+lib/tests/test_rate_limits.py: 5 warnings
+runner/tests/test_runner_policy.py: 2 warnings
+  <unknown>:108: SyntaxWarning: invalid escape sequence '\.'
+
+lib/tests/test_module_name_collisions.py::test_no_by_path_loader_registers_a_name_that_lib_owns
+lib/tests/test_module_name_collisions.py::test_every_loader_call_is_either_resolvable_or_listed_as_unresolvable
+lib/tests/test_module_name_collisions.py::test_every_loader_call_is_either_resolvable_or_listed_as_unresolvable
+lib/tests/test_module_name_collisions.py::test_every_loader_call_is_either_resolvable_or_listed_as_unresolvable
+lib/tests/test_module_name_collisions.py::test_a_shared_loader_name_always_points_at_the_same_source
+lib/tests/test_module_name_collisions.py::test_the_check_redaction_loader_no_longer_squats_the_redact_name
+  /Users/tmwu/Downloads/grx-validation/platform/build/csp_preview.py:40: SyntaxWarning: invalid escape sequence '\s'
+    if (!s || HAN.test(s) || s.split(/\s+/).length < 4) continue;   // 4+ words = prose, not a token
+
+f5_redteam/tests/test_account_enforced_guardrail.py: 18 warnings
+  /Users/tmwu/Downloads/grx-validation/f5_redteam/09_account_enforced_guardrail.py:449: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    gate = check_hard_gate(cw, model_id, now=dt.datetime.utcnow())
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED claims/tests/test_cited_paths_exist.py::test_every_cited_repo_path_exists
+FAILED claims/tests/test_future_work_register.py::test_every_prose_count_matches_a_derived_count
+FAILED claims/tests/test_hash_citations.py::test_every_elided_hash_citation_resolves_to_a_derivable_hash
+FAILED claims/tests/test_repo_copy_exclusions.py::test_every_dynamic_copy_source_is_declared_and_still_there
+FAILED lib/tests/test_results_writes_are_masked.py::test_a_write_in_a_results_module_is_masked_or_placed_outside_results
+FAILED runner/tests/test_merge_evidence.py::test_the_real_staging_tree_holds_nothing_the_live_tree_disagrees_with
+6 failed, 3856 passed, 16 skipped, 106 warnings in 4518.10s (1:15:18)
+[31mFAIL (rc=1)[0m  test suite (all 15 test directories)
+
+[1m=== redaction gate ===[0m
+redaction gate: 1274 file(s) under grx-validation/
+  extensions: ALL — inclusion is not keyed on the filename; a file that will not decode as UTF-8 is read as latin-1, not skipped
+  OOXML ['.docx', '.pptx', '.xlsx'] — 2 package(s) unzipped: agentcore_guardrails_best_practices_v1.4.pptx, agentcore_guardrails_best_practices_v1.4.zh-TW.pptx
+  skipped dirs ['.git', '.pytest_cache', '.staging', '.state', '.wheel_cache', '__pycache__', 'evidence', 'node_modules'] + any dir starting with ['.venv']
+  111,037,864 bytes read, 10968 reviewed exception(s) waived
+
+PASSED — no unredacted cloud identifiers in 1274 scanned files.
+[32mPASS[0m  redaction gate
+
+[33mSKIP[0m  F0-1 live reference check — set WITH_NETWORK=1 to include
+
+[1m=== summary ===[0m
+  [31mFAIL[0m  every .py compiles (no broken tree can reach the suites)  (rc=1)
+  [32mpass[0m  triage reproduces from the rules
+  [32mpass[0m  coverage gate (15 checks over 546 claims)
+  [32mpass[0m  coverage gate self-test (14 mutations + control arm)
+  [32mpass[0m  exclusion register matches the triage
+  [32mpass[0m  pre-registration verifies against lib/stats.py
+  [32mpass[0m  oracle bindings trace to the sealed oracle text
+  [32mpass[0m  corpora (sizes sealed, build reproducible, κ ≥ gate)
+  [32mpass[0m  deviation corpora (unsealed by design, build reproducible, promotion refused)
+  [32mpass[0m  amendment readiness (>= 2 calendar days before any doc change)
+  [32mpass[0m  v1.3 amendment register (sites derived from the triage, not listed by hand)
+  [32mpass[0m  cost projection within the sealed ceiling
+  [31mFAIL[0m  test suite (all 15 test directories)  (rc=1)
+  [32mpass[0m  redaction gate
+
+12/14 gates passed

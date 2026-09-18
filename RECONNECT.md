@@ -2,7 +2,61 @@
 
 Read this first if the session dropped. It is the shortest path back to the live state.
 
-## ⇢ RESUME HERE (2026-09-17): **all 5 plan steps are MERGED and the design is LIVE — release `v/20260917T091943Z/`, probed in a browser, and the probe is now a file**
+## ⇢ RESUME HERE (2026-09-18): **the three phase chapters are rendered and verified, and re-running the census forced a bilingual deficiency register**
+
+`/design` now embeds **four** explainers — overview plus one chapter per phase — **8 tracks, 1298 s,
+26.39 MB**, one `--verify` run at `rc=0` with `verified_identical_renders: true`. Polly, at the meter:
+**$1.4939** for the round (56,863 characters / 246 requests, decomposed to the request), cumulative
+**$2.21–$2.26**. Three rendering defects were found *by looking at the frames* and the third was introduced
+by the fix for the first — spine labels crossing the diagram's own return path — so the clearance is now
+read from the connectors (`min(0, gutter_x) - 16`), held by two arms over a fixture that has left-margin
+connectors, and `video/tests` is **53 arms** with **8/8** mutants killed.
+
+**The census is the part to read.** Step 6's re-run reported **304** untranslated rendered strings against
+a ceiling of **299**, and the videos were not why: items 37–41 landed on 2026-09-17 and the census was not
+re-run, so the arm counted against a 2026-09-16 ledger and passed on a tree that had already exceeded it.
+The fix is not a higher number. `platform/curation/register_zh.yaml` carries all **43** item titles and 5
+tier headings in Traditional Chinese, `derive_registers()` **dies** on a missing or orphaned translation in
+either direction, and the ceiling fell **299 → 259**. A new future-work item can no longer reach the site
+English-only.
+
+**Item 42 was filed from a red, not a green**: the census failed and then passed on an unchanged tree
+(`/design` in zh-TW, 15 s timeout, 44,707 characters when loaded by hand a minute later), and its message
+names two causes that were both false — in the one gate the translation ceiling can count against.
+
+**Then the whole script was run end to end for the first time since the explainer landed, and the red set
+was read by NAME**: 12 of 14 gates, `6 failed, 3856 passed, 16 skipped in 1:15:18`. Two of the six were new.
+`test_every_prose_count_matches_a_derived_count` was mine and is fixed (`EXPECTED_PROSE_SITES` 4 → 5 — every
+count in the new prose derived, and what failed was the arm that notices a *new* sentence stating a count);
+`test_the_real_staging_tree_holds_nothing_the_live_tree_disagrees_with` is red in two independent halves
+dating to 2026-08-13 and 2026-08-19, and resolving it would silently decide **issue #37**, so it is written
+into item 29 rather than closed. The gate `every .py compiles` had been red **~29 days** because the walk
+read `platform/infra/node_modules`, where an `aws-cdk` init template holds `%name.PythonModule%`
+placeholders; the walk is now bounded and prints both sides — `285 .py files (ours); 27 vendored under
+node_modules, not read`.
+
+**Two register items came out of asking what an item costs.** Item 43: adding one costs the
+untranslated-surface backlog **zero**, because the census matches *raw payload strings* against *rendered*
+text, so every `body_md` the site renders as Markdown is invisible to it — **125,957 characters** of authored
+English absent from a 259-string backlog (the first explanation I wrote, a collapsed `<details>`, is false
+and is kept on the record beside the correction). And the stamp half of item 42: the ledger the ceiling
+counts is chosen **newest by name**, three of the day's four names were typed rather than derived, and two
+were local time labelled `Z` on a UTC+8 machine — **8.2 h in the future**, so a re-measured census was
+written and silently discarded while every log line and the gate's pass message *named the stale file*. Both
+are renamed to their true UTC instants, and `check_out_stamp()` now refuses a bad name, an unreal instant, a
+stamp >120 s ahead of the clock, or one not newer than the newest ledger present. The ceiling is
+**re-measured at 259 against `rendered-surfaces-20260918T095804Z.json`** — the file that was being ignored.
+
+Floors: `platform/build/tests` **388 → 395 → 406** (six arms over the register refusals, the stale-video arm
+the media group never had — bytes present, hashed, doubly rendered and still *saying* a number the payload no
+longer publishes — then 11 clock-injected arms over the ledger name), `registers.json`'s authored-prose floor
+**84 → 86**. Two harness defects fixed: `media.json`'s no-manifest branch omitted `videos`, and the media
+fabrication built one track per language while four videos ship.
+
+Full record: `session-logs/2026-09-18-phase-chapters-and-bilingual-register.md`. **The live publish has not
+been performed** — `v/20260917T091943Z/` stays live until the user authorizes another.
+
+## ⇢ PREVIOUS BANNER (2026-09-17): **all 5 plan steps are MERGED and the design is LIVE — release `v/20260917T091943Z/`, probed in a browser, and the probe is now a file**
 
 Plan: `~/.claude/plans/lovely-whistling-sphinx.md` — publish the end-to-end guardrails design with every
 practice hooked to the case that tested it. One PR per step, **and the user merges each one**. Landed so
@@ -53,8 +107,9 @@ missing directory could not see them: it globbed `*/tests` and these sit one lev
 now (435 passed in 541 s, so the gate is ~9 min longer), the discovery walks two depths through
 `scan_scope.out_of_scope`, and the depth limit itself is under test with two mutation arms.
 
-**Still to do:** the three phase-chapter videos. Item 41's cheap half (read the deployed
-`ResponseHeadersPolicy` and one `head-object`, instead of the source that describes them) is unclaimed.
+**Still to do** (as that banner left it; the chapters are done — see the banner above): item 41's cheap
+half (read the deployed `ResponseHeadersPolicy` and one `head-object`, instead of the source that describes
+them) is unclaimed, and so is item 42's.
 
 **Live state that is not in this file:** the site is deployed behind CloudFront and serves a versioned
 payload; the release pointer names the live version, and a publish only flips that pointer, so a failed
@@ -149,7 +204,7 @@ returned SHA differs from a locally computed `git hash-object`. No change was ne
   when the measured `chain.flip.http_status` is **202**, and plotted only day 2. All fixed.
 - **New result in the paper**: F5-2's `data_plane_reconvergence` — first denial 305.8 s / 325.0 s,
   three consecutive denials 326.4 s / 345.6 s, `n_that_were_still_authorized: 0`. §11.4.
-- **`FUTURE-WORK.md` is now 41 items** (was 21, then 22, then 28, then 31, then 35, then 36). Item 28 is figure 6's missing
+- **`FUTURE-WORK.md` is now 43 items** (was 21, then 22, then 28, then 31, then 35, then 36, then 41, then 42). Item 28 is figure 6's missing
   source; item 29 is the same-run_id roll-up overwrite found on 2026-08-16; item 30 is Tier 5's citation
   anchors, which had existed unnumbered since the tier was written; item 31 is the gate's runtime, which
   this file had stated three different ways — **rewritten 2026-08-17 from a timed run, because the
@@ -294,7 +349,7 @@ deficiencies. Research and design are done; drafting has not started.
   reproduction** — ACM reserves both *Reproduced* and *Replicated* for non-authors, so **no independent
   party has re-run anything here** — and our `TRUE/FALSE/INCONCLUSIVE/RECORDED` taxonomy has **no located
   precedent** and must be defined, not cited.
-- **`FUTURE-WORK.md`** — the deficiency list, **41 items** in 5 tiers, each with derived evidence
+- **`FUTURE-WORK.md`** — the deficiency list, **43 items** in 5 tiers, each with derived evidence
   (this paragraph was first written at 22; items 23–28 were added on 2026-08-15, items 29–30 on 2026-08-16,
   items 32–35 on 2026-08-19, items 37–40 on 2026-09-16 from the explainer's own gates, item 41 on
   2026-09-17 from publishing it).

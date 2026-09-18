@@ -436,8 +436,34 @@ def derive_findings(inputs: dict[str, str]) -> list[dict]:
 
 
 def derive_registers(inputs: dict[str, str]) -> dict:
-    """`FUTURE-WORK.md`'s numbered items, each under the tier heading that precedes it."""
+    """`FUTURE-WORK.md`'s numbered items, each under the tier heading that precedes it — in both
+    languages the site publishes.
+
+    The titles and the tier headings render on `/register` in BOTH locales, so until 2026-09-18 a
+    zh-TW reader read 46 sentences of this platform's own voice in English, on a page whose banner
+    says the English here is quoted evidence. These are not evidence; they are us convicting
+    ourselves, and `authored()` exists precisely for that half of the payload.
+
+    The Chinese lives in `platform/curation/register_zh.yaml`, keyed by the number the document
+    itself assigns, and **every** item and tier must be there or this dies. That refusal is the point:
+    the five items added on 2026-09-17 are how the untranslated-surface count came to EXCEED its
+    ceiling instead of falling, and a translation that is optional is a field that ships empty
+    (`feedback_mandatory_field_timing`). A new future-work item now cannot reach the site without its
+    Chinese.
+
+    `body_md` stays English and stays a bare string. It is long-form prose, it is not what the census
+    counts here, and translating it is a different piece of work from refusing to ship a new one
+    untranslated — filed rather than half-done.
+    """
     text = read_text(ROOT / "FUTURE-WORK.md", inputs)
+    rel_zh = "platform/curation/register_zh.yaml"
+    zh = _yaml_no_duplicate_keys(read_text(ROOT / "platform" / "curation" / "register_zh.yaml",
+                                           inputs), rel_zh)
+    zh_items, zh_tiers = zh.get("items"), zh.get("tiers")
+    if not isinstance(zh_items, dict) or not zh_items:
+        die(f"{rel_zh} carries no `items` mapping")
+    if not isinstance(zh_tiers, dict) or not zh_tiers:
+        die(f"{rel_zh} carries no `tiers` mapping")
     items, tier, cur = [], None, None
     for line in text.splitlines():
         if line.startswith("## "):
@@ -459,6 +485,36 @@ def derive_registers(inputs: dict[str, str]) -> dict:
     if len(set(ns)) != len(ns):
         die(f"FUTURE-WORK.md has duplicate item numbers: "
             f"{sorted(n for n in set(ns) if ns.count(n) > 1)}")
+
+    # BOTH directions, like every other curation file in this build. A missing translation ships an
+    # English title to a Chinese reader; a translation for an item that no longer exists means the
+    # register was renumbered and this file was not re-read, so the numbers no longer name the same
+    # sentences and every OTHER title may now be attached to the wrong item.
+    untranslated = [it["n"] for it in items if not str(zh_items.get(it["n"], "")).strip()]
+    if untranslated:
+        die(f"{rel_zh} carries no Chinese title for register item(s) {sorted(untranslated)}. Every "
+            f"title renders on /register in both locales, so an untranslated one is this platform "
+            f"speaking English to a zh-TW reader on a page that calls its English quoted evidence. "
+            f"Translate it there — the ceiling in check_site_invariants.py only ever falls.")
+    orphan = sorted(set(zh_items) - set(ns))
+    if orphan:
+        die(f"{rel_zh} translates register item(s) {orphan}, which FUTURE-WORK.md does not number. "
+            f"Either an item was removed and its translation outlived it, or the register was "
+            f"renumbered — in which case the other titles are now attached to the wrong items.")
+    tiers_seen = list(dict.fromkeys(it["tier"] for it in items))
+    missing_tier = [t for t in tiers_seen if not str(zh_tiers.get(t, "")).strip()]
+    if missing_tier:
+        die(f"{rel_zh} carries no Chinese for tier heading(s) {missing_tier}, which every item under "
+            f"them renders beside its title")
+    orphan_tier = sorted(set(zh_tiers) - set(tiers_seen))
+    if orphan_tier:
+        die(f"{rel_zh} translates tier heading(s) {orphan_tier} that FUTURE-WORK.md no longer uses; a "
+            f"heading is matched by its exact text, so a reworded heading loses its translation "
+            f"silently unless this fails")
+    for it in items:
+        it["title"] = authored(it["title"], str(zh_items[it["n"]]).strip())
+        it["tier"] = authored(it["tier"], str(zh_tiers[it["tier"]]).strip())
+
     side = {}
     for name in ("ERRATA.md", "CENSUS-NOT-MEASURED.md", "DEVIATIONS.md", "EXCLUSION_REGISTER.md"):
         p = RESULTS / name
@@ -2189,13 +2245,39 @@ def derive_media(inputs: dict[str, str], render_rc: int | None, media_dir: Path)
             f"look complete")
     manifest_path = media_dir / "RENDER.json"
     if not manifest_path.is_file():
+        # `videos` is carried here too, and it is the same list as in the rendered branch, because it
+        # is a property of the SCRIPTS and not of the render: it is what this payload owes a player
+        # for. Omitting it made "nothing rendered" the one state whose expectation was `None`, and a
+        # gate comparing the payload's video list against the scripts on disk then read that None as a
+        # disagreement rather than as a complete absence of media — the arm failed for the wrong
+        # reason on every machine that had not rendered. `rendered_videos` is the empty list for the
+        # same reason: nothing rendered is a measured zero, not an unanswered question.
         return {"present": [], "missing": expected, "tracks": [], "render_check": render_rc,
+                "videos": sorted(s.stem for s in scripts), "rendered_videos": [],
                 "note": "no render manifest at video/out/media/RENDER.json — the explainer has "
                         "not been rendered on this machine. The page must say so; an absent video "
                         "and a broken one are different failures."}
     man = read_json(manifest_path, inputs)
     present, missing = [], []
-    declared = {name: f for t in man.get("tracks", []) for name, f in t["files"].items()}
+    # One video per script, one track per (video, language), and each file declared exactly once.
+    # Flattening the tracks with a dict comprehension would let two tracks claim `before.en.mp4` and
+    # keep only the second, so the file would be checked against a hash from the wrong render — the
+    # aggregated manifest made that reachable the day a scene id stopped being unique across videos.
+    stems = {s.stem for s in scripts}
+    declared: dict[str, dict] = {}
+    for t in man.get("tracks", []):
+        video = t.get("video")
+        if video not in stems:
+            die(f"RENDER.json declares a track for {video!r}, which is not a script under "
+                f"{VIDEO / 'script'}: {sorted(stems)}")
+        for name, f in t["files"].items():
+            if name in declared:
+                die(f"two tracks in RENDER.json both declare {name}; one of the two hashes is of "
+                    f"bytes this build will not check")
+            if not name.startswith(f"{video}.{t['language']}."):
+                die(f"track {video}/{t['language']} declares {name}, which is not one of its own "
+                    f"files; a mislabelled track hashes the wrong video's bytes")
+            declared[name] = f
     for name in expected:
         p = media_dir / name
         if not p.is_file():
@@ -2212,9 +2294,17 @@ def derive_media(inputs: dict[str, str], render_rc: int | None, media_dir: Path)
                         "source": rel})
     return {
         "present": present, "missing": missing,
+        "videos": sorted(stems),
+        "rendered_videos": sorted(man.get("videos", [])),
         "tracks": man.get("tracks", []),
         "script_sha256": man.get("script_sha256"),
         "payload_inputs": man.get("payload_inputs"),
+        # Every number the render resolved, carried into the payload so a gate can re-derive them from
+        # the payload it is publishing and compare. The file hashes above cannot do that job:
+        # `census.json` contains the build stamp, so its hash differs on every build even when no
+        # number moved, which would make hash-equality either always-red or waived. The resolved
+        # values are the actual claim — "what this video says is what this payload says".
+        "resolved_values": man.get("resolved_values"),
         "render_platform": man.get("platform"),
         "verified_identical_renders": man.get("verified_identical_renders"),
         "render_check": render_rc,

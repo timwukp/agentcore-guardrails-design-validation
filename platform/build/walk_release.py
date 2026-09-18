@@ -21,7 +21,10 @@ WHAT IT CHECKS, AND WHY EACH ONE NEEDS A BROWSER
      and the caption track's cue count. A `<video>` that decodes nothing renders its poster, and a
      caption track the browser dropped raises no console error: both are silent in every other check
      this repo has. The measured duration is then compared against `media.json`'s `duration_s`, which
-     is the payload's own published number — the decoder and the manifest have to agree.
+     is the payload's own published number — the decoder and the manifest have to agree. HOW MANY
+     players must be found is derived from `media.json` too (one per playable video per locale, where
+     playable means its mp4 *and* its captions shipped), so three chapters landing while only the
+     overview rendered fails here instead of clearing a floor of 2 that nobody remembered to raise.
   3. **The four verdict colours, re-measured from `getComputedStyle`.** The stylesheet arm in
      `check_site_invariants.py` reads the SHEET; this reads the SCREEN. Those are different claims, and
      the gap between them is a defect this project has already shipped once: on 2026-08-20 all 38
@@ -79,7 +82,13 @@ DEFAULT_PAYLOAD = REPO.parent / "grx-site-payload"
 # verdict badge or no route is the failure mode this script exists to catch, and all three of them
 # otherwise report as a clean run of nothing (`feedback_zero_file_scan_is_error`).
 MIN_ROUTES = census.MIN_ROUTES
-MIN_VIDEOS_TOTAL = 2          # one per locale on /design; a second chapter raises this
+# The floor is a collapse detector for the MANIFEST, not the expectation for the walk. What the walk
+# must find is DERIVED from media.json below (`expected_videos`), because a hand-raised number is a
+# name list in disguise: the comment here used to read "a second chapter raises this", which means
+# three chapters could land, only the overview render, and the walk would still pass its floor of 2
+# (`feedback_scope_as_namelist`). Two producers, two sides: the manifest says which videos ship, the
+# DOM says which ones rendered, and they have to be equal.
+MIN_VIDEOS_TOTAL = 2          # a payload declaring fewer playable tracks than one per locale is broken
 MIN_VERDICTS_SEEN = 4         # TRUE / FALSE / INCONCLUSIVE / RECORDED, each rendered somewhere
 
 # The decoder and the manifest are allowed to disagree by one frame's worth of rounding, not more. At
@@ -145,6 +154,33 @@ COLLECT_JS = r"""
 def fail(msg: str) -> None:
     print(f"CANNOT RUN: {msg}", file=sys.stderr)
     raise SystemExit(2)
+
+
+def playable_track_count(media: dict) -> int:
+    """How many `<video>` elements a walk of every locale must find, derived from `media.json`.
+
+    A video is playable in a locale only when BOTH its mp4 and its caption file are in `present`, and
+    `/design` renders exactly one player per playable video per locale — the overview under the
+    diagram, one chapter at each phase head. So a payload carrying only the overview expects 2
+    elements and one carrying all four expects 8.
+
+    This is derived rather than declared because the alternative was a constant with the comment "a
+    second chapter raises this": three chapters could land with only the overview rendered and the
+    walk would still clear a floor of 2 (`feedback_scope_as_namelist`). Counting an mp4 whose captions
+    did not ship would be the same mistake one file over — the page shows no player in that state, so
+    a walk expecting one would fail on a payload that is honestly incomplete instead of on the
+    incompleteness itself.
+
+    `videos` is the builder's list of every script that exists, not of what rendered, which is exactly
+    what makes it the right left-hand side: it counts what SHOULD have a player given what shipped.
+    """
+    shipped = {p["file"] for p in media.get("present", []) if isinstance(p, dict) and "file" in p}
+    return sum(
+        1
+        for lang in ("zh" if loc == "zh-TW" else "en" for loc in census.LOCALES)
+        for video in media.get("videos") or []
+        if {f"{video}.{lang}.mp4", f"{video}.{lang}.vtt"} <= shipped
+    )
 
 
 def hexify(css_colour: str) -> str:
@@ -257,6 +293,7 @@ def main(argv: list[str] | None = None) -> int:
     media = json.loads((args.payload / "media.json").read_text(encoding="utf-8"))
     declared = {name: t for t in media.get("tracks", []) for name in t["files"]
                 if name.endswith(".mp4")}
+    expected_videos = playable_track_count(media)
     verdicts = sorted((json.loads((args.payload / "census.json").read_text(encoding="utf-8"))
                        .get("verdict_mix") or {}))
 
@@ -302,10 +339,17 @@ def main(argv: list[str] | None = None) -> int:
                                 f"in the rendered text")
         badges.update({k: v for k, v in got["badges"].items() if k not in badges})
 
-    if videos_seen < MIN_VIDEOS_TOTAL:
+    if expected_videos < MIN_VIDEOS_TOTAL:
+        fail(f"media.json declares only {expected_videos} playable track(s) across "
+             f"{len(census.LOCALES)} locale(s), below the floor of {MIN_VIDEOS_TOTAL}. A payload whose "
+             f"explainer never rendered gives this probe nothing to walk, and a walk of nothing is an "
+             f"error rather than a pass")
+    if videos_seen != expected_videos:
         fail(f"the walk found {videos_seen} video element(s) over {len(routes)} route(s) x "
-             f"{len(census.LOCALES)} locale(s), below the floor of {MIN_VIDEOS_TOTAL}. A release whose "
-             f"explainer did not render is not a release that passed this probe")
+             f"{len(census.LOCALES)} locale(s), while media.json ships {expected_videos} playable "
+             f"track(s). A release whose explainer did not render is not a release that passed this "
+             f"probe — and a page showing MORE players than the payload vouches for is the other "
+             f"half of the same defect")
 
     measured = {}
     for verdict in verdicts:
@@ -329,7 +373,7 @@ def main(argv: list[str] | None = None) -> int:
     report = {
         "base": args.base + (prefix or ""),
         "routes": len(routes), "locales": list(census.LOCALES),
-        "videos_read": videos_seen,
+        "videos_read": videos_seen, "videos_expected": expected_videos,
         "video_detail": {w: g["videos"] for w, g in sorted(walked.items()) if g["videos"]},
         "verdict_contrast": measured,
         "polly_disclosure": {w: g["polly"] for w, g in sorted(walked.items()) if g["videos"]},
@@ -338,7 +382,8 @@ def main(argv: list[str] | None = None) -> int:
     }
     print(json.dumps(report, ensure_ascii=False, indent=1))
     print(f"\nwalked {len(routes)} route(s) x {len(census.LOCALES)} locale(s), read {videos_seen} "
-          f"video element(s), measured {len(measured)} verdict colour(s) on screen")
+          f"of {expected_videos} expected video element(s), measured {len(measured)} verdict "
+          f"colour(s) on screen")
     if problems:
         print(f"PROBLEMS — {len(problems)}")
         for p in problems:

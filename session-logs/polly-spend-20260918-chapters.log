@@ -1,0 +1,79 @@
+Polly spend for the three phase chapters — measured at the meter, 2026-09-18
+===========================================================================
+
+WHY THIS RAN
+  The same reason as 2026-09-16 (session-logs/polly-spend-20260916-video.log):
+  the only authority on what was billed is the meter. `video/out/audio/` cannot
+  bound it — `render.py --verify` does `shutil.rmtree(OUT / "audio")` between
+  its two renders on purpose, so the surviving cache is one pass wide however
+  many were paid for (feedback_meter_not_artifact).
+
+MEASURED — CloudWatch AWS/Polly RequestCharacters, Operation=SynthesizeSpeech
+  window 2026-09-17T00:00 .. 2026-09-19T00:00, Period=3600, Sum + SampleCount
+  (timestamps as returned, +08:00)
+
+  2026-09-18T12:00    17263 characters    74 requests
+  2026-09-18T13:00    31560 characters   134 requests
+  2026-09-18T14:00     8040 characters    38 requests
+  TOTAL               56863 characters   246 requests
+
+DECOMPOSITION — exact, to the request and to the character
+  A pass is NOT 62 requests. There are 31 scenes across the four scripts
+  (overview 10, before/during/after 7 each) and two languages, so 62 texts —
+  but the three chapters end on the SAME `verify` scene, word for word, in both
+  languages. `synthesize()` keys its cache on the REQUEST (voice | engine |
+  language | text), so those four texts are one request each, not four:
+
+    62 scene-language texts -> 58 distinct -> 58 requests / 13436 characters
+      duplicates: {before,during}/verify en (358 ch) and zh (140 ch),
+                  both served from after/verify
+      per pass: 9860 generative (en, Ruth) + 3576 neural (zh, Zhiyu)
+
+  Against that unit the meter resolves with nothing left over:
+
+    4 x verify pass   4 x 58 = 232 req   4 x 13436 = 53744 ch
+    1 x `--video before`     14 req                  3119 ch
+    ------------------------------------------------------------
+                            246 req                 56863 ch   <- the meter
+
+  The four passes are two `--verify` runs (each renders twice with fresh
+  synthesis): the first after the phase-chapter scripts landed, the second
+  after the label-clearance fix to `scenes.py` invalidated it. The 14-request
+  entry is the single-video render used to read one frame back before paying
+  for a second verification — 2278 en + 841 zh characters, which is `before`
+  exactly, and it billed rather than hit the cache.
+
+PRICE — generative $30/M, neural $16/M (rates confirmed against Cost Explorer
+        in the 2026-09-16 log; unchanged)
+    4 passes         39440 generative  $1.1832    14304 neural  $0.228864
+    before, once      2278 generative  $0.06834     841 neural  $0.013456
+    ------------------------------------------------------------------------
+    TOTAL 2026-09-18                              $1.4939
+
+  No interval this time. The 2026-09-16 figure was a range ($0.72–$0.77)
+  because 3508 characters belonged to a superseded draft whose engine split was
+  not derivable; here every character is attributed to a known voice, so the
+  number is a point.
+
+  One cold `--verify` of all four videos, going forward: 2 x $0.3530 = $0.706.
+
+CUMULATIVE for the /design explainer, both rounds
+    2026-09-15/16   28476 ch   120 req   $0.72 .. $0.77
+    2026-09-18      56863 ch   246 req   $1.4939
+    ---------------------------------------------------
+                    85339 ch   366 req   $2.21 .. $2.26
+
+  Against the $95 repo ceiling. No other AWS spend in this round: no new
+  resources, and the publish is S3 PUT + CloudFront transfer of 26.4 MB.
+
+WHY THE COST IS DOMINATED BY RE-VERIFICATION, ON THE RECORD
+  Of the $1.49, $1.41 is verification and $0.08 is rendering something new.
+  That is the honest shape of the rule this pipeline holds — a render is only
+  publishable if two independent renders with fresh synthesis agree byte for
+  byte, so every edit to a scene template costs a full re-synthesis of all four
+  videos even when no narration changed. The audio is identical across the two
+  verifies (the eight durations match to 0.1 s), and the cache still cannot be
+  reused, because reusing it would mean the second pass proved nothing about
+  synthesis. The alternative — hash-verify frames and trust the audio — was not
+  taken: `feedback_smoke_test_narrower_than_production` is in this repo's
+  history precisely because a narrower check authorised a wider claim.

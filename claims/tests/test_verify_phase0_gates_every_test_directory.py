@@ -327,9 +327,26 @@ def test_the_gate_counts_its_directories_instead_of_stating_a_number():
 # that edits an authored file is one interrupted run away from leaving it edited.
 
 
+def spec_text(dir_name: str) -> str:
+    """The `dir:floor` string the script currently carries for `dir_name`.
+
+    The two mutants below used to write the floor of the day into themselves —
+    `'platform/build/tests:378'`, `'"tools/tests:122"'` — and each stopped being a mutant the next time
+    a floor was raised: both failed on 2026-09-18 with "re-point this mutant", which is a red the
+    mutation coverage did not earn and a resuming session has to diagnose before it can trust the
+    suite. The subject of these arms is the SPEC, not the number in it, so the number is read out of
+    the script (`feedback_grep_the_claim_not_the_phrasing`).
+    """
+    specs = {m.group(1): m.group(2) for m in SPEC_RE.finditer(SCRIPT.read_text(encoding="utf-8"))}
+    assert dir_name in specs, (
+        f"verify_phase0.sh has no spec for {dir_name} — the directory this mutant is about is not "
+        f"gated at all, which the set-equality arm above is the right place to fail on")
+    return f"{dir_name}:{specs[dir_name]}"
+
+
 def test_mutation_a_directory_dropped_from_the_spec_list_fails(monkeypatch, tmp_path):
     text = SCRIPT.read_text(encoding="utf-8")
-    dropped = 'platform/build/tests:378'
+    dropped = spec_text("platform/build/tests")
     assert dropped in text, "the spec this mutant removes is not in the script — re-point the mutant"
     mutant = tmp_path / "verify_phase0.sh"
     mutant.write_text(text.replace(f'"{dropped}" ', "").replace(f'"{dropped}"', ""), encoding="utf-8")
@@ -344,11 +361,15 @@ def test_mutation_the_floor_tools_tests_actually_shipped_with_fails_the_drift_ar
     Not a synthetic mutant: `"tools/tests:48"` is the string this script carried for a month, against
     122 collected. This runs the whole arm — the measurement, the comparison and the report — over a
     tmp_path copy of the script, so the mutated floor is never written into the tree.
+
+    The live floor is read rather than pinned, so the mutant survives the next re-baseline; what stays
+    literal is 48, because that number is the historical defect this arm reproduces.
     """
     text = SCRIPT.read_text(encoding="utf-8")
-    assert '"tools/tests:122"' in text, "re-point this mutant: tools/tests' floor moved"
+    live = spec_text("tools/tests")
+    assert f'"{live}"' in text, f"re-point this mutant: {live} is not quoted in the script"
     mutant = tmp_path / "verify_phase0.sh"
-    mutant.write_text(text.replace('"tools/tests:122"', '"tools/tests:48"'), encoding="utf-8")
+    mutant.write_text(text.replace(f'"{live}"', '"tools/tests:48"'), encoding="utf-8")
     monkeypatch.setattr(sys.modules[__name__], "SCRIPT", mutant)
     with pytest.raises(AssertionError, match="sit further below their directory's yield"):
         test_the_floors_do_not_drift_far_below_what_their_directories_collect()

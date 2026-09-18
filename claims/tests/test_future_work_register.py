@@ -68,7 +68,11 @@ ABOUT_RE = re.compile(r"FUTURE-WORK|deficiency register", re.I)
 
 # Exactly this many prose sites currently state a register count. Not a floor: see the docstring.
 # 2026-08-16: RECONNECT.md x2 (the total), WHITEPAPER.md x2 (the total, and Tier 1's size + membership).
-EXPECTED_PROSE_SITES = 4
+# 2026-09-18: +1. `README.md` now states the register's size too, in the paragraph explaining why the
+#   item titles are translated ("its 42 item titles and 5 tier headings"). A RISE is the good direction
+#   here — the sentence was written unchecked and is checked from now on — but it is only checked
+#   because this number moved with it, which is the whole point of asserting the site count.
+EXPECTED_PROSE_SITES = 5
 
 
 def _register_text() -> str:

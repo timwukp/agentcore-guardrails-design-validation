@@ -28,11 +28,20 @@
 
 import { useMemo, useState } from "react";
 import { loadManifest, loadRegisters } from "../lib/data";
-import { T, useT, VerbatimNote } from "../lib/i18n";
+import { A, T, useAuthored, useT, VerbatimNote } from "../lib/i18n";
 import { Body, ErrorPanel, Loading, useAsync } from "../components/ui";
+import type { Authored } from "../lib/types";
 
 /** A sentinel, not a label — see the note in `Claims.tsx`. */
 const ANY = "*any*";
+
+/** The English half of an authored value, for the two jobs that must not vary by locale: the tier
+ *  facet's key (it is what the payload keys its translation on) and the deadline scan (an ISO date
+ *  written 2026 年 11 月 matches no regex, and the table's membership must not depend on which locale
+ *  the reader opened). Everything a reader *reads* goes through `<A/>` instead. */
+function en(v: Authored | string): string {
+  return typeof v === "string" ? v : v.en;
+}
 
 const ISO = /\b(20\d{2})-(\d{2})-(\d{2})\b/g;
 
@@ -67,6 +76,7 @@ export default function Register() {
   const man = useAsync(loadManifest, []);
   const [tier, setTier] = useState(ANY);
   const t = useT();
+  const auth = useAuthored();
   // Read once per mount: a countdown that recomputed on every render would tick inconsistently
   // between the items on one screen.
   const today = useMemo(() => {
@@ -78,8 +88,13 @@ export default function Register() {
   if (res.state === "error") return <ErrorPanel error={res.error} />;
   const r = res.data;
 
-  const tiers = [...new Set(r.items.map((i) => i.tier))].sort();
-  const items = r.items.filter((i) => tier === ANY || i.tier === tier).sort((a, b) => a.n - b.n);
+  // A tier is faceted by its ENGLISH heading, which is the value the payload keys the translation on
+  // and the only one of the two that is stable: two headings could translate alike, and `new Set` over
+  // objects would dedupe nothing at all and offer five identical options per tier.
+  const items = r.items.filter((i) => tier === ANY || en(i.tier) === tier).sort((a, b) => a.n - b.n);
+  const tierByEn = new Map<string, Authored | string>();
+  for (const i of r.items) if (!tierByEn.has(en(i.tier))) tierByEn.set(en(i.tier), i.tier);
+  const tiers = [...tierByEn.keys()].sort();
 
   // The cutoff comes from the payload, so the table's membership is a property of the derivation and
   // not of when the page happened to be opened. If the manifest has not arrived (or carries a stamp
@@ -87,9 +102,13 @@ export default function Register() {
   // wider, set: it can only omit rows, and the footnote below says the cutoff it used.
   const buildDate = man.state === "ok" ? buildDateOf(man.data.build_stamp) : null;
   const cutoff = buildDate ?? today.toISOString().slice(0, 10);
+  // Dates are scanned out of the ENGLISH title and the (English) body: the deadline table's membership
+  // must not depend on which locale the reader opened, and a translated date could be written 2026 年
+  // 11 月 and match nothing. The title is then rendered from the object, so the row a Chinese reader
+  // sees is Chinese even though the date that put it there was found in English.
   const upcoming = r.items
     .flatMap((i) =>
-      deadlines(`${i.title}\n${i.body_md}`, today, cutoff).map((d) => ({ ...d, n: i.n, title: i.title })),
+      deadlines(`${en(i.title)}\n${i.body_md}`, today, cutoff).map((d) => ({ ...d, n: i.n, title: i.title })),
     )
     .sort((a, b) => a.days - b.days);
   const expired = upcoming.filter((d) => d.days < 0).length;
@@ -128,7 +147,7 @@ export default function Register() {
                     {d.days < 0 ? t("reg.passed", { n: -d.days }) : d.days}
                   </td>
                   <td>
-                    {t("reg.item", { n: d.n })} — <span lang="en">{d.title}</span>
+                    {t("reg.item", { n: d.n })} — <A v={d.title} />
                   </td>
                 </tr>
               ))}
@@ -159,13 +178,18 @@ export default function Register() {
           <div className="facet">
             <label>{t("reg.facet.tier")}</label>
             <select value={tier} onChange={(e) => setTier(e.target.value)} style={{ minWidth: 420 }}>
-              {/* A tier is the register's own heading text, so the options stay as written. */}
+              {/* The VALUE is the English heading — it is the filter key and the payload's own key —
+                  while the label is the reader's language. `<option>` renders text, not elements, so
+                  this is the one place `useAuthored()` is called for its string instead of `<A/>`. */}
               <option value={ANY}>{t("facet.any")}</option>
-              {tiers.map((v) => (
-                <option key={v} value={v} lang="en">
-                  {v}
-                </option>
-              ))}
+              {tiers.map((v) => {
+                const a = auth(tierByEn.get(v) ?? v);
+                return (
+                  <option key={v} value={v} lang={a.lang}>
+                    {a.text}
+                  </option>
+                );
+              })}
             </select>
           </div>
           <div className="facet">
@@ -176,12 +200,12 @@ export default function Register() {
 
         {items.map((i) => (
           <details className="raw" key={i.n} style={{ marginBottom: 8 }}>
-            <summary lang="en">
-              <span className="mono">{String(i.n).padStart(2, "0")}</span> — {i.title}
+            <summary>
+              <span className="mono">{String(i.n).padStart(2, "0")}</span> — <A v={i.title} />
             </summary>
             <div>
-              <div style={{ color: "var(--fg-faint)", fontSize: 11.5, margin: "8px 0" }} lang="en">
-                {i.tier}
+              <div style={{ color: "var(--fg-faint)", fontSize: 11.5, margin: "8px 0" }}>
+                <A v={i.tier} />
               </div>
               <Body src={i.body_md} />
             </div>

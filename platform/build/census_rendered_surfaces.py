@@ -74,6 +74,7 @@ small backlog for the same reason a scan of zero files reports no findings
 from __future__ import annotations
 
 import argparse
+import datetime
 import json
 import re
 import sys
@@ -435,6 +436,74 @@ def walk(base: str, routes: list[str]) -> dict[tuple[str, str], dict]:
     return out
 
 
+LEDGER_NAME = re.compile(r"^rendered-surfaces-(\d{8})T(\d{6})Z\.json$")
+# How far ahead of the clock a stamp may sit. Not zero, because a caller composes the name a few seconds
+# before the program parses it; small enough that a whole timezone offset cannot pass through.
+STAMP_FUTURE_TOLERANCE_S = 120
+
+
+def check_out_stamp(out: Path, now: datetime.datetime | None = None,
+                    existing: list[Path] | None = None) -> None:
+    """The file NAME is this measurement's only timestamp, so it is a field and needs a validator.
+
+    `measured_on` in the output says the timestamp lives in the file name, and `build_site_data.py`
+    selects the ledger the translation ceiling counts against with
+    `sorted(CENSUS_DIR.glob("rendered-surfaces-*.json"))[-1]` — the newest **by name**. That makes the
+    name load-bearing while leaving it to whoever types the command, which is a mandatory field with no
+    producer (`feedback_mandatory_field_timing`).
+
+    It failed exactly that way on 2026-09-18. Two ledgers were written with LOCAL time labelled `Z`
+    (`…T151900Z.json` at 07:33:59 UTC, `…T155900Z.json` at 07:48:25 UTC — the machine is UTC+8), so they
+    out-sorted every correctly stamped ledger for the following eight hours. A re-run measured that
+    afternoon's tree at `…T095804Z`, and the build kept reading the earlier one: the census had been
+    re-run, the number it produced was ignored, and every log line named the stale file while reporting a
+    pass. Both were renamed to their true UTC times, derived from their own mtime, and this function is
+    what stops the third one.
+
+    Three refusals, all before the four-minute walk:
+      * a name that is not `rendered-surfaces-<YYYYMMDD>T<HHMMSS>Z.json`, or whose digits are not a real
+        UTC instant — a name the selector's sort cannot order meaningfully;
+      * a stamp AFTER the clock (beyond `STAMP_FUTURE_TOLERANCE_S`), which is what local-time-as-`Z`
+        looks like from here, and which would suppress every correct stamp until the offset elapsed;
+      * a stamp not strictly newer than the newest ledger already present, because such a file cannot
+        become the ledger anything reads — the walk would run, the JSON would be written, and the ceiling
+        would keep counting the older measurement.
+
+    The clock is read to VALIDATE, never to author: the stamp still comes from the caller, so the output
+    stays a function of its inputs, and `now`/`existing` are injected so the arms holding this do not
+    measure the machine they run on (`feedback_harness_test_measures_the_machine`).
+    """
+    m = LEDGER_NAME.match(out.name)
+    if not m:
+        cannot_run(f"--out {out.name} is not `rendered-surfaces-<YYYYMMDD>T<HHMMSS>Z.json`. The file name "
+                   f"is this measurement's only timestamp and `build_site_data.py` picks the newest by "
+                   f"NAME, so a name outside the convention is a measurement nothing will read.")
+    try:
+        stamp = datetime.datetime.strptime(m.group(1) + m.group(2), "%Y%m%d%H%M%S").replace(
+            tzinfo=datetime.timezone.utc)
+    except ValueError as e:
+        cannot_run(f"--out {out.name}: {m.group(1)}T{m.group(2)}Z is not a real UTC instant ({e})")
+        return
+    now = now or datetime.datetime.now(datetime.timezone.utc)
+    ahead = (stamp - now).total_seconds()
+    if ahead > STAMP_FUTURE_TOLERANCE_S:
+        cannot_run(
+            f"--out {out.name} is stamped {ahead / 3600:.1f} h AHEAD of the UTC clock "
+            f"({now.strftime('%Y%m%dT%H%M%SZ')}). A stamp in the future is almost always local time "
+            f"labelled Z, and because the ledger is chosen by name it would suppress every correct "
+            f"stamp until that offset elapsed — the census would run and the ceiling would keep "
+            f"counting an older measurement.")
+    if existing is None:
+        existing = sorted(out.parent.glob("rendered-surfaces-*.json")) if out.parent.is_dir() else []
+    others = [p.name for p in existing if p.name != out.name and LEDGER_NAME.match(p.name)]
+    if others and max(others) >= out.name:
+        cannot_run(
+            f"--out {out.name} is not newer than {max(others)}, which is already in "
+            f"{out.parent}. `build_site_data.py` reads the newest by name, so this walk would spend four "
+            f"minutes producing a ledger nothing selects — and every gate would keep reporting the older "
+            f"one by name while passing.")
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--payload", type=Path, default=DEFAULT_PAYLOAD)
@@ -454,6 +523,7 @@ def main(argv: list[str] | None = None) -> int:
                    f"reads the newest match of that glob.")
     if not out.parent.is_dir() and out.parent.exists():
         cannot_run(f"--out {out}: its parent {out.parent} exists and is not a directory")
+    check_out_stamp(out)
 
     check_route_tables_agree()
     check_server(args.base)
@@ -577,7 +647,10 @@ def main(argv: list[str] | None = None) -> int:
         }
 
     census = {
-        "measured_on": "see the file name; this script takes no clock reading",
+        # The stamp still comes from the caller — the output stays a function of its inputs — but it is
+        # no longer unchecked: `check_out_stamp()` reads the clock to refuse a name in the future or one
+        # no selector would pick. See its docstring for the two files that made it necessary.
+        "measured_on": "see the file name, validated against the UTC clock by check_out_stamp()",
         "how": {
             "base": args.base,
             "payload": str(payload),

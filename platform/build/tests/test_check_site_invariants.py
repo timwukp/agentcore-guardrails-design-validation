@@ -1269,6 +1269,21 @@ STUB_MP4 = b"\x00\x00\x00\x18ftypisom\x00\x00\x02\x00isomiso2" + b"\x00" * 64
 STUB_VTT = b"WEBVTT\n\n00:00:00.000 --> 00:00:01.000\nstub\n"
 
 
+def resolved_over(payload: Path) -> dict:
+    """Every number the narration can speak, resolved against `payload`.
+
+    The renderer's own resolver, imported from `video/`, not a second implementation: the property
+    under test is that the payload the gate is checking still yields what the render recorded, and two
+    resolvers would let this pass while a real render disagreed.
+    """
+    sys.path.insert(0, str(REPO / "video"))
+    import scenes  # noqa: PLC0415 - one fixture's dependency, not the harness's
+
+    return scenes.resolve({
+        name.split(".")[0]: json.loads((payload / name).read_text(encoding="utf-8"))
+        for name in ("census.json", "denominators.json", "practices.json", "architecture.json")})
+
+
 def _with_media(payload: Path, tmp_path: Path, tag: str, edit=None) -> Path:
     """A copy of `payload` carrying a complete, self-consistent, VERIFIED media state.
 
@@ -1286,11 +1301,23 @@ def _with_media(payload: Path, tmp_path: Path, tag: str, edit=None) -> Path:
     media["missing"] = []
     media["render_check"] = 0
     media["verified_identical_renders"] = True
-    media["tracks"] = [{"language": lang, "voice": "Ruth", "engine": "generative",
-                        "voice_language": "en-US", "synthesized": True, "duration_s": 212.3,
-                        "n_scenes": 10,
-                        "files": {n: {} for n in names if f".{lang}." in n}}
-                       for lang in ("en", "zh")]
+    # One track per (video, language), each declaring only its OWN four-file half — derived from the
+    # payload's `videos` rather than written out, so a chapter script added later is fabricated too and
+    # the control keeps testing the whole shipped set. A single per-language track was enough while the
+    # overview was the only video, and it stopped being enough silently: the arm pairs tracks with the
+    # files that shipped, and one track cannot carry four videos' durations or name four voices.
+    media["tracks"] = [{"video": v, "language": lang,
+                        "voice": "Ruth" if lang == "en" else "Zhiyu",
+                        "engine": "generative" if lang == "en" else "neural",
+                        "voice_language": "en-US" if lang == "en" else "cmn-CN",
+                        "synthesized": True, "duration_s": 212.3, "n_scenes": 10,
+                        "files": {n: {} for n in names if n.startswith(f"{v}.{lang}.")}}
+                       for v in media["videos"] for lang in ("en", "zh")]
+    # The numbers the render spoke. The arm re-resolves them against the payload it is gating and fails
+    # if any moved, so a fabrication without them tests the absence of the field instead of the state
+    # the group is about. Computed HERE with the same resolver the renderer uses, which is what a real
+    # render of this payload would have recorded.
+    media["resolved_values"] = resolved_over(dest)
     if edit is not None:
         edit(media, files)
 
@@ -1320,9 +1347,16 @@ def _with_media(payload: Path, tmp_path: Path, tag: str, edit=None) -> Path:
 def test_no_mutant_control_for_the_media_arm(payload, tmp_path):
     """The control this whole group depends on: a fabricated media state that is COMPLETE, hashed and
     verified passes the gate. Without it, every kill below could be the fabrication itself failing."""
-    proc = run_gate(_with_media(payload, tmp_path, "media-ok"))
+    dest = _with_media(payload, tmp_path, "media-ok")
+    proc = run_gate(dest)
     assert proc.returncode == 0, (proc.stdout + proc.stderr)[-3000:]
-    assert "4 media file(s) verified byte for byte" in proc.stdout, \
+    # DERIVED from what the fabrication wrote, not the 4 this asserted while one video existed: a
+    # memorised count turns into a floor the day a chapter is added, and this line is the only thing
+    # standing between the kills below and a fabrication the arm never looked at.
+    doc = json.loads((dest / "media.json").read_text(encoding="utf-8"))
+    n, owed = len(doc["present"]), len(doc["videos"]) * 4      # 2 languages x (mp4 + vtt)
+    assert n == owed, f"the fabrication shipped {n} of the {owed} file(s) the scripts define"
+    assert f"{n} media file(s) verified byte for byte" in proc.stdout, \
         "the arm reported no verified files, so the kills below would prove nothing"
 
 
@@ -1385,6 +1419,22 @@ def test_media_present_with_renders_that_disagreed_fails_the_publish(payload, tm
         media["verified_identical_renders"] = False
     expect_killed(_with_media(payload, tmp_path, "media-unverified", edit), MEDIA_ARM,
                   "does not attest verified_identical_renders")
+
+
+def test_media_rendered_against_numbers_the_payload_no_longer_publishes_fails(payload, tmp_path):
+    """The stale-video mutant, and the only one in this group a hash cannot reach.
+
+    Every file can be present, byte-identical to its manifest, doubly rendered and honestly disclosed,
+    and still SAY a number this payload does not publish — because the bytes were rendered last week.
+    The mutant moves one resolved value, which is what a re-run register does; the arm re-resolves
+    against the payload and must convict. Without it, nothing in this repository could tell a fresh
+    render from an old one, since the spoken numbers live in an audio track nobody re-listens to.
+    """
+    def edit(media, files):
+        key = sorted(media["resolved_values"])[0]
+        media["resolved_values"][key] = "999"
+    expect_killed(_with_media(payload, tmp_path, "media-stale-numbers", edit), MEDIA_ARM,
+                  "rendered against different numbers than this payload publishes")
 
 
 def test_a_track_claiming_it_is_not_synthesized_fails_the_publish(payload, tmp_path):
