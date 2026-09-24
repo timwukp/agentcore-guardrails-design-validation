@@ -61,6 +61,10 @@ export interface CensusRow {
   archive_labels: string[];
   /** A LIST, not a count — the restrictions themselves. Rendering `.length` is the caller's job. */
   citation_restrictions: CitationRestriction[];
+  /** Sub-question names only — the full notes live on the case page. Present on the census row so a
+   *  verdict chip on a LIST can be marked without fetching 91 case files: the mark has to travel with
+   *  the chip, because the chip is what a reader reads. */
+  undecided_subquestions: string[];
   files_without_verdict: string[];
 }
 
@@ -74,6 +78,23 @@ export interface Census {
     registry_sha256_declared: string;
     registry_sha256_recomputed: string;
   };
+}
+
+/** One sub-question inside a case that this study did not settle in either direction.
+ *
+ *  Not a fifth verdict. `verdict_on_disk` is carried so the page can say, in one sentence, that the file
+ *  is unchanged — the gate asserts it equals the verdict the page renders, because a presentation that
+ *  disagreed with the artifact would be the substitution this platform exists to refuse. */
+export interface UndecidedSubquestion {
+  subquestion: string;
+  /** Always `not_established`, from the five-state vocabulary the controls page uses. */
+  status: string;
+  restriction: string;
+  /** The citation policy's own wording for why, quoted rather than paraphrased. */
+  why: string;
+  verdict_on_disk: string;
+  /** A repository path to the finding that establishes the indecision, for a reader to go and read. */
+  source: string;
 }
 
 export interface CitationRestriction {
@@ -122,6 +143,10 @@ export interface CaseDetail {
   claims: string[];
   archive: ArchiveEntry[];
   citation_restrictions: CitationRestriction[];
+  /** Sub-questions the citation policy forbids citing in EITHER direction, derived from
+   *  `citation_restrictions` by the build and never authored. The verdict on disk is unchanged and is
+   *  still what every count counts; this says which part of the question that verdict does not answer. */
+  undecided_subquestions: UndecidedSubquestion[];
   series_available: string[];
   record: Record<string, unknown>;
   /** A bound on the reading written by a later reader of the record, for the cases the record itself
@@ -481,6 +506,11 @@ export interface ControlCite {
   verdict: string | null;
   has_verdict: boolean;
   restrictions: string[];
+  /** Sub-questions this verdict does not answer, derived from the citation policy. Every
+   *  annotated case row on every page carries this, so a `VerdictBadge` can be marked wherever it
+   *  is drawn — a mark that appeared on one page and not another would be a mark whose absence
+   *  carries no information. */
+  undecided: string[];
   why?: string | null;
 }
 
@@ -560,6 +590,9 @@ export interface ReportCase {
   case: string;
   verdict: string;
   restrictions: string[];
+  /** @see ControlCite.undecided — the report's own producer, `platform/audit/report.py`, derives this
+   *  from the citation policy so the audit CLI's Markdown and this page carry the same caveat. */
+  undecided: string[];
   what_this_verdict_does_not_prove: string | null;
   limits_stated_by_the_case: boolean;
 }
@@ -629,7 +662,10 @@ export interface AuditReport {
     observation: string;
     because: string;
     recommendation: string;
-    licensed_by: { case: string; verdict: string }[];
+    /** A recommendation about the reader's own system. `undecided` is on the licence itself because
+     *  this is the last place a verdict may read as settled when the policy says its sub-question
+     *  is not. */
+    licensed_by: { case: string; verdict: string; undecided: string[] }[];
     scope_note: string | null;
     sites: string[];
   }[];
@@ -678,6 +714,11 @@ export interface ArchCase {
   title: string;
   verdict: Verdict | string | null;
   restrictions: string[];
+  /** Sub-questions this verdict does not answer, derived from the citation policy. Every
+   *  annotated case row on every page carries this, so a `VerdictBadge` can be marked wherever it
+   *  is drawn — a mark that appeared on one page and not another would be a mark whose absence
+   *  carries no information. */
+  undecided: string[];
 }
 
 export type ArchStatus =
@@ -811,6 +852,11 @@ export interface PracticeCase {
   title: string;
   verdict: Verdict | string | null;
   restrictions: string[];
+  /** Sub-questions this verdict does not answer, derived from the citation policy. Every
+   *  annotated case row on every page carries this, so a `VerdictBadge` can be marked wherever it
+   *  is drawn — a mark that appeared on one page and not another would be a mark whose absence
+   *  carries no information. */
+  undecided: string[];
 }
 
 /** Which cases coloured a practice. `practice` = the sentence's own citations; `section` = the
@@ -899,6 +945,9 @@ export interface PracticeRuling {
   rule: string;
   on_disk: string | null;
   restrictions: string[];
+  /** @see ControlCite.undecided — the rulings table draws `on_disk` as a chip, which makes this row the
+   *  fourth producer of a verdict chip and the one the first pass of the change missed. */
+  undecided: string[];
   unit: string | null;
   register_item: number | null;
   restriction: string | null;

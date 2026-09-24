@@ -1,0 +1,31 @@
+# `npx cdk diff GrxLive --strict`, 2026-09-21, read-only. The account id in the CDK bootstrap
+# bucket name is masked as `<aws-account-id>` -- a raw tool transcript is still a published byte,
+# and the redaction gate reads this directory (it caught these two lines).
+Bundling asset GrxLive/EdgeAuth/Code/Stage...
+
+  ...026da7d4c03ffd3d9888960f3599248a61841f1eb7a3d2-building/index.js  972.7kb
+
+⚡ Done in 369ms
+start: Building GrxLive Template
+success: Built GrxLive Template
+start: Publishing GrxLive Template (<aws-account-id>-us-east-1-e7561aa1)
+success: Published GrxLive Template (<aws-account-id>-us-east-1-e7561aa1)
+Hold on while we create a read-only change set to get a diff with accurate replacement information (use --method=template to use a less accurate but faster template-only diff)
+
+Stack GrxLive
+Template
+[~] Description Description: GRX Live ? private, invite-only delivery of the AgentCore validation payload to GRX Live — private, invite-only delivery of the AgentCore validation payload
+
+Resources
+[~] AWS::CloudFront::ResponseHeadersPolicy SecurityHeaders SecurityHeadersE66B69D3
+ └─ [~] ResponseHeadersPolicyConfig
+     └─ [~] .SecurityHeadersConfig:
+         └─ [~] .ContentSecurityPolicy:
+             └─ [~] .ContentSecurityPolicy:
+                 ├─ [-] default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+                 └─ [+] default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; font-src 'self'; connect-src 'self'; media-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+
+
+
+✨  Number of stacks with differences: 1
+

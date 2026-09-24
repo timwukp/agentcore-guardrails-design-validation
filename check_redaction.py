@@ -156,7 +156,14 @@ PATTERNS: list[tuple[str, re.Pattern[str], str]] = [
      "S3 bucket URI"),
     ("access-key-id", re.compile(r"\b(?:AKIA|ASIA)[0-9A-Z]{16}\b"),
      "AWS access key ID"),
-    ("private-ip", re.compile(r"\b10\.\d{1,3}\.\d{1,3}\.\d{1,3}\b"),
+    # The one pattern here that is not spelled here. `lib/redact.mask_quotation` has to REMOVE this
+    # shape from every excerpt a program publishes, and a second spelling of it would be a second
+    # opinion about what a private address looks like: the mask would then be narrower or wider than
+    # the gate that reports it, and only one of those two failures is visible (the mask being
+    # narrower shows up as a finding; being wider silently rewrites more text than it had to). One
+    # object, imported, so the two sides of the gate are derived rather than agreed
+    # (`feedback_derive_both_sides_of_a_gate`).
+    ("private-ip", _redact.PRIVATE_IP,
      "private RFC1918 address"),
     ("vpc-or-subnet-id", re.compile(r"\b(?:vpc|subnet|sg|eni)-[0-9a-f]{8,17}\b"),
      "VPC-family resource id"),

@@ -152,8 +152,12 @@ def arch() -> dict:
     for r in policy.get("restrictions", []):
         for c in r.get("cases", []):
             restricted.setdefault(c, []).append(r["restriction"])
+    # Derived from the same policy the annotators read, not passed as {}: an empty mapping here would
+    # lay out and colour every box as though no sub-question were undecided, which is the state this
+    # fixture is least able to notice.
+    undecided = bsd.derive_undecided_subquestions(policy)
     families = bsd.derive_families({}, cases)
-    controls = bsd.derive_controls({}, cases, published, restricted)
+    controls = bsd.derive_controls({}, cases, published, restricted, undecided)
     figures = bsd.derive_figures({}, None)
     registers = bsd.derive_registers({})
     metrics = bsd.architecture_metrics(cases, published, restricted, archive, by_case, families,
@@ -161,9 +165,10 @@ def arch() -> dict:
     # The design document's sections, in the same order the builder resolves them: a box that names a
     # section takes its cases from here, so a fixture that passed an empty mapping would lay out nine
     # boxes of the closed-loop diagram as though they carried no evidence at all.
-    practices = bsd.derive_practices({}, cases, published, restricted)
+    practices = bsd.derive_practices({}, cases, published, restricted, undecided)
     sections = {s["id"]: s for s in practices["sections"]}
-    return bsd.derive_architecture({}, cases, published, restricted, metrics, sections)
+    return bsd.derive_architecture({}, cases, published, restricted, metrics, sections,
+                                   undecided)
 
 
 # --------------------------------------------------------------------------- the layout

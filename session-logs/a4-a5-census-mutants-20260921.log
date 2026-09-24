@@ -1,0 +1,34 @@
+subject: platform/build/census_rendered_surfaces.py (64230 bytes)
+arms:    platform/build/tests/test_census_cost_and_matching.py
+python:  /Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python
+
+[control] no mutant -> rc 0 (GREEN)
+[01/25] killed  rc 1  elapsed is the sum of every attempt, not the successful one
+[02/25] killed  rc 1  the failed attempts are dropped instead of published
+[03/25] killed  rc 1  attempts counts the allowance rather than what happened
+[04/25] killed  rc 1  one extra navigation past the published maximum
+[05/25] killed  rc 1  the retry re-requests the first url and is served from cache
+[06/25] killed  rc 1  a timed-out attempt still waits for networkidle
+[07/25] killed  rc 1  the arrival floor never reaches the browser
+[08/25] killed  rc 1  the timeout never reaches the browser
+[09/25] killed  rc 1  the per-attempt hook is called once for the whole route
+[10/25] killed  rc 1  exhaustion returns a cost dict instead of refusing
+[11/25] killed  rc 1  the exception that ended the walk is swallowed
+[12/25] SURVIVED rc 0  the timeout is a literal again rather than a measured maximum times a stated multiple
+[13/25] killed  rc 1  the headroom is tightened onto the observed distribution
+[14/25] killed  rc 1  the anchor's href survives, so no linked sentence matches
+[15/25] killed  rc 1  table divider rows are text again
+[16/25] killed  rc 1  list markers are text again
+[17/25] killed  rc 1  whitespace is collapsed rather than removed
+[18/25] killed  rc 1  markdown syntax is left in place, which is the defect item 43 names
+[19/25] killed  rc 1  the second pass is gone: every body_md reaches no reader again
+[20/25] killed  rc 1  an empty fingerprint matches every route
+[21/25] killed  rc 1  the zh side is compared verbatim while en matched stripped
+[22/25] killed  rc 1  a drop is a continue again, so the count is 0 by construction
+[23/25] killed  rc 1  the match basis is not published
+[24/25] killed  rc 1  an identifier is classified by corpus, so digests enter the backlog
+[25/25] killed  rc 1  a drop is truncated like a row, hiding nothing but claiming a width it does not have
+
+[control] restored -> rc 0 (GREEN)
+24/25 killed
+  SURVIVOR: the timeout is a literal again rather than a measured maximum times a stated multiple

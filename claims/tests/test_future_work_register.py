@@ -72,7 +72,11 @@ ABOUT_RE = re.compile(r"FUTURE-WORK|deficiency register", re.I)
 #   item titles are translated ("its 42 item titles and 5 tier headings"). A RISE is the good direction
 #   here — the sentence was written unchecked and is checked from now on — but it is only checked
 #   because this number moved with it, which is the whole point of asserting the site count.
-EXPECTED_PROSE_SITES = 5
+# 2026-09-21: +1. The new `RECONNECT.md` banner states the register's size as part of recording items
+#   44-47 ("grew from 43 to 47 items"). It was written as "Register: 43 -> 47 items" first, which no
+#   regex here matches — a count in the repo that nothing derives. Naming the register in the sentence
+#   is what puts it inside the guard, so the rise is the sentence being checked, not a new risk.
+EXPECTED_PROSE_SITES = 6
 
 
 def _register_text() -> str:

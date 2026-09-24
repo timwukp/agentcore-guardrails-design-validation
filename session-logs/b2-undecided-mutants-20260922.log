@@ -1,0 +1,38 @@
+subject: site/src/components/ui.tsx (11259 bytes)
+subject: site/src/styles.css (35970 bytes)
+subject: site/src/views/Audit.tsx (14684 bytes)
+subject: site/src/views/Design.tsx (25593 bytes)
+subject: site/src/views/Overview.tsx (18681 bytes)
+probe:   platform/build/walk_release.py --base http://127.0.0.1:8902
+
+[control] no mutant -> rc 1 (RED) in 74s
+enders 'FALSE' with no mark, while census.json leaves ['the p99 tail'] undecided on it",
+  "en /design: the chip for F6-8 renders 'FALSE' with no mark, while census.json leaves ['slope in [165,750]'] undecided on it",
+  "zh-TW /design: the chip for F6-8 renders 'FALSE' with no mark, while census.json leaves ['slope in [165,750]'] undecided on it",
+  "zh-TW /design: the chip for F6-2 renders 'FALSE' with no mark, while census.json leaves ['the p99 tail'] undecided on it",
+  "zh-TW /design: the chip for F6-5 renders 'FALSE' with no mark, while census.json leaves ['the p99 tail'] undecided on it",
+  "zh-TW /design: the chip for F6-8 renders 'FALSE' with no mark, while census.json leaves ['slope in [165,750]'] undecided on it",
+  "zh-TW /design: the chip for F6-2 renders 'FALSE' with no mark, while census.json leaves ['the p99 tail'] undecided on it",
+  "zh-TW /design: the chip for F6-5 renders 'FALSE' with no mark, while census.json leaves ['the p99 tail'] undecided on it",
+  "zh-TW /design: the chip for F6-8 renders 'FALSE' with no mark, while census.json leaves ['slope in [165,750]'] undecided on it"
+ ]
+}
+
+walked 16 route(s) x 2 locale(s), read 8 of 8 expected video element(s), measured 4 verdict colour(s) on screen
+PROBLEMS — 14
+ - en /design: the chip for F6-8 renders 'FALSE' with no mark, while census.json leaves ['slope in [165,750]'] undecided on it
+ - en /design: the chip for F6-2 renders 'FALSE' with no mark, while census.json leaves ['the p99 tail'] undecided on it
+ - en /design: the chip for F6-5 renders 'FALSE' with no mark, while census.json leaves ['the p99 tail'] undecided on it
+ - en /design: the chip for F6-8 renders 'FALSE' with no mark, while census.json leaves ['slope in [165,750]'] undecided on it
+ - en /design: the chip for F6-2 renders 'FALSE' with no mark, while census.json leaves ['the p99 tail'] undecided on it
+ - en /design: the chip for F6-5 renders 'FALSE' with no mark, while census.json leaves ['the p99 tail'] undecided on it
+ - en /design: the chip for F6-8 renders 'FALSE' with no mark, while census.json leaves ['slope in [165,750]'] undecided on it
+ - zh-TW /design: the chip for F6-8 renders 'FALSE' with no mark, while census.json leaves ['slope in [165,750]'] undecided on it
+ - zh-TW /design: the chip for F6-2 renders 'FALSE' with no mark, while census.json leaves ['the p99 tail'] undecided on it
+ - zh-TW /design: the chip for F6-5 renders 'FALSE' with no mark, while census.json leaves ['the p99 tail'] undecided on it
+ - zh-TW /design: the chip for F6-8 renders 'FALSE' with no mark, while census.json leaves ['slope in [165,750]'] undecided on it
+ - zh-TW /design: the chip for F6-2 renders 'FALSE' with no mark, while census.json leaves ['the p99 tail'] undecided on it
+ - zh-TW /design: the chip for F6-5 renders 'FALSE' with no mark, while census.json leaves ['the p99 tail'] undecided on it
+ - zh-TW /design: the chip for F6-8 renders 'FALSE' with no mark, while census.json leaves ['slope in [165,750]'] undecided on it
+
+the control is red; a mutation result read off a red probe means nothing

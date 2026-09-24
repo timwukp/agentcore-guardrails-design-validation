@@ -379,3 +379,102 @@ def mask(obj: Any) -> Any:
     if isinstance(obj, tuple):
         return tuple(mask(v) for v in obj)
     return obj
+
+
+# ----------------------------------------------- a string this project QUOTES rather than records
+#
+# Measured 2026-09-22. The rendered-surface census publishes, for every payload string it examined,
+# an EXCERPT of that string cut to a fixed number of characters — a locator, so a human can find
+# the string the row is about. Six such excerpts per ledger failed the redaction gate, in all six
+# ledgers written that evening, 36 findings:
+#
+#   * FIVE were the slice's own doing, and nothing upstream could have prevented them. The payload
+#     strings were already masked — their account fields read `ACCOUNT_PLACEHOLDER` — but the cut
+#     landed INSIDE the placeholder of a second ARN on the same line, leaving a prefix of it. The
+#     gate detects ARNs with a three-colon prefix pattern and decomposes them with a five-colon
+#     one, and when it decomposes fewer than it detected it fails CLOSED, because it cannot tell a
+#     sliced ARN from a truncated identifier. It is right to: the same shape with DIGITS in that
+#     position is the leak `_ARN_ACCOUNT_TRUNCATED` above was written for. But that rule cannot help
+#     here, since a cut placeholder leaves no digits to recognise — so the fragment has to go.
+#   * ONE was an RFC1918 CIDR, quoted from F5-7b's `instrument` description. Its two original homes
+#     carry reviewed waivers that exist because those files ARGUE about the range (its disjointness
+#     from the runner's own addressing is a claim a reader has to be able to check). An excerpt
+#     argues nothing, so it gets the mask rather than a third path anchor — the same call
+#     `check_redaction.py` records making when `.staging` copies of that file produced the same six
+#     findings: do not teach a reader that this CIDR is fine wherever it appears.
+#
+# `mask_text` is deliberately NOT changed. It runs on the way into `results/`, where the CIDR and
+# the ARN are evidence, and widening it would rewrite the distributable record to fix a defect in
+# how the record is QUOTED. This pair is strictly stronger than `mask_text` and applies only to
+# excerpts.
+
+# RFC1918 10/8, and the ONE place this shape is spelled: `check_redaction.PATTERNS` imports this
+# object, so the gate that reports the shape and the mask that removes it cannot drift apart, and a
+# gate that widens to another private range widens every excerpt with it
+# (`feedback_derive_both_sides_of_a_gate`).
+PRIVATE_IP = re.compile(r"\b10\.\d{1,3}\.\d{1,3}\.\d{1,3}\b")
+PRIVATE_IP_PLACEHOLDER = "<private-ip>"
+
+# The gate's own two ARN shapes, byte for byte: what it counts as an ARN at all, and what it can
+# decompose as far as the account field. When those two disagree in number on a line, the gate fails
+# closed — so those two patterns, and only those two, decide what has to be healed. Spelled here
+# rather than imported because `check_redaction.py` is a root-level script that imports THIS module;
+# `lib/tests/test_redact.py` asserts both against the gate's own objects rather than letting this
+# comment claim they agree. Healing anything the gate would not report would mean deleting somebody's
+# evidence to satisfy a rule nobody is enforcing.
+_ARN_ANY = re.compile(r"\barn:aws[a-z-]*:[a-z0-9-]*:")
+_ARN_THROUGH_ACCOUNT = re.compile(r"\barn:aws[a-z-]*:[^:\s]*:[^:\s]*:([^:\s]*):")
+
+
+def mask_quotation(s: str) -> str:
+    """Mask `s` for publication as an EXCERPT: everything `mask_text` does, plus two slice rules.
+
+    Use this wherever a program publishes a fixed-width piece of a longer string. Do not use it on
+    the way into `results/` — see the block above for why the two masks are not the same mask.
+
+    Idempotent, like `mask_text`: both placeholders contain no digits, no colon-delimited ARN
+    fields and no dotted quad, so a second pass finds nothing to replace. Order matters only in
+    that the ARN heal runs last: masking can lengthen a string, and it is the state of the string
+    as it will be WRITTEN whose tail must be well formed.
+    """
+    out = mask_text(s)
+    out = PRIVATE_IP.sub(PRIVATE_IP_PLACEHOLDER, out)
+    return _heal_sliced_arn(out)
+
+
+def _heal_sliced_arn(s: str) -> str:
+    """Drop a trailing ARN that a length-based slice left undecomposable.
+
+    Only the LAST ARN in the string can be the cut one — a slice cuts at the end — so only that one
+    is examined, and it is dropped only when it cannot be read as far as its account field. A
+    complete ARN at the end of a string is left exactly as it is, which is the property that keeps
+    this from quietly deleting evidence: `region_of`/`partition_of` read ARN fields by position,
+    and a rule that trimmed well-formed ARNs would be a data change wearing a redaction's clothes.
+    """
+    starts = [m.start() for m in _ARN_ANY.finditer(s)]
+    if not starts:
+        return s
+    last = starts[-1]
+    if _ARN_THROUGH_ACCOUNT.match(s, last):
+        return s
+    return s[:last].rstrip()
+
+
+def mask_quotations(obj: Any) -> Any:
+    """`mask_quotation` over every string in a JSON-shaped structure, keys included.
+
+    A walk rather than a list of field names, for the reason `feedback_scope_as_namelist` records:
+    the census ledger publishes excerpts under `text` today, and a field name added next month is a
+    field this mask would not have covered. The five findings above were all in `text`; nothing
+    about them depended on that.
+    """
+    if isinstance(obj, str):
+        return mask_quotation(obj)
+    if isinstance(obj, dict):
+        return {mask_quotations(k) if isinstance(k, str) else k: mask_quotations(v)
+                for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [mask_quotations(v) for v in obj]
+    if isinstance(obj, tuple):
+        return tuple(mask_quotations(v) for v in obj)
+    return obj

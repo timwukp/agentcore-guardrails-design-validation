@@ -1,0 +1,24 @@
+subject: site/src/components/ui.tsx (11600 bytes)
+subject: site/src/styles.css (35970 bytes)
+subject: site/src/views/Audit.tsx (14684 bytes)
+subject: site/src/views/Design.tsx (25893 bytes)
+subject: site/src/views/Overview.tsx (18681 bytes)
+subject: site/src/views/Report.tsx (21473 bytes)
+probe:   platform/build/walk_release.py --base http://127.0.0.1:8902
+
+[control] no mutant -> rc 0 (GREEN) in 58s
+[01/12] killed  rc 1 in 76s  the register table stops passing the mark
+[02/12] killed  rc 1 in 77s  the design page's evidence chip stops passing the mark
+[03/12] killed  rc 1 in 77s  the dashed border becomes solid, leaving colour as the only cue
+[04/12] killed  rc 1 in 77s  the dagger itself disappears and only the class remains
+[05/12] killed  rc 1 in 82s  the mark loses its accessible name
+[06/12] killed  rc 1 in 77s  the verdict token is replaced by a friendlier phrase beside the mark
+[07/12] killed  rc 1 in 61s  the explanatory panel loses the hook the probe finds it by
+[08/12] killed  rc 1 in 61s  the panel stops naming the verdict on disk
+[09/12] killed  rc 1 in 77s  the audit page's chip stops carrying the dagger
+[10/12] killed  rc 1 in 77s  the rulings table on /design stops passing the mark
+[11/12] killed  rc 1 in 76s  a cited case under a report measurement loses the dagger
+[12/12] killed  rc 1 in 60s  the licence under a recommendation loses the dagger
+
+[control] restored -> rc 0 (GREEN)
+12/12 killed

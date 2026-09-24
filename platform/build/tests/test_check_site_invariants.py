@@ -1467,3 +1467,231 @@ def test_media_shipping_without_the_polly_disclosure_in_the_bundle_fails(payload
                                   f"\n{(proc.stdout + proc.stderr)[-2000:]}")
     body = proc.stdout + proc.stderr
     assert f"[{MEDIA_ARM}]" in body and "no Polly disclosure wording" in body, body[-2000:]
+
+
+# ------------------------------------------------- the undecided sub-question, both ways
+#
+# Issue #37's F6 adjudication became a DERIVATION — "the policy forbids both directions on this named
+# sub-question" — precisely so that it would be checkable. These mutants are what makes the derivation
+# worth more than the three case ids a human wrote down: each one is a way the presentation could drift
+# from the policy, and every one of them is silent in every other arm in this file.
+#
+# The disk verdicts are not mutated anywhere below, because they were deliberately not changed: the
+# whole of this change is what a reader is shown, and an arm that let the file move would be enforcing
+# the opposite of the decision.
+
+UNDECIDED_ARM = "an_undecided_subquestion_is_published_where_the_policy_forbids_both_directions"
+
+
+def _first_undecided_case(payload: Path) -> str:
+    census = json.loads((payload / "census.json").read_text(encoding="utf-8"))
+    got = sorted(r["case"] for r in census["rows"] if r.get("undecided_subquestions"))
+    assert got, "the fixture payload marks no case as undecided, so these mutants would test nothing"
+    return got[0]
+
+
+def test_a_case_page_that_dropped_its_note_leaves_a_bare_verdict_chip(payload, tmp_path):
+    """The defect the change exists to prevent, arriving from the direction nobody watches: the policy
+    still restricts the case, and the page renders `FALSE` with nothing beside it."""
+    case = _first_undecided_case(payload)
+    mutant = copy_of(payload, tmp_path, "undecided-page-dropped")
+    _mutate(mutant, f"cases/{case}.json", lambda d: d.update(undecided_subquestions=[]))
+    expect_killed(mutant, UNDECIDED_ARM, "a missing one is a bare verdict chip")
+
+
+def test_a_note_the_policy_does_not_license_is_an_invented_limit(payload, tmp_path):
+    """The other direction, which matters as much: this platform may not decide on its own that a
+    verdict answers less than it does. A note with no restriction behind it is an authored caveat
+    wearing derived clothes."""
+    census = json.loads((payload / "census.json").read_text(encoding="utf-8"))
+    clean = sorted(r["case"] for r in census["rows"]
+                   if r.get("verdict") and not r.get("undecided_subquestions"))
+    assert clean, "every case in the fixture is marked, so this mutant has nowhere to land"
+    case = clean[0]
+    borrowed = json.loads((payload / "cases" / f"{_first_undecided_case(payload)}.json")
+                          .read_text(encoding="utf-8"))["undecided_subquestions"]
+    mutant = copy_of(payload, tmp_path, "undecided-invented")
+    _mutate(mutant, f"cases/{case}.json", lambda d: d.update(undecided_subquestions=borrowed))
+    expect_killed(mutant, UNDECIDED_ARM, "is an invented limit")
+
+
+def test_a_mark_that_reached_the_case_page_and_not_the_census_row_fails(payload, tmp_path):
+    """16 of 17 routes render verdict chips out of `census.json` and never fetch a case page. A mark
+    that lives only on the detail page is a mark a reader scanning the register never sees, which is the
+    state a check reading only case files would call clean."""
+    case = _first_undecided_case(payload)
+    mutant = copy_of(payload, tmp_path, "undecided-census-dropped")
+
+    def edit(census):
+        for row in census["rows"]:
+            if row["case"] == case:
+                row["undecided_subquestions"] = []
+    _mutate(mutant, "census.json", edit)
+    expect_killed(mutant, UNDECIDED_ARM, "a verdict chip on a list would render unmarked")
+
+
+def test_a_status_outside_the_five_state_vocabulary_fails(payload, tmp_path):
+    """`not_established` is a token the controls page and the architecture legend already use. Any other
+    string renders on the page as an identifier, and a new identifier beside a verdict reads as a fifth
+    verdict."""
+    case = _first_undecided_case(payload)
+    mutant = copy_of(payload, tmp_path, "undecided-status")
+
+    def edit(page):
+        page["undecided_subquestions"][0]["status"] = "measured_false"
+    _mutate(mutant, f"cases/{case}.json", edit)
+    expect_killed(mutant, UNDECIDED_ARM, "renders as an identifier")
+
+
+def test_a_note_disagreeing_with_the_verdict_on_disk_fails(payload, tmp_path):
+    """The sentence a reader most needs is that the file did not change. If the note can name a
+    different verdict from the one the page renders, that sentence becomes the substitution this
+    platform exists to refuse."""
+    case = _first_undecided_case(payload)
+    mutant = copy_of(payload, tmp_path, "undecided-disk")
+
+    def edit(page):
+        page["undecided_subquestions"][0]["verdict_on_disk"] = "INCONCLUSIVE"
+    _mutate(mutant, f"cases/{case}.json", edit)
+    expect_killed(mutant, UNDECIDED_ARM, "must never disagree with the file")
+
+
+def test_a_note_citing_a_source_that_is_not_in_the_repository_fails(payload, tmp_path):
+    """The note's whole value is that the reader can go and read the finding it rests on."""
+    case = _first_undecided_case(payload)
+    mutant = copy_of(payload, tmp_path, "undecided-source")
+
+    def edit(page):
+        page["undecided_subquestions"][0]["source"] = "results/FINDING-THAT-DOES-NOT-EXIST.md"
+    _mutate(mutant, f"cases/{case}.json", edit)
+    expect_killed(mutant, UNDECIDED_ARM, "not a file in this repository")
+
+
+def test_a_placeholder_reason_fails(payload, tmp_path):
+    """`why` is quoted from the policy, not paraphrased. A three-word stub renders in the same box, in
+    the same type, as the policy's own sentence."""
+    case = _first_undecided_case(payload)
+    mutant = copy_of(payload, tmp_path, "undecided-why")
+
+    def edit(page):
+        page["undecided_subquestions"][0]["why"] = "see the finding"
+    _mutate(mutant, f"cases/{case}.json", edit)
+    expect_killed(mutant, UNDECIDED_ARM, "too short to be the policy's stated reason")
+
+
+def test_a_policy_restricting_one_direction_only_derives_nothing_and_must_not_report_clean(
+        payload, tmp_path):
+    """The `ran` flag. A policy reshaped so that no restriction forbids both directions makes the
+    derivation empty, every loop below it iterate over nothing, and the arm print a pass — the shape a
+    zero takes when it means "did not run" rather than "nothing wrong" (`feedback_zero_needs_a_ran_flag`).
+
+    The mutation is realistic rather than adversarial: it drops the FALSE half of each `not_citable_as`,
+    which is exactly what tightening a restriction to one direction looks like.
+    """
+    mutant = copy_of(payload, tmp_path, "undecided-one-direction")
+
+    def edit(policy):
+        for entry in policy["restrictions"]:
+            phrases = entry.get("not_citable_as") or []
+            entry["not_citable_as"] = [p for p in phrases if not str(p).startswith("FALSE ")]
+    _mutate(mutant, "citation_policy.json", edit)
+    expect_killed(mutant, UNDECIDED_ARM, "this arm is now verifying nothing")
+
+
+# ------------------------------------- the sweep over every producer, and the two it caught first
+#
+# The seven mutants above all land on `cases/<ID>.json` or `census.json`, because those were the two
+# files the first version of this arm read. They were not enough: a browser walk over the same payload
+# found seven unmarked chips per locale on `/design`, drawn by a fourth producer, and two more on
+# `/report` from a fifth and a sixth. Every one of those payloads passed all seven.
+#
+# So the arm now sweeps the payload's own bytes for any object naming a case beside a verdict, and these
+# mutants are what make that sweep worth having: each removes the derivation from ONE producer and must
+# still die (`feedback_derive_from_every_producer`).
+
+
+def test_the_rulings_table_losing_the_derivation_fails(payload, tmp_path):
+    """The producer the walk found and no JSON assertion could: `practices.json`'s adjudications, which
+    `/design` renders as "the document says FALSE · the register says <chip>". Seven rows per locale,
+    every one of them an F6 case."""
+    mutant = copy_of(payload, tmp_path, "undecided-ruling-dropped")
+
+    def edit(practices):
+        touched = 0
+        for kind in ("open", "legal"):
+            for row in practices["adjudications"][kind]:
+                if row.pop("undecided", None):
+                    touched += 1
+        assert touched, "no adjudication row in the fixture names an undecided case"
+    _mutate(mutant, "practices.json", edit)
+    expect_killed(mutant, UNDECIDED_ARM, "no undecided key at all")
+
+
+def test_a_report_measurement_losing_the_derivation_fails(payload, tmp_path):
+    """`audit.json` is produced by `platform/audit/report.py` — the audit CLI, not this builder — and
+    `/report` prints its cited cases as bare chip text. A reader deciding what to change in their own
+    system is the last reader who should see a verdict read as settled."""
+    mutant = copy_of(payload, tmp_path, "undecided-report-measurement")
+
+    def edit(audit):
+        touched = 0
+        for line in audit["report"]["controls"]:
+            for m in line.get("measurements") or []:
+                for row in m.get("cases") or []:
+                    if row.pop("undecided", None):
+                        touched += 1
+        assert touched, "no measurement in the fixture cites an undecided case"
+    _mutate(mutant, "audit.json", edit)
+    expect_killed(mutant, UNDECIDED_ARM, "no undecided key at all")
+
+
+def test_a_recommendation_licence_losing_the_derivation_fails(payload, tmp_path):
+    """The sixth producer: the list of cases that LICENSE a recommendation. Same file, different path,
+    and a mutant of its own because one arm passing over it would have been enough to ship it bare."""
+    mutant = copy_of(payload, tmp_path, "undecided-report-licence")
+
+    def edit(audit):
+        touched = 0
+        for rec in audit["report"].get("recommendations") or []:
+            for row in rec.get("licensed_by") or []:
+                if row.pop("undecided", None):
+                    touched += 1
+        assert touched, "no recommendation in the fixture is licensed by an undecided case"
+    _mutate(mutant, "audit.json", edit)
+    expect_killed(mutant, UNDECIDED_ARM, "no undecided key at all")
+
+
+def test_a_sub_question_renamed_in_one_producer_only_fails(payload, tmp_path):
+    """A key that is PRESENT and wrong. Dropping the derivation is the loud failure; a row whose
+    sub-question drifted from the policy's wording still draws a mark, and the tooltip then names
+    something the policy never said."""
+    mutant = copy_of(payload, tmp_path, "undecided-ruling-renamed")
+
+    def edit(practices):
+        touched = 0
+        for row in practices["adjudications"]["open"]:
+            if row.get("undecided"):
+                row["undecided"] = ["the tail"]
+                touched += 1
+        assert touched, "no open adjudication in the fixture names an undecided case"
+    _mutate(mutant, "practices.json", edit)
+    expect_killed(mutant, UNDECIDED_ARM, "carries ['the tail']")
+
+
+def test_a_sweep_that_matches_nothing_must_not_report_clean(payload, tmp_path):
+    """The sweep's own `ran` flag, and it is a different zero from the derivation's: the derivation can
+    go on naming three cases while the sweep finds none of them beside a verdict, and every loop in it
+    would then iterate over nothing and print a pass (`feedback_zero_needs_a_ran_flag`).
+
+    The mutation is the drift this repository has already had once. `F5-7B` in the design document is
+    `F5-7b` on disk — a case-letter defect in a citation — and a policy restricting an id the payload
+    publishes under a different spelling is the same failure aimed at this arm: the restriction is real,
+    the rows it should mark are real, and nothing joins them.
+    """
+    mutant = copy_of(payload, tmp_path, "undecided-sweep-blind")
+
+    def edit(policy):
+        for entry in policy["restrictions"]:
+            entry["cases"] = [f"{c}-RENAMED" for c in entry.get("cases") or []]
+    _mutate(mutant, "citation_policy.json", edit)
+    expect_killed(mutant, UNDECIDED_ARM, "passing over the producers it exists to find")

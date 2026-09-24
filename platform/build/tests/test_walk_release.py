@@ -28,6 +28,7 @@ is measured by running the instrument, which is a different claim and cannot be 
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -115,3 +116,112 @@ def test_the_floor_is_no_longer_the_expectation():
     one = wr.playable_track_count(media(VIDEOS, files("overview")))
     assert full != one
     assert full > wr.MIN_VIDEOS_TOTAL
+
+
+# --------------------------------------------------------------- what the walk demands of the mark
+#
+# `undecided_from_payload` is the other derived expectation in the walk, and the same argument applies to
+# it: a constant `3` would be the three case ids a human adjudicated in issue #37, written down where
+# nothing can notice a fourth. These arms pin the derivation over payload shapes that have all been
+# reachable — three marked cases, none at all, a case whose verdict file is missing, and a control whose
+# cited case is undecided in a finding rather than in `measured_by`.
+#
+# No browser here, deliberately, exactly as above: the DOM half is measured by running the instrument.
+
+def payload_with(tmp_path, rows, controls=None, report=None):
+    (tmp_path / "census.json").write_text(json.dumps({"rows": rows}), encoding="utf-8")
+    (tmp_path / "controls.json").write_text(
+        json.dumps({"controls": controls if controls is not None else []}), encoding="utf-8")
+    (tmp_path / "audit.json").write_text(
+        json.dumps({"report": report if report is not None else {}}), encoding="utf-8")
+    return tmp_path
+
+
+def row(case, verdict, undecided=()):
+    return {"case": case, "verdict": verdict, "undecided_subquestions": list(undecided)}
+
+
+def test_the_marked_cases_are_read_from_the_census_row_the_lists_render_from(tmp_path):
+    p = payload_with(tmp_path, [row("F6-2", "FALSE", ["the p99 tail"]),
+                                row("F6-8", "FALSE", ["slope in [165,750]"]),
+                                row("F1-1", "TRUE")])
+    marked, verdicts, register_badges, audit_chips, report_chips = wr.undecided_from_payload(p)
+    assert marked == {"F6-2": ["the p99 tail"], "F6-8": ["slope in [165,750]"]}
+    assert verdicts["F6-2"] == "FALSE"
+    assert register_badges == 3
+    assert audit_chips == 0
+    assert report_chips == 0
+
+
+def test_a_payload_marking_nothing_returns_an_empty_mapping_for_main_to_refuse(tmp_path):
+    # Not an exception: `main()` turns this into `CANNOT RUN`, because "no case is marked" is a claim
+    # about the citation policy and the walk must say so rather than pass over an empty set
+    # (`feedback_zero_needs_a_ran_flag`).
+    marked, _, register_badges, _, _ = wr.undecided_from_payload(
+        payload_with(tmp_path, [row("F1-1", "TRUE")]))
+    assert marked == {}
+    assert register_badges == 1
+
+
+def test_the_register_badge_count_excludes_the_rows_with_no_verdict(tmp_path):
+    # Two of the 93 registered cases carry no verdict file, and `VerdictBadge` renders those as
+    # `v-none` — a lowercase token the probe's `^v-[A-Z]+$` filter does not collect. Counting them
+    # would make the walk demand 93 badges where the DOM holds 91, and the arm would fail on a correct
+    # page.
+    p = payload_with(tmp_path, [row("F1-1", "TRUE"), row("F9-1", None), row("F10-1", None)])
+    assert wr.undecided_from_payload(p)[2] == 1
+
+
+def test_the_sub_questions_come_back_sorted_so_the_panels_can_be_compared_in_order(tmp_path):
+    # The walk zips the panels it found against this list. Payload order is JSON order, which is not
+    # guaranteed to be stable across builds, so the comparison would be flaky if either side were
+    # unsorted.
+    p = payload_with(tmp_path, [row("F6-2", "FALSE", ["the p99 tail", "a second sub-question"])])
+    assert wr.undecided_from_payload(p)[0]["F6-2"] == ["a second sub-question", "the p99 tail"]
+
+
+def test_only_the_cited_rows_the_audit_page_renders_are_counted(tmp_path):
+    # `Audit.tsx` renders `measured_by` and never `findings[].cites`, and the real payload has F6-2 in
+    # both. Counting the finding's copy would make the walk demand two daggers on a page that draws
+    # one, which is a failure on a correct release — the other half of the same mistake as missing one.
+    controls = [{
+        "id": "enforcement_latency_budget",
+        "measured_by": [{"case": "F6-2", "undecided": ["the p99 tail"]},
+                        {"case": "F1-1", "undecided": []}],
+        "findings": [{"cites": [{"case": "F6-2", "undecided": ["the p99 tail"]}]}],
+    }]
+    p = payload_with(tmp_path, [row("F6-2", "FALSE", ["the p99 tail"])], controls)
+    assert wr.undecided_from_payload(p)[3] == 1
+
+
+def test_a_control_with_no_cited_rows_at_all_contributes_no_expected_dagger(tmp_path):
+    p = payload_with(tmp_path, [row("F6-2", "FALSE", ["the p99 tail"])],
+                     [{"id": "c1"}, {"id": "c2", "measured_by": None}])
+    assert wr.undecided_from_payload(p)[3] == 0
+
+
+def test_the_report_page_expects_a_dagger_per_cited_row_and_per_licence(tmp_path):
+    # `/report` draws a case beside a verdict in two places, and the producer is the audit CLI rather
+    # than the site builder. Both were unmarked until the payload-wide sweep found them, so both are
+    # counted here: a measurement's cited case, and the licence under a recommendation.
+    report = {
+        "controls": [{"measurements": [{"cases": [{"case": "F6-2", "verdict": "FALSE",
+                                                  "undecided": ["the p99 tail"]},
+                                                 {"case": "F1-1", "verdict": "TRUE",
+                                                  "undecided": []}]}]}],
+        "recommendations": [{"licensed_by": [{"case": "F6-2", "verdict": "FALSE",
+                                              "undecided": ["the p99 tail"]}]}],
+    }
+    p = payload_with(tmp_path, [row("F6-2", "FALSE", ["the p99 tail"])], report=report)
+    assert wr.undecided_from_payload(p)[4] == 2
+
+
+def test_a_report_with_no_recommendation_at_all_counts_only_its_measurements(tmp_path):
+    # The state the example submission would be in if no control it declares were in a measured state:
+    # `recommendations` is empty and the page says so in prose. Counting a licence there would make the
+    # walk demand a dagger on a page that draws none.
+    report = {"controls": [{"measurements": [{"cases": [{"case": "F6-8", "verdict": "FALSE",
+                                                         "undecided": ["slope in [165,750]"]}]}]}],
+              "recommendations": []}
+    p = payload_with(tmp_path, [row("F6-8", "FALSE", ["slope in [165,750]"])], report=report)
+    assert wr.undecided_from_payload(p)[4] == 1

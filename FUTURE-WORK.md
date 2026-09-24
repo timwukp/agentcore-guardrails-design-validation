@@ -42,7 +42,20 @@ answer is *nothing*, because the census matches raw payload text against rendere
 this site renders as Markdown fails that test — 115,067 characters of this file's own prose, dropped as
 "reaches no reader" while reaching every reader. The first explanation written for it (a collapsed
 `<details>`) was **wrong**, and is recorded in the item alongside the evidence that killed it, because a
-correction inherits no credibility from the error it replaces.
+correction inherits no credibility from the error it replaces. **44–47** were added on 2026-09-21 as
+by-products of *closing* item 40 — reading the project's own spend off a meter for the first time — and
+none of the four was the thing item 40 predicted. Three came from the one refusal that walks the meter
+instead of the ledger and asks what the ledger fails to mention: 44 is a 40 GB volume that has been
+billing with nothing attached since August, is the single largest line in the project's spend, and that
+no script here can see because the teardown has no volume sweep; 46 is that usage-type names are not
+unique keys, measured at 159 collisions; 47 is $0.032 of activity in this account on a day this study
+was running that nothing in this repo explains, over a window CloudTrail will not answer for. 45 is the
+one found by disbelieving a *sentence* rather than a green: the tag method this repo stated for six
+weeks returns `$0` with no error, because the key was never activated. **48** was added on 2026-09-21
+while closing item 41, from reading a diff's own footer instead of its body: `cdk diff` reported the CSP
+change this round needs and then said, in one line at the bottom, that it had **omitted** a change it
+judged to be mangled non-ASCII — and the change it omitted is permanent, because CloudFormation has
+already transliterated an em dash in the deployed stack's description to an ASCII `?`.
 All are placed in the tier
 they belong to rather than appended, so the numbering is out of order on purpose. Nothing is renumbered
 once written, because other files cite these numbers.
@@ -321,6 +334,60 @@ place instead is that the site renders all seven as **unsettled findings rather 
 gate's ceiling on open adjudications is **7 and ratchets down only** — so this half of (b) is closed
 when that ceiling reaches 0, and it is a build failure to add an eighth. `results/PRACTICE-EVIDENCE-MAP.md`
 records the derivation.
+
+**Scope correction, 2026-09-22: the same condition named the paper and the design document, and not
+this platform's own website — which was publishing the withheld comparison as a bare `FALSE` on every
+route that draws a verdict.** The 2026-08-23 amendment above caught the document. It did not ask what
+the site did with the same three cases, and the answer was: `results/phase1/F6-2.json` reads `FALSE`,
+`census.json` carries that verdict, and every page that draws a verdict — the register, `/design`,
+`/architecture`, `/audit`, `/report` and the three case pages — rendered it as a chip with nothing beside
+it. A reader
+of the register saw `FALSE`; nothing on the page said that the citation policy refuses a `FALSE` *and* a
+`TRUE` on the p99 tail. The policy said so, in a file with no reader.
+
+**What changed, and what deliberately did not.** The disk verdict was not touched, and neither was any
+count: `results/phase1/F6-2.json` still says `FALSE`, and the census still publishes FALSE 23 /
+INCONCLUSIVE 20 / RECORDED 2 / TRUE 46 over 91 published cases. The whole of the change is what a reader
+is shown — a dagger on the chip, an accessible name and a tooltip naming the sub-question, a dashed
+border so the cue survives greyscale, and on the case page a panel carrying the policy's own `why`, its
+source file, and the sentence that the verdict file did not change.
+
+**It is a derivation, not a third list of three case ids.** `check_controls.undecided_subquestions()`
+selects the restrictions that forbid **both** directions on a **named** sub-question. Over the ten
+restrictions in `results/CITATION-POLICY.md` that rule returns exactly F6-2 and F6-5 on the p99 tail and
+F6-8 on the slope range — the three a human adjudicated in issue #37 — and it reaches them without being
+told the answer. It excludes the near misses for stated reasons: F5-4a/F5-4b forbid both directions on
+the case as a *whole* (`NOT_A_VERDICT`, which has its own rendering), and F1-19 and F5-3b each lose one
+direction only, so calling either undecided would overstate the limit.
+
+**Where the first attempt was wrong, which is the part worth recording.** The derivation was wired into
+the three `annotate()` helpers in `build_site_data.py`, the arm reported clean on the real payload, its
+eight mutants were all killed, and the change looked complete. A browser walk over the built site then found **seven unmarked chips per
+locale on `/design`** — the rulings table, a **fourth** code site emitting the same kind of row, invisible
+to every assertion that read `census.json` and `cases/<ID>.json`. Sweeping the payload's own bytes for
+objects that name a case beside a verdict found **22 such rows on nine distinct payload paths from six
+code sites**, and two more of them were bare: `/report`'s measurement citations and the licences under
+its recommendations, both produced by `platform/audit/report.py` rather than by the site builder. A
+census of chip-drawing rows has to be taken from every producer, not from the ones that share a helper
+(`feedback_derive_from_every_producer`).
+
+**What holds it now**, each half measured rather than asserted:
+
+| layer | what it checks | how it was shown not to be vacuous |
+|---|---|---|
+| `check_site_invariants.arm_undecided_subquestions` | the derivation, both directions, on every one of the 22 rows; plus a floor that refuses a sweep matching fewer rows than the cases it derives | 13 payload mutants, each killed by this arm by name — including one per newly found producer, one that renames a sub-question rather than dropping it, and one that makes the sweep blind while leaving the derivation intact |
+| `walk_release.py`, both locales, real Chromium | per **chip**, marked ⟺ the case is marked in `census.json`; the dashed border is dashed; the dagger has an accessible name; the panel count matches; the bare-text chips on `/audit` and `/report` carry the dagger | 12 SPA mutants applied to `site/src`, rebuilt and re-walked, 12 killed, with a green no-mutant control before and after |
+| `platform/audit/report.py` | the caveat travels in the audit CLI's **own** JSON and Markdown, so a reader who runs the tool over their own template reads it too | 4 arms in `platform/audit/tests/test_report.py`, checked against two mutants of the producer |
+
+The lesson generalises past this item, and it is the same one twice: a closing condition written as the
+list of surfaces its author had in mind will omit the surface with the most readers
+(`feedback_surfaces_a_doc_names`). In August that surface was the design document. In September it was
+the website — the one artifact of this study a reader reaches without being handed anything. Item 32 was
+open, the restriction was published, the document's seven sites were already rendered as unsettled
+findings, and the register page still showed a bare `FALSE`. A second lesson rides with it: the
+JSON-only version of this fix passed eight mutants and was still incomplete on screen, because a
+presentation change verified in a payload is a change verified in the wrong artifact
+(`feedback_class_token_is_not_a_colour`).
 
 The general lesson is about closing conditions, not about F6: this condition was written by listing the
 surfaces its author had in mind, and the surface that mattered most was not one of them
@@ -613,9 +680,220 @@ spend so the explainer's Polly cost is disclosed in the file whose title is *pro
 instead of only in a session log. Regenerating `COST.md` is `estimate_cost.py`'s job, never a hand edit;
 that rule is why this is filed rather than patched inside a publication PR.
 
+**RESOLVED 2026-09-21**, in three parts, one of which closes by being proven impossible. The
+instrument is `tools/read_actual_spend.py` (44 arms in `tools/tests/`, 6 of 6 source mutants killed);
+the reading is `evidence/cost/census-20260921T153219Z.json` and
+`session-logs/read-actual-spend-20260921T153219Z.log`.
+
+- **The measurement exists.** `$13.3711` over 2026-08-01 .. 2026-09-21, attributed line by line, each
+  line naming its basis (`quantity_match` strongest, then `resource_match`, then `day_set`). Against a
+  $6.67 projection: inside the $95 ceiling by 7x and **twice the projection**, and the gap is not a
+  pricing error — EC2 compute ($3.4969), an EBS volume ($4.0912) and Polly ($2.2613) are three whole
+  families the model had no line for and together exceed the entire projection. A cost model's
+  omissions dominate its arithmetic.
+- **The stated method was worse than blind: it returns `$0.00` with no error.** Measured, not argued.
+  The `Project` tag key is **Inactive** in Billing — of 261 user-defined keys exactly **one** is Active
+  — so the filter this file quoted matches nothing, while the positive control against the active key
+  returns **$23,477.99** in the same log. The project also uses **two** tag values (29 resources
+  `guardrails-doc-validation`, 2 `grx-validation`), so no single value ever saw both halves. And the
+  "$27k/mo" qualifier was unquantified prose that had gone stale: August 2026 is **$47,629.88**.
+  Three of that sentence's four claims were wrong (`feedback_empty_query_is_not_zero`).
+- **Per-phase actuals are not obtainable, and that is now published rather than faked.** Cost
+  Explorer's finest *retroactive* granularity is a calendar day; this project ran several phases per
+  day. Hourly and resource-level data would have had to be enabled before the spend and retains 14
+  days, and August is long past that. So all thirteen phases carry `actual_usd: null` and `COST.md`
+  prints **`n/a`**, with `per-phase actual: not obtainable (0 of 13 phases)` — because the previous
+  `0.0` printed as `$0.00` beside nine phases that really did spend money, which is this item's own
+  defect one layer down. `estimate_cost.py` now refuses a missing `actual_usd` field outright, so
+  absent can no longer mean zero.
+
+Two findings the work produced that were **not** what this item predicted, recorded because a
+prediction that survives contact unchanged is usually untested:
+
+- The obvious replacement for a broken tag is a rule keyed on project days, and there are **two** such
+  rules which fail in **opposite** directions. Generous ("any spend on a project day claims the whole
+  line") measures **$70,905.69 over 1,154 lines**, 5,303x the ledger, because this account's largest
+  lines are storage and request traffic billed every single day. Strict ("only if all of the line's
+  spend is on project days") measures **$11.70 over 105 lines** — *below* the ledger, and it loses the
+  EBS volume, both Polly lines and the EC2 instance, because it cannot see a shared line at all. No
+  rule keyed on days alone works here (`feedback_constraints_are_choices`), and both are recomputed on
+  every run so neither number can go stale in prose.
+- **Usage-type names are not unique keys.** In this window **159** of 1,309 names appear under more
+  than one service; `DataTransfer-Out-Bytes` under **ten**, `TimedStorage-ByteHrs` under S3 ($2,007.82),
+  ECR ($0.41) and DynamoDB ($0.00) at once. The first version of the reader keyed on the name alone and
+  would have summed unrelated services into one ledger line. It is keyed on `(service, usage type)` now
+  and refuses an entry whose pair the meter does not have. Filed generally as **item 46**.
+
+What earned its keep was the **completeness** refusal — the one check a name list cannot satisfy, which
+walks the meter rather than the ledger. On its first live run it found **46** metered lines in this
+project's own services that the ledger never mentioned, including the **model whose invocations produced
+every guardrail unit already in the ledger**. Adjudicating them added $0.0409, refused three lines with
+named reasons, and exempted 40 under a *published* bound of $0.000097. The correction is 0.3% of the
+total and its size is not the point: nobody was going to remember to look for the model line.
+
+Three items are filed out of this one rather than folded into it: **44** (an orphaned 40 GB volume that
+is still billing, and the teardown script that cannot see volumes), **45** (two conflicting `Project` tag
+values and an inactive key), **46** (usage-type name collisions), and **47** (two charges on 2026-08-13
+that nothing in this repo explains, over a window CloudTrail will not answer for).
+
+### 45. The project's own resources carry two different `Project` tag values, under a key that is not activated
+
+Measured 2026-09-21 while doing item 40. `ce:ListCostAllocationTags` returns **261** user-defined keys
+and exactly **one** is `Active` (`tums-project`, another project's). `Project` is `Inactive`, which
+means Cost Explorer will accept a filter on it and return **`$0` with no error and no warning** — the
+positive control against the active key returns `$23,477.99` through the identical query shape in
+`session-logs/actual-spend-ledger-20260921.log`. So the sentence `cost_model.yaml` carried for six
+weeks (*"actuals are read by resource tag `Project=guardrails-doc-validation`"*) named a method that
+cannot return anything but zero, and a zero from it is a claim about the query
+(`feedback_empty_query_is_not_zero`).
+
+Underneath that, the tagging itself disagrees with itself: **29** resources carry
+`Project=guardrails-doc-validation` and **2** carry `Project=grx-validation` — the two written by
+`runner/provision.py:361`, including the orphaned volume in item 44. So even with the key activated, no
+single filter value ever saw both halves, and the half it would miss is the expensive half.
+
+Activating a cost-allocation tag key is **not retroactive**: it applies from activation forward, so
+activating `Project` today cannot recover August. This item is therefore not "fix the tag" — the
+measurement for the work already done is the per-`(service, usage type)` ledger in
+`cost_model.yaml:actuals`, and that is done. What is open is the *next* project.
+
+**Closes when** either (a) `Project` is activated in Billing, one value is chosen, and
+`runner/provision.py` and the platform's other resource writers are made to agree on it — with a check
+that fails when a writer introduces a third value, because the two that exist were both written
+deliberately and neither author knew about the other; or (b) a decision is recorded that this account
+will not use cost-allocation tags, so the ledger method is the method and no future reader re-attempts
+the tag filter and reads its `$0` as an answer. **Either way the choice must be written down**, because
+what made this expensive was not the wrong method but a stated method nobody had ever run.
+
+---
+
+### 46. Usage-type names are not unique keys, and every tool in this repo that reads a meter must know it
+
+Measured 2026-09-21: of the 1,309 `(service, usage type)` pairs in the project's billing window,
+**159 usage-type names appear under more than one service**. `DataTransfer-Out-Bytes` is metered under
+**ten** different services. `TimedStorage-ByteHrs` appears under S3 (**$2,007.82**), ECR ($0.41) and
+DynamoDB ($0.00) simultaneously — three orders of magnitude apart, under one name. `Requests-Tier1`
+appears under two.
+
+The first version of `tools/read_actual_spend.py` keyed its census on the name alone. It would not have
+crashed. It would have summed unrelated services into one line, reconciled a ledger entry against the
+wrong total, and — in the `TimedStorage-ByteHrs` case — checked this project's $0.41 of container
+storage against a two-thousand-dollar S3 bill and reported a disagreement whose *cause* would have been
+unguessable. That reader now keys on the pair, refuses an entry whose pair the meter does not have, and
+**prints the collision count on every run** so the hazard cannot decay into a comment nobody
+re-measures.
+
+That is one tool. The hazard is general, and this repo has other readers of AWS usage data
+(`f10_billing/`, and anything that later reads Cost Explorer for per-request Bedrock cost under item
+10/F10-1).
+
+**Closes when** every reader of usage-type data in this repo is audited for the assumption — the audit
+naming each reader and its verdict, so "we checked" is a list and not a feeling
+(`feedback_derive_both_sides_of_a_gate`) — and the finding is stated in the guardrails document's cost
+section, because a reader building the architecture it recommends will meter it and will hit this.
+
+---
+
+### 47. Two charges on 2026-08-13 that nothing in this repo explains, over a window CloudTrail will not answer for
+
+Found 2026-09-21 by the completeness check in `tools/read_actual_spend.py` — the refusal that walks the
+**meter** and asks what the ledger fails to mention, rather than walking the ledger and asking whether
+each line is real. Of the 46 lines it surfaced, three were refused rather than attributed, and the
+refusals are the finding:
+
+- **`BoxUsage:t3.micro`, $0.021522.** The string `t3.micro` appears **nowhere** in this repo;
+  `runner/provision.py` provisions `t3.large`. 2.0694 instance-hours × $0.0104 reproduces the charge
+  exactly, so this is a second, smaller t3 instance that ran for about two hours on 2026-08-13 — the
+  same day this project's runner was active, which is why a day-keyed rule would have claimed it.
+- **`USE1-Knowledge-Base:Consumption-based:Retrieval` ($0.006) and `:AgenticRetrieval` ($0.004).** No
+  retrieval API call exists in any `.py` in this repo. The only appearance of anything like it is
+  `kb___search_knowledge_base` as a **tool name** inside F7-1/F7-2 fixtures, which came from gateways
+  this study is forbidden to touch. Something invoked an AgentCore knowledge base that day; it was not
+  this study, and it was on this study's busiest week.
+
+**The absence of CloudTrail evidence is not evidence of absence here, and that is the second half of
+the item.** A `LookupEvents` query for 08-12/08-13 returns **0 events** — and a no-filter control for
+the same day *also* returns 0, while recent days return ≥100. So the window is indistinguishable from
+unavailable, and an attempt to bracket the oldest retrievable event timed out and was abandoned. The
+refusal reasons in `cost_model.yaml` explicitly state that CloudTrail is **not cited**, because
+`0 events` from a source that cannot be shown to cover the window is the `feedback_empty_query_is_not_zero`
+defect wearing a different service's name.
+
+The amounts are trivial ($0.032 together). The item is not about the money: **$0.032 of unexplained
+activity in an account this study publishes measurements from is a provenance gap**, and an audit
+platform that cannot say what ran in its own account on a day it was running has a weaker claim on
+every other day.
+
+**Closes when** the oldest CloudTrail event actually available is measured and recorded (a bounded
+bisection, not an open-ended scan), and then either the two charges are explained from a source that
+provably covers 2026-08-13, or the gap is written into `DEVIATIONS.md` as a named limitation with its
+size — so a reviewer reads a bounded admission rather than finding three unexplained lines in a ledger
+that claims completeness. This is a **user decision** if the answer requires enabling anything in the
+account.
+
 ---
 
 ## Tier 4 — engineering debt that weakens the evidence chain
+
+### 44. A 40 GB volume has been billing since 2026-08-19 with nothing attached, and no script in this repo can see it
+
+`vol-0aaa5827f1d9dd730` is 40 GB of gp3, created 2026-08-12T04:15:02Z, tagged
+`ManagedBy=runner/provision.py` and `Project=grx-validation`, state **`available`** — attached to
+nothing since the runner was terminated on 2026-08-19, and **still billing**. It is **$4.0912** of the
+$13.3711 this project has spent: the single largest line in the ledger, larger than all of Bedrock and
+Polly combined, and larger than the entire $6.67 projection's EC2 share.
+
+It should not exist. `runner/provision.py:358` sets `"DeleteOnTermination": True` on the root volume, so
+terminating the instance should have taken it.
+
+**Why it survived is in this repo's own deviation record, and no gate connected the two.** `DEV-P4-31`
+(2026-08-12) describes the fix for a full root disk: the volume was **detached** from the runner,
+attached as a data volume to a one-shot helper instance (`i-015a9c4460c60f1a9`, since terminated),
+grown with `growpart` + `xfs_growfs`, and **reattached** at `/dev/xvda`. `DeleteOnTermination` is a
+property of an **attachment**, not of a volume: `provision.py` sets it in the launch-time
+`BlockDeviceMappings`, and a later `attach-volume` sets it to **false** by default. So the repair that
+saved the instance silently converted a self-deleting root volume into a permanent one, and then the
+2026-08-19 termination did exactly what it was told. The one observation that would close this
+completely — `DeleteOnTermination` on the attachment — **went away with the attachment** and cannot now
+be read, so this is the mechanism that fits every surviving observation (40 GB, the 08-12 create time,
+`available` with zero attachments, all three `provision.py` tags intact) rather than a proven chain.
+That is also the reason it belongs in the register: the next repair of this shape will do it again.
+
+`DEV-P4-31` even priced the change — *"20 GiB more volume (+$1.60/month at gp3 list)"*, which is
+correct for the **increment**. That is where `teardown.py`'s figure came from, and it is the whole of
+defect (3) below: the increment's price was copied into a sentence about the whole volume.
+
+Three defects made it invisible for 33 days, and they are independent:
+
+1. **`runner/teardown.py` has no volume sweep of any kind.** It terminates the instance, deletes the
+   instance profile, the role and its policies, the security group and optionally the bucket. It never
+   calls `describe_volumes`. So nothing in this repo could notice an orphan, no matter how long it
+   ran — and a teardown script's whole claim is that after it runs, nothing bills.
+2. **The code's own numbers are wrong about the resource it creates.** `runner/provision.py:63` declares
+   `VOLUME_GIB = 20`; the volume that exists is **40 GB**, proven twice without reading the tag — the
+   account-wide gp3 line steps by exactly 1.290323 GB-Mo/day on 08-12 (× 31 = 40.000 GB) and by
+   $0.103226/day (= 40 × $0.08 / 31 to six decimals), flat with spread 0.000000 either side.
+3. **The disclosure is half the real figure.** `runner/teardown.py:47` and `:61` both tell the operator
+   `~$1.60/month for the volume`. At 40 GB × $0.08 that is **$3.20/month**. The number was derived from
+   the constant in (2), so one wrong constant produced a wrong cost disclosure in the text an operator
+   reads at the moment they decide whether to stop or terminate.
+
+**Closes when** (a) — done above, and the explanation itself is a finding: the repair path in
+`DEV-P4-31` is a producer of orphans and `runner/` has nothing that says so; (b) it is deleted — an
+AWS resource deletion, so **user-authorised**, and until then `tools/read_actual_spend.py` correctly
+exits 1 every day with `the ledger is N day(s) stale … deleting it is the fix, not editing this`,
+(c) `runner/teardown.py` gains a volume sweep that lists volumes tagged `ManagedBy=runner/provision.py`
+and refuses to report a clean teardown while any is `available`, with an arm proving it fails on a
+planted orphan, and (d) `VOLUME_GIB` and both disclosure strings are derived from one value so a size
+change cannot leave a stale price in operator-facing text. The right shape for (d) is a computed
+disclosure, not two corrected literals.
+
+The general lesson is the one this repo keeps re-learning from the other direction: the cost model was
+organised by **phase**, and a volume that outlives its instance belongs to no phase. It is exactly the
+charge a per-phase projection structurally cannot see (`feedback_fix_producer_not_janitor` — and the
+janitor here does not even have the tool).
+
+---
 
 ### 15. F5-8 has no test file
 
@@ -1639,6 +1917,58 @@ which is the fix that removes the field instead of guarding it — a refusal is 
 producer, and the reason this one is a refusal today is that four scripts and every 2026-09-18 log line
 already cite these names.
 
+**RESOLVED 2026-09-21** on the three things this item asked to be published, and one of them made the
+guess disappear rather than replacing it with a better guess.
+
+* **The distribution exists and the timeout is derived from it.** Four runs, 17 routes × 2 locales each,
+  **136 navigations, 0 retries**, machine load average 4.78–6.58 read at each run's start: **min 554.6 ms,
+  median 655.1 ms, p90 898.2 ms, max 1191.8 ms**. The slowest pair in all four runs was `/design` in
+  zh-TW — the route the 15 s guess died on. Per-run medians were 653.2 / 654.3 / 656.6 / 660.8 ms, a
+  7.6 ms spread, and the stopping rule was four runs, written into the loop before any number was read.
+  `ROUTE_ARRIVAL_TIMEOUT_MS` is now `SLOWEST_OBSERVED_MS * ARRIVAL_TIMEOUT_MULTIPLE` = 1200 × 25 =
+  **30 s**, and both factors are named constants with the n and the load beside them, so the next person
+  to move it moves the multiple in sight of its basis. The headroom is deliberately large: this number
+  bounds a **hang**, and a timeout tight enough to be informative about latency is tight enough to turn a
+  loaded CI box into a refusal — which is the failure this item is about. A narrow spread is not stability
+  (`feedback_narrow_interval_is_not_stability`), so the timeout is not set near the distribution.
+* **The retry is counted and published.** `what_the_walk_cost.per_route_locale[route|locale]` carries
+  `elapsed_ms`, `attempts` and `failed_attempt_ms` for every pair, and the summary carries `navigations`,
+  `retried`, `slowest_ms`, `median_ms` (`statistics.median`, because an even count's upper-middle element
+  is a different quantity from a median) and `timeout_basis`, which travels the derivation above into
+  every future ledger. "Passed on attempt *k*" is now a field. Across five runs, *k* was 1 for all 170
+  navigations.
+* **The video bytes are not fetched at all**, which is stronger than the `preload="none"` this item asked
+  for and needs no change to the page: the census aborts `**/*.mp4` in the browser and **publishes the
+  abort count**, and refuses to run if that count is 0 — an unfired blocker is indistinguishable from a
+  fast page (`feedback_zero_needs_a_ran_flag`). 8 aborts per run, every run. What this deliberately
+  cannot see is a broken or missing video; that is `media.json`'s job and the browser walk's.
+
+Both halves are now reachable by a test without a browser, which they were not: `arrive()` was lifted out
+of the four-minute walk and has **29 arms** in `platform/build/tests/test_census_cost_and_matching.py`,
+mutation-checked by `platform/build/tests/mutate_census_arms.py` with controls green on both sides of
+each run. Every timing arm injects its clock, because an arm that produced elapsed milliseconds by
+sleeping would be measuring this machine's load (`feedback_harness_test_measures_the_machine`), and one
+double reports success **without navigating**, because a retry that re-requested the first url would be
+served from cache and would publish a time the first attempt could not have achieved. Run log:
+`session-logs/a4-census-timing-20260921.log`.
+
+**The mutation run found the defect in this very fix, and it is worth the paragraph.** 25 mutants,
+**24 killed and 1 survivor** (`session-logs/a4-a5-census-mutants-20260921.log`): replacing
+`SLOWEST_OBSERVED_MS * ARRIVAL_TIMEOUT_MULTIPLE` with the literal `30_000` passed every arm, because
+1200 × 25 **is** 30_000 and at runtime a product and its own answer are the same integer. So the arm
+written specifically to stop the derivation reverting to a literal could not see a literal
+(`feedback_identical_output_wrong_assertion` — a byte-identical surviving mutant means the assertion is
+measuring the wrong quantity, and `feedback_vacuous_test_check` — every guard gets mutation-checked
+precisely because this is what an untested guard looks like). What this item asks for is not the value
+30 000; it is that the value be *written down as its derivation*, which is a property of the source text
+and not of the module. `test_the_timeout_is_written_as_a_product_and_not_as_its_own_answer` therefore
+parses the file with `ast` and requires the single assignment to `ROUTE_ARRIVAL_TIMEOUT_MS` to be a
+`Mult` over exactly those two names. Re-run recorded in
+`session-logs/a4-a5-census-mutants-20260922.log`.
+
+**Still open in this item**, unchanged and now the only part: the census takes its instant from a name a
+human types rather than stamping `--out` itself.
+
 ### 43. The translation census matches raw payload text against rendered text, so every field the site renders as Markdown is invisible to it — including this register's own bodies
 
 **Found** 2026-09-18, by asking what adding an item to this register costs the untranslated-surface
@@ -1698,6 +2028,113 @@ the honest denominator. It will be far above 259, and it has to land as a one-ti
 cause beside it, not as a ratchet learning to rise: the rule is that the ceiling only ever falls, and
 that rule survives a corrected denominator but not a quiet one. Translating 126 KB of this project's own
 self-conviction is *not* what this item asks for; knowing how much of it a reader meets is.
+
+**RESOLVED 2026-09-21.** The matcher now has a second pass, the drop is a published row, and the ceiling
+has been re-read once — 259 → **285** — with the rise derived string by string in
+`check_site_invariants.py` beside the constant.
+
+`fingerprint()` strips what `md.tsx` does not render, and every rule cites the line of `md.tsx` it
+mirrors, so the two readers of one format are answerable to each other rather than each pinned by its own
+test (`feedback_two_readers_one_format`): the anchor's href (`md.tsx:74`), table divider rows (110), list
+markers (204), and the inline syntax characters. Whitespace is **removed** rather than collapsed, because
+removing a backtick from ``the `ceiling`.`` leaves `the ceiling .` against a DOM `the ceiling.`. That is a
+real loss of precision — two adjacent words with no separator now fingerprint the same as one — and it is
+the reason the ceiling was re-read by hand, once, with its cause recorded, instead of trusted.
+
+Verbatim matching is tried **first** and the winning basis is published per row as `match_basis`, so a
+lossy comparison never silently replaces an exact one. What the ledger at
+`platform/census/rendered-surfaces-20260921T231741Z.json` now reports, against the 6,764 payload strings
+of prose length (the 6,764th is `media.json/payload_inputs/practices.json`, the 64-character sha256 the
+media manifest records for `practices.json`, absent from the evening's earlier walks):
+
+| count | value |
+|:---|---:|
+| `matched_verbatim` | 2,142 |
+| `matched_only_after_stripping_markdown` | **26** |
+| `dropped_for_want_of_a_match` | **4,596** |
+| `rendered_authored_and_identical_in_both_locales` (the ceiling) | 259 → **285** |
+
+2,142 + 26 + 4,596 = 6,764: nothing sits outside a count, which is the whole of this item's complaint.
+`registers.json/items[]/body_md` appears in `backlog_by_producer` for the first time, at 26 strings, and
+`/register` now reports **28 authored untranslated strings / 50,698 characters** where it previously
+reported the titles alone.
+
+**The one-time correction, derived rather than accepted.** +27 strings in, 1 out: 26 are
+`registers.json/items[]/body_md` and all 26 matched `markdown_stripped`, the 27th is the re-entry of
+`audit.json/markdown` with changed text (whose departure is the −1, netting zero), and of the 26, **25
+were already in the register before today** and 1 is item 48's body, written today. So the rise is
++25 instrument / +1 new prose / **+0 regression**, and the only-ever-falls rule survives: this rise
+carries its cause and a derivation re-runnable between two named ledgers. It is the one rise ever
+permitted, and the next movement must be downward.
+
+**What is still unseen, counted rather than argued about.** 22 of the 48 register bodies — **106,181
+characters** — remain among the 4,596 drops: bodies that quote a command, a table and a path in one
+string, where removing the syntax still leaves a string the DOM does not contain as a substring. They are
+now *listed*, with their character counts and producers, instead of vanishing at a `continue`. (An
+earlier draft of this paragraph said 97,336 characters, read from the evening's first walk; the growth
+is entirely items 42 and 43's own bodies, extended between the two walks by the resolution prose this
+item and its neighbour acquired — +4,420 and +4,425 characters, and 97,336 + 8,845 = 106,181.)
+
+**And one published count that now measures this paragraph.**
+`dropped_and_containing_a_markdown_link` read **0** when this passage was first written, because —
+checked with a second, independently written regex — the payload then contained no `[text](url)`
+sequence at all: this register cites paths in backticks, not links. Writing that sentence changed the
+answer. This item's own register body now quotes the pattern `[text](url)`, the census's link detector
+does not exclude code spans, and the count reads **1** — the one linked drop is
+`registers.json/items[44]/body_md`, this item's body, at 9,039 characters. Neither reading is evidence
+about the thing the flag exists for (`feedback_zero_needs_a_ran_flag`): the zero's cause was an empty
+corpus, and the one's cause is a quotation of the pattern in a code span, which `md.tsx` renders as
+code, not as an anchor. The rule in `fingerprint()` stays, because `md.tsx:74` renders real anchors and
+the first payload string that carries one must not silently drop; but the flag is exercised today only
+by its arms and by this self-reference, and it is not counted as thoroughness here.
+
+Both halves are reachable without a browser: **29 arms** in
+`platform/build/tests/test_census_cost_and_matching.py`, including the negative control that a lossy
+matcher must not map two different sentences together, the empty-fingerprint guard (`"" in anything` is
+True, so a divider row would otherwise claim to render on all 17 routes in both locales *and*, being
+present in both, be counted as translated), and the arm the ceiling itself depends on — that the zh side
+is compared on the **same basis** as the en side, since a stripped en match compared verbatim against zh
+would report every `body_md` as "not on the Chinese page" and drop the ceiling for the wrong reason.
+
+### 48. `cdk diff` omits, by default, changes it decides are mangled non-ASCII — and the change it omitted here is permanent drift
+
+**Found** 2026-09-21, running `npx cdk diff GrxLive` before deploying the `media-src 'self'` CSP that
+release `v/20260917T091943Z/` needs in order to play the six videos on `/design`. The diff printed the
+one CSP change expected, and then this line:
+
+```
+Omitted 1 changes because they are likely mangled non-ASCII characters. Use --strict to print them.
+```
+
+A diff is the instrument that answers "what will this deploy do", and this one **declined to show a
+change** and moved the decision into a flag nobody passes. `--strict` named it: the stack `Description`.
+`aws cloudformation get-template` on the deployed stack holds an ASCII `?` (`0x3f`) where both
+`site-stack.ts` and a fresh `cdk synth` hold U+2014 (an em dash). So CloudFormation **transliterated the
+character on the way in**, which means the drift is permanent: it reappears the moment this stack is
+deployed again, on every future deploy, for as long as the description contains a non-ASCII character.
+
+Two distinct defects, and only the second is CDK's:
+
+* **Ours.** A stack description with an em dash guarantees a permanent one-line diff, so every future
+  `cdk diff` of this stack shows a change that is not a change. That is a drift detector with a
+  known-false positive wired in — the condition under which somebody stops reading it.
+* **The tool's.** The omission is a *default*, it is counted rather than named, and a reader who does not
+  know the flag exists sees a diff that is silently incomplete. This repo has the same failure recorded
+  three times in other clothes — `-q` twice hiding a skip (`feedback_doubled_q_hides_skips`), an
+  unquoted file list reading nothing (`feedback_quote_grep_filelists`), a zero-file scan exiting 0
+  (`feedback_zero_file_scan_is_error`). An instrument that hides part of its answer to look tidy is the
+  same class of thing as one that exits 0 having read nothing.
+
+Scope, stated rather than implied: the omitted change here is harmless. That is luck, not a property of
+the tool — the next omission could be an IAM policy document or a CSP string with a non-ASCII character
+in it, and it would be omitted for exactly the same reason.
+
+**Closes when** the deploy path stops depending on a human remembering a flag: the stack description is
+reduced to ASCII so the permanent diff disappears (one character, and it removes a false positive from
+every future deploy of this stack), **and** whatever wraps `cdk diff` for this repo passes `--strict`
+and fails if the words `Omitted` and `changes` appear in its output at all — a diff that admits it is
+incomplete must not be read as a diff. The `--strict` evidence for today's reading is in
+`session-logs/cdk-diff-grxlive-20260921-strict.txt`.
 
 ## Tier 5 — citation hygiene, before anything is published
 
@@ -1767,9 +2204,15 @@ suite does *not* cover.
 
 ## Operational, not deficiencies — but they gate the above
 
-- The **EC2 runner is running** and billing (~$0.58/day). `runner/teardown.py` for $0 once the
-  day-2 batch is done. Do **not** run `runner/sync.py` while a live case runs: `_state()` repairs
-  the instance profile on every subcommand and would rotate credentials mid-job.
+- The **EC2 runner was terminated on 2026-08-19** — this bullet said "is running and billing
+  (~$0.58/day)" for 34 days after that, which is the reason item 44 exists: a sentence about live
+  state is perishable and no gate here can read an AWS account
+  (`feedback_perishable_claim_cannot_be_checked`). What is still billing is the instance's **root
+  volume**, `vol-0aaa5827f1d9dd730`, 40 GB gp3, `available` with no attachments, **$4.0912 measured
+  at the meter** and ~$0.10/day forever — `runner/teardown.py` has no volume sweep (item 44).
+  Standing rule if the runner is ever re-provisioned: do **not** run `runner/sync.py` while a live
+  case runs: `_state()` repairs the instance profile on every subcommand and would rotate
+  credentials mid-job.
 - The day-2 output `20260815T061609Z` has **not** been pulled into staging.
 - **Nothing is blocked on `wf_3762680e-846` any more — it landed 2026-08-15.** Chapter 12 is
   unblocked (item 4). **Appendix D is not**: the pass returned two citable figure anchors and left

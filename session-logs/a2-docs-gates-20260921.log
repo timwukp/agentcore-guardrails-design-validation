@@ -1,0 +1,206 @@
+........................................................F............... [ 10%]
+...............................F........................................ [ 21%]
+................F.................F..................................... [ 32%]
+........................................................................ [ 43%]
+........................................................................ [ 54%]
+........F............................................................... [ 65%]
+.F...................................................................... [ 76%]
+........................................sssssss......................... [ 87%]
+........................................................................ [ 98%]
+.........                                                                [100%]
+=================================== FAILURES ===================================
+______________________ test_every_cited_repo_path_exists _______________________
+
+    def test_every_cited_repo_path_exists():
+        anchors, suffixes = _anchors(), _suffixes()
+        docs = _docs()
+        dangling: list[str] = []
+        total = 0
+        citing_docs = 0
+        for doc in docs:
+            cites = _citations(doc.read_text(encoding="utf-8"), anchors, suffixes)
+            total += len(cites)
+            citing_docs += 1 if cites else 0
+            for tok in sorted(cites):
+                if tok not in ABSENT_BY_DESIGN and not (ROOT / tok).exists():
+                    dangling.append(f"  {doc.relative_to(ROOT)} cites `{tok}`")
+    
+        assert total >= MIN_CITATIONS and citing_docs >= MIN_DOCUMENTS, (
+            f"recognised only {total} citation(s) across {citing_docs} document(s), below the floor of "
+            f"{MIN_CITATIONS}/{MIN_DOCUMENTS}. The extractor has stopped matching, so this guard is "
+            f"reporting clean over prose it is not reading.")
+    
+>       assert not dangling, (
+            "these documents cite repo-relative paths that do not exist in the tree:\n"
+            + "\n".join(dangling)
+            + "\n\nA citation a reader cannot fetch is a claim with no evidence that reads exactly like "
+              "a claim with evidence. Note there are TWO directories named `session-logs/` — this "
+              "repo's and the outer ~/Downloads one — which is how this failed on 2026-08-20: the "
+              "cited file existed, in the wrong tree. Copy the artifact in, or stop citing it. If the "
+              "sentence's point is that the file does NOT exist — a specification, quoted output, or a "
+              "local-only runtime file — add it to ABSENT_BY_DESIGN with the reason.")
+E       AssertionError: these documents cite repo-relative paths that do not exist in the tree:
+E           FUTURE-WORK.md cites `platform/curation/scenarios.yaml`
+E           platform/SITE-REVIEW-20260822.md cites `platform/curation/scenarios.yaml`
+E         
+E         A citation a reader cannot fetch is a claim with no evidence that reads exactly like a claim with evidence. Note there are TWO directories named `session-logs/` — this repo's and the outer ~/Downloads one — which is how this failed on 2026-08-20: the cited file existed, in the wrong tree. Copy the artifact in, or stop citing it. If the sentence's point is that the file does NOT exist — a specification, quoted output, or a local-only runtime file — add it to ABSENT_BY_DESIGN with the reason.
+E       assert not ['  FUTURE-WORK.md cites `platform/curation/scenarios.yaml`', '  platform/SITE-REVIEW-20260822.md cites `platform/curation/scenarios.yaml`']
+
+claims/tests/test_cited_paths_exist.py:201: AssertionError
+____________ test_the_committed_report_matches_the_committed_model _____________
+
+tree = PosixPath('/private/tmp/pytest-grx-a2/test_the_committed_report_matc0/repo')
+
+    def test_the_committed_report_matches_the_committed_model(tree: Path) -> None:
+        """COST.md in the repo must be the current output, not a stale generation.
+    
+        feedback_format_after_the_last_edit: a clean report expires on the next edit. The
+        comparison is done in a scratch copy so the check cannot repair what it measures.
+        """
+        committed = (ROOT / "COST.md")
+        assert committed.is_file(), "COST.md has not been generated"
+        run(tree, "--write-report")
+>       assert (tree / "COST.md").read_text(encoding="utf-8") == \
+            committed.read_text(encoding="utf-8"), (
+                "COST.md is stale relative to cost_model.yaml — run "
+                "`estimate_cost.py --write-report`")
+E       AssertionError: COST.md is stale relative to cost_model.yaml — run `estimate_cost.py --write-report`
+E       assert '# COST.md — ... target.*\n\n' == '# COST.md — ... target.*\n\n'
+E         
+E         Skipping 6707 identical leading characters in diff, use -v to show
+E         - .17), and roughly $0.45 in total went on measuring this — the census, the tag experiments and the service-name resolution. Re-checks since then cost nothing: `--census-json` replays the saved census offline, which is also what makes the ledger re-derivable without paying the meter again. Disclosed because a measurement that hides its own price is the thing this project criticises elsewhere.
+E         + .17), and the running total for measuring this project is ~$0.79 (79 requests), counted in `session-logs/actual-s...
+E         
+E         ...Full output truncated (95 lines hidden), use '-vv' to show
+
+claims/tests/test_cost_gate.py:321: AssertionError
+_______ test_redaction_figures_in_the_finding_are_lower_bounds_and_hold ________
+
+doc = '# FINDING-P0-TRIAGE — What the coverage gate caught\n\n**Phase** 0 (offline) · **Cost** $0 · **Date** 2026-08-09\n**A...nd something.\n4. **No AWS mutation has occurred.** Cumulative project spend **$0** against a\n   $55–95 projection.\n'
+
+    def test_redaction_figures_in_the_finding_are_lower_bounds_and_hold(doc):
+        """The finding quotes a file count and a byte volume for the redaction gate.
+    
+        Both grow with every file added, so they are stated as `>=` and checked
+        against a real run rather than pinned to a snapshot — a pinned exact figure
+        would go stale on the next commit and be edited rather than re-measured, which
+        is how a number stops being a measurement. Per
+        feedback_zero_file_scan_is_error, a scan reading zero files must not agree with
+        anything.
+        """
+        m = re.search(r"check_redaction\.py\s+# >=(\d+) files, >=(\d+)KB", doc)
+        assert m, "the finding no longer states redaction-gate figures"
+        claimed_files, claimed_kb = int(m.group(1)), int(m.group(2))
+        r = subprocess.run([sys.executable, "check_redaction.py"],
+                           capture_output=True, text=True, cwd=str(ROOT))
+>       assert r.returncode == 0, f"the redaction gate does not pass:\n{r.stdout}"
+E       AssertionError: the redaction gate does not pass:
+E         redaction gate: 1319 file(s) under grx-validation/
+E           extensions: ALL — inclusion is not keyed on the filename; a file that will not decode as UTF-8 is read as latin-1, not skipped
+E           OOXML ['.docx', '.pptx', '.xlsx'] — 2 package(s) unzipped: agentcore_guardrails_best_practices_v1.4.pptx, agentcore_guardrails_best_practices_v1.4.zh-TW.pptx
+E           skipped dirs ['.git', '.pytest_cache', '.staging', '.state', '.wheel_cache', '__pycache__', 'evidence', 'node_modules'] + any dir starting with ['.venv']
+E           114,523,969 bytes read, 10970 reviewed exception(s) waived
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python', 'check_redaction.py'], returnco...account-id>-us-east-1-e7561aa1)\n\nRedact these, or add a narrow reviewed exception to ALLOW with a written reason.\n').returncode
+
+claims/tests/test_finding_numbers.py:372: AssertionError
+_________ test_every_elided_hash_citation_resolves_to_a_derivable_hash _________
+
+    def test_every_elided_hash_citation_resolves_to_a_derivable_hash():
+        universe = _universe()
+        cites = _citations(_docs())
+        assert len(cites) >= MIN_CITATIONS, (
+            f"found {len(cites)} elided-hash citation(s), floor {MIN_CITATIONS}")
+        bad = []
+        for path, pre, suf in cites:
+            if f"{pre}…{suf}" in SUPERSEDED_HASHES:
+                continue
+            if not _matches(universe, pre, suf):
+                bad.append(f"{path.relative_to(ROOT)}: `{pre}…{suf}`")
+>       assert not bad, (
+            "elided sha256 citation(s) match no hash this repository can derive or has recorded:\n    "
+            + "\n    ".join(bad) +
+            "\n  Either the truncation is wrong (check both ends — an off-by-one at the END is the "
+            "defect this test was written for), the artefact is gone, or the value is genuinely "
+            "superseded and belongs in SUPERSEDED_HASHES with a reason.")
+E       AssertionError: elided sha256 citation(s) match no hash this repository can derive or has recorded:
+E             DEVIATIONS.md: `ebe77ed2…13f85ddf`
+E           Either the truncation is wrong (check both ends — an off-by-one at the END is the defect this test was written for), the artefact is gone, or the value is genuinely superseded and belongs in SUPERSEDED_HASHES with a reason.
+E       assert not ['DEVIATIONS.md: `ebe77ed2…13f85ddf`']
+
+claims/tests/test_hash_citations.py:168: AssertionError
+______________________ test_gate_passes_on_the_real_tree _______________________
+
+    def test_gate_passes_on_the_real_tree():
+        """The actual deliverable: this project carries no unredacted identifiers."""
+        proc = subprocess.run([sys.executable, str(SRC)], cwd=ROOT,
+                              capture_output=True, text=True)
+>       assert proc.returncode == 0, (
+            f"redaction gate fails on the real tree:\n{proc.stdout}\n{proc.stderr}")
+E       AssertionError: redaction gate fails on the real tree:
+E         redaction gate: 1319 file(s) under grx-validation/
+E           extensions: ALL — inclusion is not keyed on the filename; a file that will not decode as UTF-8 is read as latin-1, not skipped
+E           OOXML ['.docx', '.pptx', '.xlsx'] — 2 package(s) unzipped: agentcore_guardrails_best_practices_v1.4.pptx, agentcore_guardrails_best_practices_v1.4.zh-TW.pptx
+E           skipped dirs ['.git', '.pytest_cache', '.staging', '.state', '.wheel_cache', '__pycache__', 'evidence', 'node_modules'] + any dir starting with ['.venv']
+E           114,528,605 bytes read, 10970 reviewed exception(s) waived
+E         
+E         
+E         FAIL — 2 unredacted identifier(s):
+E         
+E           session-logs/cdk-diff-grxlive-20260921-strict.txt:8  [aws-account-id]  start: Publishing GrxLive Template (<aws-account-id>-us-east-1-e7561aa1)
+E           session-logs/cdk-diff-grxlive-20260921-strict.txt:9  [aws-account-id]  success: Published GrxLive Template (<aws-account-id>-us-east-1-e7561aa1)
+E         
+E         Redact these, or add a narrow reviewed exception to ALLOW with a written reason.
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/Users/tmwu/Downloads/grx-validation/.venv-oracle/bin/python', '/Users/tmwu/Downloads/grx-vali...account-id>-us-east-1-e7561aa1)\n\nRedact these, or add a narrow reviewed exception to ALLOW with a written reason.\n').returncode
+
+claims/tests/test_redaction_gate.py:258: AssertionError
+__________ test_every_dynamic_copy_source_is_declared_and_still_there __________
+
+    def test_every_dynamic_copy_source_is_declared_and_still_there():
+        """A source reached through a variable cannot be measured, so it is declared with a reason.
+    
+        Both directions: an undeclared dynamic copy is a hit, and a declaration whose file no longer
+        holds one is stale — an exemption that exempts nothing reads as diligence.
+        """
+        found: set[str] = set()
+        undeclared: list[str] = []
+        for p in _py_files():
+            rel_p = str(p.relative_to(ROOT))
+            for line, rel in _subtree_copy_sites(p.read_text(encoding="utf-8")):
+                if rel is not None:
+                    continue
+                found.add(rel_p)
+                if rel_p not in DYNAMIC_COPY_SOURCES:
+                    undeclared.append(f"{rel_p}:{line}")
+>       assert not undeclared, (
+            "these copy a tree whose source is not a literal under ROOT, so nothing can measure it; "
+            "declare it in DYNAMIC_COPY_SOURCES with what the source is:\n  "
+            + "\n  ".join(undeclared))
+E       AssertionError: these copy a tree whose source is not a literal under ROOT, so nothing can measure it; declare it in DYNAMIC_COPY_SOURCES with what the source is:
+E           platform/build/tests/test_check_site_invariants.py:110
+E           platform/build/tests/test_check_site_invariants.py:124
+E       assert not ['platform/build/tests/test_check_site_invariants.py:110', 'platform/build/tests/test_check_site_invariants.py:124']
+
+claims/tests/test_repo_copy_exclusions.py:411: AssertionError
+=============================== warnings summary ===============================
+claims/tests/test_repo_copy_exclusions.py::test_no_whole_repo_copy_writes_its_own_exclusion_list
+claims/tests/test_repo_copy_exclusions.py::test_the_one_legitimate_whole_repo_copy_is_where_it_is_supposed_to_be
+claims/tests/test_repo_copy_exclusions.py::test_every_subtree_copy_source_is_registered_and_bounded
+claims/tests/test_repo_copy_exclusions.py::test_the_per_file_scratch_arithmetic_still_fits
+claims/tests/test_repo_copy_exclusions.py::test_nothing_copies_the_whole_evidence_tree_again
+claims/tests/test_repo_copy_exclusions.py::test_every_dynamic_copy_source_is_declared_and_still_there
+  <unknown>:40: SyntaxWarning: invalid escape sequence '\s'
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED claims/tests/test_cited_paths_exist.py::test_every_cited_repo_path_exists
+FAILED claims/tests/test_cost_gate.py::test_the_committed_report_matches_the_committed_model
+FAILED claims/tests/test_finding_numbers.py::test_redaction_figures_in_the_finding_are_lower_bounds_and_hold
+FAILED claims/tests/test_hash_citations.py::test_every_elided_hash_citation_resolves_to_a_derivable_hash
+FAILED claims/tests/test_redaction_gate.py::test_gate_passes_on_the_real_tree
+FAILED claims/tests/test_repo_copy_exclusions.py::test_every_dynamic_copy_source_is_declared_and_still_there
+6 failed, 644 passed, 7 skipped, 6 warnings in 2074.63s (0:34:34)
+rc=1

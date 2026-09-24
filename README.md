@@ -49,6 +49,13 @@ check* — so that sentence is a program, not a claim:
   document says nothing about it" is a finding too.
 - **`not_measured` never reads as clean.** It renders as *this study never looked* — the state an
   architecture page usually leaves blank.
+- **A restricted verdict never reads as settled.** Where the citation policy refuses a TRUE and a FALSE
+  alike on one named sub-question, every place this platform prints that verdict prints the sub-question
+  beside it as `not_established`: the register table, the case page, the census rows, the rulings table
+  on `/design`, the audit page, and the audit CLI's own JSON and Markdown for a reader who runs the tool
+  instead of the site. The rule is derived from the policy in `check_controls.undecided_subquestions`
+  rather than kept as a list of case ids, the files on disk are unchanged, and
+  `results/PRACTICE-EVIDENCE-MAP.md` §5 records the ruling that asked for it (issue #37).
 - **No pass rate, score, grade or percentage anywhere**, including in the video: one frame with a
   percentage would travel further than every caveat attached to it.
 - **The narration is disclosed as synthesized** (Amazon Polly; English Ruth on the generative engine,
@@ -58,7 +65,7 @@ check* — so that sentence is a program, not a claim:
 Parity is a gate, not an intention: the two editions must carry the same practice ids and the same
 citation multiset, so a Chinese reader is never shown fewer links than an English one.
 
-**The same rule now binds the deficiency register.** `FUTURE-WORK.md` is English prose, and its 43 item
+**The same rule now binds the deficiency register.** `FUTURE-WORK.md` is English prose, and its 48 item
 titles and 5 tier headings render on `/register` in *both* locales — so until 2026-09-18 a zh-TW reader
 read this project's own self-conviction in a language they had not chosen, on a page whose banner says
 the English on it is quoted evidence. It is not quoted; it is ours. The Chinese lives in

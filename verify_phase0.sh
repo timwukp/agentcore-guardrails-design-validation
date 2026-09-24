@@ -84,8 +84,8 @@ TEST_SPECS=("claims/tests:474" "lib/tests:992" "f5_redteam/tests:789" \
             "f2_determinism/tests:34" "f3_efficacy/tests:268" \
             "f8_regional/tests:152" "f10_billing/tests:80" "infra/tests:79" \
             "runner/tests:94" "f9_failsecure/tests:106" "f1_config/tests:175" \
-            "tools/tests:130" "video/tests:53" \
-            "platform/build/tests:406" "platform/audit/tests:57")
+            "tools/tests:174" "video/tests:53" \
+            "platform/build/tests:453" "platform/audit/tests:57")
 
 run_tests() {
   local rc=0
@@ -289,9 +289,54 @@ run_tests() {
   # Every arm injects its clock, because an arm about "eight hours in the future" written against
   # `datetime.now()` would pass or fail by the timezone of whoever runs it — the defect under test.
   #
+  # platform/build/tests 406 -> 425, for test_check_deployed_headers.py: 19 arms over the first check in
+  # this project that reads a header off a DEPLOYED resource. `Content-Security-Policy` already had two
+  # green checks — a CDK assertion on the synthesised template and `csp_preview.py`, which serves the SPA
+  # behind the policy — and both parse `platform/infra/lib/site-stack.ts`, so the two were one check and
+  # neither could see the deployed policy at all. `Cache-Control` had none. On its first live run the new
+  # script found that the deployed ResponseHeadersPolicy is MISSING `media-src 'self'`, which the stack
+  # source has carried since 2026-09-17: the four published videos have been blocked in every real
+  # browser since, while every source-derived check stayed green. A FILE, so the floor moves. The double
+  # is written so it can LIE — a drifted policy, a behaviour pointing at another policy, an absent
+  # header, no objects at all — because a fake that can only answer correctly proves the caller compiles.
+  #
+  # tools/tests 130 -> 174, for test_read_actual_spend.py: 44 arms over the first instrument in this
+  # project that reads the project's OWN spend off a meter instead of off a model. The number it
+  # replaces was not a small error: `cost_model.yaml` claimed actuals came from a `Project` tag filter,
+  # and that filter returns $0.00 with no error, because the tag key is INACTIVE in Billing — a wrong
+  # query is indistinguishable from no spend (feedback_empty_query_is_not_zero). A FILE, so the floor
+  # moves. The census double is written so it can LIE — it will answer with a usage type the meter
+  # never had, with the same name under a different service, with a day the ledger does not claim, and
+  # with a total that disagrees with its own lines — because a census that can only answer correctly
+  # would prove the checker parses, not that it reconciles. The arm that earned the suite is
+  # completeness: it is the only refusal no name list can satisfy, and on its first live run it found
+  # 46 metered lines the ledger never mentioned, one of them the MODEL whose invocations produced
+  # every guardrail unit already in the ledger. Three of the five day producers get their own arm
+  # because `estimated_days` is TRI-state — a list, an empty list ("the meter marked none"), and None
+  # ("this source cannot say") — and collapsing the third into the second is exactly how the offline
+  # replay came to print less than the live run it was replaying.
+  #
+  # platform/build/tests 425 -> 453, for test_census_cost_and_matching.py: 29 arms over the two halves of
+  # the translation census that no test could reach, because both lived inside a four-minute Playwright
+  # walk. `arrive()` is the retry item 42 asked to be COUNTED AND PUBLISHED rather than performed by a
+  # human re-running the command; `classify_rows()` is item 43's denominator, where every `body_md` the
+  # site renders through `md.tsx` was discarded at a `continue` that left no trace, so the number of
+  # strings the census dropped was 0 by construction. A FILE, so the floor moves. Every timing arm feeds
+  # an injected clock, because an arm that produced elapsed milliseconds by sleeping would be measuring
+  # this machine's load, and one double deliberately reports success WITHOUT navigating — a retry that
+  # re-requested the first url would be answered from cache and would publish a time the first attempt
+  # could not have achieved, so "it retried" is not enough and the arms assert the url was
+  # attempt-distinct. `platform/build/tests/mutate_census_arms.py` runs 25 mutants with controls green on
+  # both sides; the 2026-09-21 run killed 24 and the survivor is recorded in the arms file, because it is
+  # the informative one: swapping the timeout's product for the literal 30_000 passes every assertion
+  # over the module's VALUES, since 1200 * 25 is 30_000. The 29th arm reads the source with `ast` instead.
+  # Logs: `session-logs/a4-a5-census-mutants-20260921.log` (24/25) and `...-20260922.log` (the re-run).
+  # The floor is NOT raised for that 29th arm: floors move when a suite gains a FILE, as above.
+  #
   # The floor comparison is `-ge`, so a floor set to today's exact count still lets a new arm land
-  # without editing this file; what it stops is a file disappearing. Any of these five could have
-  # been a rounding-error gap and instead they add up to more than the whole twelfth directory.
+  # without editing this file; what it stops is a file disappearing. Any single bump noted above could
+  # have been dismissed as a rounding-error gap; the four single-file ones alone (+7, +11, +19, +44)
+  # add up to 81 arms, more than the whole twelfth directory had on the day it was first counted.
   for spec in "${TEST_SPECS[@]}"; do
     dir="${spec%%:*}"; floor="${spec##*:}"
     if [ ! -d "$dir" ]; then

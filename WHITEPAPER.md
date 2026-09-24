@@ -1153,8 +1153,14 @@ optimisation.** Design for it as a containment property, and take the 38–66 ms
   the sealed oracle requires. **This is a real gap in cost modelling and it is listed in Appendix F
   rather than estimated.**
 
-The whole measurement programme behind this paper cost **under $2.15** in AWS charges against a
-pre-registered ceiling of $95.
+The whole measurement programme behind this paper cost **$13.3711** in AWS charges against a
+pre-registered ceiling of $95 — read off Cost Explorer on 2026-09-21, attributed line by line in
+`COST.md`, and **6.2× what this sentence said before anyone read the meter**. The correction belongs in
+this chapter rather than a footnote, because it is the same defect the chapter is about: the earlier
+"under $2.15" was a sum of the lines the cost model had, and the three largest families it lacked — EC2
+compute ($3.4969), an EBS volume orphaned by a repair and still billing ($4.0912), and Polly ($2.2613)
+— come to $9.85 between them. **A cost model's omissions dominate its arithmetic**, and only a meter
+can find an omission. `FUTURE-WORK.md` items 44–47 hold what the reading turned up.
 
 ---
 
@@ -1386,7 +1392,7 @@ The ledger, quantified. None of these is hedging; each is a number.
 9. **0 independent replications.** See Chapter 12.
 10. **No control interaction was measured at all.** Not one case.
 
-The full 43-item deficiency register, tiered by severity, is `FUTURE-WORK.md`. Its Tier 1 —
+The full 48-item deficiency register, tiered by severity, is `FUTURE-WORK.md`. Its Tier 1 —
 "the paper is wrong or self-contradictory until these are fixed" — currently holds 6 items (1, 2, 3,
 19, 27, 32), of which the prevention/detection verb contradiction (item 1), the F8-5 erratum
 (item 27) and the F6 tail-decisiveness finding (item 32) are the three that change published text.

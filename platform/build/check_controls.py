@@ -207,8 +207,8 @@ def read_verdicts() -> tuple[set[str], dict[str, str]]:
     return registered, verdicts
 
 
-def read_restrictions() -> dict[str, set[str]]:
-    """Per case, the set of citation restrictions in force, from the citation policy's machine block.
+def read_policy_restrictions() -> list[dict]:
+    """The citation policy's machine block, verbatim — one entry per restriction.
 
     This is the whole reason no case id appears in this module. The policy file is the single place
     the restrictions live and it declares itself authoritative for tooling; reproducing any part of
@@ -224,15 +224,91 @@ def read_restrictions() -> dict[str, set[str]]:
         meta = json.loads(m.group(1))
     except json.JSONDecodeError as e:
         die(f"{rel(CITATION_POLICY)} machine block is not valid JSON: {e}")
-    out: dict[str, set[str]] = {}
     entries = meta.get("restrictions") or []
     if not entries:
         die(f"{rel(CITATION_POLICY)} declares zero restrictions; every legality rule "
             f"in this gate would then pass over an empty table")
-    for entry in entries:
+    return entries
+
+
+def read_restrictions() -> dict[str, set[str]]:
+    """Per case, the set of citation restriction tokens in force."""
+    out: dict[str, set[str]] = {}
+    for entry in read_policy_restrictions():
         for case in entry.get("cases") or []:
             out.setdefault(case, set()).add(entry.get("restriction"))
     return out
+
+
+# A restriction phrase that removes ONE direction on ONE named sub-question: "TRUE on the p99 tail",
+# "FALSE in the slope range". Both halves matter — see `undecided_subquestions` below.
+UNDECIDED_DIRECTION_RE = re.compile(r"^(TRUE|FALSE)\s+(?:on|in)\s+(.+)$")
+
+# The five-state vocabulary's token for "this study did not settle it". Named here, in the module that
+# owns the vocabulary, so the site and the audit report cannot pick different words for one state.
+UNDECIDED_STATUS = "not_established"
+
+
+def undecided_subquestions(entries: list[dict]) -> dict[str, list[dict]]:
+    """Per case, the sub-questions the citation policy forbids BOTH directions on.
+
+    Derived from the policy's own restriction phrases, never authored, and this is the point: the three
+    cases it selects today — F6-2, F6-5 on the p99 tail and F6-8 on the slope range — are the three a
+    human adjudicated in issue #37, and the rule reached them without being told the answer. A hand-kept
+    list of "cases that need a tail note" would be a second copy of a citation rule, and the weaker copy
+    wins by being the one that ran (`feedback_derive_both_sides_of_a_gate`).
+
+    WHAT THIS DELIBERATELY DOES NOT SELECT, each a near miss rather than an oversight:
+
+      * `not_citable_as: ["TRUE", "FALSE"]` with no sub-question — F5-4a and F5-4b, `NOT_A_VERDICT`.
+        Both directions are forbidden for the case as a WHOLE, which is a stronger statement than a
+        named undecided sub-question and already has its own restriction token and its own rendering. A
+        sub-question of `""` would read on the page as an undecided nothing.
+      * one direction only — `F1-19`'s "a verdict on the documented default thresholds", `F5-3b`'s "a
+        TRUE in any count". A restriction that removes one direction leaves the other standing; calling
+        that undecided would overstate the limit, which does this study's credibility the same damage in
+        the opposite direction.
+
+    So the scope of this rule is "both directions, on a named sub-question", and the two shapes above are
+    named here because the place a guard excuses itself from looking is where the next instance hides
+    (`feedback_guard_scope_is_a_claim`).
+
+    THIS MODULE, RATHER THAN THE SITE BUILDER, IS WHERE IT LIVES. Three programs publish a verdict
+    beside a case id — the site payload, the audit report's JSON, and that report's Markdown — and the
+    first version of this rule sat in `build_site_data.py`, where the audit report could not reach it.
+    Two readers of one policy file have to be made to agree by construction rather than by both being
+    pinned (`feedback_two_readers_one_format`).
+    """
+    out: dict[str, list[dict]] = {}
+    for entry in entries or []:
+        directions: dict[str, set[str]] = {}
+        for phrase in entry.get("not_citable_as") or []:
+            m = UNDECIDED_DIRECTION_RE.match(str(phrase).strip())
+            if m:
+                directions.setdefault(m.group(2), set()).add(m.group(1))
+        undecided = sorted(q for q, seen in directions.items() if seen == {"TRUE", "FALSE"})
+        if not undecided:
+            continue
+        for cid in entry.get("cases") or []:
+            for question in undecided:
+                out.setdefault(str(cid), []).append({
+                    "subquestion": question,
+                    "status": UNDECIDED_STATUS,
+                    "restriction": entry.get("restriction"),
+                    # The policy file's own wording for why. Quoted, not paraphrased: a paraphrase here
+                    # would be this platform restating a citation rule in its own voice on the page
+                    # where the rule is being applied.
+                    "why": entry.get("reason"),
+                    "verdict_on_disk": entry.get("verdict_on_disk"),
+                    "source": entry.get("source"),
+                })
+    return {cid: rows for cid, rows in sorted(out.items())}
+
+
+def read_undecided_subquestions() -> dict[str, list[str]]:
+    """`undecided_subquestions` off the policy file, flattened to what a published row carries."""
+    return {cid: [r["subquestion"] for r in rows]
+            for cid, rows in undecided_subquestions(read_policy_restrictions()).items()}
 
 
 # --------------------------------------------------------------------------------- rules

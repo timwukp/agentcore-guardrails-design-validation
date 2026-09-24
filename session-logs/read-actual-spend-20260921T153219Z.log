@@ -1,0 +1,22 @@
+window                2026-08-01 .. 2026-09-21 (end exclusive)
+read from             Cost Explorer, 17 request(s) (~$0.17)
+lines read            1309 (service, usage type) pair(s) over 51 day(s)
+ledger entries        25, of which attributed 16
+attributed            $13.3711
+day rule, generous    $70905.69 over 1154 line(s) — REJECTED, over by 5303x
+day rule, strict      $11.70 over 105 line(s) — REJECTED, UNDER the ledger: it cannot see a shared line, so the volume and Polly vanish
+immaterial lines      40 exempt from completeness, $0.000097 in total — the bound on what that hides
+name collisions       159 usage-type name(s) appear under more than one service; worst is 'DataTransfer-Out-Bytes' under 10
+note                  15 recorded project day(s), 15 of them backed by artifacts among the 15 days this repo's five producers name
+note                  quantity cross-check: 85339 characters counted by this project in 2 log(s) == 85339 at the meter, across 2 line(s)
+note                  completeness exemption: 40 line(s) in this project's services fall only on project days, are absent from the ledger, and are each below $0.0005 at the meter. Together they total $0.000097, which is the whole amount this exemption can hide; any one of them growing past the tolerance becomes a problem again
+note                  newest day Cost Explorer returned: 2026-09-20 (window ends 2026-09-21, exclusive); days after it are ABSENT, not zero
+note                  20 day(s) in the window are still marked Estimated by Cost Explorer (2026-09-01..2026-09-20); figures over them can still move, and this script failing on that drift later is correct behaviour
+
+PROBLEMS (1)
+  - EBS:VolumeUsage.gp3: prorata accounts for 39 day(s) held and the meter now covers 40 day(s) from 2026-08-12 to 2026-09-20. If the resource is still there it is still billing, and the ledger is 1 day(s) stale — deleting it is the fix, not editing this
+
+STILL OPEN, and this script cannot close it: per-PHASE actuals. Cost Explorer's finest granularity is a
+  calendar day and this project ran several phases per day, so the phase column in COST.md stays
+  `not measured` rather than being filled with a share somebody apportioned. Hourly and resource-level
+  data would have had to be enabled before the spend and retains 14 days; August is long past that.

@@ -222,6 +222,11 @@ def match_findings(control: dict, obs: dict) -> tuple[list[dict], str]:
 def build(inventory: dict, controls: list[dict], as_of: str | None) -> dict:
     ids, verdicts = check_controls.read_verdicts()
     restrictions = check_controls.read_restrictions()
+    # Per case, the sub-questions the policy forbids BOTH directions on. A report line reads
+    # "F6-2 — FALSE", and on the p99 tail that FALSE settles nothing: the policy refuses a TRUE and a
+    # FALSE alike there. The reader of this report is deciding what to change in their own system, so
+    # the caveat has to travel with the chip rather than sit in a policy file they will not open.
+    undecided = check_controls.read_undecided_subquestions()
     caveats = read_case_caveats()
 
     lines: list[dict] = []
@@ -246,6 +251,7 @@ def build(inventory: dict, controls: list[dict], as_of: str | None) -> dict:
                     "case": case_id,
                     "verdict": verdicts.get(case_id, "not published"),
                     "restrictions": sorted(restrictions.get(case_id, set())),
+                    "undecided": undecided.get(case_id, []),
                     "what_this_verdict_does_not_prove": info.get("text"),
                     "limits_stated_by_the_case": bool(info.get("present")),
                 })
@@ -302,7 +308,11 @@ def build(inventory: dict, controls: list[dict], as_of: str | None) -> dict:
                 "observation": line["observation"],
                 "because": m["says"],
                 "recommendation": m["consequence"],
-                "licensed_by": [{"case": c["case"], "verdict": c["verdict"]} for c in citable],
+                # `undecided` rides along: this list is what LICENSES a recommendation about the
+                # reader's system, which is the last place a verdict should read as settled when the
+                # policy says its sub-question is not.
+                "licensed_by": [{"case": c["case"], "verdict": c["verdict"],
+                                 "undecided": c["undecided"]} for c in citable],
                 "scope_note": m["scope_note"],
                 "sites": [f"{s['file']}:{s['line']}" for s in line["sites"]],
             })
@@ -467,6 +477,10 @@ def markdown(report: dict) -> str:
             for c in m["cases"]:
                 badge = f" [{', '.join(c['restrictions'])}]" if c["restrictions"] else ""
                 a(f"- **{c['case']} — {c['verdict']}**{badge}")
+                for question in c["undecided"]:
+                    a(f"    - This study did not settle **{question}** for this case: the citation "
+                      f"policy refuses a TRUE and a FALSE alike there, so the verdict above is about "
+                      f"the rest of the case and not about that.")
                 if c["limits_stated_by_the_case"]:
                     a(f"    - Limits of that verdict, from the case file: "
                       f"{c['what_this_verdict_does_not_prove']}")
@@ -490,7 +504,13 @@ def markdown(report: dict) -> str:
 
     def render(group: list[dict]) -> None:
         for r in group:
-            licensed = ", ".join(f"{x['case']} ({x['verdict']})" for x in r["licensed_by"])
+            # The undecided sub-question is appended to the licence itself rather than footnoted: a
+            # recommendation "licensed by F6-2 (FALSE)" reads as settled, and the policy says the tail
+            # it rests on is not.
+            licensed = ", ".join(
+                f"{x['case']} ({x['verdict']}" +
+                (f"; this study did not settle {', '.join(x['undecided'])})" if x["undecided"] else ")")
+                for x in r["licensed_by"])
             # The case ids are in the heading because one control can carry two recommendations from
             # two separate measurements, and two identical headings make them look like a duplicate.
             cited = ", ".join(x["case"] for x in r["licensed_by"])

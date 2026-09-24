@@ -267,6 +267,13 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 ARCHIVE_DIR = REPO / "results" / "phase1" / "archive"
 
+# Imported for the ONE rule this gate must not re-implement: which sub-questions the citation policy
+# leaves undecided. `check_caveats.py` imports `caveat_census` from the same module for the same reason —
+# a gate that recomputes its subject's rule is testing its own copy of it, and the repo has already
+# shipped one wrong number that way.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import build_site_data as B  # noqa: E402 - path must be set before the import
+
 # A replication claim in the derived layer is not always a boolean. `pipeline.json` states each case's
 # replication state IN WORDS, and the words are what a reader actually believes: a page saying
 # "two_or_more_archived_days_agreeing" is the 2026-08-19 sentence, whether or not any flag is set. So
@@ -478,7 +485,40 @@ MIN_AUTHORED_PROSE_OBJECTS = {
 #                    when somebody remembers is a measurement with no liveness, and the fix is not a
 #                    higher ceiling (which this block forbids in as many words) but a producer that
 #                    cannot emit an untranslated item: `derive_registers()` now DIES on one.
-MAX_UNTRANSLATED_RENDERED = 259
+#   285  2026-09-21  **the only rise this number is ever allowed to make, and it is a correction to the
+#                    INSTRUMENT, not an admission of a regression** — FUTURE-WORK item 43. Until today the
+#                    census asked whether a raw payload string occurred verbatim in the rendered DOM. Every
+#                    `body_md` field the site renders through `md.tsx` therefore matched nothing and was
+#                    discarded, unpublished and uncounted, at a `continue`. The backlog was a count over
+#                    the half of the payload that happens to render without transformation, and the
+#                    ceiling was a fraction of a denominator nobody had derived.
+#
+#                    The rise is derived, string by string, not asserted. Comparing
+#                    `rendered-surfaces-20260918T095804Z.json` with
+#                    `rendered-surfaces-20260921T231741Z.json`: 27 texts entered the backlog and 1 left.
+#                    The one that left and one of the 27 are the SAME `audit.json/markdown` string, whose
+#                    first 80 characters changed when the audit was regenerated — net zero. The remaining
+#                    **26 are all `registers.json/items[]/body_md`, and all 26 matched only after Markdown
+#                    was stripped from both sides**, which is to say: all 26 are prose the old instrument
+#                    could not see. 25 of them belong to register items 1-38, which existed before this
+#                    session; **1 is item 48's body, written today**, and that one is a genuinely new
+#                    untranslated surface rather than a recovered one. So the honest reading of 259 -> 285
+#                    is +25 instrument correction, +1 new prose, +0 regression.
+#
+#                    What is still not seen, stated rather than implied: only 26 of the register's 48
+#                    bodies match even now. The other 22 are inside the census's published
+#                    `dropped_for_want_of_a_match` count (4,596 of 6,764 payload strings reach no reader
+#                    at all, of which exactly **1 contains a Markdown link** — and that one is item 43's
+#                    own register body quoting the pattern `[text](url)` in a code span, so the flag is
+#                    exercised by a quotation, not by an anchor, and still says nothing about whether the
+#                    fingerprint loses linked prose). Why those 22 do not match is not established, and
+#                    the next fall in this number may not be credited to translating them until it is.
+#
+#                    The rule that this number only ever falls is intact, and this entry is what makes it
+#                    survive a corrected denominator instead of being quietly waived: the ceiling moved
+#                    UP exactly once, with the cause named, the derivation re-runnable, and the two
+#                    ledgers it was computed between cited by name.
+MAX_UNTRANSLATED_RENDERED = 285
 
 # Floors for the architecture view, per diagram rather than over the payload. `MIN_BOXES_PER_DIAGRAM` is
 # below the smallest diagram the file currently carries (12) with room for a legitimate simplification,
@@ -959,6 +999,137 @@ def arm_citation_policy(g: Gate, payload: Path, census_cases: set[str]) -> None:
                 n_wired += 1
     g.note(arm, f"{len(restrictions)} restriction(s) covering {n_wired} case page(s), each wired both "
                 "ways between the policy and the page that renders it")
+
+
+def arm_undecided_subquestions(g: Gate, payload: Path, census_cases: set[str]) -> None:
+    """A verdict chip may not appear bare where the policy forbids BOTH directions on a sub-question.
+
+    Issue #37's F6 adjudication, as a check rather than as a decision somebody remembers. The human
+    judgement was that F6-2, F6-5 and F6-8 must not read as a bare `FALSE`, because the day-2 confidence
+    intervals are as wide as the bands being adjudicated and neither day decides the tail. The disk
+    verdicts were deliberately left alone — `results/phase1/F6-2.json` still says FALSE, and every count
+    on the site still counts it as FALSE — so the whole of the change is what a reader is shown.
+
+    BOTH DIRECTIONS OF THE MEMBERSHIP ARE DERIVED, from the same producer the build uses: a case the
+    policy restricts this way and whose page carries no note is a bare chip, and a case whose page
+    carries a note the policy does not license is this platform inventing a limit. Either is a finding.
+    A written-down list of three case ids would pass both ways forever
+    (`feedback_derive_both_sides_of_a_gate`).
+    """
+    arm = "an_undecided_subquestion_is_published_where_the_policy_forbids_both_directions"
+    policy = load(payload, "citation_policy.json")
+    owed = B.derive_undecided_subquestions(policy)
+    g.check(arm, bool(owed),
+            "the citation policy forbids both directions on no sub-question at all. That is possible "
+            "in principle, and it is not the case today — F6-2, F6-5 and F6-8 are restricted exactly "
+            "this way — so an empty derivation here means the policy was reshaped and this arm is now "
+            "verifying nothing (`feedback_zero_needs_a_ran_flag`)")
+
+    census = {r["case"]: r for r in load(payload, "census.json").get("rows", [])}
+    n_checked = 0
+    for case in sorted(census_cases):
+        page_path = payload / "cases" / f"{case}.json"
+        if not page_path.is_file():
+            continue
+        page = json.loads(page_path.read_text(encoding="utf-8"))
+        published = page.get("undecided_subquestions") or []
+        expected = owed.get(case, [])
+        g.check(arm, [r.get("subquestion") for r in published] == [r["subquestion"] for r in expected],
+                f"{case}'s page publishes undecided sub-questions "
+                f"{[r.get('subquestion') for r in published]}, the policy derives "
+                f"{[r['subquestion'] for r in expected]}. A note the policy does not license is an "
+                f"invented limit; a missing one is a bare verdict chip.")
+        # The list pages render from census.json and never fetch a case page, so a mark that exists
+        # only on the case detail is a mark 16 of 17 routes do not show.
+        g.check(arm, (census.get(case, {}).get("undecided_subquestions") or [])
+                == [r["subquestion"] for r in expected],
+                f"{case}'s census row does not carry the same sub-questions as its case page, so a "
+                f"verdict chip on a list would render unmarked")
+        for row in published:
+            g.check(arm, row.get("status") == B.UNDECIDED_STATUS,
+                    f"{case} publishes status {row.get('status')!r}; the five-state vocabulary's token "
+                    f"is {B.UNDECIDED_STATUS!r} and a token outside it renders as an identifier")
+            g.check(arm, row.get("verdict_on_disk") == page.get("verdict"),
+                    f"{case}: the note says the disk verdict is {row.get('verdict_on_disk')!r} while "
+                    f"the page renders {page.get('verdict')!r}. This presentation changes what a "
+                    f"reader is told about a sub-question and must never disagree with the file.")
+            source = str(row.get("source") or "")
+            g.check(arm, bool(source) and (REPO / source).is_file(),
+                    f"{case}: the note cites {source!r}, which is not a file in this repository. The "
+                    f"whole value of the note is that the reader can go and read the finding.")
+            g.check(arm, len(str(row.get("why") or "").strip()) >= 40,
+                    f"{case}: the note's `why` is too short to be the policy's stated reason; a "
+                    f"placeholder renders as though it were an explanation")
+            n_checked += 1
+
+    # -------------------------------------------------------------- every producer, not two files
+    #
+    # The two assertions above cover the case page and the census row, which is where the first
+    # version of this arm stopped — and it was wrong. A verdict beside a case id is emitted by SIX
+    # producers in this payload (three `annotate()` callers, the practices rulings table, the audit
+    # report's measurements, and its recommendations' licences), and the browser walk found seven bare
+    # chips per locale on `/design` that every JSON assertion here had passed. A census of chip-drawing
+    # rows has to be taken from EVERY producer rather than from the ones that share a helper
+    # (`feedback_derive_from_every_producer`), so the membership is swept out of the payload's own bytes:
+    # any object naming a case AND quoting a verdict owes the derivation for that case.
+    #
+    # Three carriers are accepted because three shapes are published, and the sweep compares what they
+    # MEAN rather than requiring one spelling. A list row carries `undecided` — the sub-questions,
+    # flattened, which is all a chip needs to draw a mark. A case page carries `undecided_subquestions`
+    # as the full notes, because that surface renders the explanation. A census row carries the same key
+    # flattened to strings, because the list pages only draw the mark. A row carrying none of them is
+    # the defect this sweep exists for.
+    verdict_keys = ("verdict", "on_disk", "verdict_on_disk")
+    carrier_keys = ("undecided", "undecided_subquestions")
+    swept: list[str] = []
+
+    def carried(node: dict) -> list[str] | None:
+        for key in carrier_keys:
+            if key in node:
+                return sorted(str(x.get("subquestion")) if isinstance(x, dict) else str(x)
+                              for x in node.get(key) or [])
+        return None
+
+    def sweep(node, where: str) -> None:
+        if isinstance(node, dict):
+            case = node.get("case")
+            if isinstance(case, str) and any(k in node for k in verdict_keys) and case in owed:
+                want = [r["subquestion"] for r in owed[case]]
+                got = carried(node)
+                g.check(arm, got == sorted(want),
+                        f"{where} quotes {case}'s verdict and carries "
+                        f"{'no undecided key at all' if got is None else got}, not {sorted(want)}. "
+                        f"Every row that names a case beside its verdict is a row something renders as "
+                        f"a chip, and an unmarked one is a bare verdict chip on a screen no assertion "
+                        f"over two files can see.")
+                swept.append(f"{where}:{case}")
+            for k, v in node.items():
+                sweep(v, f"{where}.{k}")
+        elif isinstance(node, list):
+            for item in node:
+                sweep(item, f"{where}[]")
+
+    for name in sorted(p.name for p in payload.glob("*.json")):
+        sweep(load(payload, name), name)
+    for case in sorted(owed):
+        page_path = payload / "cases" / f"{case}.json"
+        if page_path.is_file():
+            sweep(json.loads(page_path.read_text(encoding="utf-8")), f"cases/{case}.json")
+
+    # The sweep's own liveness. It found 21 rows across 6 producers when it was written; a sweep that
+    # matched nothing would pass silently, and "no row quotes a restricted verdict" is exactly the
+    # claim the site would then be making for free (`feedback_zero_needs_a_ran_flag`).
+    g.check(arm, len(swept) >= len(owed) * 2,
+            f"the payload-wide sweep matched {len(swept)} row(s) naming one of {sorted(owed)} beside a "
+            f"verdict. Each such case is published on at least its own page and its census row, so "
+            f"fewer than {len(owed) * 2} means the sweep's shape no longer matches the payload's and it "
+            f"is passing over the producers it exists to find.")
+
+    g.note(arm, f"{n_checked} undecided sub-question note(s) across {len(owed)} case(s) "
+                f"({', '.join(sorted(owed)) or 'none'}), each derived from citation_policy.json and "
+                f"wired to both the case page and the census row the lists render from; "
+                f"{len(swept)} row(s) payload-wide quote one of those verdicts and every one of them "
+                f"carries the derivation")
 
 
 def arm_figures(g: Gate, payload: Path, bundle_text: str) -> None:
@@ -2108,6 +2279,7 @@ def main(argv: list[str] | None = None) -> int:
     denominators = arm_denominators(g, payload)
     arm_verdict_mix(g, payload, denominators)
     arm_citation_policy(g, payload, census_cases)
+    arm_undecided_subquestions(g, payload, census_cases)
     arm_figures(g, payload, bundle)
     arm_media(g, payload, bundle)
     arm_pipeline_states_are_styled(g, payload, args.dist.expanduser())

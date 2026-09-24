@@ -139,9 +139,74 @@ COLLECT_JS = r"""
                      text: el.innerText.trim().slice(0, 40)};
   }
 
+  // The undecided mark, read on screen rather than in the payload. Three separate things are collected
+  // because three separate things can fail: the dagger can be absent, the dashed border can be present
+  // in the stylesheet and not on the element (2026-08-20's 38 slate boxes), and the panel that explains
+  // the mark can be missing from the one page that has room for it.
+  const isVerdictBadge = el => [...el.classList].some(c => /^v-[A-Z]+$/.test(c));
+  const verdictBadges = [...document.querySelectorAll('span.badge')].filter(isVerdictBadge);
+  const borderOf = el => {
+    const cs = getComputedStyle(el);
+    return `${cs.borderTopStyle}/${cs.borderTopWidth}`;
+  };
+  // WHICH CASE a chip belongs to, resolved from the DOM rather than from a per-page expectation. The
+  // closest ancestor holding a `#/case/<id>` link is the row, card or list item the chip sits in, so
+  // this works unchanged on the register table, the design page's evidence list and the architecture
+  // tables — and it means the caller can assert BOTH directions per chip instead of a count per page.
+  // A count per page would have to restate each view's own selection logic, and `Design.tsx` renders a
+  // practice's cases or its section's depending on the status basis, so that restatement would be a
+  // second implementation of the thing under test.
+  const caseOf = el => {
+    for (let n = el; n && n !== document.body; n = n.parentElement) {
+      const a = n.querySelector('a[href*="#/case/"]');
+      if (a) return ((a.getAttribute('href') || '').match(/#\/case\/([^/?#]+)/) || [])[1] || null;
+    }
+    return null;
+  };
+
+  const marked = [];
+  const unmarked = [];
+  const unmarkedBorders = new Set();
+  for (const el of verdictBadges) {
+    const token = [...el.classList].find(c => /^v-[A-Z]+$/.test(c)).slice(2);
+    if (!el.classList.contains('v-partial')) {
+      unmarkedBorders.add(borderOf(el));
+      unmarked.push({token, case: caseOf(el), text: el.innerText.trim()});
+      continue;
+    }
+    const mark = el.querySelector('.undecided-mark');
+    marked.push({
+      token,
+      case: caseOf(el),
+      // The whole chip's text, so the caller can assert the verdict string a reader greps for survived
+      // the mark being added beside it.
+      text: el.innerText.trim(),
+      mark: mark ? mark.innerText.trim() : null,
+      title: mark ? (mark.getAttribute('title') || '') : '',
+      aria: mark ? (mark.getAttribute('aria-label') || '') : '',
+      border: borderOf(el),
+    });
+  }
+  // The audit page prints its verdicts as bare chip text, not through `VerdictBadge`, so its dagger is
+  // counted separately — otherwise an arm satisfied by the badges would report clean while that page
+  // showed an unmarked FALSE.
+  const chipDaggers = [...document.querySelectorAll('a.chip, span.chip')]
+    .filter(el => el.innerText.includes('†'))
+    .map(el => el.innerText.trim().slice(0, 40));
+  const panels = [...document.querySelectorAll('.note.undecided')].map(el => ({
+    text: el.innerText.trim(),
+    status: (el.querySelector('.badge') || {}).innerText || null,
+  }));
+
   return {
     videos,
     badges,
+    n_verdict_badges: verdictBadges.length,
+    marked,
+    unmarked,
+    unmarked_borders: [...unmarkedBorders],
+    chip_daggers: chipDaggers,
+    undecided_panels: panels,
     html_lang: document.documentElement.lang,
     csp: window.__csp || [],
     main_chars: (document.querySelector('main')?.innerText || '').trim().length,
@@ -181,6 +246,45 @@ def playable_track_count(media: dict) -> int:
         for video in media.get("videos") or []
         if {f"{video}.{lang}.mp4", f"{video}.{lang}.vtt"} <= shipped
     )
+
+
+def undecided_from_payload(
+        payload: Path) -> tuple[dict[str, list[str]], dict[str, str], int, int, int]:
+    """Which cases the walk must find marked, and how many chips each page must draw.
+
+    Derived from the payload the browser is about to be shown, never from a list here. The three cases
+    the citation policy currently leaves undecided in both directions are F6-2 / F6-5 / F6-8, and a
+    fourth restriction of the same shape added to `citation_policy.json` has to change what this probe
+    demands — a constant `3` would have let the site stop marking the new one while the walk stayed
+    green (`feedback_scope_as_namelist`).
+
+    Returns the marked cases with their sub-questions, those cases' verdicts, the number of uppercase
+    verdict badges the register table must render, the number of chips the audit page must dagger, and
+    the number the report page must. The last two are counted separately because those two pages print
+    their verdicts as bare chip TEXT, and an arm that only looked at `.badge` elements would report
+    clean over an unmarked FALSE on either — which is how `/report` got missed on the first pass: the
+    payload-side sweep in `check_site_invariants.py` now finds all six producers, and these are the two
+    of them whose mark is hand-written in the JSX rather than drawn by `VerdictBadge`.
+    """
+    census_doc = json.loads((payload / "census.json").read_text(encoding="utf-8"))
+    marked = {r["case"]: sorted(r.get("undecided_subquestions") or [])
+              for r in census_doc["rows"] if r.get("undecided_subquestions")}
+    verdicts = {r["case"]: r["verdict"] for r in census_doc["rows"]}
+    register_badges = sum(1 for r in census_doc["rows"] if r.get("verdict"))
+    controls = json.loads((payload / "controls.json").read_text(encoding="utf-8"))
+    audit_chips = sum(1 for c in controls["controls"] for m in c.get("measured_by") or []
+                      if m.get("undecided"))
+    # `/report` draws a case id beside a verdict twice: once per cited case under each measurement, and
+    # once per licence under each recommendation. Both come from `platform/audit/report.py`, which is
+    # the audit CLI's own output — a reader running the tool over their own template gets the same
+    # caveat in Markdown, and this counts the screen half of it.
+    report = json.loads((payload / "audit.json").read_text(encoding="utf-8")).get("report") or {}
+    report_chips = sum(1 for line in report.get("controls") or []
+                       for m in line.get("measurements") or []
+                       for c in m.get("cases") or [] if c.get("undecided"))
+    report_chips += sum(1 for r in report.get("recommendations") or []
+                        for l in r.get("licensed_by") or [] if l.get("undecided"))
+    return marked, verdicts, register_badges, audit_chips, report_chips
 
 
 def hexify(css_colour: str) -> str:
@@ -290,6 +394,25 @@ def main(argv: list[str] | None = None) -> int:
     if len(routes) < MIN_ROUTES:
         fail(f"{len(routes)} route(s) to walk, below the floor of {MIN_ROUTES}")
 
+    # The case pages of the cases the policy leaves undecided are appended to the static table rather
+    # than added to it: `census.STATIC_ROUTES` is the set two producers must agree on, and a drill-down
+    # is not a static route. They are walked because the case page is the only page that carries the
+    # panel explaining the mark, and a mark whose explanation was never rendered is a dagger with
+    # nothing behind it.
+    (marked_cases, case_verdicts, register_badges, audit_chips,
+     report_chips) = undecided_from_payload(args.payload)
+    if not report_chips:
+        fail("audit.json cites no undecided case beside a verdict, so the `/report` rule below would "
+             "compare 0 against 0 and pass over a page whose chips are drawn by hand in the JSX. The "
+             "example submission's report cites one such case today; if the worked example changed, "
+             "this arm needs re-deriving rather than silencing")
+    if not marked_cases:
+        fail("census.json marks no case as undecided in both directions, so every assertion below "
+             "would pass over an empty set. If the citation policy really has no such restriction "
+             "any more, this arm and the build's derivation come out together")
+    case_routes = [f"/case/{cid}" for cid in sorted(marked_cases)]
+    routes += case_routes
+
     media = json.loads((args.payload / "media.json").read_text(encoding="utf-8"))
     declared = {name: t for t in media.get("tracks", []) for name in t["files"]
                 if name.endswith(".mp4")}
@@ -339,6 +462,97 @@ def main(argv: list[str] | None = None) -> int:
                                 f"in the rendered text")
         badges.update({k: v for k, v in got["badges"].items() if k not in badges})
 
+        # ------------------------------------------------- the undecided mark, at the element
+        route = where.split(" ", 1)[1]
+        for m in got["marked"]:
+            if m["mark"] != "†":
+                problems.append(f"{where}: a .v-partial badge renders its mark as {m['mark']!r}")
+            if m["token"] not in m["text"]:
+                problems.append(f"{where}: a marked badge renders {m['text']!r}, which no longer "
+                                f"contains the bare token {m['token']!r} a reader greps the payload "
+                                f"for")
+            if "dashed" not in m["border"]:
+                problems.append(f"{where}: a marked badge renders border {m['border']}, not dashed — "
+                                f"the `.v-partial` token is in the stylesheet and not on the screen, "
+                                f"which is the 2026-08-20 defect one file over")
+            if not m["title"] or not m["aria"]:
+                problems.append(f"{where}: the mark on a {m['token']} badge carries "
+                                f"title={m['title']!r} aria-label={m['aria']!r}; a dagger with no "
+                                f"accessible name is a symbol only a sighted mouse user can resolve")
+        # The discriminating half: some badge on some page must render a NON-dashed border, or
+        # "dashed" above is what every badge looks like and the cue distinguishes nothing.
+        if got["marked"] and not any("dashed" not in b for b in got["unmarked_borders"]):
+            problems.append(f"{where}: every verdict badge on the page renders dashed, so the dashed "
+                            f"border marks nothing (unmarked styles seen: {got['unmarked_borders']})")
+
+        # Both directions, per chip, wherever the DOM says which case a chip belongs to. A chip whose
+        # case the policy leaves undecided must carry the mark, and a chip whose case it does not must
+        # not — the second half is what stops "mark everything" from passing. Chips with no case in
+        # their row are skipped here and covered by the case-page arms below: on a case page the header
+        # chip has no link to itself, and the archive rows are deliberately left unmarked because an
+        # archived day's disagreement is a different claim from an undecided sub-question.
+        for chip in got["marked"]:
+            if chip["case"] and chip["case"] not in marked_cases:
+                problems.append(f"{where}: a chip for {chip['case']} carries the mark, which "
+                                f"census.json does not put on that case — an invented limit")
+        for chip in got["unmarked"]:
+            if chip["case"] in marked_cases:
+                problems.append(f"{where}: the chip for {chip['case']} renders {chip['text']!r} with "
+                                f"no mark, while census.json leaves "
+                                f"{marked_cases[chip['case']]} undecided on it")
+
+        if route == "/":
+            if len(got["marked"]) != len(marked_cases):
+                problems.append(f"{where}: the register table renders {len(got['marked'])} marked "
+                                f"badge(s); census.json marks {len(marked_cases)} case(s) "
+                                f"{sorted(marked_cases)}")
+            if got["n_verdict_badges"] != register_badges:
+                problems.append(f"{where}: {got['n_verdict_badges']} verdict badge(s) on the register "
+                                f"table against {register_badges} row(s) carrying a verdict in "
+                                f"census.json")
+        if route == "/audit":
+            if len(got["chip_daggers"]) != audit_chips:
+                problems.append(f"{where}: {len(got['chip_daggers'])} audit chip(s) carry the dagger "
+                                f"against {audit_chips} cited row(s) whose case is undecided "
+                                f"({got['chip_daggers']})")
+        if route == "/report":
+            # Both directions on a count, like every other rule here: too few daggers is a verdict
+            # reading as settled under a recommendation about the reader's own system, too many is this
+            # platform marking a case the policy does not restrict.
+            if len(got["chip_daggers"]) != report_chips:
+                problems.append(f"{where}: {len(got['chip_daggers'])} report chip(s) carry the dagger "
+                                f"against {report_chips} row(s) in audit.json whose case is undecided "
+                                f"({got['chip_daggers']})")
+        if route in case_routes:
+            cid = route.rsplit("/", 1)[1]
+            owed = marked_cases[cid]
+            if not got["marked"]:
+                problems.append(f"{where}: the case page renders no marked verdict badge, while "
+                                f"census.json leaves {owed} undecided on this case")
+            if len(got["undecided_panels"]) != len(owed):
+                problems.append(f"{where}: {len(got['undecided_panels'])} undecided panel(s) for "
+                                f"{len(owed)} undecided sub-question(s) {owed}")
+            for panel, subq in zip(got["undecided_panels"], owed):
+                # Read as TEXT, not as an attribute: the point of doing this in a browser is that the
+                # sentence a reader sees is the thing checked. A `data-` attribute could hold the right
+                # verdict while the visible token said something else.
+                if subq not in panel["text"]:
+                    problems.append(f"{where}: an undecided panel does not name {subq!r}")
+                if (case_verdicts[cid] or "") not in panel["text"]:
+                    problems.append(f"{where}: an undecided panel never renders the verdict on disk "
+                                    f"({case_verdicts[cid]}), so the sentence saying the file is "
+                                    f"unchanged names no file state")
+                if panel["status"] != "not_established":
+                    problems.append(f"{where}: an undecided panel's status token renders as "
+                                    f"{panel['status']!r}, not the controls vocabulary's "
+                                    f"`not_established`")
+
+    marks_seen = sum(len(g["marked"]) for g in walked.values())
+    if not marks_seen:
+        fail(f"no marked verdict badge was found on any of {len(routes)} route(s) x "
+             f"{len(census.LOCALES)} locale(s), while census.json marks {sorted(marked_cases)}. The "
+             f"arm reported nothing rather than something wrong")
+
     if expected_videos < MIN_VIDEOS_TOTAL:
         fail(f"media.json declares only {expected_videos} playable track(s) across "
              f"{len(census.LOCALES)} locale(s), below the floor of {MIN_VIDEOS_TOTAL}. A payload whose "
@@ -376,6 +590,18 @@ def main(argv: list[str] | None = None) -> int:
         "videos_read": videos_seen, "videos_expected": expected_videos,
         "video_detail": {w: g["videos"] for w, g in sorted(walked.items()) if g["videos"]},
         "verdict_contrast": measured,
+        "undecided_marks": {
+            "cases_marked_by_the_payload": marked_cases,
+            "marks_read_on_screen": marks_seen,
+            "case_routes_walked": case_routes,
+            "audit_chips_expected": audit_chips,
+            "report_chips_expected": report_chips,
+            "per_route": {w: {"marked": len(g["marked"]), "panels": len(g["undecided_panels"]),
+                              "chip_daggers": len(g["chip_daggers"]),
+                              "verdict_badges": g["n_verdict_badges"]}
+                          for w, g in sorted(walked.items())
+                          if g["marked"] or g["undecided_panels"] or g["chip_daggers"]},
+        },
         "polly_disclosure": {w: g["polly"] for w, g in sorted(walked.items()) if g["videos"]},
         "csp_violations": {w: g["csp"] for w, g in sorted(walked.items()) if g["csp"]},
         "problems": problems,

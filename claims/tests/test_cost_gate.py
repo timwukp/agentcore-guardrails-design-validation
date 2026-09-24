@@ -329,3 +329,64 @@ def test_the_cost_gate_is_wired_into_verify_phase0(tree: Path) -> None:
     assert "estimate_cost.py" in sh, (
         "estimate_cost.py is not invoked by verify_phase0.sh — an unrun gate is not a "
         "control")
+
+
+# ------------------------------------------- refusal: the stamp on the meter reading
+# `actuals.read_at` first held "2026-09-21T21:49Z", typed while the reading it described finished at
+# 14:58:15Z: local time on a UTC+8 machine wearing a Z, seven hours in the FUTURE. It survived because
+# the only rule was "is it blank", and an impossible stamp is not blank. The producer now lives in
+# `read_actual_spend.utc_stamp`; these are the arms over the validator behind it. The two subprocess
+# arms use stamps that are wrong in EVERY timezone, so they cannot pass or fail by the machine's
+# offset; the clock-injected arms below cover the eight-hour case that can.
+
+def test_kills_a_read_at_in_the_future(tree: Path) -> None:
+    model = load(tree)
+    model["actuals"]["read_at"] = "2099-01-01T00:00:00Z"
+    dump(tree, model)
+    kills(run(tree), "in the future")
+
+
+def test_kills_a_read_at_that_is_not_an_iso_utc_instant(tree: Path) -> None:
+    """An unparseable stamp passes 'is it blank' and cannot be compared to anything, so the
+    future check would silently never run over it."""
+    model = load(tree)
+    model["actuals"]["read_at"] = "yesterday evening"
+    dump(tree, model)
+    kills(run(tree), "not an ISO UTC instant")
+
+
+def test_the_real_models_read_at_is_a_past_utc_instant(tree: Path) -> None:
+    """The control for the two above, and the arm that would have convicted the typo: the committed
+    value must satisfy the refusal it introduced. It is asserted here and not only via the green
+    control arm because `check()` collects problems and a second one could mask this."""
+    sys.path.insert(0, str(ROOT))
+    import estimate_cost as ec  # noqa: E402
+
+    stamp = str(load(tree)["actuals"]["read_at"])
+    assert ec.stamp_problems(stamp) == [], f"the committed read_at is itself refused: {stamp!r}"
+    assert re.fullmatch(r"20\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ", stamp), \
+        "seconds included, so a re-read minutes later is a different stamp"
+
+
+def test_a_local_stamp_wearing_a_z_is_refused_with_its_clock_injected() -> None:
+    """The exact defect, with the clock passed in. Written against `datetime.now()` this arm would
+    pass or fail by the timezone of whoever ran it -- which IS the defect under test."""
+    sys.path.insert(0, str(ROOT))
+    import estimate_cost as ec  # noqa: E402
+    from datetime import datetime, timedelta, timezone
+
+    ref = datetime(2026, 9, 21, 14, 58, 15, tzinfo=timezone.utc)
+    bad = ec.stamp_problems("2026-09-21T21:49:00Z", now=ref)
+    assert len(bad) == 1 and "in the future" in bad[0]
+    assert "6.8 hour(s)" in bad[0], f"the size of the error is the tell, and it is named: {bad[0]}"
+
+    good = ec.stamp_problems("2026-09-21T14:49:00Z", now=ref)
+    assert good == [], "the same instant spelled correctly must pass"
+
+    # The boundary: equal to the reference clock is not "after" it.
+    assert ec.stamp_problems("2026-09-21T14:58:15Z", now=ref) == []
+    assert ec.stamp_problems("2026-09-21T14:58:16Z", now=ref) != []
+
+    # A reading from a week ago is stale, not impossible: this refusal is about direction only.
+    week = ref - timedelta(days=7)
+    assert ec.stamp_problems(week.strftime("%Y-%m-%dT%H:%M:%SZ"), now=ref) == []

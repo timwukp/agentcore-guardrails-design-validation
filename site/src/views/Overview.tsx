@@ -363,7 +363,9 @@ export default function Overview() {
                       <Link to={`/case/${r.case}`}>{r.case}</Link>
                     </td>
                     <td>
-                      <VerdictBadge v={r.verdict} />
+                      {/* The register table is the densest place a bare verdict appears — 93 rows of
+                          tokens — and therefore the place the mark matters most. */}
+                      <VerdictBadge v={r.verdict} undecided={r.undecided_subquestions} />
                     </td>
                     <td>{r.family}</td>
                     <td>{r.tier}</td>

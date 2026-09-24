@@ -262,7 +262,7 @@ function Panel({ box, arch }: { box: ArchBox; arch: Architecture }) {
                       </Link>
                     </td>
                     <td>
-                      <VerdictBadge v={c.verdict} />
+                      <VerdictBadge v={c.verdict} undecided={c.undecided} />
                     </td>
                     <td>
                       <span lang="en">{c.title}</span>
