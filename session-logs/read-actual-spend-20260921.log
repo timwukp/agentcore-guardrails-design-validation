@@ -1,0 +1,64 @@
+window                2026-08-01 .. 2026-09-21 (end exclusive)
+read from             Cost Explorer, 17 request(s) (~$0.17)
+lines read            1309 (service, usage type) pair(s) over 51 day(s)
+ledger entries        19, of which attributed 13
+attributed            $13.3302
+the naive day rule    $11.70 over 105 line(s) — REJECTED, see the module docstring
+name collisions       159 usage-type name(s) appear under more than one service; worst is 'DataTransfer-Out-Bytes' under 10
+note                  15 recorded project day(s), 15 of them backed by artifacts among the 15 days this repo's five producers name
+note                  quantity cross-check: 85339 characters counted by this project in 2 log(s) == 85339 at the meter, across 2 line(s)
+note                  newest day Cost Explorer returned: 2026-09-20 (window ends 2026-09-21, exclusive); days after it are ABSENT, not zero
+note                  20 day(s) in the window are still marked Estimated by Cost Explorer (2026-09-01..2026-09-20); figures over them can still move, and this script failing on that drift later is correct behaviour
+
+PROBLEMS (46)
+  - APN2-APS8-AWS-In-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - APS1-APS7-AWS-In-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 3 day(s). Adjudicate it either way, but not by omission
+  - USE1-NovaMicro-input-tokens (Amazon Bedrock) is metered only on this project's own days and the ledger does not mention it — $0.0069 over 3 day(s). Adjudicate it either way, but not by omission
+  - USE1-NovaMicro-output-tokens (Amazon Bedrock) is metered only on this project's own days and the ledger does not mention it — $0.0205 over 3 day(s). Adjudicate it either way, but not by omission
+  - APN1-APS8-AWS-In-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - APN2-SAE1-AWS-In-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 3 day(s). Adjudicate it either way, but not by omission
+  - APS1-SAE1-AWS-In-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 4 day(s). Adjudicate it either way, but not by omission
+  - APS1-SAE1-AWS-Out-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 2 day(s). Adjudicate it either way, but not by omission
+  - USE1-Llama3-8B-input-tokens (Amazon Bedrock) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - USE1-Llama3-8B-output-tokens (Amazon Bedrock) is metered only on this project's own days and the ledger does not mention it — $0.0001 over 1 day(s). Adjudicate it either way, but not by omission
+  - USE1-gpt-oss-20b-input-tokens (Amazon Bedrock) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - USE1-gpt-oss-20b-output-tokens (Amazon Bedrock) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - USE1-mistral.ministral-3-3b-instruct-mantle-input-tokens-standard (Amazon Bedrock) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - USE1-mistral.ministral-3-3b-instruct-mantle-output-tokens-standard (Amazon Bedrock) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - USE1-Knowledge-Base:Consumption-based:AgenticRetrieval (Amazon Bedrock AgentCore) is metered only on this project's own days and the ledger does not mention it — $0.0040 over 1 day(s). Adjudicate it either way, but not by omission
+  - USE1-Knowledge-Base:Consumption-based:Retrieval (Amazon Bedrock AgentCore) is metered only on this project's own days and the ledger does not mention it — $0.0060 over 1 day(s). Adjudicate it either way, but not by omission
+  - APN1-SAE1-AWS-In-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 2 day(s). Adjudicate it either way, but not by omission
+  - APN2-EUC1-AWS-Out-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 2 day(s). Adjudicate it either way, but not by omission
+  - APS2-SAE1-AWS-In-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 2 day(s). Adjudicate it either way, but not by omission
+  - APS2-USE1-AWS-Out-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - CPUCredits:t3 (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0134 over 1 day(s). Adjudicate it either way, but not by omission
+  - EUN1-EUC1-AWS-Out-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - USE1-APN1-AWS-Out-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - USE1-APS2-AWS-Out-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - USE1-APS3-AWS-Out-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - USE1-EUN1-AWS-Out-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - USE1-EUW2-AWS-Out-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - USE1-SAE1-AWS-Out-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - USW2-EUC1-AWS-Out-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - USW2-USE1-AWS-Out-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - BoxUsage:t3.micro (Amazon Elastic Compute Cloud - Compute) is metered only on this project's own days and the ledger does not mention it — $0.0215 over 1 day(s). Adjudicate it either way, but not by omission
+  - EU-APS8-AWS-In-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - EU-EUN1-AWS-Out-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - APN2-APS4-AWS-In-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - EU-APS4-AWS-In-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - APS1-AFS1-AWS-In-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 2 day(s). Adjudicate it either way, but not by omission
+  - APS1-APN3-AWS-In-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - APS1-APS6-AWS-In-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - APS1-CAN2-AWS-In-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - APS1-EUC2-AWS-In-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - APS1-MXC1-AWS-In-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - APS2-APE2-AWS-In-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - EUN1-APS1-AWS-Out-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - APS2-APS7-AWS-In-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - USE1-EUS2-AWS-In-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+  - APS2-NYC1-AWS-In-Bytes (EC2 - Other) is metered only on this project's own days and the ledger does not mention it — $0.0000 over 1 day(s). Adjudicate it either way, but not by omission
+
+STILL OPEN, and this script cannot close it: per-PHASE actuals. Cost Explorer's finest granularity is a
+  calendar day and this project ran several phases per day, so the phase column in COST.md stays
+  `not measured` rather than being filled with a share somebody apportioned. Hourly and resource-level
+  data would have had to be enabled before the spend and retains 14 days; August is long past that.

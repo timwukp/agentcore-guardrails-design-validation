@@ -190,6 +190,22 @@ export const STRINGS = {
   "ui.restrict.notCitableAs": ["May not be cited as:", "不可以被引用為："],
   "ui.restrict.onDisk": ["Verdict recorded on disk:", "檔案裡記錄的判定："],
   "ui.restrict.source": ["source:", "出處："],
+  // The dagger's tooltip. It names what the verdict does NOT answer, because that is the sentence a
+  // reader looking at a bare `FALSE` on a list cannot supply for themselves.
+  "ui.verdict.undecidedMark": [
+    "this verdict does not answer:",
+    "這個判定沒有回答：",
+  ],
+  "ui.undecided.heading": [
+    "This study established nothing in either direction on:",
+    "本研究在以下這一點上，兩個方向都沒有確立任何結論：",
+  ],
+  // Said explicitly, because the change here is one of presentation ONLY: the verdict file was not
+  // edited, and a reader who cannot tell that from the page would reasonably suspect it was.
+  "ui.undecided.diskUnchanged": [
+    "The verdict file is unchanged and every count on this site still counts it as:",
+    "判定檔案未被修改，本網站的每一項計數仍然把它算成：",
+  ],
 
   // ------------------------------------------------------------------ citation policy
   "cit.loading": ["the citation policy", "引用政策"],

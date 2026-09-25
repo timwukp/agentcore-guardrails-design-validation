@@ -1,8 +1,143 @@
-# Reconnect note — updated 2026-08-15 (late)
+# Reconnect note — updated 2026-09-22
 
 Read this first if the session dropped. It is the shortest path back to the live state.
 
-## ⇢ RESUME HERE (2026-09-18): **the three phase chapters are rendered and verified, and re-running the census forced a bilingual deficiency register**
+## ⇢ RESUME HERE (2026-09-22): **issue #37's ruling shipped as a derivation over the citation policy, and the browser refuted the version that only fixed the JSON**
+
+**State, verified through the API rather than remembered at the start of this window:** `main` =
+`8c35a4a0abc54893056db01dee2c7d31b4d34ae0`, **1113 blobs**, `truncated: false`, **0 open PRs**. This
+change opens one; after you merge it, `main` and its blob count move and the hand-over bundle owes a
+re-sync (`--main-sha`/`--main-blobs`, neither of which has a default anywhere).
+
+**The ruling was "change what is presented, not what was recorded", and it is now a rule rather than a
+list.** `results/phase1/F6-2.json` still reads `FALSE`, F6-5 and F6-8 likewise, and no verdict was
+recounted. `check_controls.undecided_subquestions` reads `results/CITATION-POLICY.md`'s machine block and
+keeps a sub-question only where a restriction forbids `TRUE on X` and `FALSE on X` alike: over the **10**
+restrictions in force that is **2** entries and **3** cases — F6-2 and F6-5 on the p99 tail, F6-8 on
+`slope in [165,750]` — the same three a human adjudicated, reached without being told them. It lives in
+the module owning the five-state vocabulary because **3** programs resolve it there
+(`build_site_data.py`, `check_site_invariants.py` through the builder, `platform/audit/report.py`); its
+first version sat in the site builder, where the audit CLI could not reach it
+(`feedback_two_readers_one_format`).
+
+**A browser killed the JSON-only fix.** With the payload arm reporting clean and its **8** mutants all
+killed, a walk over the built site found **seven unmarked chips per locale on `/design`**'s rulings
+table and two more on `/report`, drawn by producers no assertion was reading. The gate now sweeps the
+payload's own bytes for any object naming a case beside a verdict — **22** rows over **9** payload paths
+from **6** code sites on this build — and the arm fails if the sweep matches fewer rows than twice the
+cases it derives, so a seventh producer cannot arrive unnoticed
+(`feedback_derive_from_every_producer`). Held at three layers, each mutation-checked: **13** payload
+mutants killed by arm name, **12** SPA mutants killed by `walk_release.py` in real Chromium with a green
+no-mutant control on both sides (`session-logs/b2-undecided-mutants-20260922b.log`), and **4** arms over
+the audit CLI's own JSON and Markdown checked against two producer mutations. Two prose counts were
+wrong by one while all this was measured (a docstring's "nine" and a table's "14"), so the counts now sit
+in `results/PRACTICE-EVIDENCE-MAP.md`'s machine block where `test_practice_evidence_map.py` re-derives
+them — a number in a sentence is a number nobody checks.
+
+**Measured this window:** `platform/build/tests` **475 passed**, `platform/audit/tests/test_report.py`
+**31 passed**, `walk_release.py` rc 0 over both locales
+(`session-logs/b2-undecided-walk-report-20260922.log`), and the translation backlog re-measured at
+**285**, exactly the published ceiling. The payload gate's red set **by name** is still only the two
+by-design reds of a census-only build (`figures_are_real_pngs` with no integer `numeric_check`,
+`media_is_real_and_disclosed` with `render_check=None`); both clear when `publish_web.py` supplies the
+measured rcs it refuses to default.
+
+**Still open, in order:** **item 41's deploy half is still blocked on you** — see the previous banner
+for the `cdk diff` output; `npx cdk deploy GrxLive` stays undeployed because nothing here names that
+production stack, and the authorised republish (the live release serves only the **4** overview assets)
+waits on that CSP. Then: measuring **F10-1**, which needs `ce:GetCostAndUsage` on the runner policy;
+planning what is left in `FUTURE-WORK.md`, whose **open** count is the one quantity here that no test
+derives — read the `Closes when` lines rather than trusting a remembered total, and note that items 40,
+42 and 43 closed this cycle; and closing **issue #37**,
+whose closing record is
+`results/PRACTICE-EVIDENCE-MAP.md` §5 plus item 32's scope correction — true only once this PR lands.
+
+## ⇢ PREVIOUS BANNER (2026-09-21): **this project's own spend was read off a meter for the first time — $13.3711, 2× the projection, and the largest single line is a volume nobody knew existed**
+
+**State, verified through the API rather than remembered:** `main` =
+`8c35a4a0abc54893056db01dee2c7d31b4d34ae0` (PR #60, *"Three phase-chapter explainers, a bilingual
+deficiency register, and the census ledger's own timestamp"*), **1113 blobs** in the recursive tree,
+`truncated: false`, and **0 open PRs**. The hand-over bundle is re-synced to that pair and is a fixed
+point (`--main-sha`/`--main-blobs`, neither of which has a default anywhere).
+
+**Item 40 is RESOLVED, in three parts, and none of them is "the number was bigger than we thought".**
+(a) The measurement exists: **$13.3711** over 2026-08-01 .. 2026-09-21 (end exclusive), 16 attributed
+ledger lines, each with its attribution basis — `quantity_match`, `resource_match` or the weakest
+`day_set`, which must also name its `excluded_days`. (b) **The method `COST.md` stated returns `$0.00`
+with no error**: actuals were to be read by tag `Project=guardrails-doc-validation`, and of 261
+user-defined cost-allocation keys exactly **one** is `Active` — another project's — so that query could
+only ever answer zero, and this project uses **two** tag values anyway (item 45). A wrong-but-valid
+filter is not "no spend" (`feedback_empty_query_is_not_zero`). (c) Per-phase actuals are **not
+obtainable** at daily granularity and now print **`n/a`**, because the previous `0.0` printed as `$0.00`
+beside nine phases that had really spent money.
+
+**The largest line in the project is an orphan.** `vol-0aaa5827f1d9dd730`, 40 GB gp3, state
+`available`, **$4.0912** and still billing — 31% of the total, for a volume that has been attached to
+nothing since the runner was terminated on 08-19. `provision.py:358` sets `DeleteOnTermination: True`,
+so it should not exist; **`DeleteOnTermination` is an attachment property**, and DEV-P4-31's
+detach/grow/reattach repair re-attached it with `attach-volume`, which defaults that flag to **false**.
+Three independent defects kept it invisible: `runner/teardown.py` has no volume sweep of any kind;
+`provision.py:63` declares `VOLUME_GIB = 20` against a 40 GB reality; and `teardown.py:47`/`:61`
+disclose "~$1.60/month" — the price of the 20 GiB *increment*, copied into a sentence about the whole
+volume, which really costs **$3.20/month**. Filed as **item 44**; deleting it is an AWS resource
+deletion and is **user-authorised**, so it is still running.
+
+**Two day-attribution rules were measured and both are unusable, in opposite directions.** Generous
+("any spend on a project day claims the line") = **$70,905.69 over 1,154 lines, 5,303× the truth** on
+the 2026-09-21T15:51:30Z reading — and that figure *grows between readings*, having been $70,040.35 /
+5,238× thirty-four minutes earlier. Strict ("only if all spend is on project days") = **$11.70 over 105
+lines**, *below* the ledger, and it loses the volume, both Polly lines and the EC2 instance. Hence
+per-line bases with refusals. Also measured: **usage-type names are not unique keys** — 159 of 1,309
+names appear under more than one service, `DataTransfer-Out-Bytes` under **ten**, and
+`TimedStorage-ByteHrs` is S3 ($2,007.82), ECR ($0.41) *and* DynamoDB ($0.00) at once (item 46).
+
+**The completeness refusal earned its keep.** A ledger is a name list and a name list cannot notice a
+new name, so any usage type in a service this project provably called, metered only on this project's
+own days and absent from the ledger, fails the check. It found **46 unmentioned lines**, including the
+**Nova Micro tokens behind every guardrail probe** — the ledger had the guardrail units and not the
+model that produced them. Adjudicating them moved the total by $0.0409 (0.3%); the point is not the
+size, it is that nobody was going to remember to look.
+
+**And the fix for a stamp defect turned out to have no producer.** Three hours after `check_out_stamp()`
+was written to refuse a census ledger named 8.2 h in the future, `actuals.read_at` was published as
+`"2026-09-21T21:49Z"` — local time on a UTC+8 machine wearing a `Z`, describing a reading that finished
+at **14:58:15Z**, i.e. seven hours in the *future*. It survived because the only rule was "is it
+blank", and an impossible stamp is not blank; the tell that the earlier fix was a validator with no
+producer is that the same defect reappeared in a second file. The correction was then **wrong a second
+time** — correct UTC, but hand-derived from `date -u`, naming a census written before the field existed
+(`feedback_correction_wrong_twice`). Fixed producer-first: `utc_stamp()` writes the instant into the
+census body beside the lines it describes, `stamp_problems()` refuses a stamp that is not ISO UTC or
+sits after the clock, and the run **prints a disagreement between artifact and published file** rather
+than trusting either. **13 mutants over 3 rounds**; the 2 survivors each convicted something real — an
+arm whose docstring cited `feedback_two_readers_one_format` while hand-writing the JSON it claimed to
+round-trip, and a tri-state collapse (`raw.get(KEY) or []`) that turned an absent field in the *wrapped*
+census into "the meter marked none".
+
+**One gate is deliberately, permanently red.** `tools/read_actual_spend.py` exits **1** every day the
+orphaned volume bills, which is why it is **not** wired into `verify_phase0.sh`: rc 1 *is* the correct
+output, and it should be read as a standing invoice rather than as breakage.
+
+The FUTURE-WORK register grew from 43 to **48 items**: 44 the orphaned volume, 45 the two tag values
+under an inactive key, 46 usage-type collisions, 47 a `t3.micro` and two AgentCore knowledge-base
+retrieval meters on 2026-08-13 that nothing in this repo explains (over a CloudTrail window whose
+0-event answer is indistinguishable from unavailability), and 48 `cdk diff`'s default omission of
+changes it judges to be mangled non-ASCII — the one it omitted here is a **permanent** drift, because
+CloudFormation transliterated the stack description's em dash to `?` on the way in and will do so on
+every future deploy. Floor `platform/build/tests` **406 → 425**. Cost of measuring, disclosed:
+**~$0.79** of Cost Explorer requests, cumulative and only ever growing. Full record:
+`session-logs/actual-spend-ledger-20260921.log`.
+
+**Still open, in order:** **item 41's deploy half is blocked on you** — the read-only `cdk diff GrxLive`
+was run and its `--strict` output is in `session-logs/cdk-diff-grxlive-20260921-strict.txt`: the change
+is confined to the `ResponseHeadersPolicy`'s CSP (`media-src 'self'` added) plus the permanent
+description drift above, and `npx cdk deploy GrxLive` was **declined** because no instruction here names
+that production stack. Then: items 42 and 43 are **code-complete with arms and a mutation harness**
+(`platform/build/tests/mutate_census_arms.py`) and owe a measured timing distribution plus the one-time
+ceiling re-read; the five-state presentation change for F6-2/F6-5/F6-8 plus closing issue #37;
+measuring F10-1; and the authorised republish — **the live release still serves only the 4 overview
+assets**, and `v/20260917T091943Z/` stays live until the republish runs.
+
+## ⇢ PREVIOUS BANNER (2026-09-18): **the three phase chapters are rendered and verified, and re-running the census forced a bilingual deficiency register**
 
 `/design` now embeds **four** explainers — overview plus one chapter per phase — **8 tracks, 1298 s,
 26.39 MB**, one `--verify` run at `rc=0` with `verified_identical_renders: true`. Polly, at the meter:
@@ -204,7 +339,7 @@ returned SHA differs from a locally computed `git hash-object`. No change was ne
   when the measured `chain.flip.http_status` is **202**, and plotted only day 2. All fixed.
 - **New result in the paper**: F5-2's `data_plane_reconvergence` — first denial 305.8 s / 325.0 s,
   three consecutive denials 326.4 s / 345.6 s, `n_that_were_still_authorized: 0`. §11.4.
-- **`FUTURE-WORK.md` is now 43 items** (was 21, then 22, then 28, then 31, then 35, then 36, then 41, then 42). Item 28 is figure 6's missing
+- **`FUTURE-WORK.md` is now 48 items** (was 21, then 22, then 28, then 31, then 35, then 36, then 41, then 42, then 43). Item 28 is figure 6's missing
   source; item 29 is the same-run_id roll-up overwrite found on 2026-08-16; item 30 is Tier 5's citation
   anchors, which had existed unnumbered since the tier was written; item 31 is the gate's runtime, which
   this file had stated three different ways — **rewritten 2026-08-17 from a timed run, because the
@@ -349,7 +484,7 @@ deficiencies. Research and design are done; drafting has not started.
   reproduction** — ACM reserves both *Reproduced* and *Replicated* for non-authors, so **no independent
   party has re-run anything here** — and our `TRUE/FALSE/INCONCLUSIVE/RECORDED` taxonomy has **no located
   precedent** and must be defined, not cited.
-- **`FUTURE-WORK.md`** — the deficiency list, **43 items** in 5 tiers, each with derived evidence
+- **`FUTURE-WORK.md`** — the deficiency list, **48 items** in 5 tiers, each with derived evidence
   (this paragraph was first written at 22; items 23–28 were added on 2026-08-15, items 29–30 on 2026-08-16,
   items 32–35 on 2026-08-19, items 37–40 on 2026-09-16 from the explainer's own gates, item 41 on
   2026-09-17 from publishing it).
@@ -874,7 +1009,11 @@ assertions) — neither file is a sealed bound artifact.
   mutation harness restores with `cp` only)
 - Published to `github.com/timwukp/agentcore-guardrails-design-validation` **by API push only** — see
   the PR #12 note at the top of this file before pushing anything.
-- Approved plan: `/Users/tmwu/.claude/plans/melodic-hatching-seal.md`
+- Approved plan: `/Users/tmwu/.claude/plans/lovely-whistling-sphinx.md` — the `/design` publication
+  plan, **all 5 steps merged**, so it is now a record rather than a queue; the open work is in
+  `FUTURE-WORK.md`. (This line pointed at `melodic-hatching-seal.md` until 2026-09-21, and **that file
+  does not exist** — a plan path lives outside the repo, so nothing here can check it. Verify the file
+  is readable before trusting the pointer.)
 - Python: `.venv-oracle/bin/python` (botocore 1.43.67). `.venv-baseline` is 1.42.79 and is **data**, not a fallback.
 - Full gate: `PYTHON=.venv-oracle/bin/python ./verify_phase0.sh` — **1 h 24 min 16 s, 14 gates**
   (measured 2026-08-17, rc 0, 14/14; its pytest leg was 3,187 passed / 16 skipped in 1:04:17 over the
@@ -923,36 +1062,60 @@ assertions) — neither file is a sealed bound artifact.
 `ExpiresAt` on every tag is a **72 h TTL from creation**. If a reconnect happens after that window
 and the work is not continuing, run `infra/99_teardown.py --run` and confirm zero survivors.
 
+**And one resource that is in no `state.json` at all.** `vol-0aaa5827f1d9dd730` — 40 GB gp3,
+us-east-1, created 2026-08-12T04:15:02Z, tagged `ManagedBy=runner/provision.py` and
+`Project=grx-validation`, `State: available`, `Attachments: []`. It has billed every day since the
+runner was terminated on **2026-08-19** and is now the **largest single cost line in the project**
+(**$4.0912**, ~$0.10/day, $3.20/month). Nothing in this repo can see it: `runner/teardown.py` has no
+volume sweep, so "confirm zero survivors" above has never included volumes. It is **not** deleted,
+because deleting an AWS resource needs the user's authorisation — **FUTURE-WORK item 44** carries the
+mechanism (`DeleteOnTermination` is an attachment property, and DEV-P4-31's detach/grow/reattach
+repair re-attached it with the flag defaulted to false) and the fix.
+
 ## Money spent so far
 
-Still **under $2** — and as of 2026-09-16 the largest single line is **Amazon Polly**, not the runner
-and not the experiments. Derived, not remembered:
+**$13.3711**, read off Cost Explorer on 2026-09-21 (`actuals` in `cost_model.yaml`, checked by
+`tools/read_actual_spend.py`, published in `COST.md`). Against a $6.67 projection and a $95 ceiling:
+inside the ceiling by 7×, and **twice the projection**.
 
-| item | how it is priced | to date |
+**This section used to say "still under $2", and that was wrong by 6.7×** — not because any price was
+wrong, but because three whole families had no line anywhere: EC2 compute **$3.4969**, the orphaned EBS
+volume **$4.0912** and Polly **$2.2613** sum to $9.85, more than the entire projection. The estimates
+below are kept rather than deleted, because what they got wrong is the useful part.
+
+| item | what this file estimated | measured at the meter |
 |:---|:---|---:|
-| control plane, CloudWatch Logs delivery objects | free to create and define | $0.00 |
-| billable `tools/call` requests + span ingestion across F1–F7 | per request, all well under Cost Explorer's resolution | <$0.50 |
-| EC2 runner `t3.small`, us-east-1 | $0.0208/h; provisioned 2026-08-11, ≤19 h wall-clock since | ≤$0.40 |
-| runner root volume, 40 GB gp3 | $0.08/GB-month ⇒ $0.11/day | ≤$0.20 |
-| Amazon Polly, the `/design` explainer's narration | **28,476 characters over 120 `SynthesizeSpeech` requests**, read off CloudWatch `AWS/Polly` `RequestCharacters`; priced at $30/M generative + $16/M neural | **$0.72–$0.77** |
-| S3 PUT + CloudFront transfer for the published payload | a few hundred MB of one-off PUTs and egress | cents, not separately measured |
+| runner root volume, gp3 | $0.11/day ⇒ **≤$0.20** | **$4.0912** — the *largest single line in the project*. 40 GB, state `available`, still billing: it outlived the instance by 33 days and nothing in `runner/` could see it (**item 44**) |
+| EC2 runner `t3.small`, us-east-1 | $0.0208/h × ≤19 h ⇒ **≤$0.40** | **$3.4969** — the rate and the instance type were both right and the **hours** were wrong by 8.8×: 168.122 h over eight days. Three of them are a **full-24-hour weekend with no artifact of any kind** — $1.4976, 43% of the line, bought nothing |
+| Bedrock guardrail + model units across F1–F7 | "well under Cost Explorer's resolution", **<$0.50** | **$3.5081** ($3.1543 Bedrock + $0.3538 AgentCore) — 7× the bound, and they were never below the meter's resolution: daily granularity resolves them fine |
+| Amazon Polly narration | **$0.72–$0.77** for the 2026-09-16 round | **$2.2613** cumulative across every round, exact and not an interval: Cost Explorer carries the engine split that CloudWatch's `RequestCharacters` lacks |
+| control plane, CloudWatch Logs delivery objects | free to create and define | **$0.00** — the one row that held, and it is a *measured result* rather than an unfilled field, which is why `actual_usd: 0.0` had to stop meaning "not measured" |
+| S3 PUT + CloudFront transfer for the payload | "cents, not separately measured" | **still not separable, and now that is a recorded refusal.** Account-wide over the window: S3 $1,855.19 Tier1 + $519.72 Tier2 + $2,007.82 storage, on all 51 days — the payload bucket's share cannot be cut out at day granularity. CloudFront viewer egress is the one line with a real ceiling: **account-wide $0.0000**, so serving the four videos is below the meter's own resolution |
+| Cost Explorer itself, to measure the above | not anticipated | **~$0.79** — 79 requests at $0.01, counted in `session-logs/actual-spend-ledger-20260921.log`. A running total that only grows; re-checks are free because `--census-json` replays the saved census offline |
 
-Two things about the Polly row, because it is the one number here that was published wrong twice. It is
-read from the **meter**, not from the audio cache — `render.py --verify` deletes `video/out/audio`
-between its two renders on purpose, so each verification bills two full passes and the cache's contents
-bound nothing (`feedback_meter_not_artifact`). And it is an interval rather than a figure because
-CloudWatch's `AWS/Polly` metric has no engine dimension: 24,968 of those characters decompose into
-known en/zh passes and the remaining 3,508, from a superseded draft of the script, are bounded at both
-engines' rates. Cost Explorer will settle it exactly once its ~1-day lag clears —
-`session-logs/polly-spend-20260916-video.log` holds the measurement and its decomposition. **None of
-this appears in `COST.md`**, whose actuals are read by resource tag and whose method therefore cannot
-see a per-request API with no resource to tag: FUTURE-WORK item 40.
+Three lessons this table earned, all now enforced in code rather than remembered:
 
-The `t3.small` figure is a **ceiling**: EC2's `LaunchTime` resets on stop/start (the volume was grown
-from 20 GiB to 40 GB after DEV-P4-31), so uptime cannot be read off the current launch time and the
-row above bills the whole window as if it never stopped. Phases 3–8 were projected at **$5.86**
-combined and the measured spend is running well under that. **Stop the instance if the work pauses**
-— `runner/provision.py` knows the instance id, and a stopped `t3.small` costs only its volume.
+- **A cost model organised by phase cannot see a resource that outlives a phase.** The volume belongs
+  to no phase, so no per-phase projection had anywhere to put it. It is 31% of the total.
+- **A ceiling published in the same typeface as a measurement reads as a measurement.** Three of the
+  seven rows above were `≤` or `<` bounds and **all three were breached** — 8.7×, 20.5×, 7.0×. `COST.md`
+  now prints **`n/a`** for anything unmeasured and `estimate_cost.py` refuses a missing field, because
+  the previous `0.0` printed as `$0.00` beside nine phases that had really spent money.
+- **The stated method returned `$0` with no error.** Actuals were to be read by tag
+  `Project=guardrails-doc-validation`; the tag key is **Inactive** in Billing (1 of 261 keys is
+  active), so that query can only ever answer zero, and the project uses **two** tag values anyway
+  (**item 45**). `feedback_empty_query_is_not_zero`, applied to money.
+
+The Polly figure was published wrong **twice** before the meter settled it — "≈$1.8" from a remembered
+character count, then "$0.121, counted rather than estimated" from an audio cache that `--verify`
+deliberately deletes between its two renders (`feedback_meter_not_artifact`), then the
+$0.72–$0.77 interval above, which was a real CloudWatch reading with no engine dimension to price it
+exactly. PR #54's merged body still carries the $0.121; the repo does not.
+
+**Stop the instance if the work pauses** — `runner/provision.py` knows the instance id. And note what
+"stopped" does not mean: `runner/teardown.py:47` offers to stop and keep everything for
+"~$1.60/month for the volume", which is the price of **20 GiB**. The volume is 40 GB, so it is
+**$3.20/month**, and item 44 holds the fix.
 
 ## Task state
 

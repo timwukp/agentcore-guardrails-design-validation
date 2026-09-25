@@ -75,7 +75,10 @@ export default function ArchitectureView() {
                   </Link>
                 </td>
                 <td>
-                  <VerdictBadge v={c.verdict} />
+                  {/* Same mark as the register, the case page and the design page: this row is an
+                      unplaced case, and a bare token here would be the one verdict chip on the site
+                      whose silence about an undecided sub-question meant nothing. */}
+                  <VerdictBadge v={c.verdict} undecided={c.undecided} />
                   {c.restrictions.map((r) => (
                     <span key={r} className="chip blocked" style={{ marginLeft: 4 }}>
                       {r}

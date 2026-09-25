@@ -19,6 +19,16 @@ Three refusals, in increasing order of how easy they would be to skip:
    — cheap and worthless rather than expensive. This is the refusal I would not have
    thought to write before the rule was gated, and it is the one that connects money to
    validity.
+4. **An actual that nothing measured.** Every phase carried `actual_usd: 0.0` for the
+   whole project, and this script printed it as `$0.00` in COST.md's Actual column and in
+   an `actual to date $0.00` total. Nothing had ever been read off a meter; the zero was a
+   placeholder that rendered as a measurement, and an empty query is not a zero
+   (`feedback_empty_query_is_not_zero`). Cost Explorer's finest retroactive granularity is
+   a calendar day and this project ran several phases per day, so a per-phase actual is not
+   obtainable at all — the phases now carry `null`, this script prints `n/a`, and a
+   *numeric* per-phase actual is refused unless it names an `actual_source`. The
+   whole-project figure that IS measurable lives in `cost_model.yaml:actuals`, is checked
+   against the meter by `tools/read_actual_spend.py`, and is published with its window.
 
 Usage:
   estimate_cost.py                     # project and check
@@ -31,6 +41,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
@@ -59,8 +70,28 @@ def price_of(model: dict, name: str) -> dict:
     return p
 
 
+def ledger_total(acts: dict) -> float:
+    """Sum the attributed ledger lines.
+
+    `tools/read_actual_spend.py` computes this same sum against live Cost Explorer data. Two
+    readers of one file must be asserted to AGREE (`feedback_two_readers_one_format`), or
+    each will happily pin its own number while the other moves — so `check()` compares this
+    sum with `actuals.measured_usd` rather than trusting the published total.
+    """
+    return round(sum(float(e.get("usd") or 0.0)
+                     for e in (acts.get("ledger") or []) if e.get("attributed")), 4)
+
+
+_MISSING = object()
+
+
 def project(model: dict) -> tuple[list[dict], float]:
-    """Per-phase projection. Sums are computed here and nowhere else."""
+    """Per-phase projection. Sums are computed here and nowhere else.
+
+    `actual` is deliberately tri-state: a float (measured, and then it must name a source),
+    `None` (declared not measurable), or `_MISSING` (the field is absent, which `check()`
+    refuses — an absent field used to arrive here as 0.0 and print as a measured zero).
+    """
     rows = []
     for ph in model["phases"]:
         total = 0.0
@@ -75,7 +106,8 @@ def project(model: dict) -> tuple[list[dict], float]:
             "days": ph["days"], "amends": ph.get("amends") or [],
             "projected": round(total, 4),
             "declared": ph.get("projected_usd"),
-            "actual": ph.get("actual_usd", 0.0),
+            "actual": ph.get("actual_usd", _MISSING),
+            "actual_source": ph.get("actual_source"),
             "unverified": sorted(set(unverified)),
             "status": ph.get("status", "pending"),
         })
@@ -106,8 +138,42 @@ def sealed_min_days(problems: list[str]) -> int:
     return int(m.group(1))
 
 
+def stamp_problems(stamp: str, now: datetime | None = None) -> list[str]:
+    """Refuse an `actuals.read_at` that is not UTC, or that is in the future.
+
+    The first value this field ever held was `2026-09-21T21:49Z`, typed by hand while the reading it
+    described finished at `14:58:15Z`: local time on a UTC+8 machine wearing a `Z`. Nothing caught it,
+    because the only rule was "not empty" -- and an unparseable or impossible stamp is not empty. The
+    future check is the one that convicts this exact mistake, since a local stamp mislabelled UTC on
+    this machine is always ahead of the clock. `read_actual_spend.py --save-census` now PRODUCES the
+    value (`utc_stamp`), so this is the validator behind a producer rather than instead of one.
+
+    `now` is injected by every arm. An arm about "eight hours in the future" written against
+    `datetime.now()` would pass or fail by the timezone of whoever ran it, which is the defect itself.
+    """
+    out: list[str] = []
+    try:
+        read = datetime.strptime(stamp, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    except ValueError:
+        try:
+            read = datetime.strptime(stamp, "%Y-%m-%dT%H:%MZ").replace(tzinfo=timezone.utc)
+        except ValueError:
+            return [f"actuals.read_at is {stamp!r}, which is not an ISO UTC instant "
+                    f"(YYYY-MM-DDThh:mm[:ss]Z). An unparseable stamp passes an 'is it blank' "
+                    f"check and still cannot be compared to anything"]
+    ref = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    if read > ref:
+        ahead = (read - ref).total_seconds() / 3600.0
+        out.append(
+            f"actuals.read_at is {stamp}, which is {ahead:.1f} hour(s) in the future against "
+            f"{ref:%Y-%m-%dT%H:%M:%SZ}. A meter cannot have been read after now; the way this "
+            f"field goes wrong is local time labelled Z on a UTC+8 machine, which lands about "
+            f"eight hours ahead. Let `read_actual_spend.py --save-census` produce it")
+    return out
+
+
 def check(model: dict, rows: list[dict], total: float,
-          only: str | None = None) -> list[str]:
+          only: str | None = None, now: datetime | None = None) -> list[str]:
     problems: list[str] = []
     min_days = sealed_min_days(problems)
     ceiling = float(model["meta"]["ceiling_usd"])
@@ -152,6 +218,50 @@ def check(model: dict, rows: list[dict], total: float,
                 f"phase {r['id']} declares days={r['days']} but names no `amends:` "
                 f"targets — either it can amend something and should say so, or it is "
                 f"being replicated for no stated reason")
+
+    # The actual column, which is a claim about a meter and not an arithmetic result. These
+    # run over every phase, not just the one being authorised: what they protect is the
+    # honesty of the published file, which does not depend on which phase is in scope.
+    for r in rows:
+        if r["actual"] is _MISSING:
+            problems.append(
+                f"phase {r['id']} has no `actual_usd` field at all. Absent used to mean "
+                f"0.0 here, and 0.0 prints as $0.00 in COST.md next to nine phases that "
+                f"really did spend money. Write `null` and let the report say n/a")
+        elif r["actual"] is not None and not str(r["actual_source"] or "").strip():
+            problems.append(
+                f"phase {r['id']} declares actual_usd=${float(r['actual']):.4f} and names "
+                f"no `actual_source`. No per-phase actual can be read from Cost Explorer "
+                f"(daily is its finest retroactive granularity and this project ran several "
+                f"phases per day), so a number here has to say where it came from")
+
+    acts = model.get("actuals")
+    if acts is not None:
+        if acts.get("measured_usd") is None:
+            problems.append("actuals: exists but carries no measured_usd; the report would "
+                            "announce a measurement and print nothing")
+        win = acts.get("window") or {}
+        if not (win.get("start") and win.get("end")):
+            problems.append(
+                "actuals.window is incomplete. A spend figure without its window is the "
+                "share-without-a-denominator defect applied to money: $13.33 over seven "
+                "weeks and $13.33 over one afternoon are different findings")
+        stamp = str(acts.get("read_at") or "").strip()
+        if not stamp:
+            problems.append("actuals.read_at is absent; a meter reading is perishable and "
+                            "an undated one cannot be re-checked")
+        else:
+            problems.extend(stamp_problems(stamp, now))
+        summed = ledger_total(acts)
+        recorded = acts.get("measured_usd")
+        if recorded is not None and abs(float(recorded) - summed) > 0.005:
+            problems.append(
+                f"actuals.measured_usd says ${float(recorded):.4f} and its own attributed "
+                f"ledger lines sum to ${summed:.4f}. COST.md publishes the first and this "
+                f"file's other reader checks the second, so they have to agree")
+        if not (acts.get("ledger") or []):
+            problems.append("actuals: has no ledger; a total with no lines under it is a "
+                            "figure nobody can attribute or refute")
     return problems
 
 
@@ -160,7 +270,18 @@ def write_report(model: dict, rows: list[dict], total: float) -> None:
     contingency = model.get("contingency") or []
     csum = round(sum(float(c["usd"]) for c in contingency), 2)
     live = [r for r in rows if r["live"]]
-    spent = round(sum(float(r["actual"]) for r in rows), 2)
+    acts = model.get("actuals") or {}
+    # Two populations, counted separately, because the interesting number is how many phases
+    # have an actual AT ALL. Summing `None` as zero is how "we never measured this" became
+    # "this cost nothing" in every previous revision of this file.
+    measured_rows = [r for r in rows
+                     if r["actual"] is not _MISSING and r["actual"] is not None]
+    spent = round(sum(float(r["actual"]) for r in measured_rows), 2)
+    per_phase = (f"**per phase measured ${spent:.2f}** ({len(measured_rows)} of {len(rows)} "
+                 f"phases)") if measured_rows else \
+                (f"**per-phase actual: not obtainable** (0 of {len(rows)} phases)")
+    meter = acts.get("measured_usd")
+    win = acts.get("window") or {}
 
     L = []
     A = L.append
@@ -172,8 +293,14 @@ def write_report(model: dict, rows: list[dict], total: float) -> None:
     A("")
     A(f"**Ceiling ${float(m['ceiling_usd']):.2f}** · "
       f"**projected ${total:.2f}** · "
-      f"**contingency ${csum:.2f}** (worst case ${total + csum:.2f}) · "
-      f"**actual to date ${spent:.2f}**")
+      f"**contingency ${csum:.2f}** (worst case ${total + csum:.2f})")
+    A("")
+    if meter is not None:
+        A(f"**Measured at the meter: ${float(meter):.4f}** for the whole project, "
+          f"{win.get('start')} .. {win.get('end')} (end exclusive), read "
+          f"{acts.get('read_at')} · {per_phase}")
+    else:
+        A(f"**No spend has been read off a meter.** {per_phase}")
     A("")
     A("Standing authorisation is $1000/mo of project spend, so this project never "
       "needed to ask. Per `feedback_spend_authorization` the authorisation removes the "
@@ -187,10 +314,21 @@ def write_report(model: dict, rows: list[dict], total: float) -> None:
     A("|:--|:--:|--:|--:|--:|:--|:--|")
     for r in rows:
         amends = ", ".join(r["amends"]) if r["amends"] else "—"
+        act = ("n/a" if r["actual"] is None or r["actual"] is _MISSING
+               else f"${float(r['actual']):.2f}")
         A(f"| **{r['id']}** {r['name']} | {'yes' if r['live'] else 'no'} | "
-          f"{r['days']} | ${r['projected']:.2f} | ${float(r['actual']):.2f} | "
+          f"{r['days']} | ${r['projected']:.2f} | {act} | "
           f"{amends} | {r['status']} |")
-    A(f"| | | | **${total:.2f}** | **${spent:.2f}** | | |")
+    tail = f"**${spent:.2f}**" if measured_rows else "**n/a**"
+    A(f"| | | | **${total:.2f}** | {tail} | | |")
+    A("")
+    A("`Actual` reads **n/a**, not $0.00, and the difference is the point. Cost Explorer's "
+      "finest retroactive granularity is a calendar day; this project ran several phases on "
+      "most of its days, so no per-phase actual exists to be read. Every phase carried "
+      "`actual_usd: 0.0` until 2026-09-21 and this table printed thirteen `$0.00`s and an "
+      "`actual to date $0.00` — a column of placeholders that read as a column of "
+      "measurements. The figure that *is* measurable is the whole-project one above, and it "
+      "is measured, not projected.")
     A("")
     A("`Days` is the number of distinct calendar days of observation, and it is derived "
       "from `May amend`, not chosen. A phase that may amend the document needs >= 2 "
@@ -198,6 +336,53 @@ def write_report(model: dict, rows: list[dict], total: float) -> None:
       "`check_amendment_readiness.py`); `estimate_cost.py` refuses to authorise a phase "
       "that names an amendment target and declares one day.")
     A("")
+    if acts:
+        A("## Actual spend, read off the meter")
+        A("")
+        A(f"*Read by `{acts.get('read_by')}` at {acts.get('read_at')}, over "
+          f"{win.get('start')} .. {win.get('end')} (end exclusive). Every figure below is "
+          f"re-derived from Cost Explorer on each run of that script, which refuses the "
+          f"ledger if a line has drifted, if a metered day is neither claimed nor excluded, "
+          f"or if a usage type in one of this project's services is missing from the table "
+          f"altogether.*")
+        A("")
+        A(f"{str(acts.get('measured_usd_note', '')).strip()}")
+        A("")
+        A(f"{str(acts.get('ce_request_note', '')).strip()}")
+        A("")
+        A(f"Attribution rests on {len(acts.get('project_days') or [])} calendar days this "
+          f"project's own artifacts place it on, across "
+          f"{len(acts.get('services_touched') or [])} services it provably called. The days "
+          f"are derived from the repository, not listed by hand, so a ledger line claiming a "
+          f"day nothing happened on is refused.")
+        A("")
+        A("| Usage type | Service | Basis | USD |")
+        A("|:--|:--|:--|--:|")
+        ledger = acts.get("ledger") or []
+        for e in [x for x in ledger if x.get("attributed")]:
+            A(f"| `{e['usage_type']}` | {e['service']} | {e.get('basis', '—')} | "
+              f"${float(e.get('usd') or 0.0):.4f} |")
+        A(f"| | | **attributed to this project** | **${ledger_total(acts):.4f}** |")
+        A("")
+        rejected = [x for x in ledger if not x.get("attributed")]
+        if rejected:
+            A(f"And **{len(rejected)} lines this project will not claim**, with their real "
+              f"amounts, because a rejection with no number attached cannot be checked:")
+            A("")
+            A("| Usage type | Service | USD at the meter | Why not claimed |")
+            A("|:--|:--|--:|:--|")
+            for e in rejected:
+                why = " ".join(str(e.get("reason", "")).split())
+                why = why if len(why) <= 180 else why[:177].rstrip() + "..."
+                A(f"| `{e['usage_type']}` | {e['service']} | "
+                  f"${float(e.get('usd') or 0.0):.4f} | {why} |")
+            A("")
+            A("The largest of these dwarf the project's entire spend. That is the finding, "
+              "not an inconvenience: a day rule over this account's shared lines would have "
+              "attributed hundreds of dollars of unrelated storage and request traffic to a "
+              "guardrails study, and the attribution note above records the measured size of "
+              "that error.")
+            A("")
     A("## What the replication requirement cost")
     A("")
     A("Nothing, in eight of the ten live phases — and the reason is a design decision "

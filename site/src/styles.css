@@ -303,6 +303,20 @@ section > h3 {
   border-style: dashed;
 }
 
+/* A verdict that does not answer part of its own question. The chip keeps its verdict colour — the
+   verdict is unchanged and recolouring it would read as a fifth verdict — and gains a dashed underline
+   plus the dagger the component renders. A colour change alone would also be invisible to anyone
+   reading this in monochrome or with a colour deficiency, and the mark has to survive that: a class
+   token in the stylesheet is not a rendered difference until it is looked at
+   (`feedback_class_token_is_not_a_colour`). */
+.v-partial {
+  border-style: dashed;
+}
+.undecided-mark {
+  cursor: help;
+  font-weight: 600;
+}
+
 .chip {
   display: inline-block;
   background: var(--bg-inset);

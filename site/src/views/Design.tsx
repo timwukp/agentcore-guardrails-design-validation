@@ -168,7 +168,13 @@ function Evidence({ cases, asserted }: { cases: PracticeCase[]; asserted: Practi
           <Link to={`/case/${c.case}`} className="mono">
             {c.case}
           </Link>{" "}
-          <VerdictBadge v={c.verdict} />
+          {/* The mark matters most here, of all the places it is drawn. This page's entire claim is
+              "this practice was measured", so a chip reading FALSE under a practice — with no
+              indication that the policy forbids reading it as FALSE on the sub-question the practice
+              is actually about — is the strongest version of the misreading the mark exists to
+              prevent. Same shape as the register and the case page on purpose: a mark that appeared
+              on some pages and not others would be a mark whose absence carried no information. */}
+          <VerdictBadge v={c.verdict} undecided={c.undecided} />
           {says.has(c.case) ? (
             <span className="desasserted">
               {says.get(c.case) ? (
@@ -282,7 +288,10 @@ function Rulings({ rows }: { rows: PracticeRuling[] }) {
                 </span>
                 <span className="desasserted">
                   {t("des.docSays")} <span className="mono">{r.asserted}</span> · {t("des.registerSays")}{" "}
-                  <VerdictBadge v={r.on_disk} />
+                  {/* Seven of these rows are the F6 open adjudications, so this is the densest place on
+                      the site where a restricted verdict is quoted — and it was bare until the browser
+                      walk counted it. */}
+                  <VerdictBadge v={r.on_disk} undecided={r.undecided} />
                 </span>
               </td>
             </tr>
@@ -561,7 +570,7 @@ export default function DesignView() {
             <Link to={`/case/${c.case}`} className="mono">
               {c.case}
             </Link>{" "}
-            <VerdictBadge v={c.verdict} />
+            <VerdictBadge v={c.verdict} undecided={c.undecided} />
             <span className="destitle" lang="en">
               {c.title}
             </span>

@@ -72,6 +72,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+# The citation policy's reader, and the ONE implementation of what its restriction phrases mean. The
+# audit report program imports the same module for the same rule.
+import check_controls  # noqa: E402
 
 RESULTS = ROOT / "results"
 PHASE1 = RESULTS / "phase1"
@@ -534,6 +539,32 @@ def derive_citation_policy(inputs: dict[str, str]) -> dict:
         die(f"results/CITATION-POLICY.md machine block is not valid JSON: {e}")
     meta["body_md"] = MACHINE_RE.sub("", text).strip()
     return meta
+
+
+# A restriction entry of the shape "not citable as TRUE on X" *and* "not citable as FALSE on X" is
+# saying something a verdict badge cannot: on the sub-question X, this study established nothing, and the
+# verdict on disk is about something else. The rule that reads those phrases lives in
+# `check_controls.py`, beside the policy reader, because THREE programs publish a verdict beside a case
+# id — this builder, the audit report's JSON and that report's Markdown — and a rule the audit program
+# cannot import is a rule the audit program will re-implement differently
+# (`feedback_two_readers_one_format`).
+#
+# `UNDECIDED_STATUS` is deliberately NOT a sixth verdict: `results/phase1/<case>.json` still reads
+# FALSE, every count still counts it as FALSE, and the note says only that a NAMED sub-question inside
+# the case is undecided. A reader looking at a bare `FALSE` chip on a list cannot know that; that is the
+# whole defect (issue #37's F6 adjudication).
+UNDECIDED_STATUS = check_controls.UNDECIDED_STATUS
+
+
+def derive_undecided_subquestions(policy: dict) -> dict[str, list[dict]]:
+    """Per case, the sub-questions the citation policy forbids both directions on.
+
+    Over the payload's own `citation_policy.json` rather than the source markdown, so what the site
+    marks is derived from the bytes the site ships. The rule itself is
+    `check_controls.undecided_subquestions`, whose docstring records what it deliberately does not
+    select and why.
+    """
+    return check_controls.undecided_subquestions(policy.get("restrictions") or [])
 
 
 DATE_RE = re.compile(r"(20\d{2}-\d{2}-\d{2})")
@@ -1254,7 +1285,8 @@ def _plain(obj, where: str):
 
 
 def derive_controls(inputs: dict[str, str], cases: dict, published: dict,
-                    restricted: dict[str, list[str]]) -> dict:
+                    restricted: dict[str, list[str]],
+                    undecided: dict[str, list[dict]]) -> dict:
     """The authored control→case mapping, with every annotation derived here rather than authored.
 
     The split is the same one `families.yaml` uses and it is the whole point of the file. Which
@@ -1288,6 +1320,10 @@ def derive_controls(inputs: dict[str, str], cases: dict, published: dict,
         return {"case": case_id, "verdict": pub.get("verdict"),
                 "has_verdict": bool(pub.get("verdict")),
                 "restrictions": restricted.get(case_id, []),
+                # Sub-question names only, in every annotated row on every page that draws a verdict
+                # chip. One shape for all three annotators on purpose: a chip that carried the mark on
+                # the register and not on the design page would be a mark whose absence means nothing.
+                "undecided": [r["subquestion"] for r in undecided.get(case_id, [])],
                 "family": cases[case_id][0], "title": cases[case_id][1]}
 
     rows = []
@@ -1686,7 +1722,8 @@ def _section_why_these_cases(sid: str) -> dict[str, str]:
 
 def derive_architecture(inputs: dict[str, str], cases: dict, published: dict,
                         restricted: dict[str, list[str]], metrics: dict[str, int],
-                        sections: dict[str, dict]) -> dict:
+                        sections: dict[str, dict],
+                        undecided: dict[str, list[dict]]) -> dict:
     """The authored topology of the diagrams, with every annotation and coordinate derived here.
 
     The coverage claim is the arm worth reading twice. Placed cases plus the authored `unplaced_cases`
@@ -1728,6 +1765,10 @@ def derive_architecture(inputs: dict[str, str], cases: dict, published: dict,
         pub = published.get(case_id) or {}
         return {"case": case_id, "verdict": pub.get("verdict"),
                 "restrictions": restricted.get(case_id, []),
+                # Sub-question names only, in every annotated row on every page that draws a verdict
+                # chip. One shape for all three annotators on purpose: a chip that carried the mark on
+                # the register and not on the design page would be a mark whose absence means nothing.
+                "undecided": [r["subquestion"] for r in undecided.get(case_id, [])],
                 "family": cases[case_id][0], "title": cases[case_id][1]}
 
     out_diagrams, placed = [], {}
@@ -1901,7 +1942,8 @@ PRACTICE_STATUS_BASIS = {
 
 
 def derive_practices(inputs: dict[str, str], cases: dict, published: dict,
-                     restricted: dict[str, list[str]]) -> dict:
+                     restricted: dict[str, list[str]],
+                     undecided: dict[str, list[dict]]) -> dict:
     """The 45 best practices, read out of both editions, with each one's evidence joined to it.
 
     WHY NOTHING HERE IS AUTHORED
@@ -1944,6 +1986,10 @@ def derive_practices(inputs: dict[str, str], cases: dict, published: dict,
         pub = published.get(case_id) or {}
         return {"case": case_id, "verdict": pub.get("verdict"),
                 "restrictions": restricted.get(case_id, []),
+                # Sub-question names only, in every annotated row on every page that draws a verdict
+                # chip. One shape for all three annotators on purpose: a chip that carried the mark on
+                # the register and not on the design page would be a mark whose absence means nothing.
+                "undecided": [r["subquestion"] for r in undecided.get(case_id, [])],
                 "family": cases[case_id][0], "title": cases[case_id][1]}
 
     sections = {}
@@ -1978,6 +2024,14 @@ def derive_practices(inputs: dict[str, str], cases: dict, published: dict,
         return {k: m[k] for k in ("case", "asserted", "where", "line", "disposition", "kind", "why",
                                  "evidence", "rule", "reason", "on_disk", "restrictions")
                 if k in m} | {
+            # The fourth producer of a verdict chip, and the one the first pass of this change missed:
+            # the rulings table renders "the document says X · the register says <chip>", and its chip
+            # came out bare while the three `annotate()` callers were all marked. The browser walk found
+            # it — 7 chips per locale on `/design`, every one of them an F6 row. A census of chip-drawing
+            # rows has to be taken from EVERY producer, not from the ones that share a helper
+            # (`feedback_derive_from_every_producer`), which is why `arm_undecided_subquestions` now
+            # sweeps the whole payload for rows carrying `restrictions` instead of reading two files.
+            "undecided": [r["subquestion"] for r in undecided.get(m["case"], [])],
             "unit": m.get("unit"), "register_item": m.get("register_item"),
             "restriction": m.get("restriction"), "withheld": m.get("withheld"),
             "blocked_on": m.get("blocked_on"),
@@ -2510,10 +2564,14 @@ def main(argv: list[str] | None = None) -> int:
     if unknown:
         die(f"results/CITATION-POLICY.md names {unknown}, which are not in the sealed register")
 
+    # Read off the same restrictions, in the same pass, so the presentation of an undecided sub-question
+    # cannot name a case the citation policy does not restrict.
+    undecided = derive_undecided_subquestions(policy)
+
     # After `restricted`, deliberately: every badge this page renders is a restriction the citation
     # policy states, so the derivation cannot run before the policy has been read.
     with scope() as s_controls:
-        controls = derive_controls(inputs, cases, published, restricted)
+        controls = derive_controls(inputs, cases, published, restricted, undecided)
     # No new sources: every day here comes from the verdict files and the archive that the register,
     # published and archive scopes already recorded. Its source list is theirs, plus families.yaml for
     # the cadence it compares against.
@@ -2525,7 +2583,7 @@ def main(argv: list[str] | None = None) -> int:
     # chip and every status beside a practice is read out of those three — and the adjudication of a
     # citation the policy restricts cannot be decided before the policy has been read.
     with scope() as s_practices:
-        practices = derive_practices(inputs, cases, published, restricted)
+        practices = derive_practices(inputs, cases, published, restricted, undecided)
     # And BEFORE the architecture, which is the newer dependency: the closed-loop diagram's boxes take
     # their headings and their cases from these sections rather than repeating them, so the section
     # table has to exist before a box can be drawn from it.
@@ -2534,7 +2592,8 @@ def main(argv: list[str] | None = None) -> int:
             inputs, cases, published, restricted,
             architecture_metrics(cases, published, restricted, archive, by_case, families, controls,
                                  figures, registers),
-            {s["id"]: s for s in practices["sections"]})
+            {s["id"]: s for s in practices["sections"]},
+            undecided)
     # The audit page: the two command-line programs run over the checked-in example submission, in
     # process, so the published example is what the code does today rather than a stored output.
     with scope() as s_audit:
@@ -2553,6 +2612,9 @@ def main(argv: list[str] | None = None) -> int:
             "claims": sorted(by_case.get(cid, [])),
             "n_claims": len(by_case.get(cid, [])),
             "citation_restrictions": restricted.get(cid, []),
+            # The sub-questions this case's verdict does not answer, so every list that renders a
+            # verdict chip from `census.json` can mark it without fetching the case page.
+            "undecided_subquestions": [r["subquestion"] for r in undecided.get(cid, [])],
             "archive_labels": [a["label"] for a in archive.get(cid, [])],
             "files_without_verdict": pub.get("_no_verdict_files", []),
         })
@@ -2627,6 +2689,10 @@ def main(argv: list[str] | None = None) -> int:
             "claims": sorted(by_case.get(cid, [])),
             "citation_restrictions": [r for r in policy.get("restrictions", [])
                                       if cid in r.get("cases", [])],
+            # Derived from the restrictions above, not authored. Present only where the policy forbids
+            # both directions on a named sub-question, so a reader who meets a FALSE chip on a list is
+            # told, next to the chip, which part of the question the FALSE does not answer.
+            "undecided_subquestions": undecided.get(cid, []),
             "archive": archive.get(cid, []),
             "record": light,
             "series_available": sorted(heavy),

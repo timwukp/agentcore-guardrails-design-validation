@@ -26,6 +26,7 @@ guarantee is that no number in the block is a memory of a measurement.
 from __future__ import annotations
 
 import collections
+import importlib.util
 import json
 import re
 import sys
@@ -36,17 +37,35 @@ import pytest
 REPO = Path(__file__).resolve().parent.parent.parent.parent
 sys.path.insert(0, str(REPO / "platform" / "build"))
 
+import check_controls as cc  # noqa: E402
 import check_practices as cp  # noqa: E402
 from check_controls import read_verdicts  # noqa: E402
 
 MAP = REPO / "results" / "PRACTICE-EVIDENCE-MAP.md"
 GATE_TESTS = Path(__file__).parent / "test_check_practices.py"
+SITE_GATE_TESTS = Path(__file__).parent / "test_check_site_invariants.py"
+SPA_MUTANTS = Path(__file__).parent / "mutate_undecided_mark_arms.py"
+AUDIT_TESTS = REPO / "platform" / "audit" / "tests" / "test_report.py"
 SCHEMA = "grx-practice-evidence-map/1"
 
-# The four sections this test derives in full. `schema`, `note`, `derived_on` and
+# The five sections this test derives in full. `schema`, `note`, `derived_on` and
 # `authoritative_for_tooling` are prose about the block rather than measurements of the tree.
-DERIVED_SECTIONS = ("design", "citations", "adjudications", "gate")
+DERIVED_SECTIONS = ("design", "citations", "adjudications", "presentation", "gate")
 PROSE_KEYS = {"schema", "authoritative_for_tooling", "note", "derived_on"}
+
+# Every mutant of the payload half of issue #37's presentation change names the arm it must die by, so
+# the population is countable by the assertion rather than by a heading someone has to keep current
+# (`feedback_red_set_by_name`).
+PAYLOAD_MUTANT_RE = re.compile(r"expect_killed\(mutant, UNDECIDED_ARM")
+
+# An arm of the audit CLI's half is one that takes the `undecided` fixture — the fixture is what reaches
+# the rule, so an arm without it is not checking this change however it is named.
+AUDIT_ARM_RE = re.compile(r"def (test_\w+)\(([^)]*)\)", re.DOTALL)
+
+# A program READS the rule when it resolves it through the module that owns it, directly or through the
+# builder it imports as `B`. `walk_release.py` deliberately does not count: it reads the published key
+# out of the payload in a browser, which is the screen layer and not a second derivation.
+RULE_READER_RE = re.compile(r"(?:check_controls|\bB)\.\w*undecided_subquestions")
 
 
 @pytest.fixture(scope="module")
@@ -59,12 +78,35 @@ def machine():
     return data
 
 
+def _spa_mutants() -> int:
+    """`mutate_undecided_mark_arms.MUTANTS`, by import rather than by regex.
+
+    The list is five-tuples spanning several lines each; counting them with a pattern would be counting
+    a formatting habit. Loaded by path because the harness is deliberately not named `test_*` and must
+    not be collected, and because importing it must not depend on this file's sys.path.
+    """
+    spec = importlib.util.spec_from_file_location("_spa_mutants_probe", SPA_MUTANTS)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return len(module.MUTANTS)
+
+
+def _rule_readers() -> list[str]:
+    paths = []
+    for path in sorted((REPO / "platform").rglob("*.py")):
+        if "tests" in path.parts or path.name == "check_controls.py":
+            continue
+        if RULE_READER_RE.search(path.read_text(encoding="utf-8")):
+            paths.append(str(path.relative_to(REPO)))
+    return paths
+
+
 @pytest.fixture(scope="module")
 def derived():
     """The same two entry points the gate and the page use. No third derivation lives here."""
     result = cp.adjudicate()
     design = result["design"]
-    registered, _ = read_verdicts()
+    registered, verdicts = read_verdicts()
     census = design["citation_census"]
     cited = set(census["cases"])
     loc = collections.Counter(a["where"] for a in design["assertions"])
@@ -75,6 +117,10 @@ def derived():
                 for lang, freq in design["marker_frequency"].items()}
 
     disposition = collections.Counter(m["disposition"] for m in result["adjudications"])
+    restrictions = cc.read_policy_restrictions()
+    undecided = cc.read_undecided_subquestions()
+    audit_arms = [name for name, params in AUDIT_ARM_RE.findall(AUDIT_TESTS.read_text(encoding="utf-8"))
+                  if re.search(r"\bundecided\b", params)]
     return {
         "design": {
             "n_practices": design["n_practices"],
@@ -108,6 +154,30 @@ def derived():
             "open_ceiling": cp.MAX_OPEN_ADJUDICATIONS,
             "by_disposition": dict(sorted(disposition.items())),
             "open_register_items": sorted({m["register_item"] for m in result["open_findings"]}),
+        },
+        "presentation": {
+            "status": cc.UNDECIDED_STATUS,
+            "undecided_subquestions": undecided,
+            # From `results/phase1/*.json`, not from the policy's own `verdict_on_disk` field. The claim
+            # the map makes is that the FILES did not change, and reading the policy's copy of them would
+            # make that claim circular — the policy is the artifact this change acts on.
+            "verdict_on_disk": {case: verdicts[case] for case in sorted(undecided)},
+            "n_restrictions_read": len(restrictions),
+            "n_restrictions_selected": sum(1 for e in restrictions
+                                           if cc.undecided_subquestions([e])),
+            # The near miss the rule deliberately passes over: both directions withheld for a whole case
+            # rather than for a named sub-question. Counted so that a second one arriving moves a number
+            # in this block instead of arriving unnoticed.
+            "n_restrictions_forbidding_both_directions_for_a_whole_case": sum(
+                1 for e in restrictions
+                if {str(p).strip() for p in (e.get("not_citable_as") or [])} >= {"TRUE", "FALSE"}),
+            "rule_readers": _rule_readers(),
+            "mutation_arms": {
+                "payload": len(PAYLOAD_MUTANT_RE.findall(
+                    SITE_GATE_TESTS.read_text(encoding="utf-8"))),
+                "screen": _spa_mutants(),
+                "audit_cli": len(audit_arms),
+            },
         },
         "gate": {
             "mutation_arms": len(re.findall(r"^def test_", GATE_TESTS.read_text(encoding="utf-8"),

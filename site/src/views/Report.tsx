@@ -131,8 +131,18 @@ function Measurement({ m }: { m: ReportMeasurement }) {
       <div style={{ marginTop: 8 }}>
         {m.cases.map((k) => (
           <div key={k.case} style={{ marginBottom: 4 }}>
-            <Link to={`/case/${k.case}`} className="chip">
+            {/* A bare text chip, not a `VerdictBadge`, so the mark is added by hand here — the same
+                shape as `/audit`'s `measured_by` chips. The report's producer supplies `undecided`;
+                this component must not decide which cases are marked. */}
+            <Link
+              to={`/case/${k.case}`}
+              className="chip"
+              title={k.undecided.length
+                ? `${t("ui.verdict.undecidedMark")} ${k.undecided.join("; ")}`
+                : undefined}
+            >
               {k.case} · {k.verdict}
+              {k.undecided.length ? " †" : ""}
             </Link>
             {k.restrictions.map((r) => (
               <span key={r} className="badge restrict" style={{ marginRight: 4 }}>
@@ -357,8 +367,16 @@ function ReportBody({ r }: { r: AuditReport }) {
                 </td>
                 <td>
                   {x.licensed_by.map((l) => (
-                    <Link key={l.case} to={`/case/${l.case}`} className="chip">
+                    <Link
+                      key={l.case}
+                      to={`/case/${l.case}`}
+                      className="chip"
+                      title={l.undecided.length
+                        ? `${t("ui.verdict.undecidedMark")} ${l.undecided.join("; ")}`
+                        : undefined}
+                    >
                       {l.case} · {l.verdict}
+                      {l.undecided.length ? " †" : ""}
                     </Link>
                   ))}
                 </td>

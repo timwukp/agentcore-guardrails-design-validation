@@ -74,6 +74,14 @@ DIST = SITE / "dist"
 DEFAULT_PAYLOAD = REPO.parent / "grx-site-payload"
 STACK_NAME = "GrxLive"
 
+# The two `Cache-Control` values `upload()` sends, hoisted to module level on 2026-09-21 so that
+# `check_deployed_headers.py` can compare a header READ OFF A REAL OBJECT against the value this
+# publisher claims to set, instead of re-typing the string in a second file. Both sides of that
+# comparison must not come from the same place -- but here only one side does: the other is S3's
+# answer to `head-object`. Until then these were locals inside `upload()` and nothing checked them.
+IMMUTABLE_CACHE_CONTROL = "max-age=31536000, immutable"
+FRESH_CACHE_CONTROL = "no-cache, must-revalidate"
+
 # The interpreters are separate on purpose and the reasons differ per venv; see platform/README.md.
 # `.venv-oracle` is a measurement instrument (its botocore pin is what several F1/F8 verdicts read),
 # so it is used to RUN code here and never modified.
@@ -468,8 +476,8 @@ def upload(pub: Publish, bucket: str, distribution: str) -> None:
         fail(f"v/{pub.stamp}/ already has objects. An immutable prefix is never rewritten; "
              "re-run to get a new stamp.")
 
-    immutable = "max-age=31536000, immutable"
-    fresh = "no-cache, must-revalidate"
+    immutable = IMMUTABLE_CACHE_CONTROL
+    fresh = FRESH_CACHE_CONTROL
 
     print(f"\n=== upload release to {prefix}/")
     aws(["s3", "sync", str(DIST), f"{prefix}/", "--exclude", "data/*", "--exclude", "data",

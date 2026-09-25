@@ -476,3 +476,89 @@ def test_a_caveat_field_of_any_shape_renders(tmp_path):
     assert report_mod.as_text({"b": "2", "a": "1"}) == "a: 1 b: 2"
     assert report_mod.as_text("x" * 900).endswith("…")
     assert len(report_mod.as_text("x" * 900)) == 700
+
+
+# -------------------------------------------- the sub-question the policy leaves undecided
+#
+# This report prints "F6-2 — FALSE" beside a recommendation about the reader's own system, and on the
+# p99 tail that FALSE settles nothing: the citation policy refuses a TRUE and a FALSE alike there. The
+# caveat has to travel with the chip, in this program's own output, because the reader running the CLI
+# over their template never opens `results/CITATION-POLICY.md`.
+#
+# The rule lives in `check_controls.undecided_subquestions`, so these arms check that THIS program
+# carries what the rule derives — the site has its own arms for the same derivation, and two readers of
+# one policy file have to be made to agree rather than pinned separately
+# (`feedback_two_readers_one_format`).
+
+
+@pytest.fixture(scope="module")
+def undecided() -> dict[str, list[str]]:
+    got = check_controls.read_undecided_subquestions()
+    assert got, ("the citation policy leaves no sub-question undecided in both directions, so every "
+                 "arm below would pass over an empty set")
+    return got
+
+
+def test_a_cited_case_carries_the_sub_questions_the_policy_leaves_undecided(tmp_path, controls,
+                                                                           undecided):
+    case = sorted(undecided)[0]
+    mutant = copy.deepcopy(controls)
+    _target, finding = applicable(mutant)
+    finding["cites"] = [case]
+
+    r = build(tmp_path, mutant)
+    rows = [c for line in r["controls"] for m in line["measurements"] for c in m["cases"]
+            if c["case"] == case]
+    assert rows, f"{case} was cited and appears in no measurement"
+    for row in rows:
+        assert row["undecided"] == undecided[case], row
+
+
+def test_a_case_the_policy_leaves_decided_carries_an_empty_list_not_a_missing_key(tmp_path, controls,
+                                                                                 verdicts, undecided):
+    # The absent key is the defect: a consumer reading `row["undecided"]` must not have to guess whether
+    # a missing key means "decided" or "this report predates the field".
+    case = next(c for c in sorted(verdicts) if c not in undecided)
+    mutant = copy.deepcopy(controls)
+    _target, finding = applicable(mutant)
+    finding["cites"] = [case]
+
+    r = build(tmp_path, mutant)
+    rows = [c for line in r["controls"] for m in line["measurements"] for c in m["cases"]
+            if c["case"] == case]
+    assert rows
+    for row in rows:
+        assert row["undecided"] == [], row
+
+
+def test_the_markdown_names_the_undecided_sub_question_under_the_case(tmp_path, controls, undecided):
+    case = sorted(undecided)[0]
+    mutant = copy.deepcopy(controls)
+    _target, finding = applicable(mutant)
+    finding["cites"] = [case]
+
+    md = report_mod.markdown(build(tmp_path, mutant))
+    for question in undecided[case]:
+        assert question in md, (f"the Markdown report names {case} without naming {question!r}, which "
+                                f"is the sub-question its verdict does not answer")
+    assert "did not settle" in md
+
+
+def test_a_licence_under_a_recommendation_carries_the_caveat_in_json_and_in_prose(tmp_path, controls,
+                                                                                 undecided,
+                                                                                 verdicts):
+    # The last place a verdict may read as settled. A recommendation is a sentence about the reader's
+    # system, and its licence is what this study is being made to say.
+    case = next((c for c in sorted(undecided) if verdicts.get(c) in ("TRUE", "FALSE")), None)
+    assert case, "no undecided case carries a citable verdict, so no recommendation can rest on one"
+    mutant = copy.deepcopy(controls)
+    _target, finding = applicable(mutant)
+    finding["cites"] = [case]
+
+    r = build(tmp_path, mutant)
+    licences = [l for rec in r["recommendations"] for l in rec["licensed_by"] if l["case"] == case]
+    assert licences, f"{case} is citable and licensed no recommendation in this fixture"
+    for lic in licences:
+        assert lic["undecided"] == undecided[case], lic
+    md = report_mod.markdown(r)
+    assert f"did not settle {', '.join(undecided[case])}" in md

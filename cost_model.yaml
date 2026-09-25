@@ -26,9 +26,35 @@ meta:
     projected (default path + 5c + 6b)". The upper end is the ceiling; the lower end is
     not a target.
   attribution: >
-    Actuals are read by resource tag Project=guardrails-doc-validation, never by
-    service. This account carries roughly $27k/mo of unrelated spend, so a
-    service-level filter would misattribute other systems' cost to this project.
+    CORRECTED 2026-09-21, by measurement. This field used to read: "Actuals are read by
+    resource tag Project=guardrails-doc-validation, never by service. This account carries
+    roughly $27k/mo of unrelated spend." Three of those four claims are wrong, and the
+    method it describes returns $0 with no error. (1) The `Project` tag key is INACTIVE in
+    Billing -- of 261 user-defined keys exactly one is Active -- so the filter it names
+    matches nothing; the positive control against the active key returns $23,477.99 in the
+    same log. (2) This project uses TWO tag values, `guardrails-doc-validation` on 29
+    resources and `grx-validation` on 2, so no single value ever saw both halves. (3) The
+    account carries $47,629.88 for August 2026, not $27k -- the qualifier was
+    unquantified prose that went stale (feedback_quantify_qualifiers). What survives is the
+    fourth claim: a service-level filter WOULD misattribute other systems' cost, and the
+    measured size of that error is now on the record -- TWICE, because the obvious
+    replacement for a broken tag is a rule keyed on days, and there are two such rules that
+    fail in opposite directions. Claim a whole line if ANY of its spend lands on a project
+    day: $70,905.69 over 1,154 lines, 5,303x the truth on the 2026-09-21T15:51:30Z reading (this
+    one GROWS between readings, because the shared lines it sweeps in keep billing daily, and it is
+    recomputed on every run rather than trusted from here), because this account's biggest lines are
+    storage and request traffic billed every single day, so every project day intersects them. Claim a line only if ALL of its spend is on project days: $11.70 over 105 lines --
+    BELOW the ledger, and it loses the expensive part, because it cannot see a shared line at
+    all. The orphaned 40 GB volume, the single most valuable thing this measurement found, is
+    invisible to it. No rule keyed on days alone can work here, which is why every ledger line
+    below carries a named basis instead. Both numbers are recomputed on every run so this
+    paragraph cannot go stale the way the $27k one did. Actuals are read per
+    (SERVICE, USAGE TYPE) pair -- keyed on the pair because 159 usage-type names in this
+    window appear under more than one service, `DataTransfer-Out-Bytes` under ten of them, and
+    a census keyed on the name alone silently sums unrelated services. Checked by
+    tools/read_actual_spend.py against 1,309 pairs over 51 days. Per-PHASE actuals are not
+    obtainable at all: Cost Explorer's finest retroactive granularity is a calendar day and
+    this project ran several phases per day, so every phase carries actual_usd: null.
 
 # ---------------------------------------------------------------------------
 # Unit prices. `verified: false` blocks live phases that depend on the price.
@@ -161,6 +187,24 @@ prices:
       $0.13) but it is a real charge that outlives the experiment, and Phase 8's +30d
       regression means the logs are deliberately retained rather than swept at teardown.
 
+  ebs_gp3_gb_month:
+    usd: 0.08
+    unit: "1 GB-month of gp3 volume, us-east-1"
+    source: "Pricing API, AmazonEC2 EBS:VolumeUsage.gp3: $0.08 per GB-mo"
+    pricing_api:
+      service_code: AmazonEC2
+      usagetype: EBS:VolumeUsage.gp3
+    verified: true
+    note: >
+      Added 2026-09-21, and it is the only price in this file that the METER verified
+      before the Pricing API did. `actuals.ledger`'s `EBS:VolumeUsage.gp3` entry needs it
+      to check its own arithmetic, and the account-wide gp3 line steps by $0.103226/day on
+      the day the runner's volume was created, which is 40 x 0.08 / 31 to six decimals --
+      the size and the price falling out of one measurement together. Absent from the
+      projection entirely, which is why the projection missed $4.09: a volume that
+      outlives its instance is exactly the charge a per-phase model cannot see, because it
+      belongs to no phase.
+
   control_plane_call:
     usd: 0.0
     unit: "1 control-plane API call (Create/Get/Update/List/Delete)"
@@ -219,7 +263,7 @@ phases:
     days_rationale: "offline; static inputs have no transient state to exclude"
     items: []
     projected_usd: 0.0
-    actual_usd: 0.0
+    actual_usd: null          # NOT MEASURABLE per phase -- see meta.attribution and actuals:
     status: complete
 
   - id: "1"
@@ -253,7 +297,7 @@ phases:
         qty: 840
         note: "prompt_attack 360 + hard_negatives 60 + benign 110 through promptAttack, x2 days-split arms"
     projected_usd: null      # computed
-    actual_usd: 0.0
+    actual_usd: null          # NOT MEASURABLE per phase -- see meta.attribution and actuals:
     status: pending
 
   - id: "2"
@@ -275,7 +319,7 @@ phases:
       - price: logs_storage_gb_month
         qty: 0.02
     projected_usd: null
-    actual_usd: 0.0
+    actual_usd: null          # NOT MEASURABLE per phase -- see meta.attribution and actuals:
     status: pending
 
   - id: "3"
@@ -321,7 +365,7 @@ phases:
       - price: guardrail_text_unit
         qty: 400
     projected_usd: null
-    actual_usd: 0.0
+    actual_usd: null          # NOT MEASURABLE per phase -- see meta.attribution and actuals:
     status: pending
 
   - id: "4"
@@ -351,7 +395,7 @@ phases:
       - price: logs_insights_gb_scanned
         qty: 30
     projected_usd: null
-    actual_usd: 0.0
+    actual_usd: null          # NOT MEASURABLE per phase -- see meta.attribution and actuals:
     status: pending
 
   - id: "5"
@@ -374,7 +418,7 @@ phases:
       - price: guardrail_text_unit
         qty: 300
     projected_usd: null
-    actual_usd: 0.0
+    actual_usd: null          # NOT MEASURABLE per phase -- see meta.attribution and actuals:
     status: pending
 
   - id: "5c"
@@ -394,7 +438,7 @@ phases:
       - price: guardrail_text_unit
         qty: 60
     projected_usd: null
-    actual_usd: 0.0
+    actual_usd: null          # NOT MEASURABLE per phase -- see meta.attribution and actuals:
     status: pending
 
   - id: "6"
@@ -427,7 +471,7 @@ phases:
       - price: logs_insights_gb_scanned
         qty: 120
     projected_usd: null
-    actual_usd: 0.0
+    actual_usd: null          # NOT MEASURABLE per phase -- see meta.attribution and actuals:
     status: pending
 
   - id: "6b"
@@ -448,7 +492,7 @@ phases:
       - price: spans_ingest_gb
         qty: 0.1
     projected_usd: null
-    actual_usd: 0.0
+    actual_usd: null          # NOT MEASURABLE per phase -- see meta.attribution and actuals:
     status: pending
 
   - id: "7"
@@ -467,7 +511,7 @@ phases:
       - price: guardrail_text_unit
         qty: 180
     projected_usd: null
-    actual_usd: 0.0
+    actual_usd: null          # NOT MEASURABLE per phase -- see meta.attribution and actuals:
     status: pending
 
   - id: "8"
@@ -491,7 +535,7 @@ phases:
       - price: logs_insights_gb_scanned
         qty: 40
     projected_usd: null
-    actual_usd: 0.0
+    actual_usd: null          # NOT MEASURABLE per phase -- see meta.attribution and actuals:
     status: pending
 
   - id: "9"
@@ -501,7 +545,7 @@ phases:
     days_rationale: "offline analysis of already-collected evidence"
     items: []
     projected_usd: 0.0
-    actual_usd: 0.0
+    actual_usd: null          # NOT MEASURABLE per phase -- see meta.attribution and actuals:
     status: pending
 
   - id: "99"
@@ -513,7 +557,7 @@ phases:
       - price: control_plane_call
         qty: 300
     projected_usd: 0.0
-    actual_usd: 0.0
+    actual_usd: null          # NOT MEASURABLE per phase -- see meta.attribution and actuals:
     status: pending
 
 # ---------------------------------------------------------------------------
@@ -538,3 +582,507 @@ contingency:
     trigger: >
       Throttling forces retries beyond the 3-attempt backoff, re-running trials. Sized
       at roughly 20% of the metered phases.
+
+# ---------------------------------------------------------------------------
+# ACTUALS — what the meter says this project spent, and on whose authority.
+#
+# Read on 2026-09-21 from Cost Explorer, DAILY granularity, grouped by SERVICE and
+# USAGE_TYPE over the whole account: 1,309 (service, usage type) pairs across 51 days —
+# 51 and not 52 because Cost Explorer's newest complete day was 09-20, and days after it
+# are ABSENT from the answer rather than zero. Checked by
+# `tools/read_actual_spend.py`, which re-reads the meter and fails on any disagreement
+# with the figures below. It never writes this file — a number changing here is a
+# decision a person makes, printed side by side, the same rule `--verify-prices` follows.
+#
+# WHY THIS IS A LEDGER AND NOT A TAG FILTER
+# The method this file used to state ("read by resource tag Project=…, never by service")
+# cannot work, and each of its three failures was measured rather than argued:
+#   * the `Project` tag key is INACTIVE in Billing. Of 261 user-defined keys in this
+#     account exactly one is Active (`tums-project`). A Cost Explorer query filtered on
+#     an inactive key returns $0 with no error — the positive control is in the same log:
+#     the identical query against the active key returns $23,477.99. A $0 here was a
+#     claim about the query, not about the spend (`feedback_empty_query_is_not_zero`).
+#   * this project uses TWO tag values — 29 resources carry
+#     `Project=guardrails-doc-validation` and 2 carry `Project=grx-validation` — so no
+#     single filter value ever saw both halves.
+#   * Cost Explorer's finest retroactive granularity is a calendar DAY and this project
+#     ran several phases per day. Per-phase actuals are therefore not recoverable at all;
+#     hourly and resource-level data would have had to be enabled before the spend and
+#     retains 14 days. That is why every phase below carries `actual_usd: null`.
+#
+# WHY NOT JUST "DAYS WHEN THE PROJECT RAN"
+# Both versions of that rule were implemented and measured, and they fail in OPPOSITE
+# directions, which is the part a single number would have hidden:
+#   * generous ("any spend on a project day claims the whole line") — $70,905.69 over 1,154
+#     lines, 5,303x the truth on the 2026-09-21T15:51:30Z reading. This account's largest lines
+#     are shared storage and request traffic billed every day, so every project day intersects
+#     every one of them — which is also why this number GROWS on every re-read (it was
+#     $70,040.35 / 5,238x thirty-four minutes earlier). It is recomputed on every run; the stamp
+#     is here so the figure can be checked against the reading it came from rather than read as
+#     a constant (feedback_perishable_claim_cannot_be_checked).
+#   * strict ("only if all of the line's spend is on project days") — $11.70 over 105 lines,
+#     which is BELOW the $13.37 ledger. It errs by omission and drops exactly the expensive
+#     lines: the EBS volume and both Polly lines have spend from before this project began,
+#     and the EC2 instance has spend on three days no artifact backs. The orphaned 40 GB
+#     volume — the most valuable thing this measurement found — is invisible to it.
+# `read_actual_spend.py` recomputes both on every run, so this paragraph cannot go stale
+# the way the "$27k/mo" qualifier did, and neither can it be read as "be more careful with
+# the day list": no rule keyed on days alone works here.
+#
+# WHY THE CENSUS IS KEYED ON (SERVICE, USAGE TYPE) AND NOT ON THE NAME
+# Because usage-type names are not unique. In this window 159 names appear under more than
+# one service; `DataTransfer-Out-Bytes` appears under ten, and `TimedStorage-ByteHrs` under
+# S3, ECR and DynamoDB at once. The first version of the reader keyed on the name alone and
+# would have summed unrelated services into one line and reconciled a ledger entry against
+# the wrong total. Every entry below therefore names its `service`, and the checker refuses
+# an entry whose (service, usage type) pair the meter does not have.
+#
+# THE THREE BASES, in descending strength:
+#   quantity_match  the meter's quantity equals a quantity this project counted for
+#                   itself, from its own logs, at the time. Two meters agreeing.
+#   resource_match  a step in a shared account-wide line whose size and dollar rate both
+#                   match one identified resource this project created.
+#   day_set         the usage type exists only because of this project's own probes, and
+#                   its metered days fall inside the project's own days. The weakest, and
+#                   the only one that needs `excluded_days` to stay honest.
+# ---------------------------------------------------------------------------
+actuals:
+  read_at: "2026-09-21T15:51:30Z"
+  read_at_note: >
+    CORRECTED, twice, and the second correction is the point. This field first read
+    "2026-09-21T21:49Z", which was local time on a UTC+8 machine wearing a Z: the reading it described
+    finished at 14:58:15Z, so the published stamp sat seven hours in the FUTURE. It survived because
+    the only rule was "is it blank", and an impossible stamp is not blank. Two fixes, in the order that
+    matters: `read_actual_spend.py --save-census` now PRODUCES the value (`utc_stamp`, clock-injected
+    and covered by arms) and writes it into the census file beside the lines it describes, and
+    `estimate_cost.py` refuses a stamp that does not parse as UTC or that sits after the clock. The
+    first attempt at this field was then re-typed as "2026-09-21T15:32:19Z" — correct UTC, but derived
+    by a human reading `date -u`, which is the same class of authorship the fix was supposed to
+    remove, and the census it named had been written BEFORE the field existed and so could not carry
+    it. The value above is instead copied from the artifact that produced it:
+    evidence/cost/census-20260921T155109Z.json carries `read_at: 2026-09-21T15:51:30Z` in its own
+    body, and `read_actual_spend.py` prints a disagreement between the two on every run rather than
+    trusting either (feedback_mandatory_field_timing, feedback_two_readers_one_format).
+  read_by: "tools/read_actual_spend.py (Cost Explorer, DAILY, account-wide)"
+  window:
+    start: "2026-08-01"
+    end: "2026-09-21"           # end exclusive; Cost Explorer's newest complete day was 09-20
+  measured_usd: 13.3711
+  measured_usd_note: >
+    Against a $6.67 projection and a $95 ceiling: inside the ceiling by 7x, and TWICE the
+    projection. The gap is not a pricing error — it is three whole families the model
+    never had a line for. EC2 compute ($3.4969), the EBS volume ($4.0912) and Polly
+    ($2.2613) sum to $9.85, more than the entire projection. A cost model's omissions
+    dominate its arithmetic.
+  measured_usd_completeness_note: >
+    $13.3302 of this was written before the completeness check had ever run. The check then
+    found 46 metered lines in this project's own services that the ledger did not mention,
+    and adjudicating them added $0.0409: the Nova Micro tokens behind every guardrail probe
+    ($0.0274 — the ledger had the units and not the model that produced them) and a t3 surplus
+    credit line ($0.0134). Three more were refused with reasons (a t3.micro, and two AgentCore
+    knowledge-base retrieval meters), and 40 fell below the $0.0005 tolerance and are exempt
+    under a published bound of $0.000097. The correction is 0.3% of the total and the point is
+    not its size: nobody was going to remember to look for the model line.
+  ce_request_cost_usd: 0.01
+  ce_request_note: >
+    Each get_cost_and_usage call is billed $0.01. The census itself is 17 calls ($0.17), and the
+    running total for measuring this project is ~$0.79 (79 requests), counted in
+    `session-logs/actual-spend-ledger-20260921.log` — the census, the tag experiments, the
+    service-name resolution and the re-read that produced the `read_at` above. This figure only
+    ever grows, so it is a running total with a named source rather than a fact about the project
+    (feedback_perishable_claim_cannot_be_checked); it read $0.45 before the stamp work forced a
+    second census. Re-checks themselves cost nothing: `--census-json` replays the saved census
+    offline, which is also what makes the ledger re-derivable without paying the meter again.
+    Disclosed because a measurement that hides its own price is the thing this project criticises
+    elsewhere.
+
+  # The days this project's own artifacts place it on, recorded so that a ledger entry
+  # claiming a day can be refused. Derived independently by
+  # `read_actual_spend.derive_project_days()` from five producers (evidence run dirs,
+  # runner transports, day-2 replications, timestamped results, session logs); the checker
+  # refuses any day below that no artifact backs.
+  project_days:
+    - "2026-08-09"
+    - "2026-08-10"
+    - "2026-08-11"
+    - "2026-08-12"
+    - "2026-08-13"
+    - "2026-08-14"
+    - "2026-08-15"
+    - "2026-08-19"
+    - "2026-08-20"
+    - "2026-08-23"
+    - "2026-09-10"
+    - "2026-09-16"
+    - "2026-09-17"
+    - "2026-09-18"
+    - "2026-09-21"
+
+  # Services this project provably called. Used for the COMPLETENESS refusal: any usage
+  # type in one of these services that is metered ONLY on this project's own days and is
+  # absent from the ledger below is a failure, because a ledger is a name list and a name
+  # list cannot notice a new name (`feedback_scope_as_namelist`). A name here that Cost
+  # Explorer does not return is also a failure — a typo would switch the check off
+  # silently, which is how a guard becomes vacuous.
+  services_touched:
+    - "Amazon Bedrock"
+    - "Amazon Bedrock AgentCore"
+    - "Amazon Elastic Compute Cloud - Compute"
+    - "Amazon Polly"
+    - "EC2 - Other"
+    - "Amazon Simple Storage Service"
+    - "Amazon CloudFront"
+    - "AWS Lambda"
+
+  ledger:
+    # ---- Bedrock guardrails: the probes themselves -----------------------------------
+    - usage_type: "USE1-Guardrail-ContentPolicyUnitsConsumed"
+      service: "Amazon Bedrock"
+      attributed: true
+      basis: day_set
+      usd: 2.1267
+      qty: 14178
+      days: ["2026-08-10", "2026-08-11", "2026-08-13", "2026-08-14", "2026-08-15", "2026-08-19"]
+      excluded_days:
+        "2026-08-21": >
+          36 units, $0.0054. No artifact in this repo places the project on 08-21 and the
+          two days either side are quiet, so this is not claimed. Left visible rather than
+          rounded away: an unexplained residual is a fact about the measurement.
+      reason: >
+        The dominant line, and the one the model priced. Content-filter text units exist in
+        this account only because of ApplyGuardrail / InvokeGuardrailChecks probes, and the
+        metered days are Phase 1, 3 and 6 days. The daily curve tracks the phases: 4,718
+        units on 08-10 and 5,130 on 08-11 (the bulk probe days), 70-530 on the 13th-15th
+        (day-2 replication), 3,494 on 08-19 (the second replication night).
+    - usage_type: "USE1-GuardrailChecks-ContentFilterCheckUnitsConsumed"
+      service: "Amazon Bedrock"
+      attributed: true
+      basis: day_set
+      usd: 0.68404
+      qty: 9772
+      days: ["2026-08-11", "2026-08-12", "2026-08-13", "2026-08-19"]
+      reason: >
+        The standalone `InvokeGuardrailChecks` API, priced separately from
+        `ApplyGuardrail`. Every metered day is a project day and the usage type appears
+        nowhere else in the 52-day window.
+    - usage_type: "USE1-Guardrail-SensitiveInformationPolicyPaidUnitsConsumed"
+      service: "Amazon Bedrock"
+      attributed: true
+      basis: day_set
+      usd: 0.155
+      qty: 1550
+      days: ["2026-08-10", "2026-08-11", "2026-08-13", "2026-08-14", "2026-08-15", "2026-08-19"]
+      reason: >
+        PII policy units. "Paid" is the meter's own word: the regex-based half of the PII
+        policy is free and the managed-entity half is not, which is why only one of the two
+        appears here at all.
+    - usage_type: "USE1-Guardrail-TopicPolicyUnitsConsumed"
+      service: "Amazon Bedrock"
+      attributed: true
+      basis: day_set
+      usd: 0.11145
+      qty: 743
+      days: ["2026-08-10", "2026-08-11", "2026-08-19"]
+      reason: "Denied-topic units from the F3 topic-policy probes."
+    - usage_type: "USE1-Guardrail-ContextualGroundingPolicyUnitsConsumed"
+      service: "Amazon Bedrock"
+      attributed: true
+      basis: day_set
+      usd: 0.0129
+      qty: 129
+      days: ["2026-08-10"]
+      reason: >
+        One day, 129 units. The grounding policy was exercised once, on 08-10, and never
+        again — consistent with a single case rather than a swept parameter.
+    - usage_type: "USE1-GuardrailChecks-PromptAttackCheckUnitsConsumed"
+      service: "Amazon Bedrock"
+      attributed: true
+      basis: day_set
+      usd: 0.0368
+      qty: 460
+      days: ["2026-08-10", "2026-08-15"]
+      max_daily_qty: 230
+      reason: >
+        230 units on each of exactly two days — the same count twice, which is what a
+        re-run of one fixed probe set looks like at the meter.
+    - usage_type: "USE1-Guardrail-WordPolicyUnitsConsumed"
+      service: "Amazon Bedrock"
+      attributed: true
+      basis: day_set
+      usd: 0.0
+      qty: 1144
+      days: ["2026-08-10", "2026-08-11", "2026-08-13", "2026-08-19"]
+      reason: >
+        A MEASURED zero, and the reason `actual_usd: 0.0` had to stop meaning "not
+        measured" elsewhere in this file. 1,144 word-policy units were consumed and billed
+        at $0.0000: the word-filter tier is free. This line is the one place in the ledger
+        where a zero is a result, and it is only legible because the quantity beside it is
+        not zero (`feedback_zero_needs_a_ran_flag`).
+
+    # ---- AgentCore policy engine -----------------------------------------------------
+    - usage_type: "USE1-Policy:Consumption-based:Authorization-API-Invocations"
+      service: "Amazon Bedrock AgentCore"
+      attributed: true
+      basis: day_set
+      usd: 0.3363
+      qty: 13452
+      days: ["2026-08-10", "2026-08-11", "2026-08-12", "2026-08-13", "2026-08-14", "2026-08-19"]
+      reason: >
+        13,452 authorization decisions. This account has exactly one set of policy engines
+        and this project created them (F4, F8-1, F5); the 6,804 on 08-11 and 5,002 on 08-19
+        are the two bulk decision-table runs.
+    - usage_type: "USE1-Policy:Consumption-based:Generation-Input-Tokens"
+      service: "Amazon Bedrock AgentCore"
+      attributed: true
+      basis: day_set
+      usd: 0.01755
+      qty: 0.0
+      days: ["2026-08-13", "2026-08-14"]
+      reason: >
+        Priced at $0.01755 with a usage QUANTITY of zero at the meter: Cost Explorer
+        charges for this line without exposing units for it. Recorded as it reads. A
+        quantity of 0.0 beside a non-zero cost is not an error to be tidied — it is the
+        meter declining to say how much, and inventing a number here would be worse.
+
+    # ---- the model behind the probes -------------------------------------------------
+    # Found by the completeness check on its first live run, not by remembering to look: the
+    # ledger had a line for every guardrail unit and no line for the model whose invocations
+    # produced them. $0.027 of tokens is immaterial to the total and entirely material to the
+    # claim that this ledger is complete.
+    - usage_type: "USE1-NovaMicro-input-tokens"
+      service: "Amazon Bedrock"
+      attributed: true
+      basis: day_set
+      usd: 0.006893
+      qty: 196.956
+      days: ["2026-08-11", "2026-08-13", "2026-08-19"]
+      reason: >
+        `f1_config/06_eval_scope.py:179` sets `DEFAULT_MODEL_ID = "us.amazon.nova-micro-v1:0"`,
+        and F1-28, F6-6 and F6-7 record that model id in their own outputs. The three metered
+        days are Phase 1 (08-11), the F5-9 model sweep (08-13) and the day-2 replication
+        (08-19, whose staged pre-run files carry the same model id).
+    - usage_type: "USE1-NovaMicro-output-tokens"
+      service: "Amazon Bedrock"
+      attributed: true
+      basis: day_set
+      usd: 0.020550
+      qty: 146.788
+      days: ["2026-08-11", "2026-08-13", "2026-08-19"]
+      reason: >
+        The output half of the same invocations, and three times the cost of the input half
+        on a quarter fewer units — output tokens are priced higher. Same days, same evidence.
+
+    # ---- the runner instance ---------------------------------------------------------
+    - usage_type: "BoxUsage:t3.small"
+      service: "Amazon Elastic Compute Cloud - Compute"
+      attributed: true
+      basis: day_set
+      usd: 3.496942
+      qty: 168.122
+      max_daily_qty: 24.0
+      days: ["2026-08-12", "2026-08-13", "2026-08-14", "2026-08-15", "2026-08-16",
+             "2026-08-17", "2026-08-18", "2026-08-19"]
+      unexplained_days: ["2026-08-16", "2026-08-17", "2026-08-18"]
+      unexplained_reason: >
+        Three full 24-hour days, $1.4976, on which this project produced NO artifact: the
+        runner instance stayed up across a weekend. It is ours — that is not in doubt — and
+        43% of the EC2 line bought nothing. The honest way to record idle spend is to claim
+        it and name it, not to drop the days because they are embarrassing.
+      reason: >
+        `runner/provision.py:62` launches exactly this instance type and nothing else in
+        this account does. The identification does not rest on the tag: the DAILY curve
+        never exceeds 24 hours (19.8, 18.1, 24.0, 19.3, 24.0, 24.0, 24.0, 15.0), so at most
+        ONE instance of this type ran at any moment, and the first and last days are
+        partial in the way a single create-then-terminate is. `max_daily_qty: 24.0` makes
+        that the checker's business rather than this paragraph's.
+
+    # ---- the volume nobody deleted ---------------------------------------------------
+    - usage_type: "EBS:VolumeUsage.gp3"
+      service: "EC2 - Other"
+      attributed: true
+      basis: resource_match
+      shared_line: true
+      usd: 4.091183
+      qty: null                  # the account-wide line is 345 GB-Mo; this entry claims a step in it
+      resource_monthly_qty: 40.0
+      price_key: ebs_gp3_gb_month
+      first_billed_day: "2026-08-12"
+      step_measurement:
+        baseline_days: ["2026-08-01", "2026-08-11"]   # inclusive range, before the volume existed
+        step_days: ["2026-08-14", "2026-08-31"]       # inclusive range, after it settled
+        days_in_step_month: 31
+      prorata:
+        - month: "2026-08"
+          days_held: 20
+          days_in_month: 31
+        - month: "2026-09"
+          days_held: 19
+          days_in_month: 30
+      reason: >
+        A FINDING, not just a cost line. `vol-0aaa5827f1d9dd730` is 40 GB of gp3, created
+        2026-08-12T04:15:02Z, tagged `ManagedBy=runner/provision.py` and
+        `Project=grx-validation`, and its state is `available` — it has been attached to
+        nothing since the runner was terminated on 08-19, and it is still billing today.
+        `runner/provision.py:358` sets `DeleteOnTermination: True`, so this volume should
+        not exist; `runner/teardown.py` has no volume sweep of any kind, so nothing in this
+        repo could have noticed. Two figures identify it independently of the tag: the
+        account-wide gp3 line steps by exactly 1.290323 GB-Mo/day on 08-12 and holds flat
+        with spread 0.000000 on both sides of the step, and 1.290323 x 31 = 40.000 GB; the
+        dollar step is $0.103226/day, which is 40 x $0.08 / 31 to six decimals. Note also
+        what the step contradicts: `provision.py:63` declares `VOLUME_GIB = 20` and
+        `teardown.py:47` discloses "~$1.60/month for the volume". The volume that exists is
+        twice the size the code says it creates and bills twice what the code discloses.
+    - usage_type: "CPUCredits:t3"
+      service: "EC2 - Other"
+      attributed: true
+      basis: day_set
+      usd: 0.013446
+      qty: 0.2689
+      days: ["2026-08-13"]
+      reason: >
+        Surplus CPU credits, 0.2689 vCPU-hours at $0.05 — a t3 in unlimited mode burning past
+        its baseline. Claimed in full, and the claim is an UPPER BOUND rather than an exact
+        figure: two t3 instances were metered on 08-13 (this project's t3.small for 18.06
+        hours, and a t3.micro for 2.07 hours that no artifact here accounts for), and the
+        credit line does not say which earned the surplus. Claiming all of it over-states this
+        project's own spend by at most $0.0134, and for a cost disclosure over-stating is the
+        safe direction. What makes it likely ours anyway is the day: `results/DEPENDENCY-AUDIT-
+        2026-08-13.md` records a CPU-bound dependency build on the runner that afternoon.
+    - usage_type: "USE1-SynthesizeSpeechGenerative-Characters"
+      service: "Amazon Polly"
+      attributed: true
+      basis: quantity_match
+      usd: 1.91979
+      qty: 63993
+      days: ["2026-09-15", "2026-09-16", "2026-09-18"]
+      unexplained_days: ["2026-09-15"]
+      unexplained_reason: >
+        Cost Explorer bills in UTC and `session-logs/` names carry the local date, and this
+        machine is UTC+8: the evening of 09-16 local is 09-15 UTC. `polly-spend-20260916-
+        video.log` is therefore the artifact for a day the derived project-day list does
+        not contain. The quantity check is what makes this safe to claim — the characters
+        add up whichever side of midnight they fell on.
+      excluded_days:
+        "2026-08-04": >
+          11,060 characters, $0.3318, five weeks before this project's first render and
+          not ours. This is precisely why Polly cannot use the day_set basis and needs the
+          quantity match instead.
+      reason: >
+        The English narration: Ruth on the generative engine. 63,993 characters.
+    - usage_type: "USE1-SynthesizeSpeechNeural-Characters"
+      service: "Amazon Polly"
+      attributed: true
+      basis: quantity_match
+      usd: 0.341536
+      qty: 21346
+      days: ["2026-09-15", "2026-09-16", "2026-09-18"]
+      unexplained_days: ["2026-09-15"]
+      unexplained_reason: "Same UTC/local boundary as the generative line above."
+      excluded_days:
+        "2026-08-04": "8,971 characters, $0.1435, not ours — same pre-project use."
+      reason: >
+        The Chinese narration: Zhiyu, cmn-CN, on the NEURAL engine because Polly has no
+        generative Chinese voice — the split between these two usage types at the meter is
+        the same editorial fact the page discloses. 21,346 characters.
+        Together the two Polly lines are 63,993 + 21,346 = 85,339 characters, which is
+        exactly 28,476 + 56,863: the totals this project counted from CloudWatch
+        `RequestCharacters` at render time and wrote into
+        `session-logs/polly-spend-20260916-video.log` and `…-20260918-chapters.log`. Two
+        meters, counted six days apart, agreeing to the character. `read_actual_spend.py`
+        parses those totals out of the logs rather than trusting the number here
+        (`feedback_two_readers_one_format`).
+
+    # ---- metered, and NOT ours -------------------------------------------------------
+    - usage_type: "APS1-Guardrail-ContentPolicyUnitsConsumed"
+      service: "Amazon Bedrock"
+      attributed: false
+      reason: >
+        481 content-policy units, $0.072150, in ap-southeast-1 on 2026-08-23 — a day this
+        project's artifacts DO cover, which is exactly why it is worth recording as a
+        refusal. Two facts overrule the calendar: every resource this platform created is
+        us-east-1, and `results/phase1/F8-1.json` says in its own words that
+        ap-southeast-1 "is outside the default probe set" and is "untested by this run".
+        08-23's artifacts are seven local site-build logs that make no AWS call at all. A
+        same-day match is not evidence, and this is the line that would have been claimed
+        if the day rule had been left to decide.
+    - usage_type: "BoxUsage:t3.micro"
+      service: "Amazon Elastic Compute Cloud - Compute"
+      attributed: false
+      reason: >
+        2.0694 hours, $0.021522, on 2026-08-13 — one on-demand t3.micro in us-east-1, since
+        2.0694 x $0.0104 reproduces the charge to six decimals, so this is a single instance
+        and not a fleet. Not claimed: `t3.micro` appears NOWHERE in this repository — not in
+        `runner/provision.py`, which hard-codes `t3.small` at line 62, not in `runner/README.md`
+        or `bootstrap.sh`, and not in any result, staging or transport artifact. The project's
+        own instance is separately metered on the same day (`BoxUsage:t3.small`, 18.06 hours),
+        so this is not a second reading of ours. CloudTrail could not settle it either way and
+        is deliberately NOT cited here: a single-day `lookup_events` for 08-12 and 08-13
+        returns zero events of any kind while the same reader returns events for recent days,
+        and an absence I cannot distinguish from unavailability is not evidence
+        (`feedback_zero_needs_a_ran_flag`).
+    - usage_type: "USE1-Knowledge-Base:Consumption-based:Retrieval"
+      service: "Amazon Bedrock AgentCore"
+      attributed: false
+      reason: >
+        6 retrieval units, $0.006, on 2026-08-13. Not claimed: no code path in this repository
+        calls a retrieval API. `Retrieve` / `RetrieveAndGenerate` / `bedrock-agent-runtime`
+        appear in no `.py` file here, and the only knowledge-base string anywhere is the TOOL
+        NAME `kb___search_knowledge_base` inside the tool lists F7-1 and F7-2 enumerated from
+        pre-existing gateways this project was told not to modify. Listing a gateway's tools is
+        a control-plane call and meters nothing; somebody else invoked the tool.
+    - usage_type: "USE1-Knowledge-Base:Consumption-based:AgenticRetrieval"
+      service: "Amazon Bedrock AgentCore"
+      attributed: false
+      reason: >
+        1 agentic-retrieval unit, $0.004, on 2026-08-13, same service and same argument as the
+        line above. Recorded separately because the meter keys them separately and a ledger
+        that merges two meters is the defect this whole census was rebuilt to avoid.
+
+    # ---- spent, real, and NOT SEPARABLE ---------------------------------------------
+    # These are not zero and they are not in the total. This project put objects in S3,
+    # served them through CloudFront, wrote CloudWatch logs and ran Lambdas, inside an
+    # account measured at $47,629.88 for August 2026 whose other work does all four things
+    # continuously. Every one of these usage types is metered on all 52 days of the window,
+    # so no day set, no quantity this project counted, and no resource step can separate
+    # our share from the rest. Recorded so that `measured_usd` is read as a floor with a
+    # named boundary rather than as a complete account (`feedback_share_needs_the_window`).
+    - usage_type: "Requests-Tier1"
+      service: "Amazon Simple Storage Service"
+      attributed: false
+      reason: >
+        S3 PUT/COPY/POST/LIST requests: $1,855.19 across the window, on all 51 days. Every
+        `publish_web.py` upload is in here and so is everything else this account does. The
+        payload bucket IS tagged `Project=grx-validation`, so an activated cost allocation
+        tag plus a `ce:StartCostAllocationTagBackfill` would make this separable in future —
+        both are account-wide decisions and neither is mine to take.
+    - usage_type: "Requests-Tier2"
+      service: "Amazon Simple Storage Service"
+      attributed: false
+      reason: "S3 GET/HEAD: $519.72 across the window, on all 51 days. Same boundary."
+    - usage_type: "TimedStorage-ByteHrs"
+      service: "Amazon Simple Storage Service"
+      attributed: false
+      reason: >
+        S3 storage: $2,007.82 across the window. The payload is a few hundred MB against an
+        account holding terabytes. Note what the usage-type NAME does not tell you: this
+        same name is also metered under Amazon DynamoDB and under ECR. A census keyed by
+        usage type alone would silently merge three services, which is why every entry in
+        this ledger carries a `service` and `read_actual_spend.py` keys on the pair.
+      collides_with: ["Amazon DynamoDB", "Amazon EC2 Container Registry (ECR)"]
+    - usage_type: "US-DataTransfer-Out-Bytes"
+      service: "Amazon CloudFront"
+      attributed: false
+      reason: >
+        CloudFront egress to viewers, and the one shared line with a real upper bound: the
+        ACCOUNT-WIDE figure for this usage type over the whole window is $0.0000. The four
+        published videos are 20 MB in total, and whatever they cost to serve is below the
+        meter's own resolution. Not attributed, because $0.0000 account-wide is a bound on
+        our share rather than a measurement of it — but unlike the S3 lines, the bound is
+        tight enough to say the number out loud.
+    - usage_type: "Lambda-GB-Second"
+      service: "AWS Lambda"
+      attributed: false
+      reason: >
+        $1.1493 account-wide. This project's echo Lambda (tagged
+        `Project=guardrails-doc-validation`) is one of several functions in the account and
+        its share is not separable at day granularity.

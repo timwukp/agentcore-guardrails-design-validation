@@ -1,0 +1,16 @@
+stack                 GrxLive
+CSP parsed from       platform/infra/lib/site-stack.ts (203 chars)
+CSP read from         cloudfront:GetResponseHeadersPolicy (present)
+behaviours checked    1
+objects probed        5 (floor 3)
+note                  live release /v/20260917T091943Z/
+
+PROBLEMS
+  Content-Security-Policy DRIFT: the deployed policy is not the stack's policy
+    in the stack source, MISSING from the deployed policy: "media-src 'self'"
+
+STILL OPEN (item 41, and this script cannot close it): the Lambda@Edge viewer decision.
+  A viewer request needs a Cognito session on a pool with mfa: REQUIRED, and this platform never
+  creates an account. That half closes only as a DATED human record -- someone with the second
+  factor loading the live page once and pasting the response headers into a log, labelled with the
+  release stamp it was read against, because it expires on the next deploy.

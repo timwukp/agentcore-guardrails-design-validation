@@ -162,6 +162,54 @@ third state in which a defect is quietly excused. `platform/build/tests/test_che
 25 arms, each of which mutates the passing tree and requires the named finding; the first is a
 no-mutant control, because a gate arm that has never fired is indistinguishable from one that cannot.
 
+## 5. The human ruling on the three open F6 findings, and the three layers that hold it
+
+Issue #37 put the three `OPEN_RESTS_ON_RESTRICTED_DIMENSION` findings of §3.2 to a human. The ruling was
+**change what is presented, not what was recorded.** `results/phase1/F6-2.json` still reads `FALSE`,
+`F6-5` and `F6-8` likewise; no verdict was recounted, so the mix `verdict_mix_sums_to_published` checks
+is the same mix it checked before. What changed is that every place this platform prints one of those
+three verdicts now prints, beside it, the sub-question the citation policy refuses in **both**
+directions — under the five-state vocabulary's own token `not_established`, with the verdict token left
+exactly as a reader searching `results/phase1/<case>.json` would type it, and with the sentence "the
+file did not change" said out loud on the case page.
+
+**It is a derivation over the policy, not a fourth list of case ids.** `check_controls.undecided_subquestions`
+reads `results/CITATION-POLICY.md`'s machine block and keeps a sub-question only where a restriction
+forbids `TRUE on X` and `FALSE on X` alike. Over the **10** restrictions in force that selects **2**
+entries and **3** cases — and it reached the same three a human adjudicated without being told which
+they were, which is the only reason it is worth more than the three ids written in the issue. Two
+near misses are deliberately not selected, and are named in the function's docstring because the place
+a guard excuses itself from looking is where the next instance hides: `NOT_A_VERDICT` forbids both
+directions for `F5-4a` and `F5-4b` as whole cases, which is a stronger statement with its own token and
+its own rendering; and `MECHANISM_ONLY` on `F1-19` and `NEVER_CITE` on `F5-3b` withhold something the
+direction pattern does not read as a direction at all, so calling them undecided would overstate the
+limit — the same damage to this study's credibility in the opposite direction.
+
+**Where the first attempt was wrong, twice.** The rule first lived in `build_site_data.py`, where the
+audit CLI could not reach it, and the first pass marked the case pages and the census rows only. A
+browser walk over the built site then found seven unmarked chips per locale on `/design`'s rulings
+table, drawn by a producer no JSON assertion was reading, and two more on `/report`. A bare `FALSE` in a
+list is read as an answer to the whole question, so an unmarked chip is not a cosmetic gap. The rule
+therefore sits in the module that owns the vocabulary, **3** programs reach it there
+(`platform/build/build_site_data.py`, `platform/build/check_site_invariants.py` through the builder, and
+`platform/audit/report.py`), and the gate now sweeps the payload's own bytes for any object naming a
+case beside a verdict rather than the two files it started with — 22 such rows across nine payload paths
+on the 2026-09-22 build, a count that moves with the payload and is therefore measured on every run
+instead of written down here.
+
+| layer | what it holds | how it is held |
+|---|---|---|
+| the payload | every producer's rows carry the derivation, both directions against the policy, plus a floor that refuses a sweep matching fewer rows than there are marked cases | **13** mutants in `platform/build/tests/test_check_site_invariants.py`, each killed by this arm **by name** — one per producer the walk found, one that renames a sub-question rather than dropping it, and one that blinds the sweep while leaving the derivation intact |
+| the screen | the dagger, its accessible name, the dashed border and the explanatory panel reach a real browser in both locales, and the count of marks is derived per page rather than asserted as a floor | **12** mutants in `platform/build/tests/mutate_undecided_mark_arms.py`, all killed by `walk_release.py` with a no-mutant control green on both sides of the run |
+| the audit CLI | a reader who runs the tool instead of the site gets the caveat, in the JSON and in the Markdown prose | **4** arms in `platform/audit/tests/test_report.py`, each checked against a producer mutation so that none of them can pass on a report that dropped the annotation |
+
+**What this ruling does not settle.** It does not pick a day. F6-2 and F6-5 flipped `FALSE → TRUE` on
+day 2 and F6-8's day-2 interval overlaps the documented range, and which day a published F6 figure
+should rest on is still register item 32's question. It also does not touch the seven citation sites in
+the design document, which remain a v1.5 editorial matter (§3.3). What it removes is the state where
+this platform's own pages presented those verdicts as settled while its own citation policy said they
+were not.
+
 ---
 
 <!-- machine
@@ -169,7 +217,7 @@ no-mutant control, because a gate arm that has never fired is indistinguishable 
   "schema": "grx-practice-evidence-map/1",
   "authoritative_for_tooling": false,
   "note": "Every value here is re-derived by platform/build/tests/test_practice_evidence_map.py from practices_source.extract_files() and check_practices.adjudicate(). This block exists so the prose above cannot drift: a number in a sentence is unchecked, and this project has been wrong that way before. Nothing here is evidence; the register and results/CITATION-POLICY.md are.",
-  "derived_on": "2026-08-23",
+  "derived_on": "2026-09-22",
   "design": {
     "n_practices": 45,
     "n_sections": 9,
@@ -207,6 +255,24 @@ no-mutant control, because a gate arm that has never fired is indistinguishable 
       "OPEN_QUALIFICATION_ABSENT": 4
     },
     "open_register_items": [32]
+  },
+  "presentation": {
+    "status": "not_established",
+    "undecided_subquestions": {
+      "F6-2": ["the p99 tail"],
+      "F6-5": ["the p99 tail"],
+      "F6-8": ["slope in [165,750]"]
+    },
+    "verdict_on_disk": {"F6-2": "FALSE", "F6-5": "FALSE", "F6-8": "FALSE"},
+    "n_restrictions_read": 10,
+    "n_restrictions_selected": 2,
+    "n_restrictions_forbidding_both_directions_for_a_whole_case": 1,
+    "rule_readers": [
+      "platform/audit/report.py",
+      "platform/build/build_site_data.py",
+      "platform/build/check_site_invariants.py"
+    ],
+    "mutation_arms": {"payload": 13, "screen": 12, "audit_cli": 4}
   },
   "gate": {"mutation_arms": 25}
 }

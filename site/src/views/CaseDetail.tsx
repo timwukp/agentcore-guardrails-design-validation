@@ -45,6 +45,7 @@ import {
   Loading,
   RawJson,
   Restrictions,
+  UndecidedSubquestions,
   VerdictBadge,
   useAsync,
 } from "../components/ui";
@@ -323,7 +324,14 @@ function Replication({ c }: { c: Case }) {
                   <span className="badge">{t("cs.rep.live")}</span> {c.verdict_file ?? "—"}
                 </td>
                 <td>
-                  <VerdictBadge v={live} />
+                  {/* The live row is this case's own verdict, so it carries the mark. The ARCHIVE rows
+                      below deliberately do not: the indecision here is a disagreement BETWEEN days, and
+                      marking a single archived day would assert the restriction applies to that day's
+                      measurement rather than to the adjudication across them. */}
+                  <VerdictBadge
+                    v={live}
+                    undecided={(c.undecided_subquestions ?? []).map((r) => r.subquestion)}
+                  />
                 </td>
                 <td className="mono" style={{ fontSize: 11.5 }}>
                   {String(c.record["run_id"] ?? "—")}
@@ -611,7 +619,11 @@ export default function CaseDetail() {
   return (
     <>
       <h2 className="view">
-        <span className="mono">{c.case}</span> <VerdictBadge v={c.verdict} />
+        <span className="mono">{c.case}</span>{" "}
+        <VerdictBadge
+          v={c.verdict}
+          undecided={(c.undecided_subquestions ?? []).map((r) => r.subquestion)}
+        />
       </h2>
       {/* The case title is the artifact's own one-line statement of what was measured. */}
       <p className="lede" lang="en">
@@ -647,6 +659,11 @@ export default function CaseDetail() {
         </div>
       ) : null}
 
+      {/* Before the restrictions, deliberately. The restriction block is a rule about citation, written
+          for someone about to quote this case; this block answers the question a reader has while looking
+          at the chip above — what does that verdict not tell me — and it is derived from the very
+          restrictions rendered below it. */}
+      <UndecidedSubquestions items={c.undecided_subquestions ?? []} />
       <Restrictions items={c.citation_restrictions} />
 
       <section>

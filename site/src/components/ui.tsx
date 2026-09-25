@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { PayloadError } from "../lib/data";
 import { T, useT } from "../lib/i18n";
 import { VERDICTS } from "../lib/types";
-import type { CitationRestriction, Verdict } from "../lib/types";
+import type { CitationRestriction, UndecidedSubquestion, Verdict } from "../lib/types";
 import { Markdown } from "../lib/md";
 
 /** Async load with the three states rendered distinctly. `null` data is never conflated with an
@@ -75,7 +75,21 @@ export function ErrorPanel({ error }: { error: unknown }) {
  * contain one — an archived F3-10 file carries WITHDRAWN, which is a real state of a real file and not
  * a fifth verdict. Coercing it to a colour would file it under a vocabulary it does not belong to;
  * dropping it would hide that the archive and the live register speak slightly different languages. */
-export function VerdictBadge({ v }: { v: Verdict | string | null }) {
+export function VerdictBadge({
+  v,
+  undecided,
+}: {
+  v: Verdict | string | null;
+  /** Names of sub-questions this verdict does not answer, from `undecided_subquestions`. When any are
+   *  present the chip carries a dagger and a tooltip naming them, because a bare `FALSE` on a list is
+   *  read as an answer to the whole question — issue #37's F6 adjudication. Optional for exactly one
+   *  call site: the ARCHIVE rows on a case page, where the indecision is a disagreement BETWEEN days
+   *  and marking one day would assert the restriction applies to that day's measurement rather than to
+   *  the adjudication across them (`CaseDetail.tsx`, and the reason is written there too). Every other
+   *  call site passes it, and `check_site_invariants.arm_undecided_subquestions` sweeps the whole
+   *  payload so a new producer cannot quietly become a second exception. */
+  undecided?: string[];
+}) {
   const t = useT();
   if (v === null || v === "") return <span className="badge v-none">{t("ui.verdict.none")}</span>;
   const known = (VERDICTS as readonly string[]).includes(v);
@@ -87,10 +101,74 @@ export function VerdictBadge({ v }: { v: Verdict | string | null }) {
     );
   // TRUE / FALSE / INCONCLUSIVE / RECORDED are never translated: they are the literal tokens in
   // `results/phase1/<case>.json`, and a reader comparing the page to the file searches for the token.
+  // The dagger is OUTSIDE the token for the same reason: `FALSE †` still contains the string a reader
+  // searches for, where `FALSE*` or a recoloured chip would not.
+  const marked = (undecided ?? []).filter((s) => s.trim().length > 0);
   return (
-    <span className={`badge v-${v}`} lang="en">
+    <span className={`badge v-${v}${marked.length ? " v-partial" : ""}`} lang="en">
       {v}
+      {marked.length ? (
+        <span
+          className="undecided-mark"
+          // The sub-question names are the citation policy's own strings, so they stay English for the
+          // same reason `derived_from` paths do; the sentence around them is this SPA's and is
+          // translated.
+          title={`${t("ui.verdict.undecidedMark")} ${marked.join("; ")}`}
+          aria-label={`${t("ui.verdict.undecidedMark")} ${marked.join("; ")}`}
+        >
+          {" †"}
+        </span>
+      ) : null}
     </span>
+  );
+}
+
+/** The sub-questions a verdict does not answer, rendered beside the verdict on a case page.
+ *
+ *  Data, never copy: every sentence below except the labels comes from `citation_policy.json`, which the
+ *  build reads and the invariant gate checks both ways. `status` renders as its identifier — the same
+ *  token the controls page and the architecture legend use — because coining a friendlier word for it
+ *  would put a fifth verdict on the page. */
+export function UndecidedSubquestions({ items }: { items: UndecidedSubquestion[] }) {
+  const t = useT();
+  if (!items.length) return null;
+  return (
+    <>
+      {items.map((r, n) => (
+        // `undecided` is on the box so `walk_release.py` can find this panel in a real browser without
+        // guessing at `.note.warn`, which four other components also use. A probe that located its
+        // subject by a shared class would read a different box on any page that reordered its notes.
+        <div className="note warn undecided" key={n}>
+          <div>
+            <span className="badge restrict" lang="en">
+              {r.status}
+            </span>{" "}
+            <strong>{t("ui.undecided.heading")}</strong>{" "}
+            <span className="mono" lang="en">
+              {r.subquestion}
+            </span>
+          </div>
+          <div style={{ marginTop: 6 }} lang="en">
+            {r.why}
+          </div>
+          {/* The one sentence a reader most needs and the one this platform is most tempted to leave
+              out: the file did not change. The gate asserts `verdict_on_disk` equals the verdict this
+              page renders, so these two tokens cannot drift apart. */}
+          <div style={{ marginTop: 6 }}>
+            {t("ui.undecided.diskUnchanged")}{" "}
+            <span className="mono" lang="en">
+              {r.verdict_on_disk}
+            </span>
+          </div>
+          <div style={{ marginTop: 6, color: "var(--fg-faint)", fontSize: 11.5 }}>
+            {t("ui.restrict.source")}{" "}
+            <span className="mono" lang="en">
+              {r.source}
+            </span>
+          </div>
+        </div>
+      ))}
+    </>
   );
 }
 

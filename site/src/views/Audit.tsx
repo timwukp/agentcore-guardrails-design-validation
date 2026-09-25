@@ -131,9 +131,24 @@ function ControlRow({ c }: { c: Control }) {
       <td>
         {c.measured_by.length ? (
           c.measured_by.map((m) => (
-            <Link key={m.case} to={`/case/${m.case}`} className="chip" title={m.title}>
+            // This chip prints the verdict as bare text rather than through `VerdictBadge`, so the
+            // dagger has to be added here by hand — and it has to be added, because the mark's meaning
+            // depends on it being drawn everywhere a verdict token is. The dagger stays outside the
+            // token, same as in `VerdictBadge`: `FALSE †` still contains the string a reader searches
+            // the payload for.
+            <Link
+              key={m.case}
+              to={`/case/${m.case}`}
+              className="chip"
+              title={
+                m.undecided.length
+                  ? `${m.title} — ${t("ui.verdict.undecidedMark")} ${m.undecided.join("; ")}`
+                  : m.title
+              }
+            >
               {m.case}
               {m.verdict ? ` · ${m.verdict}` : ` · ${t("ui.verdict.none")}`}
+              {m.undecided.length ? " †" : ""}
               {m.restrictions.length ? " ⚠" : ""}
             </Link>
           ))

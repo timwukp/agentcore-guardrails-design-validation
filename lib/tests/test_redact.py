@@ -497,3 +497,130 @@ def test_mask_walks_structures_not_just_strings():
     R.register_resource_id(FAKE_IDS[0])
     got = R.mask({FAKE_IDS[0]: [{"vpc": FAKE_IDS[0]}]})
     assert FAKE_IDS[0] not in json.dumps(got)
+
+
+# ------------------------------------------- excerpts: the mask for a string this project QUOTES
+
+def load_gate():
+    """The redaction gate, loaded by path. It is a root-level script, not an importable package."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("_gate", ROOT / "check_redaction.py")
+    gate = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gate)
+    return gate
+
+
+# A path under ROOT that `allowed()` can make relative. It does not have to exist -- `allowed` reads
+# the path only to match ALLOW's suffixes -- and a ledger name is used because the ledger is the file
+# these arms are about. No ALLOW entry names it, so nothing here is excused by a waiver.
+LEDGER = "platform/census/rendered-surfaces-20260101T000000Z.json"
+
+
+def sliced_quotation() -> str:
+    """The shape that failed: a line holding two ARNs, cut inside the second one's placeholder.
+
+    Assembled at runtime like every other identifier in this file, and for a sharper reason than
+    usual: a *sliced* ARN written as a literal would be a finding in this file, and this file has no
+    waiver. The fragment is the thing under test, so it cannot be spelled.
+    """
+    full = ("User: " + arn(account=ACCT, service="sts", region="",
+                           resource="assumed-role/grx-attacker/grx-harness")
+            + " is not authorized to perform: UpdateGateway on resource: "
+            + arn(account=ACCT, service="bedrock-agentcore", resource="gateway/grx-gw-1"))
+    masked = R.mask_text(full)
+    assert ACCT not in masked
+    # Cut four characters into the LAST placeholder: what a 200-character slice did six times.
+    return masked[:masked.rindex(R.ACCOUNT_PLACEHOLDER) + 4]
+
+
+def test_a_slice_through_the_placeholder_is_what_the_gate_fails_closed_on():
+    """The premise, asserted before the fix: without healing, the excerpt IS a finding.
+
+    An arm that only checked the masked form would pass just as happily if `mask_quotation` did
+    nothing at all, because the gate excuses a masked ARN anyway (`feedback_vacuous_test_check`).
+    """
+    gate = load_gate()
+    cut = sliced_quotation()
+    assert gate.PATTERNS_BY_NAME["arn"].search(cut), "the fixture is not in the shape the gate reads"
+    assert gate.allowed(ROOT / LEDGER, "arn", cut) is None, (
+        "the sliced fixture is already excused by the gate, so these arms would prove nothing -- "
+        "check that the cut still lands inside the placeholder")
+
+
+def test_an_excerpt_drops_the_arn_a_slice_cut_and_keeps_the_one_it_did_not():
+    gate = load_gate()
+    healed = R.mask_quotation(sliced_quotation())
+    assert gate.allowed(ROOT / LEDGER, "arn", healed) is not None, (
+        "the healed excerpt is still a finding, so a ledger carrying it could not ship")
+    assert gate.PATTERNS_BY_NAME["arn"].search(healed), (
+        "the first ARN was dropped too: healing must remove the FRAGMENT, not every ARN on the "
+        "line -- an excerpt with its evidence deleted is not an excerpt")
+    assert healed.count(R.ACCOUNT_PLACEHOLDER) == 1
+    assert len(healed) <= len(sliced_quotation()), "healing must only ever shorten"
+
+
+def test_a_complete_arn_at_the_end_of_an_excerpt_is_left_exactly_as_it_is():
+    """The over-chop failure. `region_of`/`partition_of` read ARN fields by position."""
+    whole = R.mask_text("resource: " + arn())
+    assert R.mask_quotation(whole) == whole
+    assert R.mask_quotation(whole).endswith(arn().rsplit(":", 1)[-1])
+
+
+def test_an_excerpt_masks_the_private_range_and_the_record_it_quotes_does_not():
+    """Strictly stronger than `mask_text`, and the asymmetry is the decision, not an oversight.
+
+    The CIDR is evidence in `results/phase1/F5-7b.json` -- the finding's claim that it cannot
+    collide with the runner's own addressing is only checkable if the range is named -- so
+    `mask_text`, which runs on the way into `results/`, must leave it alone. An excerpt makes no
+    such claim, so it gets the mask instead of a third reviewed waiver.
+    """
+    cidr = "10." + "61.0.0/16"
+    sentence = f"A VPC built for this case alone: {cidr}, a public subnet holding a NAT gateway"
+    assert cidr in R.mask_text(sentence), (
+        "mask_text has started masking private addresses, which rewrites the distributable record "
+        "-- that is a decision for results/, not a side effect of fixing an excerpt")
+    got = R.mask_quotation(sentence)
+    assert cidr not in got and R.PRIVATE_IP_PLACEHOLDER in got
+    assert not R.PRIVATE_IP.search(got), "the placeholder itself trips the pattern that made it"
+
+
+def test_the_gate_and_the_excerpt_mask_read_the_same_three_shapes():
+    """One spelling per shape, checked by identity where possible and by pattern text otherwise.
+
+    A mask narrower than the gate shows up as a finding; a mask WIDER than the gate silently
+    rewrites more of somebody's evidence than it had to, and nothing reports that. So the two sides
+    are derived from one object rather than agreed in a comment
+    (`feedback_derive_both_sides_of_a_gate`, `feedback_two_readers_one_format`).
+    """
+    gate = load_gate()
+    assert gate.PATTERNS_BY_NAME["private-ip"] is R.PRIVATE_IP, (
+        "the gate has stopped importing lib/redact.PRIVATE_IP, so there are two opinions about "
+        "what a private address looks like")
+    assert R._ARN_ANY.pattern == gate._ARN_DETECT.pattern, (
+        "what counts as an ARN at all differs between the gate and the excerpt mask")
+    assert R._ARN_THROUGH_ACCOUNT.pattern == gate._ARN_ACCOUNT_FIELD.pattern, (
+        "the gate decomposes an ARN with a pattern the excerpt mask does not mirror, so the mask "
+        "can heal a fragment the gate still reports, or spare one it does not")
+
+
+def test_masking_a_quotation_is_idempotent():
+    once = R.mask_quotation(sliced_quotation())
+    assert R.mask_quotation(once) == once
+    cidr_once = R.mask_quotation("route via 10." + "61.0.7")
+    assert R.mask_quotation(cidr_once) == cidr_once
+
+
+def test_mask_quotations_walks_the_structure_keys_included():
+    """A walk, not a rule for the field called `text`: the next field escapes a name list."""
+    cut = sliced_quotation()
+    got = R.mask_quotations({cut: [{"text": cut, "chars": 4000}, ("t", cut)]})
+    dumped = json.dumps(got, ensure_ascii=False)
+    gate = load_gate()
+    for line in dumped.splitlines():
+        for name, rx, _d in gate.PATTERNS:
+            if rx.search(line):
+                assert gate.allowed(ROOT / LEDGER, name, line) is not None, (
+                    f"[{name}] survives the walk in {line[:120]!r}")
+    assert cut not in got, "the key was published unmasked"
+    assert len(got) == 1 and next(iter(got)) == R.mask_quotation(cut), (
+        "the key is not the masked form of the key, so the walk did something other than mask it")

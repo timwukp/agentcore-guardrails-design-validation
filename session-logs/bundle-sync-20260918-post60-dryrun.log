@@ -1,0 +1,49 @@
+tools/sync_handover_bundle.py (DRY RUN, no --apply) --main-sha 8c35a4a0abc5 --main-blobs 1113
+Post-#60 re-sync, run 1 of N: what the merge of 81 files left stale in the bundle.
+
+repo    /Users/tmwu/Downloads/grx-validation: 43,074 files in scope for the bundle
+bundle  /Users/tmwu/Downloads/AgentCore-guardrails-closed-loop-practices
+  add    : 210
+    platform/build/tests/test_census_stamp.py
+    platform/build/tests/test_walk_release.py
+    platform/census/rendered-surfaces-20260918T064500Z.json
+    platform/census/rendered-surfaces-20260918T073359Z.json
+    platform/census/rendered-surfaces-20260918T074825Z.json
+    platform/census/rendered-surfaces-20260918T095804Z.json
+    platform/curation/register_zh.yaml
+    session-logs/2026-09-18-phase-chapters-and-bilingual-register.md
+    session-logs/2026-09-18-post-58-resync-and-the-sentence-that-expires.md
+    session-logs/build-20260918-chapters.log
+    session-logs/build-20260918-chapters.rc
+    session-logs/build-20260918-item43.log
+    … and 198 more
+  replace: 27
+    FUTURE-WORK.md
+    README.md
+    RECONNECT.md
+    WHITEPAPER.md
+    claims/tests/test_future_work_register.py
+    claims/tests/test_verify_phase0_gates_every_test_directory.py
+    platform/build/build_site_data.py
+    platform/build/census_rendered_surfaces.py
+    platform/build/check_site_invariants.py
+    platform/build/tests/test_build_site_data.py
+    platform/build/tests/test_check_site_invariants.py
+    platform/build/walk_release.py
+    … and 15 more
+  delete : 37
+    site/dist/assets/index-KGF2nRXR.js
+    video/out/frames/en/after-00.png
+    video/out/frames/en/before-00.png
+    video/out/frames/en/claim-00.png
+    video/out/frames/en/colours-00.png
+    video/out/frames/en/during-00.png
+    video/out/frames/en/honesty-00.png
+    video/out/frames/en/loop-00.png
+    video/out/frames/en/loop-01.png
+    video/out/frames/en/loop-02.png
+    video/out/frames/en/loop-03.png
+    video/out/frames/en/loop-04.png
+    … and 25 more
+
+dry run — nothing written. Re-run with --apply to sync.
