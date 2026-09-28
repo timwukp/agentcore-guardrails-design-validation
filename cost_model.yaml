@@ -922,7 +922,7 @@ actuals:
         A FINDING, not just a cost line. `vol-0aaa5827f1d9dd730` is 40 GB of gp3, created
         2026-08-12T04:15:02Z, tagged `ManagedBy=runner/provision.py` and
         `Project=grx-validation`, and its state is `available` — it has been attached to
-        nothing since the runner was terminated on 08-19, and it is still billing today.
+        nothing since the runner was terminated on 08-19, and it was still billing on 09-21 (deleted 09-28, item 44).
         `runner/provision.py:358` sets `DeleteOnTermination: True`, so this volume should
         not exist; `runner/teardown.py` has no volume sweep of any kind, so nothing in this
         repo could have noticed. Two figures identify it independently of the tag: the

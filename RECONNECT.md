@@ -1,8 +1,85 @@
-# Reconnect note — updated 2026-09-22
+# Reconnect note — updated 2026-09-28
 
 Read this first if the session dropped. It is the shortest path back to the live state.
 
-## ⇢ RESUME HERE (2026-09-22): **issue #37's ruling shipped as a derivation over the citation policy, and the browser refuted the version that only fixed the JSON**
+## ⇢ RESUME HERE (2026-09-28): **the CSP is deployed, release `v/20260928T064713Z/` is live with all 16 media files, and the orphaned volume is gone behind a snapshot**
+
+**Done on 2026-09-28, in the order you authorised:**
+
+1. **`cdk deploy GrxLive`, run by you** after the classifier refused it to me. Only the
+   ResponseHeadersPolicy changed. Read back off CloudFront by `check_deployed_headers.py`: rc 0, the
+   deployed CSP equals the stack's and carries `media-src 'self'` (`session-logs/deployed-headers-20260928.log`).
+   The script's documented invocation crashed first (`lib/` not on `sys.path`; its 19 arms all drove a
+   fake reader). Fixed so it and `awsclients` share ONE `redact` module, because two spellings are two
+   module objects and the account-id mask would silently miss. New arm `…shares_its_redact_module`, 20
+   passed. The mutant restoring the bare-path bug is killed, and the one that survives (`from lib
+   import awsclients` once `lib/` is on the path) is equivalent. Shipped with the 2026-09-28 docs PR.
+2. **B1 republished.** `video/render.py --verify` rc 0, 8 tracks byte-identical over two fresh syntheses
+   (`session-logs/render-verify-20260928-b1.{log,rc}`, Polly expected ~$0.71, not read off the meter).
+   `publish_web.py --confirm --render-rc 0` rc 0: 16 media files, 58 invariants, 135+4 objects fetched
+   back set-equal, redaction over the fetched bytes passed. Post-publish header check rc 0 against the
+   new release (`session-logs/deployed-headers-20260928-post-b1.log`). **The publish log printed the
+   bucket name on two lines, and the redaction gate failed the tree on it.** The 2026-09-17 log carried
+   `<bucket>` only because it had been edited by hand. Fixed in `publish_web.py`, which now prints the
+   shape and masks `s3://…` in `aws()` refusals. Held by 3 arms, 3 of 3 mutants killed. Today's log is
+   masked the same way the 09-17 one was.
+
+   **Red set by name, 2026-09-28** (`claims/tests platform/build/tests f10_billing/tests`, 1,033 passed):
+   exactly item 37's three documented reds (`scenarios.yaml` citation, `ebe77ed2…` hash,
+   `test_check_site_invariants.py:110/124` copy sources). The two redaction reds were the log above,
+   and they are green on re-run (`session-logs/pytest-20260928-pr-rerun.{log,rc}`, 96 passed, rc 0).
+3. **F10-1: designed, nothing sent** (`f10_billing/F10-1-DESIGN.md`). A read-only Cost Explorer query
+   was refused by the classifier. The design uses two tagged application inference profiles (the sealed
+   method says "cost attributed by resource tag"), which answers obstacle 3. Needs 3 authorizations,
+   listed in the file, under $0.10. The claim that profile tags reach Cost Explorer is **unverified**.
+4. **FUTURE-WORK planned** (`session-logs/2026-09-28-future-work-plan.md`, draft for review): 40 of 48 open,
+   partitioned 9 AWS / 14 local code / 15 writing / 2 human-only. **F3-11's +7 d/+30 d compares
+   (2026-08-18, 2026-09-10) were both missed.**
+5. **Item 44(b) done.** `vol-0aaa5827f1d9dd730` was snapshotted first as `snap-081a88706089d8b7a`,
+   because item 3 says F5-8's day-2 output may exist only on that disk and in an expiring S3 prefix. It
+   was then deleted, and `DescribeVolumes` now returns NotFound (`session-logs/ebs-item44-*`). The
+   snapshot bills about ≤$2/mo and is the one thing to delete once item 3 is settled. Items 44(c)/(d)
+   are still open.
+
+## ⇢ PREVIOUS BANNER (2026-09-25): **PR #61 landed and the bundle is a fixed point again; what stopped the push was the gate failing closed on its own excerpts, and the fix is a mask that runs after every count**
+
+**State, verified through the API rather than remembered:** `main` =
+`81b75d60a2cbb8f71aafe6df6072b26507593bce` (PR #61 merge, branch auto-deleted), **1,149 blobs**,
+`truncated: false`, **0 open PRs**, local tree ≡ remote main blob-by-blob (`tools/repo_diff.py`: 0
+added / 0 modified / 0 deleted). The hand-over bundle is re-synced to that pair
+(`session-logs/bundle-sync-20260925-post61.log`, rc 0, MANIFEST 43,122 entries) and its README's five
+stated numbers were re-derived, not trusted — the sync refused rc 1 until they matched.
+
+**The push blocker, named precisely.** The redaction gate stopped the first push with 36 findings over
+the six census ledgers of 2026-09-21, and every one was an EXCERPT the ledger slices to fixed width
+(`s[:400]` / `s[:200]`): a cut through the `<account>` placeholder of the second ARN on a line is
+indistinguishable from a truncated identifier, so the gate failed closed — correctly. **No real
+identifier was ever in any ledger.** Fixed at the producer (`redact.mask_quotation`/`mask_quotations`,
+run LAST in `write_ledger()` so no published number can move — counts byte-identical to the quarantined
+unmasked walk, dropped set entered 0 / left 0), never by waiver; the gate and the mask now share their
+three patterns by identity/`.pattern`-assertion. Held by 3 redact + 28 census mutants, all killed,
+controls green. The six unredacted ledgers sit quarantined in
+`~/Downloads/grx-census-unredacted-20260922/`, never on main; the shipped ledger is
+`rendered-surfaces-20260921T231741Z.json`.
+
+**Item 43's numbers were stale by one against both walks and are re-derived in the same PR:** 6,764
+payload strings / 4,596 drops / **1** linked drop — the linked drop being item 43's own register body
+quoting `[text](url)` in a code span, the sentence that asserted the zero. 22 unmatched register bodies
+are now 106,181 characters (growth = items 42/43's own resolution prose, +4,420/+4,425, derivation in
+the item). Ceiling **285** unchanged; the 27-in/1-out derivation re-verified against the new ledger.
+
+**Measured this window:** the three gate-adjacent test files **69 passed** rc 0; invariants gate red set
+by name = only the two by-design reds of a census-only build; `check_redaction.py` **rc 0 read
+directly**, 1,335 files / 117 MB. `.claude/` (local machine config) entered `.gitignore` after
+`repo_diff` proposed `settings.local.json` for publication — producer fixed, not the list.
+
+**Still open after #61, in order:** **item 41's deploy half is still blocked on you** — `npx cdk deploy
+GrxLive` needs the stack named by you, and the authorised republish (live serves only the **4** overview
+assets) waits on that CSP; then **F10-1** (`ce:GetCostAndUsage` on the runner policy, authorised); then
+planning the open FUTURE-WORK items; the orphaned volume's deletion stays yours. Issue #37 is closed
+with the adjudication recorded. Preview pid 54620 was killed at the end of this window.
+
+## ⇢ PREVIOUS BANNER (2026-09-22): **issue #37's ruling shipped as a derivation over the citation policy, and the browser refuted the version that only fixed the JSON**
 
 **State, verified through the API rather than remembered at the start of this window:** `main` =
 `8c35a4a0abc54893056db01dee2c7d31b4d34ae0`, **1113 blobs**, `truncated: false`, **0 open PRs**. This

@@ -123,3 +123,10 @@ did not: it reads what only a DOM can answer — CSP violations counted at the p
 reach. The **live** distribution is not one of the things it walks: viewer requests need a Cognito
 session on a pool with MFA required, so the released bytes are walked at their own URL behind
 `csp_preview.py` and the viewer path stays unmeasured (`FUTURE-WORK.md` item 41).
+
+What *is* read off the live resources is the half that needs no session.
+`.venv-oracle/bin/python platform/build/check_deployed_headers.py` fetches the deployed CloudFront
+`ResponseHeadersPolicy`, compares it character for character with `site-stack.ts`, and runs
+`head-object` on the release's objects to check the `Cache-Control` the publisher claims. Run it after
+every `cdk deploy` and every publish. It read rc 0 on 2026-09-28, both after the deploy that added
+`media-src 'self'` and against release `v/20260928T064713Z/`.

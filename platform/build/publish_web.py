@@ -454,7 +454,8 @@ def gate_payload(pub: Publish) -> None:
 def aws(args: list[str], parse_json: bool = True):
     proc = subprocess.run(["aws", *args], capture_output=True, text=True, check=False)
     if proc.returncode != 0:
-        fail(f"aws {' '.join(args[:3])}… exited {proc.returncode}: {proc.stderr.strip()[:400]}")
+        msg = f"aws {' '.join(args[:3])}… exited {proc.returncode}: {proc.stderr.strip()[:400]}"
+        fail(re.sub(r"s3://[^/\s]+", "s3://<bucket>", msg))
     return json.loads(proc.stdout) if parse_json and proc.stdout.strip() else proc.stdout
 
 
@@ -479,7 +480,8 @@ def upload(pub: Publish, bucket: str, distribution: str) -> None:
     immutable = IMMUTABLE_CACHE_CONTROL
     fresh = FRESH_CACHE_CONTROL
 
-    print(f"\n=== upload release to {prefix}/")
+    # The bucket name is an account-scoped identifier and every run of this is logged; print its shape.
+    print(f"\n=== upload release to s3://<bucket>/v/{pub.stamp}/")
     aws(["s3", "sync", str(DIST), f"{prefix}/", "--exclude", "data/*", "--exclude", "data",
          "--cache-control", immutable, "--only-show-errors"], parse_json=False)
     aws(["s3", "sync", str(pub.payload), f"{prefix}/data/",
@@ -635,7 +637,7 @@ def main(argv: list[str] | None = None) -> int:
         verify_served(pub, bucket)
         print("\nPUBLISHED")
         print(f"  release  v/{pub.stamp}/")
-        print(f"  pointer  s3://{bucket}/index.html and /current.json")
+        print("  pointer  s3://<bucket>/index.html and /current.json")
 
     # vite emptied `dist/`, taking the payload symlink a local preview depends on, with it.
     link = DIST / "data"

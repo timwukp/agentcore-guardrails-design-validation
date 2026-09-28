@@ -1158,7 +1158,7 @@ pre-registered ceiling of $95 — read off Cost Explorer on 2026-09-21, attribut
 `COST.md`, and **6.2× what this sentence said before anyone read the meter**. The correction belongs in
 this chapter rather than a footnote, because it is the same defect the chapter is about: the earlier
 "under $2.15" was a sum of the lines the cost model had, and the three largest families it lacked — EC2
-compute ($3.4969), an EBS volume orphaned by a repair and still billing ($4.0912), and Polly ($2.2613)
+compute ($3.4969), an EBS volume orphaned by a repair, attached to nothing from 2026-08-19 until its deletion on 2026-09-28 ($4.0912 by the 2026-09-21 reading), and Polly ($2.2613)
 — come to $9.85 between them. **A cost model's omissions dominate its arithmetic**, and only a meter
 can find an omission. `FUTURE-WORK.md` items 44–47 hold what the reading turned up.
 
