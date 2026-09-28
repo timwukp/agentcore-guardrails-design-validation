@@ -60,9 +60,20 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 sys.path.insert(0, str(REPO / "platform" / "build"))
+sys.path.insert(0, str(REPO / "lib"))
 
 from csp_preview import csp_from_stack  # noqa: E402  the ONE parse of the stack source, reused
-from lib import redact  # noqa: E402
+
+# Bare `redact`, never `lib.redact`: `awsclients` does `import redact`, and Python keeps the two
+# spellings as two module objects. The account id `awsclients.account_id` registers would land in
+# one and `mask_text` below would read the other, printing ARNs unmasked.
+import redact  # noqa: E402
+
+
+def _awsclients():
+    import awsclients  # noqa: PLC0415  boto3; this file must import under the playwright interpreter
+
+    return awsclients
 
 STACK_NAME = "GrxLive"
 RHP_TYPE = "AWS::CloudFront::ResponseHeadersPolicy"
@@ -236,8 +247,7 @@ class Boto3Reader:
         # exists (the bucket name, the distribution id and the site hostname are simply never
         # printed). Imported here rather than at module scope because `awsclients` imports boto3,
         # and this file must stay importable under the interpreter that owns playwright.
-        from lib import awsclients  # noqa: PLC0415  see above
-
+        awsclients = _awsclients()
         awsclients.account_id(awsclients.ClientFactory(region="us-east-1"))
 
     def outputs(self) -> dict[str, str]:

@@ -292,3 +292,16 @@ def test_the_csp_under_comparison_is_the_one_the_stack_file_holds():
     assert "media-src 'self'" in parsed, \
         "the stack has carried media-src since 2026-09-17; if this fails the stack lost it"
     assert parsed.count(";") == parsed.count("; "), "the parse joins on '; ' by construction"
+
+
+def test_the_real_reader_imports_the_choke_point_and_shares_its_redact_module():
+    """Every other arm here drives a fake reader, so the one line that imports `awsclients` never ran
+    until the first real invocation after the 2026-09-28 deploy -- where `from lib import awsclients`
+    died on its own `import redact`. Importing it is not enough: the account id the choke point
+    registers must land in the SAME module object this script masks with, or ARNs print unmasked.
+    """
+    pytest.importorskip("boto3")
+    awsclients = chk._awsclients()
+    assert awsclients.redact is chk.redact, "two redact modules: registration and masking disagree"
+    awsclients.redact.register_account_id("111122223333")
+    assert "111122223333" not in chk.redact.mask_text("arn:aws:iam::111122223333:role/x")

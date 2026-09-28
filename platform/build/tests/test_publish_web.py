@@ -426,3 +426,69 @@ def test_a_skipped_gate_is_recorded_rather_than_only_printed(monkeypatch, tmp_pa
     for entry in pub.skipped:
         assert entry["why"].strip(), "a skip with no reason is the one somebody makes permanent"
     assert "skipped" in capsys.readouterr().out
+
+
+LEAK_BUCKET = "grxlive-payload-00000000-examplebucket"
+
+
+def test_the_upload_log_never_names_the_bucket(monkeypatch, tmp_path, capsys):
+    """Every publish is logged into `session-logs/`, which ships, and the bucket name is an
+    account-scoped identifier. On 2026-09-28 two lines of the upload log printed it, and the
+    redaction gate failed the tree on that log. The 2026-09-17 log carried `<bucket>` only because
+    someone edited it by hand."""
+    dist = tmp_path / "dist"
+    dist.mkdir()
+    (dist / "index.html").write_text("<html></html>", encoding="utf-8")
+    payload = tmp_path / "payload"
+    payload.mkdir()
+    sent = []
+
+    def fake_aws(args, parse_json=True):
+        sent.append(args)
+        if args[:2] == ["cloudfront", "create-invalidation"]:
+            return {"Invalidation": {"Id": "I-TEST"}}
+        return {} if parse_json else ""
+
+    monkeypatch.setattr(pw, "aws", fake_aws)
+    monkeypatch.setattr(pw, "DIST", dist)
+    pw.upload(pw.Publish(stamp="20260101T000000Z", payload=payload), LEAK_BUCKET, "EDIST")
+    assert any(LEAK_BUCKET in " ".join(a) for a in sent), "the fake must see the real bucket, or this is vacuous"
+    out = capsys.readouterr()
+    assert LEAK_BUCKET not in out.out + out.err
+    assert "s3://<bucket>/v/20260101T000000Z/" in out.out
+
+
+def test_a_failed_aws_call_does_not_print_the_bucket_either(monkeypatch, capsys):
+    def failing_run(*a, **k):
+        return subprocess.CompletedProcess(a[0], 1, "", f"fatal error: s3://{LEAK_BUCKET}/v/x/ AccessDenied")
+
+    monkeypatch.setattr(pw.subprocess, "run", failing_run)
+    with pytest.raises(SystemExit):
+        pw.aws(["s3", "sync", f"s3://{LEAK_BUCKET}/v/x/", "/tmp/y"], parse_json=False)
+    err = capsys.readouterr().err
+    assert LEAK_BUCKET not in err
+    assert "s3://<bucket>" in err
+
+
+def test_no_print_or_refusal_in_the_publisher_interpolates_the_bucket():
+    """The run-time test above only reaches `upload()`. `main()` prints the pointer summary after
+    `verify_served()`, which no fake here drives end to end, so the source itself is read. It checks
+    every `print(...)`/`fail(...)` whose f-string formats a name that holds the bucket or a URI built
+    from it."""
+    import ast
+
+    tree = ast.parse(Path(pw.__file__).read_text(encoding="utf-8"))
+    held = {"bucket", "prefix"}
+    offenders = []
+    calls = 0
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call) and getattr(node.func, "id", None) in {"print", "fail"}:
+            calls += 1
+            for arg in node.args:
+                for sub in ast.walk(arg):
+                    if isinstance(sub, ast.FormattedValue):
+                        names = {n.id for n in ast.walk(sub.value) if isinstance(n, ast.Name)}
+                        if names & held:
+                            offenders.append(f"line {node.lineno}: formats {sorted(names & held)}")
+    assert calls > 20, f"only {calls} print/fail calls found; the walk is not reading the publisher"
+    assert not offenders, offenders

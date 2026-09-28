@@ -113,6 +113,15 @@ sibling **F10-3 is unaffected and did run**: it reads `usage.*Units` and
 `guardrailCoverage.textCharacters` directly off the `ApplyGuardrail` response and needs no billing
 data at all.
 
+**2026-09-28: a design exists, and the record above is unchanged.** `f10_billing/F10-1-DESIGN.md`
+proposes an answer to obstacle 3 built from the sealed method's own words, "cost attributed by resource
+tag". It uses two tagged application inference profiles, one per arm, with the output-blocked arm
+serving as the positive control that tag attribution reaches Cost Explorer at all. Obstacle 2 has
+changed shape: the runner is gone, so the read would run from the operator's machine, and a read-only
+Cost Explorer query was refused there by the session's permission layer, pending the user. **Nothing
+has been sent, and F10-1 remains not measured.** Whether profile tags reach Cost Explorer line items is
+the design's own unverified premise, and its positive control is what would establish or refute it.
+
 ---
 
 ## What this document does not claim

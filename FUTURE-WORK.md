@@ -624,6 +624,16 @@ Explorer's daily granularity cannot supply**. Two options: accept the NOT-MEASUR
 `results/CENSUS-NOT-MEASURED.md`, or authorize widening the runner policy for
 `ce:GetCostAndUsage`. This is the one open item in the 92 verdict-eligible cases.
 
+**Update 2026-09-28: designed, nothing sent.** The runner-policy option no longer exists, because the
+runner was terminated on 2026-08-19. `f10_billing/F10-1-DESIGN.md` follows the sealed method's own
+words, "cost attributed by resource tag". It uses two tagged application inference profiles over one
+model and the `words` guardrail, 20 requests per arm, with the output-blocked arm doubling as the
+positive control that the tag reaches Cost Explorer at all. That design is the proposed answer to the
+daily-granularity objection above. It is **unverified**: the claim that profile tags reach Cost Explorer
+line items has not been checked against AWS documentation or measured. Estimated under $0.10. It waits
+on three user authorizations named in the file, and one of them (activating a cost-allocation tag)
+also decides item 45.
+
 ### 11. F9-1 is untestable by its own sealed oracle
 
 AgentCore exposes no fault-injection surface for policy evaluation. Correctly excluded from the
@@ -639,6 +649,10 @@ confirmation. The risk is a future reader seeing TRUE in the register and citing
 ### 13. F3-11 is hard-gated on calendar time
 
 `--compare` runs owed on **2026-08-18** and **2026-09-10**. Nothing can accelerate this.
+
+**As of 2026-09-28 both dates have passed unrun.** A compare run now is neither the sealed +7 d nor the
++30 d reading. It would be a +48 d reading, and it can only be published as a named deviation in
+`DEVIATIONS.md`, never as either of the two owed runs. Whether to run it is the user's decision.
 
 ### 14. Vendor drift is acknowledged but not instrumented
 
@@ -887,6 +901,15 @@ and refuses to report a clean teardown while any is `available`, with an arm pro
 planted orphan, and (d) `VOLUME_GIB` and both disclosure strings are derived from one value so a size
 change cannot leave a stale price in operator-facing text. The right shape for (d) is a computed
 disclosure, not two corrected literals.
+
+**(b) done 2026-09-28, user-authorised.** Before deletion, the volume was snapshotted as
+`snap-081a88706089d8b7a`, because item 3 says F5-8's day-2 output may survive only on this disk and in
+an S3 prefix with a 90-day expiry. Deleting it unsnapshotted could have destroyed one of the two copies.
+The snapshot reached `completed`, the volume was deleted, and `DescribeVolumes` now returns
+`InvalidVolume.NotFound` (`session-logs/ebs-item44-snapshot-20260928.json`,
+`session-logs/ebs-item44-delete-20260928.txt`). The snapshot is the new standing charge, billed on used
+blocks and at most about $2/month for 40 GB. It is deleted once item 3 is settled. (c) and (d) remain
+open, so `runner/teardown.py` would still not see the next orphan.
 
 The general lesson is the one this repo keeps re-learning from the other direction: the cost model was
 organised by **phase**, and a volume that outlives its instance belongs to no phase. It is exactly the
@@ -1838,6 +1861,18 @@ which closes only as a **dated** record: a human with the second factor loading 
 pasting the response headers into a log, which expires the next time the stack is deployed and should
 therefore be labelled with the release stamp it was read against.
 
+**The first half is done, read off the deployed resources on 2026-09-28.** `platform/build/check_deployed_headers.py`
+compares CloudFront's `ResponseHeadersPolicy` against the parse of `site-stack.ts`, checks that every
+behaviour references it, and runs `head-object` on five objects. It returned rc 0 after `cdk deploy
+GrxLive` added `media-src 'self'` (`session-logs/deployed-headers-20260928.log`), and again against
+release `v/20260928T064713Z/` after the republish (`session-logs/deployed-headers-20260928-post-b1.log`).
+Its first real run crashed: all 19 arms drove a fake reader, so the one line that imports
+`lib/awsclients.py` had never executed, and `lib/` was not on its path. The fix keeps a single `redact`
+module shared with `awsclients`. Under two import spellings, the account id the choke point registers
+would land in one module object while the mask read the other, so ARNs would print unmasked. An arm
+now holds that identity. **The viewer-path half is still open** and still closes only as the dated human
+record described above.
+
 ### 42. The census that holds the translation ceiling to account failed and then passed on the same tree, and its message names two causes that were both false
 
 **Found** 2026-09-18, running `platform/build/census_rendered_surfaces.py` twice in succession over an
@@ -2209,7 +2244,9 @@ suite does *not* cover.
   state is perishable and no gate here can read an AWS account
   (`feedback_perishable_claim_cannot_be_checked`). What is still billing is the instance's **root
   volume**, `vol-0aaa5827f1d9dd730`, 40 GB gp3, `available` with no attachments, **$4.0912 measured
-  at the meter** and ~$0.10/day forever — `runner/teardown.py` has no volume sweep (item 44).
+  at the meter** by 2026-09-21. It was **deleted on 2026-09-28** behind the snapshot
+  `snap-081a88706089d8b7a`, which is now the one standing charge (item 44). `runner/teardown.py` still has
+  no volume sweep.
   Standing rule if the runner is ever re-provisioned: do **not** run `runner/sync.py` while a live
   case runs: `_state()` repairs the instance profile on every subcommand and would rotate
   credentials mid-job.
