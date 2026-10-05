@@ -761,19 +761,19 @@
         "C-s9-mermaid-008"
       ],
       "cls": "S",
-      "family": null,
+      "family": "unassigned_by_seal",
       "interval": null,
-      "kind": null,
+      "kind": "EXISTENCE",
       "n": null,
       "n_claims": 15,
       "oracle_chars": 156,
-      "published": false,
+      "published": true,
       "region": null,
       "run_id": null,
       "strength": null,
       "threshold": null,
       "title": "Input block avoids model inference charge; output block does not",
-      "verdict": null,
+      "verdict": "FALSE",
       "x": null
     },
     {
@@ -1844,7 +1844,7 @@
       "family": "exploratory_latency",
       "interval": null,
       "kind": "BAND_CONTAINS",
-      "n": 1000,
+      "n": 999,
       "n_claims": 4,
       "oracle_chars": 116,
       "published": true,
@@ -2465,7 +2465,7 @@
       ],
       "claims": 35,
       "mix": {
-        "FALSE": 4,
+        "FALSE": 15,
         "INCONCLUSIVE": 11,
         "TRUE": 19
       },
@@ -2517,7 +2517,7 @@
       ],
       "claims": 29,
       "mix": {
-        "FALSE": 1,
+        "FALSE": 2,
         "INCONCLUSIVE": 2,
         "TRUE": 3
       },
@@ -2542,7 +2542,7 @@
       ],
       "claims": 29,
       "mix": {
-        "FALSE": 7,
+        "FALSE": 8,
         "INCONCLUSIVE": 1,
         "TRUE": 4
       },
@@ -2646,7 +2646,7 @@
       ],
       "claims": 22,
       "mix": {
-        "FALSE": 13,
+        "FALSE": 14,
         "INCONCLUSIVE": 1,
         "TRUE": 7
       },
@@ -2881,7 +2881,7 @@
       ],
       "claims": 9,
       "mix": {
-        "FALSE": 3,
+        "FALSE": 4,
         "INCONCLUSIVE": 3,
         "TRUE": 4
       },
@@ -3045,10 +3045,9 @@
     "verdicts": "results/phase1/*.json"
   },
   "totals": {
-    "cases_published": 91,
+    "cases_published": 92,
     "cases_registered": 93,
     "cases_unpublished": [
-      "F10-1",
       "F9-1"
     ],
     "claims_triaged": 546,
@@ -3065,7 +3064,7 @@
       "X": 10
     },
     "verdict_mix": {
-      "FALSE": 23,
+      "FALSE": 24,
       "INCONCLUSIVE": 20,
       "RECORDED": 2,
       "TRUE": 46

@@ -1061,6 +1061,9 @@ NOT_AN_OBSERVATION_KEYS = {
     "start": "same: a query-window bound.",
     "end": "same. Excluding it costs a little precision on a few cases and avoids reporting the far "
            "edge of a requested window as the day somebody looked.",
+    "Start": "Cost Explorer's own spelling of a query-window bound (`TimePeriod.Start`, F10-1).",
+    "End": "same: `TimePeriod.End`, which is exclusive and can be the day of the read, not of any "
+           "request.",
     "baseline_interval_opens_after": "a condition on when a FUTURE comparison becomes valid.",
     "window_opens_after": "same.",
 }

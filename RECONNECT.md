@@ -1,8 +1,25 @@
-# Reconnect note — updated 2026-09-28
+# Reconnect note — updated 2026-10-05
 
 Read this first if the session dropped. It is the shortest path back to the live state.
 
-## ⇢ RESUME HERE (2026-09-28): **the CSP is deployed, release `v/20260928T064713Z/` is live with all 16 media files, and the orphaned volume is gone behind a snapshot**
+## ⇢ RESUME HERE (2026-10-05): **F10-1 is measured, FALSE on one day, so the census reads 92 of 92**
+
+- **F10-1 is FALSE** (`results/phase1/F10-1.json`; each step is in `f10_billing/F10-1-DESIGN.md`).
+  Cost was attributed through three tagged application inference profiles over Nova Micro, 20 requests
+  per arm on 2026-10-02, and read on 2026-10-05.
+  - The control arm (no guardrail) was billed 580/80 input/output tokens, equal to its reported `usage`.
+  - The input-blocked arm was billed 0/0, as claimed.
+  - The output-blocked arm was billed 0/0, where the claim says it pays in full.
+  - An account-wide Nova read shows no untagged usage that day that could hold the missing tokens.
+  - The profiles were deleted on 2026-10-05, user-authorised. The `grx-f10-1-arm` tag stays active.
+- **Owed next:**
+  - (a) The PR carrying this, which the user merges.
+  - (b) After the merge: the bundle re-sync with `--main-sha/--main-blobs`, and a republish, so the live
+    site reads 92 of 92.
+  - (c) The user's decision on a second-day F10-1 replica (about $0.10). Without it, the v1.4 billing
+    sentences stand. If it agrees, they are amended in v1.5 (FUTURE-WORK item 10).
+
+## Previous resume point (2026-09-28): **the CSP is deployed, release `v/20260928T064713Z/` is live with all 16 media files, and the orphaned volume is gone behind a snapshot**
 
 **Done on 2026-09-28, in the order you authorised:**
 
@@ -28,7 +45,7 @@ Read this first if the session dropped. It is the shortest path back to the live
    exactly item 37's three documented reds (`scenarios.yaml` citation, `ebe77ed2…` hash,
    `test_check_site_invariants.py:110/124` copy sources). The two redaction reds were the log above,
    and they are green on re-run (`session-logs/pytest-20260928-pr-rerun.{log,rc}`, 96 passed, rc 0).
-3. **F10-1: designed, nothing sent** (`f10_billing/F10-1-DESIGN.md`). A read-only Cost Explorer query
+3. **F10-1: designed, nothing sent** (superseded 2026-10-05: measured, FALSE, see the top). A read-only Cost Explorer query
    was refused by the classifier. The design uses two tagged application inference profiles (the sealed
    method says "cost attributed by resource tag"), which answers obstacle 3. Needs 3 authorizations,
    listed in the file, under $0.10. The claim that profile tags reach Cost Explorer is **unverified**.
@@ -586,7 +603,7 @@ right citation for figure 6. Next step is a **scoped verification of those eight
 `RESEARCH-evidence-presentation-20260815.md` §5 — a verification, not a search. Everything else is
 draftable now.
 
-### Measurement: done. 91 of 92 published, 1 outstanding and it is a decision, not a run
+### Measurement: done. 92 of 92 published (F10-1 measured 2026-10-05)
 
 Regenerate rather than trust; the numbers below were read from the command, not remembered:
 
@@ -594,15 +611,15 @@ Regenerate rather than trust; the numbers below were read from the command, not 
 .venv-oracle/bin/python census.py            # read-only;  --write rewrites results/_progress_census.txt
 ```
 
-**93 sealed cases → 92 verdict-eligible** (minus F9-1, untestable by its own oracle) → **91
-published**, **TRUE 46 / FALSE 23 / INCONCLUSIVE 20 / RECORDED 2**. Every family reads `complete`
-except F10 (2/3). Of the 91, **90 are publishable**: F5-3b is TRUE but its
+**93 sealed cases → 92 verdict-eligible** (minus F9-1, untestable by its own oracle) → **92
+published**, **TRUE 46 / FALSE 24 / INCONCLUSIVE 20 / RECORDED 2**. Every family reads `complete`.
+Of the 92, **91 are publishable**: F5-3b is TRUE but its
 `every_boundary_transition_was_observed_to_settle` guard failed, so it is **non-publishable and must
 not be cited as confirmation**.
 
-The single outstanding case, **F10-1**, is not a missing run. The `ce:GetCostAndUsage` grant is
-removable and I declined to remove it unilaterally; that is recorded in
-`results/CENSUS-NOT-MEASURED.md`. It needs a decision, not an instrument.
+The last case, **F10-1**, was measured on 2026-10-05: FALSE, on one calendar day, so it amends
+nothing yet (FUTURE-WORK item 10). Until then it was the single outstanding case, recorded in
+`results/CENSUS-NOT-MEASURED.md`, which keeps that history.
 
 ### The document exists in two languages and both are published
 

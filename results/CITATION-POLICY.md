@@ -29,7 +29,9 @@ sealed artifact disagree, the sealed artifact wins and this file is the thing th
 | **the 20 `INCONCLUSIVE` cases** | `INCONCLUSIVE` | that the study did not establish the claim, and — where a finding says so — that the *instrument* failed rather than the platform | evidence **against** the claim, or grounds for any document amendment | the study's editorial rule, stated in `agentcore_guardrails_best_practices_v1.4.md` §0: "An INCONCLUSIVE verdict is not evidence against a claim, and this version amends nothing on one." `F1-8 F1-10 F1-11 F1-12 F1-13 F1-15 F1-16 F1-17 F1-19 F1-20 F1-26 F1-27 F2-3 F3-11 F5-3a F5-5 F5-7b F5-9 F8-7 F9-3` |
 | **F5-4a**, **F5-4b** | `RECORDED` | the observation as recorded, with its own stated scope | a TRUE or a FALSE. `RECORDED` is the state for an observation whose oracle could not adjudicate it | `PREREGISTRATION.yaml`'s verdict vocabulary; register item 20 on why that vocabulary is ours |
 | **F9-1** | *no verdict* | that AgentCore exposes no fault-injection surface for policy evaluation, which is why the case is untestable | anything about fail-secure behaviour | its own sealed oracle declares it untestable; `results/CENSUS-NOT-MEASURED.md` |
-| **F10-1** | *no verdict* | nothing | anything | unmeasured; the one case of the 92 verdict-eligible with no verdict on disk |
+
+F10-1 was listed here as UNMEASURED until 2026-10-05. It now has a FALSE on disk and carries no
+restriction in this section. Its limit is the one-day rule in section 2.
 
 ## 2. Restrictions on *what a citation licenses*, not on the verdict
 
@@ -37,6 +39,7 @@ sealed artifact disagree, the sealed artifact wins and this file is the thing th
 |---|---|---|---|
 | The **twelve** v1.4 amendments resting on **one** calendar day | yes | **no** — they are already applied and owe a second day retroactively | register item 2. `check_amendment_readiness.py` does not look at them (register item 22), so its exit 0 is not a statement about these twelve |
 | Any case whose finding status is `AMENDMENT_DEFERRED` | yes | no, until the `blocked_on` condition is discharged | `check_amendment_readiness.py`; currently `FINDING-F1-15`, `FINDING-F5-7B`, `FINDING-F6-DAY2-DECISIVENESS` |
+| **F10-1** | yes, as FALSE on one model (Nova Micro), one word policy and one calendar day (2026-10-02) | **no**, until a second calendar day agrees | `PREREGISTRATION.yaml` `reproduction_before_amendment` (at least 2 calendar days). The record's observation days are its sends, `t0_iso` and `t1_iso`, both on 2026-10-02. `f10_billing/F10-1-DESIGN.md`; `FUTURE-WORK.md` item 10 |
 | **F6-1**, **F6-3**, **F6-4** | yes | yes on the verdict; **but see below on re-running** | they agreed across 2026-08-10 and 2026-08-19 |
 | Every **F6** case | yes | yes where the two-day rule is met | **but an F6 replication must be run from the same client and network position.** The estimator is a paired difference of client-measured wall clocks, so an EC2 re-run changes platform *and* network position — the one dimension a replication must hold fixed. A cloud-side F6 re-run is not a replication of F6 |
 | **F1-4**, **F1-21** | yes | yes | no claim in `claims/triage.csv` points at either: their propositions are about the service model, not about a document sentence. They cannot be cited as evidence *for a document claim*, because there is no claim they map to |
@@ -64,8 +67,9 @@ a disagreement licenses **no change to the published record**, and the published
 day-2 files are retained in full under `results/phase1/archive/F6-{2,5,8}__day2_indecisive_2026-08-19.json`
 with their sha256s recorded in the finding, because both days' files carry the same `run_id` and the
 archive filename is a label rather than evidence. `census.py` re-derives
-**TRUE 46 / FALSE 23 / INCONCLUSIVE 20 / RECORDED 2**, which is what published `main` states; before
-the restore it derived TRUE 49 / FALSE 20.
+**TRUE 46 / FALSE 23 / INCONCLUSIVE 20 / RECORDED 2**, which is what published `main` stated at the
+time; before the restore it derived TRUE 49 / FALSE 20. Since 2026-10-05, when F10-1 was measured FALSE,
+it derives FALSE 24.
 
 ---
 
@@ -110,10 +114,6 @@ the restore it derived TRUE 49 / FALSE 20.
      "not_citable_as": ["anything about fail-secure behaviour"],
      "reason": "its own sealed oracle declares the case untestable",
      "source": "results/CENSUS-NOT-MEASURED.md"},
-    {"cases": ["F10-1"], "verdict_on_disk": null, "restriction": "UNMEASURED",
-     "citable_as": [], "not_citable_as": ["anything"],
-     "reason": "no verdict on disk; the one outstanding case of the 92 verdict-eligible",
-     "source": "census.py"},
     {"cases": ["F1-4", "F1-21"], "verdict_on_disk": "TRUE", "restriction": "NO_CLAIM_MAPPED",
      "citable_as": ["the API-surface fact itself"],
      "not_citable_as": ["evidence for a document claim"],

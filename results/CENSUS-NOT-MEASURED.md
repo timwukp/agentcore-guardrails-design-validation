@@ -1,19 +1,23 @@
 # Cases with no verdict record, and why — census closure
 
-**Date:** 2026-08-15
-**Scope:** the 2 of 93 sealed cases in `lib/oracle.py:BINDINGS` that hold no verdict record.
-**Status:** both recorded and skipped. Neither is awaiting effort.
+**Date:** 2026-08-15, updated 2026-10-05
+**Scope:** the sealed cases in `lib/oracle.py:BINDINGS` that hold no verdict record. There were 2
+until 2026-10-05. There is now 1, F9-1, because F10-1 was measured (FALSE) on that date. The F10-1
+section is kept below as the record of why it took seven weeks.
+**Status:** F9-1 is recorded and skipped, and is not awaiting effort. F10-1 is closed by a verdict.
 
 ## The census
 
 | | Count |
 |---|---|
 | Sealed cases in `O.BINDINGS` | **93** |
-| Carrying a verdict record | **91** |
-| Carrying none — this document | **2** |
+| Carrying a verdict record | **92** (91 until 2026-10-05) |
+| Carrying none — this document | **1** (2 until 2026-10-05) |
 
-Of the 91: TRUE 46, FALSE 23, INCONCLUSIVE 20, RECORDED 2 — as reported by `census.py` on
-2026-08-15, after `F5-7b`'s re-scored record was merged to this machine (it is the twentieth
+Of the 92: TRUE 46, FALSE 24, INCONCLUSIVE 20, RECORDED 2, as reported by `census.py` on
+2026-10-05, so the publishable count is now 91, not 90. The rest of this paragraph is the
+2026-08-15 reading of the 91 records that existed then. They were counted after `F5-7b`'s
+re-scored record was merged to this machine (it is the twentieth
 INCONCLUSIVE, and it was measured on 2026-08-14 and re-scored on 2026-08-15). One of the 46 TRUE
 verdicts, `F5-3b`, is **non-publishable** and may not be cited as confirmation, so the design
 document's own count is 90 publishable, not 91. `results/phase1/` also holds
@@ -122,16 +126,31 @@ Cost Explorer query was refused there by the session's permission layer, pending
 has been sent, and F10-1 remains not measured.** Whether profile tags reach Cost Explorer line items is
 the design's own unverified premise, and its positive control is what would establish or refute it.
 
+**2026-10-05: measured. FALSE.** `results/phase1/F10-1.json`. The run is described step by step in
+`f10_billing/F10-1-DESIGN.md`. Obstacle 2 went away with the runner. Obstacle 3 was answered by
+the method above, plus a third arm the pre-flight forced. The arm is a control: the same prompt with no
+guardrail, through its own tagged profile. Over 20 requests per arm on 2026-10-02, Cost Explorer billed
+the control 580 input and 80 output tokens, exactly what its responses reported, so tag attribution
+works. It billed the input-blocked arm nothing, as the claim says. It also billed the output-blocked arm
+nothing, where the claim says it pays in full. Its expected charge, taken from the control, was 580/80.
+An account-wide read of every Nova Micro usage type, with untagged spend kept, shows no other Nova
+usage on that day. So the blocked arms' tokens did not land untagged instead.
+
+The verdict rests on **one calendar day**. Under `reproduction_before_amendment` it therefore
+licenses no amendment yet. The v1.4 sentences ("if the OUTPUT is blocked, you still pay full
+inference") stand as written until a second day replicates the reading. See `FUTURE-WORK.md`
+item 10.
+
 ---
 
 ## What this document does not claim
 
-- That the 91 measured cases produced 91 useful answers. 20 are INCONCLUSIVE and several of those
+- That the 92 measured cases produced 92 useful answers. 20 are INCONCLUSIVE and several of those
   are instrument failures rather than platform facts — `F5-7b` is one, and its own re-score on
   2026-08-15 corrected the *reason* while leaving the verdict where it was.
-- That F10-1 is impossible. Two of its three obstacles are removable; one is a permission grant and
-  one is an open question about Cost Explorer's granularity.
-- That skipping these two closes the project. `F5-8`'s day-2 replication, and the day-2
+- That F10-1's FALSE generalises. It was read on one model (Nova Micro), one word policy, the
+  non-streaming `Converse` API, and one day.
+- That recording F9-1 closes the project. `F5-8`'s day-2 replication, and the day-2
   replications owed by `F4-6` and `F2-1`, remain outstanding under
   `reproduction_before_amendment` — those are *measured* cases awaiting a second calendar day, a
-  different thing from the two recorded here.
+  different thing from the one recorded here.

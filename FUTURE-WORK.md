@@ -616,7 +616,7 @@ alongside the commit. Cheap to do, expensive to be caught on. Note the scope hon
 
 ## Tier 3 — measurement debt
 
-### 10. F10-1 is not measured, and the decision is the user's
+### 10. F10-1 was measured FALSE on one day, and the document's billing claim waits on a second
 
 The v1.2 claim is that an input-blocked request incurs **no** model-inference charge while an
 output-blocked one **is** charged. The sealed oracle needs a tagged cost delta that **Cost
@@ -633,6 +633,32 @@ daily-granularity objection above. It is **unverified**: the claim that profile 
 line items has not been checked against AWS documentation or measured. Estimated under $0.10. It waits
 on three user authorizations named in the file, and one of them (activating a cost-allocation tag)
 also decides item 45.
+
+**Update 2026-10-05: measured, FALSE, on one calendar day.** `results/phase1/F10-1.json`;
+`f10_billing/F10-1-DESIGN.md` records each step and each change to the design. The user authorised all
+three steps on 2026-09-29 and ran the tag activation themselves on 2026-09-30.
+- **The premise was refuted.** A guardrail-intervened `Converse` response reports `usage` 0/0, so the
+  output arm could not be its own positive control. A third arm was added: the same prompt with no
+  guardrail, through its own tagged profile.
+- **The reading.** 20 requests per arm were sent on 2026-10-02. Billed model tokens, input/output:
+  control 580/80, which equals its reported `usage` exactly, so tag attribution reaches the bill.
+  Input-blocked 0/0, as claimed. Output-blocked 0/0, where the claim says it pays the full 580/80.
+- **The alternative excluded.** An account-wide read of every Nova Micro usage type, keeping untagged
+  spend, shows no other Nova usage that day, so the blocked tokens did not land untagged.
+- The run spent about $0.0005 in model calls and about $0.10 in Cost Explorer reads. The three
+  profiles were deleted on 2026-10-05.
+
+**What is still open.** The census now reads 92 of 92. But this verdict rests on one day, and
+`reproduction_before_amendment` lets no single-day reading amend the document. The v1.4 sentences that
+say an output-blocked request "still pays full model inference" stand as written, in §3.2 (bullet and
+diagram), §7.1 row 2, §9 and Appendix B, until a second calendar day replicates the reading. A replica is
+the same script with three fresh profiles, about $0.10, and a 24 h Cost Explorer wait. If it agrees,
+the amendment goes in a new version, v1.5, because v1.4 has shipped. v1.5 must also correct v1.4's
+status lines, which call F10-1 "outstanding" (§0 and the line "90 of the 92 verdict-eligible cases"),
+and the matching notes in the v1.4 slide decks (`tools/deckgen/deck.py` and `diagrams.py`, which say
+UNMEASURED). Those were true when v1.4 shipped and are left as shipped. The finding also has a
+metering consequence whatever the bill says: a caller that meters blocked traffic from `Converse`'s
+`usage` field counts zero model tokens.
 
 ### 11. F9-1 is untestable by its own sealed oracle
 

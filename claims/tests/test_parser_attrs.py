@@ -88,9 +88,18 @@ def args_reads(tree: ast.AST) -> dict[str, int]:
 
 
 def local_dests(tree: ast.AST) -> set[str]:
-    """Flags the script adds itself, by `dest=` or derived from the longest option string."""
+    """Flags the script adds itself, by `dest=` or derived from the longest option string.
+
+    `add_subparsers(dest=...)` counts too: argparse stores the chosen subcommand under that dest,
+    so `args.<dest>` is a real read (F10-1's `send`/`read` script was the first to use one).
+    """
     dests: set[str] = set()
     for node in ast.walk(tree):
+        if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                and node.func.attr == "add_subparsers"):
+            dests.update(str(kw.value.value) for kw in node.keywords
+                         if kw.arg == "dest" and isinstance(kw.value, ast.Constant))
+            continue
         if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
                 and node.func.attr == "add_argument"):
             continue
@@ -191,3 +200,18 @@ def test_the_live_script_actually_parses_and_imports() -> None:
         cwd=ROOT, capture_output=True, text=True, timeout=180)
     assert r.returncode == 0, r.stdout + r.stderr
     assert "F5-4a dry run" in r.stdout
+
+
+def test_a_subparser_dest_is_a_defined_flag_and_an_undeclared_one_is_not() -> None:
+    """The subparser arm admits exactly the dest it names, nothing more."""
+    src = (
+        "import argparse\n"
+        "ap = argparse.ArgumentParser()\n"
+        "sub = ap.add_subparsers(dest='cmd', required=True)\n"
+        "args = ap.parse_args()\n"
+        "print(args.cmd, args.verb)\n"
+    )
+    tree = ast.parse(src)
+    allowed = base_dests() | local_dests(tree)
+    unknown = set(args_reads(tree)) - allowed
+    assert unknown == {"verb"}, unknown
