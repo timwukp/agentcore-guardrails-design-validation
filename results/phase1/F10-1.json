@@ -1,0 +1,147 @@
+{
+  "billing": {
+    "billed_tokens": {
+      "control": {
+        "input": 580.0,
+        "output": 80.0
+      },
+      "input-blocked": {
+        "input": 0.0,
+        "output": 0.0
+      },
+      "output-blocked": {
+        "input": 0.0,
+        "output": 0.0
+      }
+    },
+    "control_billed": true,
+    "control_matches_its_usage": {
+      "input": true,
+      "output": true
+    },
+    "expected_output_arm_tokens": {
+      "input": 580.0,
+      "output": 80.0
+    },
+    "input_arm_zero": true,
+    "observed": false,
+    "output_arm_full": {
+      "input": false,
+      "output": false
+    },
+    "reported_tokens": {
+      "control": {
+        "input": 580,
+        "n": 20,
+        "output": 80
+      },
+      "input-blocked": {
+        "input": 0,
+        "n": 20,
+        "output": 0
+      },
+      "output-blocked": {
+        "input": 0,
+        "n": 20,
+        "output": 0
+      }
+    },
+    "status": "decided",
+    "tolerance_tokens_per_request": 1,
+    "unit_check": {
+      "checks": [
+        {
+          "arm": "control",
+          "expected": 3.5e-05,
+          "kind": "input",
+          "ok": true,
+          "usd_per_unit": 3.5e-05
+        },
+        {
+          "arm": "control",
+          "expected": 0.00014,
+          "kind": "output",
+          "ok": true,
+          "usd_per_unit": 0.00014
+        }
+      ],
+      "ok": true
+    },
+    "wrong_arm_rows": []
+  },
+  "blockers": {
+    "blockers": [],
+    "blockers_are_not_exhaustive": "the >=2-separate-calendar-days replication rule, the archived x-amzn-requestid requirement and the alternative-explanation register are checked by check_amendment_readiness.py against the evidence records, not here",
+    "case_id": "F10-1",
+    "clear_here": true
+  },
+  "case_id": "F10-1",
+  "cost_explorer_request": {
+    "Filter": {
+      "Tags": {
+        "Key": "grx-f10-1-arm",
+        "Values": [
+          "input-blocked",
+          "output-blocked",
+          "control"
+        ]
+      }
+    },
+    "Granularity": "DAILY",
+    "GroupBy": [
+      {
+        "Key": "grx-f10-1-arm",
+        "Type": "TAG"
+      },
+      {
+        "Key": "USAGE_TYPE",
+        "Type": "DIMENSION"
+      }
+    ],
+    "Metrics": [
+      "UnblendedCost",
+      "UsageQuantity"
+    ],
+    "TimePeriod": {
+      "End": "2026-10-05",
+      "Start": "2026-10-02"
+    }
+  },
+  "design": "f10_billing/F10-1-DESIGN.md",
+  "kind": "EXISTENCE",
+  "oracle_text": "TRUE if a Cost-Explorer/tagged delta shows zero inference charge for input-blocked requests and full charge for output-blocked ones; FALSE if either differs",
+  "planned_n": null,
+  "record": {
+    "alpha": 0.05,
+    "case_id": "F10-1",
+    "evidence": {
+      "detail": {
+        "input_arm_zero": true,
+        "output_arm_full": {
+          "input": false,
+          "output": false
+        }
+      },
+      "observed": false
+    },
+    "family": "unassigned_by_seal",
+    "kind": "EXISTENCE",
+    "mutation_required": false,
+    "n_attempted": 60,
+    "n_met": true,
+    "n_usable": 60,
+    "notes": [],
+    "p_value": null,
+    "planned_n": null,
+    "thresholds": [],
+    "verdict": "FALSE"
+  },
+  "sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "sends": "results/f10_billing/F10-1-sends.json",
+  "t0_iso": "2026-10-02T01:32:02.640243+00:00",
+  "t1_iso": "2026-10-02T01:33:05.590046+00:00",
+  "verdict": "FALSE"
+}

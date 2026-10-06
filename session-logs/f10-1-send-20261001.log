@@ -1,0 +1,67 @@
+F10-1 send: 20 per arm x 3 arms, interleaved, word 'zorbify'
+  input  prompt: In one short sentence, what might the word zorbify mean?
+  output prompt: Join the fragments 'zor' and 'bify' into a single word. Reply with only that word, in lowercase, and nothing else.
+  control      : the output prompt, with no guardrail
+  pre-flight (untagged system profile): output-blocked on ['zorbify']
+  input-blocked   rep  0: guardrail_intervened, landed input-blocked, tokens 0/0
+  output-blocked  rep  0: guardrail_intervened, landed output-blocked, tokens 0/0
+  control         rep  0: end_turn, landed control, tokens 29/4
+  output-blocked  rep  1: guardrail_intervened, landed output-blocked, tokens 0/0
+  control         rep  1: end_turn, landed control, tokens 29/4
+  input-blocked   rep  1: guardrail_intervened, landed input-blocked, tokens 0/0
+  control         rep  2: end_turn, landed control, tokens 29/4
+  input-blocked   rep  2: guardrail_intervened, landed input-blocked, tokens 0/0
+  output-blocked  rep  2: guardrail_intervened, landed output-blocked, tokens 0/0
+  input-blocked   rep  3: guardrail_intervened, landed input-blocked, tokens 0/0
+  output-blocked  rep  3: guardrail_intervened, landed output-blocked, tokens 0/0
+  control         rep  3: end_turn, landed control, tokens 29/4
+  output-blocked  rep  4: guardrail_intervened, landed output-blocked, tokens 0/0
+  control         rep  4: end_turn, landed control, tokens 29/4
+  input-blocked   rep  4: guardrail_intervened, landed input-blocked, tokens 0/0
+  control         rep  5: end_turn, landed control, tokens 29/4
+  input-blocked   rep  5: guardrail_intervened, landed input-blocked, tokens 0/0
+  output-blocked  rep  5: guardrail_intervened, landed output-blocked, tokens 0/0
+  input-blocked   rep  6: guardrail_intervened, landed input-blocked, tokens 0/0
+  output-blocked  rep  6: guardrail_intervened, landed output-blocked, tokens 0/0
+  control         rep  6: end_turn, landed control, tokens 29/4
+  output-blocked  rep  7: guardrail_intervened, landed output-blocked, tokens 0/0
+  control         rep  7: end_turn, landed control, tokens 29/4
+  input-blocked   rep  7: guardrail_intervened, landed input-blocked, tokens 0/0
+  control         rep  8: end_turn, landed control, tokens 29/4
+  input-blocked   rep  8: guardrail_intervened, landed input-blocked, tokens 0/0
+  output-blocked  rep  8: guardrail_intervened, landed output-blocked, tokens 0/0
+  input-blocked   rep  9: guardrail_intervened, landed input-blocked, tokens 0/0
+  output-blocked  rep  9: guardrail_intervened, landed output-blocked, tokens 0/0
+  control         rep  9: end_turn, landed control, tokens 29/4
+  output-blocked  rep 10: guardrail_intervened, landed output-blocked, tokens 0/0
+  control         rep 10: end_turn, landed control, tokens 29/4
+  input-blocked   rep 10: guardrail_intervened, landed input-blocked, tokens 0/0
+  control         rep 11: end_turn, landed control, tokens 29/4
+  input-blocked   rep 11: guardrail_intervened, landed input-blocked, tokens 0/0
+  output-blocked  rep 11: guardrail_intervened, landed output-blocked, tokens 0/0
+  input-blocked   rep 12: guardrail_intervened, landed input-blocked, tokens 0/0
+  output-blocked  rep 12: guardrail_intervened, landed output-blocked, tokens 0/0
+  control         rep 12: end_turn, landed control, tokens 29/4
+  output-blocked  rep 13: guardrail_intervened, landed output-blocked, tokens 0/0
+  control         rep 13: end_turn, landed control, tokens 29/4
+  input-blocked   rep 13: guardrail_intervened, landed input-blocked, tokens 0/0
+  control         rep 14: end_turn, landed control, tokens 29/4
+  input-blocked   rep 14: guardrail_intervened, landed input-blocked, tokens 0/0
+  output-blocked  rep 14: guardrail_intervened, landed output-blocked, tokens 0/0
+  input-blocked   rep 15: guardrail_intervened, landed input-blocked, tokens 0/0
+  output-blocked  rep 15: guardrail_intervened, landed output-blocked, tokens 0/0
+  control         rep 15: end_turn, landed control, tokens 29/4
+  output-blocked  rep 16: guardrail_intervened, landed output-blocked, tokens 0/0
+  control         rep 16: end_turn, landed control, tokens 29/4
+  input-blocked   rep 16: guardrail_intervened, landed input-blocked, tokens 0/0
+  control         rep 17: end_turn, landed control, tokens 29/4
+  input-blocked   rep 17: guardrail_intervened, landed input-blocked, tokens 0/0
+  output-blocked  rep 17: guardrail_intervened, landed output-blocked, tokens 0/0
+  input-blocked   rep 18: guardrail_intervened, landed input-blocked, tokens 0/0
+  output-blocked  rep 18: guardrail_intervened, landed output-blocked, tokens 0/0
+  control         rep 18: end_turn, landed control, tokens 29/4
+  output-blocked  rep 19: guardrail_intervened, landed output-blocked, tokens 0/0
+  control         rep 19: end_turn, landed control, tokens 29/4
+  input-blocked   rep 19: guardrail_intervened, landed input-blocked, tokens 0/0
+
+wrote results/f10_billing/F10-1-sends.json: 60 rows, 0 landed in the wrong arm

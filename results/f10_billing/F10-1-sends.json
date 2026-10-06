@@ -1,0 +1,789 @@
+{
+  "case_id": "F10-1",
+  "guardrail_id": "bb8eo7hr35og",
+  "guardrail_version": "DRAFT",
+  "manipulation_check": {
+    "control_prompt_is_output_prompt": true,
+    "fragments": [
+      "zor",
+      "bify"
+    ],
+    "input_prompt_words": [
+      "zorbify"
+    ],
+    "ok": true,
+    "output_prompt_words": [],
+    "word": "zorbify"
+  },
+  "model_source": "us.amazon.nova-micro-v1:0",
+  "preflight": {
+    "arm": "output-blocked",
+    "input_blocked_words": [],
+    "input_tokens": 0,
+    "output_blocked_words": [
+      "zorbify"
+    ],
+    "output_tokens": 0,
+    "rep": -1,
+    "request_id": "051810dd-78ba-4e1e-9691-1e34762db9f3",
+    "sent_at": "2026-10-02T01:32:02.634922+00:00",
+    "stop_reason": "guardrail_intervened"
+  },
+  "profiles": {
+    "control": "arn:aws:bedrock:us-east-1:<account>:application-inference-profile/pj21d310s69b",
+    "input-blocked": "arn:aws:bedrock:us-east-1:<account>:application-inference-profile/12jjg23nnft1",
+    "output-blocked": "arn:aws:bedrock:us-east-1:<account>:application-inference-profile/wn91zu880oo3"
+  },
+  "prompts": {
+    "control": "Join the fragments 'zor' and 'bify' into a single word. Reply with only that word, in lowercase, and nothing else.",
+    "input-blocked": "In one short sentence, what might the word zorbify mean?",
+    "output-blocked": "Join the fragments 'zor' and 'bify' into a single word. Reply with only that word, in lowercase, and nothing else."
+  },
+  "rows": [
+    {
+      "arm": "input-blocked",
+      "input_blocked_words": [
+        "zorbify"
+      ],
+      "input_tokens": 0,
+      "output_blocked_words": [],
+      "output_tokens": 0,
+      "rep": 0,
+      "request_id": "868ac483-f7aa-454c-a074-164db5f8b216",
+      "sent_at": "2026-10-02T01:32:02.640243+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "output-blocked",
+      "input_blocked_words": [],
+      "input_tokens": 0,
+      "output_blocked_words": [
+        "zorbify"
+      ],
+      "output_tokens": 0,
+      "rep": 0,
+      "request_id": "e8372188-c72c-4038-af96-430de4de300e",
+      "sent_at": "2026-10-02T01:32:03.524859+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "control",
+      "input_blocked_words": [],
+      "input_tokens": 29,
+      "output_blocked_words": [],
+      "output_tokens": 4,
+      "rep": 0,
+      "request_id": "67cb3b80-2621-44c0-9370-bd9e00ab14c0",
+      "sent_at": "2026-10-02T01:32:04.892994+00:00",
+      "stop_reason": "end_turn"
+    },
+    {
+      "arm": "output-blocked",
+      "input_blocked_words": [],
+      "input_tokens": 0,
+      "output_blocked_words": [
+        "zorbify"
+      ],
+      "output_tokens": 0,
+      "rep": 1,
+      "request_id": "75b6c6a3-d536-4032-84f5-7eee57a7bbf1",
+      "sent_at": "2026-10-02T01:32:05.800452+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "control",
+      "input_blocked_words": [],
+      "input_tokens": 29,
+      "output_blocked_words": [],
+      "output_tokens": 4,
+      "rep": 1,
+      "request_id": "399e4333-df3c-457f-9e0c-15ebb247d36b",
+      "sent_at": "2026-10-02T01:32:07.191020+00:00",
+      "stop_reason": "end_turn"
+    },
+    {
+      "arm": "input-blocked",
+      "input_blocked_words": [
+        "zorbify"
+      ],
+      "input_tokens": 0,
+      "output_blocked_words": [],
+      "output_tokens": 0,
+      "rep": 1,
+      "request_id": "6e8a86cd-a68c-4ec2-93f8-a2622fd5c241",
+      "sent_at": "2026-10-02T01:32:08.210890+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "control",
+      "input_blocked_words": [],
+      "input_tokens": 29,
+      "output_blocked_words": [],
+      "output_tokens": 4,
+      "rep": 2,
+      "request_id": "fb634780-6a4e-4c5d-8268-f492c31019fa",
+      "sent_at": "2026-10-02T01:32:09.059565+00:00",
+      "stop_reason": "end_turn"
+    },
+    {
+      "arm": "input-blocked",
+      "input_blocked_words": [
+        "zorbify"
+      ],
+      "input_tokens": 0,
+      "output_blocked_words": [],
+      "output_tokens": 0,
+      "rep": 2,
+      "request_id": "b05e6d9f-d743-4f1f-9b2d-1a3f527e65fa",
+      "sent_at": "2026-10-02T01:32:10.013894+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "output-blocked",
+      "input_blocked_words": [],
+      "input_tokens": 0,
+      "output_blocked_words": [
+        "zorbify"
+      ],
+      "output_tokens": 0,
+      "rep": 2,
+      "request_id": "463ee5d6-6553-48f0-8692-39888cd8e4e6",
+      "sent_at": "2026-10-02T01:32:10.875787+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "input-blocked",
+      "input_blocked_words": [
+        "zorbify"
+      ],
+      "input_tokens": 0,
+      "output_blocked_words": [],
+      "output_tokens": 0,
+      "rep": 3,
+      "request_id": "b3393174-3742-4502-8430-fe3cb2735bfb",
+      "sent_at": "2026-10-02T01:32:12.316684+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "output-blocked",
+      "input_blocked_words": [],
+      "input_tokens": 0,
+      "output_blocked_words": [
+        "zorbify"
+      ],
+      "output_tokens": 0,
+      "rep": 3,
+      "request_id": "6cae014c-ab4f-4c67-8c0d-a4667dbef001",
+      "sent_at": "2026-10-02T01:32:13.161688+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "control",
+      "input_blocked_words": [],
+      "input_tokens": 29,
+      "output_blocked_words": [],
+      "output_tokens": 4,
+      "rep": 3,
+      "request_id": "6bf105ba-df72-471b-865e-58742e8a8c43",
+      "sent_at": "2026-10-02T01:32:14.657799+00:00",
+      "stop_reason": "end_turn"
+    },
+    {
+      "arm": "output-blocked",
+      "input_blocked_words": [],
+      "input_tokens": 0,
+      "output_blocked_words": [
+        "zorbify"
+      ],
+      "output_tokens": 0,
+      "rep": 4,
+      "request_id": "e28c78f4-a9ad-4d8e-b5af-927b950125ba",
+      "sent_at": "2026-10-02T01:32:15.651089+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "control",
+      "input_blocked_words": [],
+      "input_tokens": 29,
+      "output_blocked_words": [],
+      "output_tokens": 4,
+      "rep": 4,
+      "request_id": "d17c0466-c953-4c49-8820-59663c3230b5",
+      "sent_at": "2026-10-02T01:32:17.011561+00:00",
+      "stop_reason": "end_turn"
+    },
+    {
+      "arm": "input-blocked",
+      "input_blocked_words": [
+        "zorbify"
+      ],
+      "input_tokens": 0,
+      "output_blocked_words": [],
+      "output_tokens": 0,
+      "rep": 4,
+      "request_id": "15337b5a-22d2-49b8-ba4c-13c099511717",
+      "sent_at": "2026-10-02T01:32:17.842793+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "control",
+      "input_blocked_words": [],
+      "input_tokens": 29,
+      "output_blocked_words": [],
+      "output_tokens": 4,
+      "rep": 5,
+      "request_id": "b1db87bc-d091-40fe-a695-2c25395b1140",
+      "sent_at": "2026-10-02T01:32:18.696925+00:00",
+      "stop_reason": "end_turn"
+    },
+    {
+      "arm": "input-blocked",
+      "input_blocked_words": [
+        "zorbify"
+      ],
+      "input_tokens": 0,
+      "output_blocked_words": [],
+      "output_tokens": 0,
+      "rep": 5,
+      "request_id": "d0d1ec1f-686f-4d2c-81df-0d8b62d4c24e",
+      "sent_at": "2026-10-02T01:32:19.779206+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "output-blocked",
+      "input_blocked_words": [],
+      "input_tokens": 0,
+      "output_blocked_words": [
+        "zorbify"
+      ],
+      "output_tokens": 0,
+      "rep": 5,
+      "request_id": "343dde08-b1eb-4e32-83ba-3169f3c92d2f",
+      "sent_at": "2026-10-02T01:32:20.630802+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "input-blocked",
+      "input_blocked_words": [
+        "zorbify"
+      ],
+      "input_tokens": 0,
+      "output_blocked_words": [],
+      "output_tokens": 0,
+      "rep": 6,
+      "request_id": "9cc52b2a-cc9b-4fc9-87f3-086c33b5a6a9",
+      "sent_at": "2026-10-02T01:32:22.004545+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "output-blocked",
+      "input_blocked_words": [],
+      "input_tokens": 0,
+      "output_blocked_words": [
+        "zorbify"
+      ],
+      "output_tokens": 0,
+      "rep": 6,
+      "request_id": "f6810e2c-85d3-4924-ba66-c49c1082de2f",
+      "sent_at": "2026-10-02T01:32:22.867721+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "control",
+      "input_blocked_words": [],
+      "input_tokens": 29,
+      "output_blocked_words": [],
+      "output_tokens": 4,
+      "rep": 6,
+      "request_id": "e2b7a331-dba2-4c8c-8ce2-6be51050b034",
+      "sent_at": "2026-10-02T01:32:24.262738+00:00",
+      "stop_reason": "end_turn"
+    },
+    {
+      "arm": "output-blocked",
+      "input_blocked_words": [],
+      "input_tokens": 0,
+      "output_blocked_words": [
+        "zorbify"
+      ],
+      "output_tokens": 0,
+      "rep": 7,
+      "request_id": "1cc9af92-2379-45bb-b985-2cb92f36bb01",
+      "sent_at": "2026-10-02T01:32:25.219103+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "control",
+      "input_blocked_words": [],
+      "input_tokens": 29,
+      "output_blocked_words": [],
+      "output_tokens": 4,
+      "rep": 7,
+      "request_id": "ae752ee3-87df-4f73-bdb4-64578a9ef329",
+      "sent_at": "2026-10-02T01:32:26.649963+00:00",
+      "stop_reason": "end_turn"
+    },
+    {
+      "arm": "input-blocked",
+      "input_blocked_words": [
+        "zorbify"
+      ],
+      "input_tokens": 0,
+      "output_blocked_words": [],
+      "output_tokens": 0,
+      "rep": 7,
+      "request_id": "33d176a8-12c9-4fed-a28c-e837594a4295",
+      "sent_at": "2026-10-02T01:32:27.629139+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "control",
+      "input_blocked_words": [],
+      "input_tokens": 29,
+      "output_blocked_words": [],
+      "output_tokens": 4,
+      "rep": 8,
+      "request_id": "3f3aa988-1769-419b-8c6f-455c37d0b38d",
+      "sent_at": "2026-10-02T01:32:28.460356+00:00",
+      "stop_reason": "end_turn"
+    },
+    {
+      "arm": "input-blocked",
+      "input_blocked_words": [
+        "zorbify"
+      ],
+      "input_tokens": 0,
+      "output_blocked_words": [],
+      "output_tokens": 0,
+      "rep": 8,
+      "request_id": "fc8f3c73-6726-4ec2-be12-e7dcd92c5f68",
+      "sent_at": "2026-10-02T01:32:29.412090+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "output-blocked",
+      "input_blocked_words": [],
+      "input_tokens": 0,
+      "output_blocked_words": [
+        "zorbify"
+      ],
+      "output_tokens": 0,
+      "rep": 8,
+      "request_id": "0c328307-34eb-444c-9ae0-f5b8907e63d2",
+      "sent_at": "2026-10-02T01:32:30.248102+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "input-blocked",
+      "input_blocked_words": [
+        "zorbify"
+      ],
+      "input_tokens": 0,
+      "output_blocked_words": [],
+      "output_tokens": 0,
+      "rep": 9,
+      "request_id": "5946c208-6541-476a-8592-3b210ee4e226",
+      "sent_at": "2026-10-02T01:32:32.244748+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "output-blocked",
+      "input_blocked_words": [],
+      "input_tokens": 0,
+      "output_blocked_words": [
+        "zorbify"
+      ],
+      "output_tokens": 0,
+      "rep": 9,
+      "request_id": "b6bc5bd8-2d48-4890-b6cd-d9c2a1e5a020",
+      "sent_at": "2026-10-02T01:32:33.083252+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "control",
+      "input_blocked_words": [],
+      "input_tokens": 29,
+      "output_blocked_words": [],
+      "output_tokens": 4,
+      "rep": 9,
+      "request_id": "eba1b710-fb41-4b6a-8be5-71587cf1e157",
+      "sent_at": "2026-10-02T01:32:34.445346+00:00",
+      "stop_reason": "end_turn"
+    },
+    {
+      "arm": "output-blocked",
+      "input_blocked_words": [],
+      "input_tokens": 0,
+      "output_blocked_words": [
+        "zorbify"
+      ],
+      "output_tokens": 0,
+      "rep": 10,
+      "request_id": "9040fb69-a7c8-4dad-8f37-bd2b51c96b14",
+      "sent_at": "2026-10-02T01:32:35.426145+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "control",
+      "input_blocked_words": [],
+      "input_tokens": 29,
+      "output_blocked_words": [],
+      "output_tokens": 4,
+      "rep": 10,
+      "request_id": "6ecd5feb-f7f1-4554-a48e-40abc2a5828b",
+      "sent_at": "2026-10-02T01:32:36.715086+00:00",
+      "stop_reason": "end_turn"
+    },
+    {
+      "arm": "input-blocked",
+      "input_blocked_words": [
+        "zorbify"
+      ],
+      "input_tokens": 0,
+      "output_blocked_words": [],
+      "output_tokens": 0,
+      "rep": 10,
+      "request_id": "3cb716fd-6d24-4a5f-ba6d-f1c9a581082a",
+      "sent_at": "2026-10-02T01:32:37.650348+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "control",
+      "input_blocked_words": [],
+      "input_tokens": 29,
+      "output_blocked_words": [],
+      "output_tokens": 4,
+      "rep": 11,
+      "request_id": "04ea4254-dc20-4a33-b7a4-2a0c10b4ff84",
+      "sent_at": "2026-10-02T01:32:38.456490+00:00",
+      "stop_reason": "end_turn"
+    },
+    {
+      "arm": "input-blocked",
+      "input_blocked_words": [
+        "zorbify"
+      ],
+      "input_tokens": 0,
+      "output_blocked_words": [],
+      "output_tokens": 0,
+      "rep": 11,
+      "request_id": "0bf53ec8-6bf9-4e93-bc8f-2d291fd688a7",
+      "sent_at": "2026-10-02T01:32:39.281029+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "output-blocked",
+      "input_blocked_words": [],
+      "input_tokens": 0,
+      "output_blocked_words": [
+        "zorbify"
+      ],
+      "output_tokens": 0,
+      "rep": 11,
+      "request_id": "b1636474-6ef5-4709-8a4b-a5b92dd1255c",
+      "sent_at": "2026-10-02T01:32:40.137606+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "input-blocked",
+      "input_blocked_words": [
+        "zorbify"
+      ],
+      "input_tokens": 0,
+      "output_blocked_words": [],
+      "output_tokens": 0,
+      "rep": 12,
+      "request_id": "8aaa1b98-c98a-4cbf-a84d-e1da45f78e9d",
+      "sent_at": "2026-10-02T01:32:41.407000+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "output-blocked",
+      "input_blocked_words": [],
+      "input_tokens": 0,
+      "output_blocked_words": [
+        "zorbify"
+      ],
+      "output_tokens": 0,
+      "rep": 12,
+      "request_id": "0620bc1d-b579-4fa9-b77a-41413735638e",
+      "sent_at": "2026-10-02T01:32:42.260637+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "control",
+      "input_blocked_words": [],
+      "input_tokens": 29,
+      "output_blocked_words": [],
+      "output_tokens": 4,
+      "rep": 12,
+      "request_id": "ea9c800e-ebe7-4ab2-a2c7-53130184a4c7",
+      "sent_at": "2026-10-02T01:32:43.467569+00:00",
+      "stop_reason": "end_turn"
+    },
+    {
+      "arm": "output-blocked",
+      "input_blocked_words": [],
+      "input_tokens": 0,
+      "output_blocked_words": [
+        "zorbify"
+      ],
+      "output_tokens": 0,
+      "rep": 13,
+      "request_id": "5184e04d-434e-49b3-9972-fd2c84de8a6e",
+      "sent_at": "2026-10-02T01:32:44.428926+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "control",
+      "input_blocked_words": [],
+      "input_tokens": 29,
+      "output_blocked_words": [],
+      "output_tokens": 4,
+      "rep": 13,
+      "request_id": "a9c685b8-0617-496c-994b-5d096e47d469",
+      "sent_at": "2026-10-02T01:32:45.823360+00:00",
+      "stop_reason": "end_turn"
+    },
+    {
+      "arm": "input-blocked",
+      "input_blocked_words": [
+        "zorbify"
+      ],
+      "input_tokens": 0,
+      "output_blocked_words": [],
+      "output_tokens": 0,
+      "rep": 13,
+      "request_id": "fd03d05a-ce09-4ac3-b3d6-2d650a31078f",
+      "sent_at": "2026-10-02T01:32:46.654447+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "control",
+      "input_blocked_words": [],
+      "input_tokens": 29,
+      "output_blocked_words": [],
+      "output_tokens": 4,
+      "rep": 14,
+      "request_id": "b34100f1-222b-4011-8642-3cc74073d986",
+      "sent_at": "2026-10-02T01:32:47.509816+00:00",
+      "stop_reason": "end_turn"
+    },
+    {
+      "arm": "input-blocked",
+      "input_blocked_words": [
+        "zorbify"
+      ],
+      "input_tokens": 0,
+      "output_blocked_words": [],
+      "output_tokens": 0,
+      "rep": 14,
+      "request_id": "1c8c35bb-5ca6-4e43-b394-92a288a01742",
+      "sent_at": "2026-10-02T01:32:48.426368+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "output-blocked",
+      "input_blocked_words": [],
+      "input_tokens": 0,
+      "output_blocked_words": [
+        "zorbify"
+      ],
+      "output_tokens": 0,
+      "rep": 14,
+      "request_id": "450810bd-2b07-40dc-8143-ee76583b29d1",
+      "sent_at": "2026-10-02T01:32:49.251041+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "input-blocked",
+      "input_blocked_words": [
+        "zorbify"
+      ],
+      "input_tokens": 0,
+      "output_blocked_words": [],
+      "output_tokens": 0,
+      "rep": 15,
+      "request_id": "9f4a24ed-18b2-469d-b645-46d3f3bb3c37",
+      "sent_at": "2026-10-02T01:32:50.600432+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "output-blocked",
+      "input_blocked_words": [],
+      "input_tokens": 0,
+      "output_blocked_words": [
+        "zorbify"
+      ],
+      "output_tokens": 0,
+      "rep": 15,
+      "request_id": "096e4f35-ce3b-4890-92df-4af9e60dd471",
+      "sent_at": "2026-10-02T01:32:51.350002+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "control",
+      "input_blocked_words": [],
+      "input_tokens": 29,
+      "output_blocked_words": [],
+      "output_tokens": 4,
+      "rep": 15,
+      "request_id": "c56564ad-fad7-4efd-b6c8-4e332ef9ef31",
+      "sent_at": "2026-10-02T01:32:52.906926+00:00",
+      "stop_reason": "end_turn"
+    },
+    {
+      "arm": "output-blocked",
+      "input_blocked_words": [],
+      "input_tokens": 0,
+      "output_blocked_words": [
+        "zorbify"
+      ],
+      "output_tokens": 0,
+      "rep": 16,
+      "request_id": "08a4149a-ed10-412f-90b9-e6c37a8cc8d2",
+      "sent_at": "2026-10-02T01:32:53.819784+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "control",
+      "input_blocked_words": [],
+      "input_tokens": 29,
+      "output_blocked_words": [],
+      "output_tokens": 4,
+      "rep": 16,
+      "request_id": "eeeb0cf0-b6e0-427f-b266-71ede4cbf58b",
+      "sent_at": "2026-10-02T01:32:55.203700+00:00",
+      "stop_reason": "end_turn"
+    },
+    {
+      "arm": "input-blocked",
+      "input_blocked_words": [
+        "zorbify"
+      ],
+      "input_tokens": 0,
+      "output_blocked_words": [],
+      "output_tokens": 0,
+      "rep": 16,
+      "request_id": "3dba840d-195b-49f4-a588-cb0517351478",
+      "sent_at": "2026-10-02T01:32:56.134337+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "control",
+      "input_blocked_words": [],
+      "input_tokens": 29,
+      "output_blocked_words": [],
+      "output_tokens": 4,
+      "rep": 17,
+      "request_id": "8ce7cac9-fc68-4d61-ab48-33678865efe2",
+      "sent_at": "2026-10-02T01:32:56.958473+00:00",
+      "stop_reason": "end_turn"
+    },
+    {
+      "arm": "input-blocked",
+      "input_blocked_words": [
+        "zorbify"
+      ],
+      "input_tokens": 0,
+      "output_blocked_words": [],
+      "output_tokens": 0,
+      "rep": 17,
+      "request_id": "d6dcafd3-f03b-410f-bd2d-730668cbefc8",
+      "sent_at": "2026-10-02T01:32:57.883784+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "output-blocked",
+      "input_blocked_words": [],
+      "input_tokens": 0,
+      "output_blocked_words": [
+        "zorbify"
+      ],
+      "output_tokens": 0,
+      "rep": 17,
+      "request_id": "30e33f36-11ef-46e8-9fb0-a2d97857bf50",
+      "sent_at": "2026-10-02T01:32:58.783643+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "input-blocked",
+      "input_blocked_words": [
+        "zorbify"
+      ],
+      "input_tokens": 0,
+      "output_blocked_words": [],
+      "output_tokens": 0,
+      "rep": 18,
+      "request_id": "f53943f3-9e4f-444c-b5b6-24cee0b91d00",
+      "sent_at": "2026-10-02T01:33:00.146592+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "output-blocked",
+      "input_blocked_words": [],
+      "input_tokens": 0,
+      "output_blocked_words": [
+        "zorbify"
+      ],
+      "output_tokens": 0,
+      "rep": 18,
+      "request_id": "2c55a32e-4529-4692-971b-0c11de7eb9a1",
+      "sent_at": "2026-10-02T01:33:01.034115+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "control",
+      "input_blocked_words": [],
+      "input_tokens": 29,
+      "output_blocked_words": [],
+      "output_tokens": 4,
+      "rep": 18,
+      "request_id": "5b87f880-a9a3-46a0-8af8-bb682415643c",
+      "sent_at": "2026-10-02T01:33:02.346838+00:00",
+      "stop_reason": "end_turn"
+    },
+    {
+      "arm": "output-blocked",
+      "input_blocked_words": [],
+      "input_tokens": 0,
+      "output_blocked_words": [
+        "zorbify"
+      ],
+      "output_tokens": 0,
+      "rep": 19,
+      "request_id": "07220063-fe06-4fcd-9898-b1058bd8bb3d",
+      "sent_at": "2026-10-02T01:33:03.372945+00:00",
+      "stop_reason": "guardrail_intervened"
+    },
+    {
+      "arm": "control",
+      "input_blocked_words": [],
+      "input_tokens": 29,
+      "output_blocked_words": [],
+      "output_tokens": 4,
+      "rep": 19,
+      "request_id": "75b0d7fe-a750-4a16-94d1-dcc9fde26173",
+      "sent_at": "2026-10-02T01:33:04.631618+00:00",
+      "stop_reason": "end_turn"
+    },
+    {
+      "arm": "input-blocked",
+      "input_blocked_words": [
+        "zorbify"
+      ],
+      "input_tokens": 0,
+      "output_blocked_words": [],
+      "output_tokens": 0,
+      "rep": 19,
+      "request_id": "d29f5f50-1c15-4432-8754-5ad2e35a12e1",
+      "sent_at": "2026-10-02T01:33:05.590046+00:00",
+      "stop_reason": "guardrail_intervened"
+    }
+  ],
+  "sdk": {
+    "boto3": "1.43.67",
+    "botocore": "1.43.67"
+  },
+  "tag_key": "grx-f10-1-arm"
+}

@@ -24,8 +24,8 @@ This section is first on purpose. A paper whose evidence is still being collecte
 it says anything else, and should say exactly what is missing rather than gesturing at future work.
 
 **What is finished.** 93 propositions were registered against a sealed oracle before any data existed.
-92 are verdict-eligible; **91 carry a published verdict** on disk. The verdict mix is **TRUE 46,
-FALSE 23, INCONCLUSIVE 20, RECORDED 2**. 546 claims were extracted from the document under test and
+92 are verdict-eligible; **all 92 carry a published verdict** on disk. The verdict mix is **TRUE 46,
+FALSE 24, INCONCLUSIVE 20, RECORDED 2**. 546 claims were extracted from the document under test and
 triaged; 385 map to at least one case; 161 do not, and **all 161 carry a written exclusion reason —
 zero are unexplained**.
 
@@ -34,7 +34,7 @@ zero are unexplained**.
 | # | Open item | State | Consequence for this paper |
 |---|---|---|---|
 | 1 | **Day-2 replications: 1 still owed, 3 discharged, 3 in disagreement** — owed: F4-6. Discharged 2026-08-19: F6-1, F6-3, F6-4. Disagreed, so no amendment is licensed on any of them: F6-2, F6-5, F6-8 | 5 of the original 12 discharged 2026-08-15; the nine F6 cases re-measured 2026-08-19 | Chapter 10's latency numbers now rest on **two** calendar days, and five of them moved — the record for the six agreeing cases is the 2026-08-19 file (§10.1.1). ACG-01-BP05 (F4-6) still rests on one day. F6-2/F6-5/F6-8's comparisons against the documented tail are **not established in either direction**, and F6-6 agrees but fell one usable observation short of its pre-registered 1,000, so it does not clear the amendment bar either. |
-| 2 | **F10-1 — NOT MEASURED** | needs a decision, not a run | The billing-asymmetry question (does an input block avoid the model inference charge?) is unanswered. Cost Explorer's daily granularity cannot supply the delta the sealed oracle requires. §10.4 states the gap and nothing more. |
+| 2 | **F10-1 — FALSE on one calendar day** | measured 2026-10-02, read 2026-10-05; a second day is owed | Cost was attributed by tagged application inference profile, with an unguarded control arm that proved the tag reaches the bill. Input-blocked requests were billed no model tokens, as claimed. Output-blocked requests were billed none either, where the document says they pay in full. A single day licenses no amendment, so the document's sentence stands until a replica agrees. See §10.4. |
 | 3 | **F9-1 — untestable by its own sealed oracle** | closed as untestable | Whether policy-evaluation timeout yields automatic DENY cannot be decided: AgentCore exposes no fault-injection surface for policy evaluation. Chapter 11 is explicit that only the *missing-permission* failure mode was observed. |
 | 4 | **Appendix D — figure and statistical conventions** | BLOCKED | Eight sources are located but unadjudicated (censoring, binomial intervals at zero successes, colour-blind-safe three-state encoding). Until they are verified, Appendix D states conventions as **authorial judgment**, not as citations. |
 | 5 | **Figures: 7 of 8 drawn; figure 6 blocked** | drawn 2026-08-15 | All seven are generated from the evidence tree by `tools/whitepaper_figures.py`, and `--check` re-derives their numbers against `results/figures/MANIFEST.json`. **Figure 6 (control × threat matrix) is not drawn and states why:** only 5 of the 17 OWASP Agentic v1.1 threat titles are grounded in a source we hold, so 12 columns would be authored from memory. Its blocking reason and closing condition are recorded in the manifest, not in prose alone. |
@@ -46,7 +46,7 @@ zero are unexplained**.
 | 11 | **No independent party has re-run anything** | structural | See Chapter 12. Our second-day runs are *repeatability*, not reproduction. |
 | 12 | **A zh-TW edition** | not started | Follows once this English edition stabilises. |
 
-**How to read a draft.** Nothing in §0 weakens the 91 published verdicts; each was decided by an
+**How to read a draft.** Nothing in §0 weakens the 92 published verdicts; each was decided by an
 oracle sealed before data collection, and each is traceable in Appendix C. What §0 bounds is how far
 those verdicts may be read — which is the same discipline the rest of the paper applies to the
 document under test.
@@ -57,7 +57,7 @@ document under test.
 
 A production design document for Amazon Bedrock AgentCore guardrails was treated as a set of testable
 propositions rather than as guidance. 546 claims were extracted and triaged; 93 became experiments
-with falsifying conditions sealed by sha256 before any AWS call was made; **91 of the 92
+with falsifying conditions sealed by sha256 before any AWS call was made; **all 92
 verdict-eligible propositions were decided against live service behaviour in `us-east-1`**, with
 n up to 1,000 per case, Wilson or order-statistic intervals on every proportion and quantile, and a
 pre-committed cross-instrument rule for disagreement.
@@ -97,7 +97,7 @@ guardrails and policy behaviour as observed between 2026-08-09 and 2026-08-15. R
 **Explicit non-goals.**
 
 1. **Not a product manual.** Where AWS documentation is correct, this paper cites it and moves on.
-2. **Not an end-to-end safety claim.** 91 independent verdicts do not compose. No case tests two
+2. **Not an end-to-end safety claim.** 92 independent verdicts do not compose. No case tests two
    controls interacting. See Chapter 12, construct validity.
 3. **Not a conformance statement.** No claim of the form "satisfies OWASP agentic mitigations" appears
    here, and Chapter 2 explains why such a claim would be unmeasurable in principle.
@@ -144,11 +144,11 @@ nowhere.
 | **NOT MEASURED** | No usable instrument exists. | Nothing. Listed in Appendix F. |
 
 The single most common misreading of a register like this one is to treat INCONCLUSIVE as a soft
-FALSE. Twenty of the 91 verdicts are INCONCLUSIVE. Two document sections (§5.1 and §4.5.5 of the
+FALSE. Twenty of the 92 verdicts are INCONCLUSIVE. Two document sections (§5.1 and §4.5.5 of the
 document under test) are **predominantly** INCONCLUSIVE and are labelled weakly evidenced wherever
 they appear.
 
-![Figure 1 — the 91 published verdicts by state. INCONCLUSIVE is a neutral hatched grey, never a
+![Figure 1 — the 92 published verdicts by state. INCONCLUSIVE is a neutral hatched grey, never a
 warning colour.](results/figures/fig-01-verdict-distribution.png)
 
 Figure 1 and figure 2 encode that rule rather than restating it: INCONCLUSIVE is drawn in a neutral
@@ -160,9 +160,9 @@ separable for a reader who cannot distinguish the colours.
 §4-5-5 are visibly dominated by the hatched
 state.](results/figures/fig-02-evidence-by-section.png)
 
-Figure 2 is the same 91 verdicts projected onto the document under test, so a reader who cares about one
+Figure 2 is the same 92 verdicts projected onto the document under test, so a reader who cares about one
 section can see how well evidenced that section is before relying on it. It counts claim × case rather
-than cases, which is why its total exceeds 91: one case can decide several claims, and one claim can
+than cases, which is why its total exceeds 92: one case can decide several claims, and one claim can
 require several cases.
 
 ### Pre-registration
@@ -1148,10 +1148,19 @@ optimisation.** Design for it as a containment property, and take the 38–66 ms
 - **F10-3 FALSE.** Input tagging does **not** reduce text units billed: tagged and untagged were
   **identical on every usable pair**, which is the sealed FALSE branch. Tagging is required for
   detection to happen at all (ACG-04-BP04) and buys nothing on cost.
-- **F10-1 NOT MEASURED.** Whether an input block avoids the model inference charge while an output
-  block does not is unresolved. Cost Explorer's daily granularity cannot supply the per-request delta
-  the sealed oracle requires. **This is a real gap in cost modelling and it is listed in Appendix F
-  rather than estimated.**
+- **F10-1 FALSE, on one calendar day.** The document says an input block avoids the model
+  inference charge and an output block does not. Cost was attributed by resource tag, as the sealed
+  method says, through one tagged application inference profile per arm over Nova Micro. A
+  guardrail-intervened `Converse` response reports `usage` 0/0, so a third arm sent the output prompt
+  with no guardrail as the reference. Its bill matched its own `usage` exactly: 580 input and 80
+  output tokens over 20 requests. That proves the tag reaches Cost Explorer. The input-blocked arm was
+  billed 0/0, as claimed. **The output-blocked arm was also billed 0/0**, against the 580/80 the claim
+  predicts. An account-wide read showed no untagged Nova usage that day that could hold the missing
+  tokens. One model, one word policy, the non-streaming API and one day are the whole sample, and
+  `reproduction_before_amendment` lets no single day amend anything. So the document's sentence
+  stands, marked by this result, until a second day replicates it. Separately from the bill, a
+  caller that meters blocked traffic from `usage` counts zero model tokens
+  (`f10_billing/F10-1-DESIGN.md`).
 
 The whole measurement programme behind this paper cost **$13.3711** in AWS charges against a
 pre-registered ceiling of $95 — read off Cost Explorer on 2026-09-21, attributed line by line in
@@ -1268,7 +1277,7 @@ document under test both return **0**.
 
 ### 12.1 Construct validity
 
-**Coverage is not conjunction.** 91 independent verdicts do not compose into an end-to-end safety
+**Coverage is not conjunction.** 92 independent verdicts do not compose into an end-to-end safety
 claim. **No case tests two controls interacting.** ACG-01 measures that the engine denies; ACG-04
 measures that a filter detects; nothing measures a request that must pass both. *Threatens:* any
 aggregate reading of the verdict count, and every "defence in depth" reading of Chapter 1's table.
@@ -1278,7 +1287,7 @@ space here for that reason.
 **57 of 546 claims are prescriptions, not propositions.** 10.4% of the triaged claims are
 best-practice recommendations, checklist steps, design principles and decision-matrix
 recommendations. The apparatus cannot decide them **in principle** — a prescription has no truth
-value. *Threatens:* the implication that 91 verdicts validate the document. The parts of a guardrails
+value. *Threatens:* the implication that 92 verdicts validate the document. The parts of a guardrails
 document that tell you what to do are exactly the parts an oracle cannot decide, and this is the same
 structural limitation Chapter 2 found in OWASP's own standard, which makes it a shared problem rather
 than a local failure.
@@ -1342,7 +1351,7 @@ class of defect that would threaten them silently, so it is recorded here rather
 ### 12.4 External validity
 
 **A hosted moving target.** `AWS-BEHAVIOR-CHANGES.md` exists because the system under test changed
-during the study. Every verdict is dated. *Threatens:* **all 91.**
+during the study. Every verdict is dated. *Threatens:* **all 92.**
 
 **One Region, one account, one document, one SDK generation.** ACG-06-BP02 is the only control probed
 across Regions, and only for a control-plane mutation. *Threatens:* every latency figure (Region-local
@@ -1366,12 +1375,14 @@ both halves in one sentence, or neither.
 
 The ledger, quantified. None of these is hedging; each is a number.
 
-1. **20 INCONCLUSIVE of 91 published verdicts (22%).** An INCONCLUSIVE licenses no amendment and is
+1. **20 INCONCLUSIVE of 92 published verdicts (22%).** An INCONCLUSIVE licenses no amendment and is
    not evidence against the claim it tests. Two document sections are predominantly INCONCLUSIVE:
    **s5-1 (17 of 28 claim×case outcomes)** and **s4-5-5 (14 of 15)**. Any reader relying on those
    sections is relying on unmeasured guidance, and this paper labels them so wherever they appear.
-2. **1 NOT MEASURED** — F10-1, the billing asymmetry. Cost Explorer's daily granularity cannot supply
-   the required delta.
+2. **1 FALSE on a single day** — F10-1, the billing asymmetry. It was measured on 2026-10-02, and
+   output-blocked requests were billed no model tokens. It needs a second calendar day before it can
+   amend the document. Until then the document's claim is refuted by one day of data and is not yet
+   corrected.
 3. **1 UNTESTABLE by its own sealed oracle** — F9-1, policy-evaluation timeout. No fault-injection
    surface exists. The failure mode most likely to occur in production is the one that cannot be
    tested.
@@ -1464,6 +1475,7 @@ text.
 |---|---|---|
 | Initial publication (draft) | First edition. 91 of 92 verdict-eligible propositions published; 7 day-2 replications outstanding; Appendix D conventions unadjudicated; 7 of 8 figures drawn and figure 6 blocked; F8-5 erratum open. | 2026-08-15 |
 | Chapter 10 re-stated against the 2026-08-19 replication | No verdict changed and no sealed field moved. Five of Chapter 10's measured values now come from the 2026-08-19 record rather than day 1, because the six agreeing F6 cases publish their day-2 files: F6-1/F6-4 p50 401→362 ms, F6-3 55→59 ms, F6-6 1483→1364 ms at n=999, F6-7 residual [258.8, 273.0]→[285.1, 296.2] ms, F6-9 shift [30.2, 57.0]→[37.9, 66.2] ms. New §10.1.1 records the replication, the 8.7–38.3% between-day speed-up measured by two independent instruments, and the citation restriction on F6-2/F6-5/F6-8, whose two days disagree indecisively. Figure 3 redrawn to show both days per row with the record marked. §0 item 1, §12.2, §13 item 5 and Appendix D's interval example re-stated to match. | 2026-08-20 |
+| F10-1 measured | The last verdict-eligible case. 92 of 92 are published, and the mix is TRUE 46, FALSE 24, INCONCLUSIVE 20, RECORDED 2. F10-1 is FALSE on one calendar day: output-blocked requests were billed no model tokens. It amends nothing until a second day replicates it. Figures 1 and 2 and Appendix C regenerated. | 2026-10-05 |
 
 ---
 
@@ -1488,10 +1500,10 @@ respective owners.
 |---|---|---|---|
 | A | Pre-registration and seals | `census.py`, `verify_prereg.py`, `PREREGISTRATION.yaml` | complete |
 | B | Method per family F0–F10 | `results/FINDING-*.md` (17 documents) | complete for the 17 documented families |
-| C | The full register: 546 claims → 93 cases → 91 verdicts, with a C↔E map and every exclusion reason | `results/WHITEPAPER-APPENDIX-C.md` (generated) | complete, regenerable |
+| C | The full register: 546 claims → 93 cases → 92 verdicts, with a C↔E map and every exclusion reason | `results/WHITEPAPER-APPENDIX-C.md` (generated) | complete, regenerable |
 | D | Figures and statistical conventions | `tools/whitepaper_figures.py`, `results/figures/MANIFEST.json`, `results/RESEARCH-evidence-presentation-20260815.md` §5 | figures 7 of 8 drawn and machine-checked; **conventions still BLOCKED** — 8 sources located, unadjudicated |
 | E | Deviations and errata | `DEVIATIONS.md`, `results/ERRATA.md` | complete; E-2 pending the F8-5 decision |
-| F | Not-measured register | `results/CENSUS-NOT-MEASURED.md` | complete (F10-1) |
+| F | Not-measured register | `results/CENSUS-NOT-MEASURED.md` | complete. F9-1 is untestable; F10-1 was measured 2026-10-05 and its entry is kept as history |
 | G | Reproduction, and how far it reaches | `census.py`, `verify_phase0.sh` | complete |
 
 ## Appendix A — Pre-registration and seals
@@ -1510,14 +1522,14 @@ case census — every number below is derived, none is remembered
   claim-mapped    cases at least one claim points at      90
   untestable      by their own sealed oracle              1 ['F9-1']
   verdict-eligible register minus untestable              92
-  published       verdict on disk under results/phase1/   91
-  REMAINING       verdict-eligible minus published        1
+  published       verdict on disk under results/phase1/   92
+  REMAINING       verdict-eligible minus published        0
 
-  verdicts: FALSE 23, INCONCLUSIVE 20, RECORDED 2, TRUE 46
+  verdicts: FALSE 24, INCONCLUSIVE 20, RECORDED 2, TRUE 46
 
   by family (published / verdict-eligible):
     F0 1/1  F1 28/28  F2 5/5  F3 11/11  F4 6/6  F5 12/12
-    F6 9/9  F7 7/7    F8 8/8  F9 2/2    F10 2/3  outstanding: F10-1
+    F6 9/9  F7 7/7    F8 8/8  F9 2/2    F10 3/3  outstanding: none
 ```
 
 The oracle-registry hash is computed over `{case_id: oracle_text}` for all 93 cases, sorted by id —
@@ -1585,7 +1597,7 @@ citation. It is not cited until it is verified.
 
 | # | Figure | Where | State | Constraint, and how it is met |
 |---|---|---|---|---|
-| 1 | Verdict distribution over 91 verdicts | "How to read the evidence" | drawn | INCONCLUSIVE must not read as failure — neutral grey **plus** a hatch, so the state survives greyscale |
+| 1 | Verdict distribution over 92 verdicts | "How to read the evidence" | drawn | INCONCLUSIVE must not read as failure — neutral grey **plus** a hatch, so the state survives greyscale |
 | 2 | Evidence strength by document section | "How to read the evidence" | drawn | must agree with the register — both are derived from the same `whitepaper_data.build()` output |
 | 3 | Enforcement latency against documented bands | §10.1 | drawn | quantile form, never a bar of means; log x-axis because the bands span 5 ms to 31 s |
 | 4 | Confidence-score lattice, n=61 | §9.4 | drawn | **censored below τ** — the two unobservable points are full-height hatched spans, never bars with a readable height |
@@ -1623,7 +1635,9 @@ six sites in two languages plus the handover bundle and the slide decks.
 
 ## Appendix F — Not-measured register
 
-`results/CENSUS-NOT-MEASURED.md`. One entry: **F10-1**, the billing asymmetry. The register exists as
+`results/CENSUS-NOT-MEASURED.md`. One case carries no verdict: **F9-1**, untestable by its own seal. The
+F10-1 entry is kept there as the record of the seven weeks it was unmeasured; it was measured on
+2026-10-05. The register exists as
 a separate document so that a not-measured case cannot be mistaken for an absent one.
 
 ## Appendix G — Reproduction, and how far it reaches

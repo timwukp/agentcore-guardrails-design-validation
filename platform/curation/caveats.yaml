@@ -498,6 +498,19 @@ caveats:
       result rests on four service responses, each decided individually, not on a rate.
 
   # ---------------------------------------------------------------- F10: billing
+  F10-1:
+    verdict: "FALSE"
+    derived_from: [oracle_text, billing, sends, t0_iso, t1_iso]
+    why: >-
+      that a guardrail block never costs model inference. The FALSE rests on the claim's output
+      half. Twenty output-blocked Converse calls through a tagged profile showed no billed model
+      tokens in the read window. A control arm with no guardrail was billed exactly its own reported
+      580 input and 80 output tokens, so the tag did reach the bill. Cost Explorer's zero is the
+      bound: a charge below the quantity it reports is compatible with this observation. All sends
+      fell within one minute of one day, on one model (Nova Micro), one word-filter guardrail and
+      the non-streaming Converse API. A streaming call, another model or another policy type could
+      not have been reached by these arms. The input-blocked arm was billed nothing as well, which
+      is the half of the claim this case supports.
   F10-3:
     verdict: "FALSE"
     derived_from: [oracle_text, instrument]

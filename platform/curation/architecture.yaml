@@ -692,8 +692,9 @@ diagrams:
         cases: [F10-1, F10-2, F10-3]
         why_these_cases: >
           A cost model is a design input: if blocking at the input checkpoint does not avoid the
-          inference charge, a security control has a per-request price a reader must plan for. One of
-          these three carries no verdict at all and says so.
+          inference charge, a security control has a per-request price a reader must plan for. F10-1,
+          the last of the three to be measured, read FALSE on one calendar day: output-blocked
+          requests were billed no model tokens either.
 
       - id: region_tier
         label: "Where it works, and in which languages"

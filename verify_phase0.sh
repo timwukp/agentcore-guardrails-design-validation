@@ -82,7 +82,7 @@ gate() {
 # a record — is inside run_tests, immediately above the loop that reads this.
 TEST_SPECS=("claims/tests:474" "lib/tests:992" "f5_redteam/tests:789" \
             "f2_determinism/tests:34" "f3_efficacy/tests:268" \
-            "f8_regional/tests:152" "f10_billing/tests:80" "infra/tests:79" \
+            "f8_regional/tests:152" "f10_billing/tests:100" "infra/tests:79" \
             "runner/tests:94" "f9_failsecure/tests:106" "f1_config/tests:175" \
             "tools/tests:174" "video/tests:53" \
             "platform/build/tests:453" "platform/audit/tests:57")
@@ -193,6 +193,7 @@ run_tests() {
   # floor of 327 sat under 720 collected, so more than half that directory could have been deleted
   # and this gate would have printed a pass. f1_config was 11 against 170, lib 587 against 882,
   # f9_failsecure 48 against 106, f10_billing 35 against 80.
+  # f10_billing raised 80 -> 100 on 2026-10-05: F10-1's 20 billing arms took it to 100 collected.
   #
   # That is the failure this list exists to prevent, arriving through the list itself. A floor is
   # only a floor while it is close to the count; each bump above is recorded one file at a time,

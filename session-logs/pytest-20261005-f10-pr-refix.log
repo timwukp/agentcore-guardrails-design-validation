@@ -1,0 +1,39 @@
+.......................................F................................ [ 26%]
+........................................................................ [ 53%]
+........................................................................ [ 80%]
+....................................................                     [100%]
+=================================== FAILURES ===================================
+______ test_each_published_caveat_count_is_derived_from_its_own_producer _______
+
+    def test_each_published_caveat_count_is_derived_from_its_own_producer():
+        """The defect that started this whole area: three definitions of "caveat coverage" sharing one name,
+        so a number computed under one definition got published under another. `feedback_two_numbers_two_claims`
+        — each is derived here from its own producer, and never one from another.
+    
+          record-carried  `cases_with_what_*_does_not_prove`  <- caveat_census, over the verdict files
+          authored        `cases_with_an_authored_caveat`     <- the length of caveats.yaml
+          off-direction   `caveats_for_a_direction_...`       <- off_direction_caveats, a different rule
+    
+        Adding the authored count into either record-carried count is the specific substitution the review's
+        withdrawn R2 was built on, and it would still pass a test that only checked "the numbers are
+        plausible". So each is recomputed and compared, not sanity-checked."""
+        import json
+    
+        payload = REPO.parent / "grx-site-payload" / "method.json"
+        if not payload.is_file():
+            pytest.skip("no build present; the invariant harness asserts this against a real publish")
+        c = json.loads(payload.read_text(encoding="utf-8"))["caveats"]
+        published = cx.load_published()
+        census = B.caveat_census(published)
+        authored_file = yaml.safe_load(cx.CURATION.read_text(encoding="utf-8"))["caveats"]
+    
+        assert c["cases_with_what_true_does_not_prove"] == len(census["TRUE"]["have"])
+        assert c["cases_with_what_false_does_not_prove"] == len(census["FALSE"]["have"])
+>       assert c["cases_with_an_authored_caveat"] == len(authored_file)
+E       assert 49 == 50
+E        +  where 50 = len({'F0-1': {'verdict': 'TRUE', 'derived_from': ['oracle_text'], 'why': 'that any §10 reference SUPPORTS the row that cit...ost 7 reachable operating points rests on the same run, so the two do not corroborate each other independently."}, ...})
+
+platform/build/tests/test_check_caveats.py:421: AssertionError
+=========================== short test summary info ============================
+FAILED platform/build/tests/test_check_caveats.py::test_each_published_caveat_count_is_derived_from_its_own_producer
+1 failed, 267 passed in 628.32s (0:10:28)

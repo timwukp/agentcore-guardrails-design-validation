@@ -175,7 +175,8 @@ file did not change" said out loud on the case page.
 
 **It is a derivation over the policy, not a fourth list of case ids.** `check_controls.undecided_subquestions`
 reads `results/CITATION-POLICY.md`'s machine block and keeps a sub-question only where a restriction
-forbids `TRUE on X` and `FALSE on X` alike. Over the **10** restrictions in force that selects **2**
+forbids `TRUE on X` and `FALSE on X` alike. Over the **9** restrictions in force (10 until 2026-10-05, when F10-1's UNMEASURED entry was removed
+because the case was measured) that selects **2**
 entries and **3** cases — and it reached the same three a human adjudicated without being told which
 they were, which is the only reason it is worth more than the three ids written in the issue. Two
 near misses are deliberately not selected, and are named in the function's docstring because the place
@@ -264,7 +265,7 @@ were not.
       "F6-8": ["slope in [165,750]"]
     },
     "verdict_on_disk": {"F6-2": "FALSE", "F6-5": "FALSE", "F6-8": "FALSE"},
-    "n_restrictions_read": 10,
+    "n_restrictions_read": 9,
     "n_restrictions_selected": 2,
     "n_restrictions_forbidding_both_directions_for_a_whole_case": 1,
     "rule_readers": [
